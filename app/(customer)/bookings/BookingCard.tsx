@@ -73,6 +73,14 @@ export function BookingCard({ booking }: { booking: BookingResult }) {
       {booking.notes && (
         <p className="text-sm text-gray-500 italic">"{booking.notes}"</p>
       )}
+
+      {booking.status === 'accepted' && booking.cleaner_phone && booking.cleaner_email && (
+        <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-700 flex flex-col gap-1">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingCard.contact.title')}</p>
+          <p>{t('bookingCard.contact.phone')}: {booking.cleaner_phone}</p>
+          <p>{t('bookingCard.contact.email')}: {booking.cleaner_email}</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -74,4 +74,27 @@ describe('BookingCard', () => {
     render(<BookingCard booking={{ ...baseBooking, cleaner_avatar_url: 'https://example.com/photo.jpg' }} />)
     expect(screen.getByRole('img', { name: 'Sarah M.' })).toHaveAttribute('src', 'https://example.com/photo.jpg')
   })
+
+  it('shows cleaner contact info for accepted bookings', () => {
+    render(<BookingCard booking={{
+      ...baseBooking,
+      status: 'accepted',
+      cleaner_email: 'sarah.m@example.com',
+      cleaner_phone: '050-222-1111',
+    }} />)
+
+    expect(screen.getByText('Contact Info')).toBeInTheDocument()
+    expect(screen.getByText(/050-222-1111/)).toBeInTheDocument()
+    expect(screen.getByText(/sarah.m@example.com/)).toBeInTheDocument()
+  })
+
+  it('does not show contact info for pending bookings', () => {
+    render(<BookingCard booking={{
+      ...baseBooking,
+      cleaner_email: 'sarah.m@example.com',
+      cleaner_phone: '050-222-1111',
+    }} />)
+
+    expect(screen.queryByText('Contact Info')).not.toBeInTheDocument()
+  })
 })
