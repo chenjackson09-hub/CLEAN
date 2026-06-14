@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
+import { useLang } from "@/context/LangContext";
 import type { Profile, Cleaner } from "@/types/database";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ProfileForm({ profile, cleaner }: Props) {
+  const { t } = useLang();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url ?? null);
@@ -22,7 +24,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
     if (result?.error) {
       setMessage({ type: "error", text: result.error });
     } else {
-      setMessage({ type: "success", text: "Profile saved." });
+      setMessage({ type: "success", text: t("prof_saved") });
     }
     setLoading(false);
   }
@@ -39,7 +41,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           )}
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">Profile photo</label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_photo")}</label>
           <input
             type="file"
             name="avatar"
@@ -55,7 +57,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">Full name</label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_full_name")}</label>
           <input
             type="text"
             name="full_name"
@@ -64,7 +66,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">Phone</label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_phone")}</label>
           <input
             type="tel"
             name="phone"
@@ -75,7 +77,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-1">Bio</label>
+        <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_bio")}</label>
         <textarea
           name="bio"
           rows={3}
@@ -86,9 +88,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">
-            Hourly rate (₪)
-          </label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
           <input
             type="number"
             name="hourly_rate"
@@ -99,9 +99,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">
-            Service radius (km)
-          </label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_service_radius")}</label>
           <input
             type="number"
             name="service_radius_km"
@@ -114,7 +112,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-2">Service types</label>
+        <label className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</label>
         <div className="flex gap-4">
           {(["residential", "commercial"] as const).map((type) => (
             <label key={type} className="flex items-center gap-2 text-base text-gray-700">
@@ -125,31 +123,25 @@ export default function ProfileForm({ profile, cleaner }: Props) {
                 defaultChecked={cleaner?.service_types?.includes(type)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              {type.charAt(0).toUpperCase() + type.slice(1)}
+              {type === "residential" ? t("svc_residential") : t("svc_commercial")}
             </label>
           ))}
         </div>
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-1">
-          Service area address
-        </label>
+        <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
         <input
           type="text"
           name="address"
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <p className="text-sm text-gray-400 mt-1">
-          Used to calculate your service coverage area.
-        </p>
+        <p className="text-sm text-gray-400 mt-1">{t("prof_address_hint")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">
-            Years of experience
-          </label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
           <input
             type="number"
             name="years_experience"
@@ -160,9 +152,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">
-            Languages (separated by ",")
-          </label>
+          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
           <input
             type="text"
             name="languages"
@@ -190,7 +180,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
         disabled={loading}
         className="bg-blue-600 text-white rounded-lg px-5 py-2.5 text-base font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
-        {loading ? "Saving..." : "Save profile"}
+        {loading ? t("prof_saving") : t("prof_save")}
       </button>
     </form>
   );

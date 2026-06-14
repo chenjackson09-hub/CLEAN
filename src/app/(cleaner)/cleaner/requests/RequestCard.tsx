@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { respondToBooking } from "../../actions";
+import { useLang } from "@/context/LangContext";
 import type { BookingWithCustomer, BookingStatus } from "@/types/database";
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
@@ -14,31 +15,27 @@ const STATUS_STYLES: Record<BookingStatus, string> = {
   cancelled: "bg-gray-100 text-gray-500",
 };
 
-const SERVICE_LABELS: Record<string, string> = {
-  residential: "Residential",
-  commercial:  "Commercial",
-};
-
 function formatDate(d: string) {
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
 }
 
 function Countdown({ deadline }: { deadline: string }) {
+  const { t } = useLang();
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {
     function update() {
       const diff = new Date(deadline).getTime() - Date.now();
-      if (diff <= 0) { setRemaining("Expired"); return; }
+      if (diff <= 0) { setRemaining(t("req_expired")); return; }
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
-      setRemaining(`${h}h ${m}m left`);
+      setRemaining(`${h}${t("req_h")} ${m}${t("req_m_left")}`);
     }
     update();
     const id = setInterval(update, 60000);
     return () => clearInterval(id);
-  }, [deadline]);
+  }, [deadline, t]);
 
   return <span className="text-xs text-orange-500 font-medium">{remaining}</span>;
 }
@@ -49,10 +46,16 @@ interface Props {
 }
 
 export default function RequestCard({ booking, showActions }: Props) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<"accepted" | "declined" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState(booking.status);
+
+  const svcLabel: Record<string, string> = {
+    residential: t("svc_residential"),
+    commercial: t("svc_commercial"),
+  };
 
   async function handleRespond(response: "accepted" | "declined") {
     setLoading(response);
@@ -72,12 +75,11 @@ export default function RequestCard({ booking, showActions }: Props) {
       {/* ── Card ── */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 flex items-center justify-between gap-6">
         <div className="flex items-center gap-4 min-w-0">
-          {/* Avatar */}
           <div className="shrink-0 w-14 h-14 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
             {booking.profiles?.avatar_url ? (
               <Image
                 src={booking.profiles.avatar_url}
-                alt={booking.profiles.full_name ?? "Customer"}
+                alt={booking.profiles.full_name ?? t("req_customer")}
                 width={56}
                 height={56}
                 className="object-cover w-full h-full"
@@ -90,11 +92,11 @@ export default function RequestCard({ booking, showActions }: Props) {
                 href={`/cleaner/customers/${booking.customer_id}`}
                 className="font-semibold text-gray-900 text-xl truncate hover:text-blue-600 hover:underline transition-colors"
               >
-                {booking.profiles?.full_name ?? "Customer"}
+                {booking.profiles?.full_name ?? t("req_customer")}
               </Link>
             ) : (
               <div className="font-semibold text-gray-900 text-xl truncate">
-                {booking.profiles?.full_name ?? "Customer"}
+                {booking.profiles?.full_name ?? t("req_customer")}
               </div>
             )}
             <div className="text-base text-gray-500 mt-1 truncate">{booking.address}</div>
@@ -112,7 +114,7 @@ export default function RequestCard({ booking, showActions }: Props) {
           onClick={() => setOpen(true)}
           className="shrink-0 bg-blue-600 text-white text-base font-semibold px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
         >
-          Watch
+          {t("req_watch")}
         </button>
       </div>
 
@@ -134,11 +136,11 @@ export default function RequestCard({ booking, showActions }: Props) {
                     href={`/cleaner/customers/${booking.customer_id}`}
                     className="text-2xl font-bold text-gray-900 hover:text-blue-600 hover:underline transition-colors"
                   >
-                    {booking.profiles?.full_name ?? "Customer"}
+                    {booking.profiles?.full_name ?? t("req_customer")}
                   </Link>
                 ) : (
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {booking.profiles?.full_name ?? "Customer"}
+                    {booking.profiles?.full_name ?? t("req_customer")}
                   </h2>
                 )}
                 <div className="flex items-center gap-3 mt-2">
@@ -162,38 +164,38 @@ export default function RequestCard({ booking, showActions }: Props) {
             <div className="px-8 py-6 space-y-5">
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">Date</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_date")}</p>
                   <p className="text-lg font-semibold text-gray-900">{formatDate(booking.scheduled_date)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">Time</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_time")}</p>
                   <p className="text-lg font-semibold text-gray-900">{booking.scheduled_start?.slice(0, 5)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">Duration</p>
-                  <p className="text-lg font-semibold text-gray-900">{booking.duration_hours}h</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_duration")}</p>
+                  <p className="text-lg font-semibold text-gray-900">{booking.duration_hours}{t("req_h")}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">Service</p>
-                  <p className="text-lg font-semibold text-gray-900">{SERVICE_LABELS[booking.service_type] ?? booking.service_type}</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_service")}</p>
+                  <p className="text-lg font-semibold text-gray-900">{svcLabel[booking.service_type] ?? booking.service_type}</p>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">Address</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_address")}</p>
                 <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
               </div>
 
               {booking.notes && (
                 <div>
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_notes")}</p>
                   <p className="text-lg text-gray-700 bg-gray-50 rounded-xl px-4 py-3">{booking.notes}</p>
                 </div>
               )}
 
               {currentStatus === "accepted" && booking.profiles?.phone && (
                 <div className="bg-green-50 border border-green-100 rounded-xl px-5 py-4">
-                  <p className="text-sm text-green-600 uppercase tracking-wide mb-1">Customer phone</p>
+                  <p className="text-sm text-green-600 uppercase tracking-wide mb-1">{t("req_customer_phone")}</p>
                   <p className="text-lg font-semibold text-green-800">{booking.profiles.phone}</p>
                 </div>
               )}
@@ -211,14 +213,14 @@ export default function RequestCard({ booking, showActions }: Props) {
                   disabled={!!loading}
                   className="flex-1 bg-green-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {loading === "accepted" ? "Accepting…" : "Accept"}
+                  {loading === "accepted" ? t("req_accepting") : t("req_accept")}
                 </button>
                 <button
                   onClick={() => handleRespond("declined")}
                   disabled={!!loading}
                   className="flex-1 border border-gray-300 text-gray-700 rounded-xl py-4 text-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
                 >
-                  {loading === "declined" ? "Declining…" : "Decline"}
+                  {loading === "declined" ? t("req_declining") : t("req_decline")}
                 </button>
               </div>
             )}

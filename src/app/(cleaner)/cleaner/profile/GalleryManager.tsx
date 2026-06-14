@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { uploadGalleryPhoto, deleteGalleryPhoto } from "../../actions";
+import { useLang } from "@/context/LangContext";
 import type { CleanerGalleryPhoto } from "@/types/database";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function GalleryManager({ photos: initialPhotos }: Props) {
+  const { t } = useLang();
   const router = useRouter();
   const [photos, setPhotos] = useState(initialPhotos);
 
@@ -51,15 +53,15 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Gallery</h2>
-          <p className="text-sm text-gray-500">Photos customers will see on your profile.</p>
+          <h2 className="text-base font-semibold text-gray-900">{t("gallery_title")}</h2>
+          <p className="text-sm text-gray-500">{t("gallery_subtitle")}</p>
         </div>
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          {uploading ? "Uploading…" : "+ Add photo"}
+          {uploading ? t("gallery_uploading") : t("gallery_add")}
         </button>
         <input
           ref={inputRef}
@@ -76,8 +78,8 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
 
       {photos.length === 0 ? (
         <div className="border-2 border-dashed border-gray-200 rounded-xl py-10 text-center text-gray-400">
-          <p className="text-base">No photos yet.</p>
-          <p className="text-sm mt-1">Add some to show customers your work.</p>
+          <p className="text-base">{t("gallery_empty")}</p>
+          <p className="text-sm mt-1">{t("gallery_empty_sub")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

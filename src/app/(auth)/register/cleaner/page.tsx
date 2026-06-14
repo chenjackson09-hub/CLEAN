@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useLang } from "@/context/LangContext";
 
 function Spinner() {
   return (
@@ -14,6 +15,7 @@ function Spinner() {
 }
 
 export default function CleanerOnboardingPage() {
+  const { t } = useLang();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -57,7 +59,6 @@ export default function CleanerOnboardingPage() {
 
     const supabase = createClient();
 
-    // Create the account now that the user has filled in all their details
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: creds.email,
       password: creds.password,
@@ -139,7 +140,7 @@ export default function CleanerOnboardingPage() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
-          <p className="text-base font-medium text-gray-600">Submitting application…</p>
+          <p className="text-base font-medium text-gray-600">{t("onboard_submit_loading")}</p>
         </div>
       )}
       <div className="w-full max-w-lg bg-white rounded-2xl shadow p-8">
@@ -152,51 +153,49 @@ export default function CleanerOnboardingPage() {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Go back
+          {t("onboard_back")}
         </button>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Cleaner application</h1>
-        <p className="text-base text-gray-500 mb-6">
-          Fill in your details. Our team will review your application within 1–2 business days.
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">{t("onboard_title")}</h1>
+        <p className="text-base text-gray-500 mb-6">{t("onboard_subtitle")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium text-gray-700 mb-1">Full name</label>
+              <label className="block text-base font-medium text-gray-700 mb-1">{t("onboard_full_name")}</label>
               <input
                 type="text"
                 name="full_name"
                 required
                 className={`w-full border rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 ${nameError ? "border-red-400" : "border-gray-300"}`}
               />
-              {nameError && <p className="text-xs text-red-500 mt-1">Please enter your full name.</p>}
+              {nameError && <p className="text-xs text-red-500 mt-1">{t("onboard_name_error")}</p>}
             </div>
             <div>
-              <label className="block text-base font-medium text-gray-700 mb-1">Phone</label>
+              <label className="block text-base font-medium text-gray-700 mb-1">{t("onboard_phone")}</label>
               <input
                 type="tel"
                 name="phone"
                 required
                 className={`w-full border rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 ${phoneError ? "border-red-400" : "border-gray-300"}`}
               />
-              {phoneError && <p className="text-xs text-red-500 mt-1">Please enter a valid phone number.</p>}
+              {phoneError && <p className="text-xs text-red-500 mt-1">{t("onboard_phone_error")}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-base font-medium text-gray-700 mb-1">Bio</label>
+            <label className="block text-base font-medium text-gray-700 mb-1">{t("onboard_bio")}</label>
             <textarea
               name="bio"
               rows={3}
-              placeholder="Tell customers about your experience and approach..."
+              placeholder={t("onboard_bio_placeholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium text-gray-700 mb-1">Years of experience</label>
+              <label className="block text-base font-medium text-gray-700 mb-1">{t("onboard_experience")}</label>
               <input
                 type="number"
                 name="years_experience"
@@ -207,7 +206,7 @@ export default function CleanerOnboardingPage() {
               />
             </div>
             <div>
-              <label className="block text-base font-medium text-gray-700 mb-1">Languages (comma-separated)</label>
+              <label className="block text-base font-medium text-gray-700 mb-1">{t("onboard_languages")}</label>
               <input
                 type="text"
                 name="languages"
@@ -219,7 +218,7 @@ export default function CleanerOnboardingPage() {
 
           <div>
             <label className="block text-base font-medium text-gray-700 mb-1">
-              ID document <span className="text-gray-400">(passport, national ID)</span>
+              {t("onboard_id_doc")} <span className="text-gray-400">({t("onboard_id_doc_hint")})</span>
             </label>
             <input
               type="file"
@@ -228,7 +227,7 @@ export default function CleanerOnboardingPage() {
               required
               className="w-full text-base text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-base file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
             />
-            <p className="text-xs text-gray-400 mt-1">PDF, JPG, or PNG. Stored securely.</p>
+            <p className="text-xs text-gray-400 mt-1">{t("onboard_id_doc_sub")}</p>
           </div>
 
           {error && (
@@ -240,7 +239,7 @@ export default function CleanerOnboardingPage() {
             disabled={loading || !creds}
             className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-base font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
-            {loading ? <><Spinner />Submitting…</> : "Submit application"}
+            {loading ? <><Spinner />{t("onboard_submitting")}</> : t("onboard_submit")}
           </button>
         </form>
       </div>

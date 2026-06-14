@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useLang } from "@/context/LangContext";
+import type { TranslationKey } from "@/lib/lang";
 
-const navItems = [
+const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode }[] = [
   {
     href: "/cleaner/dashboard",
-    label: "Dashboard",
+    labelKey: "nav_dashboard",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
@@ -15,7 +17,7 @@ const navItems = [
   },
   {
     href: "/cleaner/requests",
-    label: "Requests",
+    labelKey: "nav_requests",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m8-4v4" />
@@ -24,7 +26,7 @@ const navItems = [
   },
   {
     href: "/cleaner/availability",
-    label: "Availability",
+    labelKey: "nav_availability",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -33,7 +35,7 @@ const navItems = [
   },
   {
     href: "/cleaner/profile",
-    label: "Profile",
+    labelKey: "nav_profile",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -42,7 +44,7 @@ const navItems = [
   },
   {
     href: "/cleaner/preview",
-    label: "Preview",
+    labelKey: "nav_preview",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -50,6 +52,13 @@ const navItems = [
     ),
   },
 ];
+
+const STATUS_KEY: Record<string, TranslationKey> = {
+  approved: "status_approved",
+  pending: "status_pending",
+  rejected: "status_rejected",
+  suspended: "status_suspended",
+};
 
 interface Props {
   signOut: () => Promise<void>;
@@ -59,13 +68,15 @@ interface Props {
 }
 
 export default function NavLinks({ signOut, userName, status, statusColor }: Props) {
+  const { lang, setLang, t } = useLang();
   const [isPending, startTransition] = useTransition();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    navItems.forEach((item) => router.prefetch(item.href));
+    NAV_ITEMS.forEach((item) => router.prefetch(item.href));
   }, [router]);
 
   useEffect(() => {
@@ -78,6 +89,33 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
     startTransition(() => router.push(href));
   }
 
+  const statusLabel = status ? (t(STATUS_KEY[status] ?? ("status_pending" as TranslationKey))) : null;
+
+  const LangButtons = (
+    <div className="flex gap-1">
+      <button
+        onClick={() => setLang("en")}
+        className={`text-xs font-bold px-2 py-0.5 rounded transition-colors ${
+          lang === "en"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+        }`}
+      >
+        EN
+      </button>
+      <button
+        onClick={() => setLang("he")}
+        className={`text-xs font-bold px-2 py-0.5 rounded transition-colors ${
+          lang === "he"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+        }`}
+      >
+        HE
+      </button>
+    </div>
+  );
+
   return (
     <>
       {isPending && (
@@ -86,30 +124,32 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
-          <p className="text-base font-medium text-gray-600">Loading…</p>
+          <p className="text-base font-medium text-gray-600">{t("nav_loading")}</p>
         </div>
       )}
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-56 shrink-0 bg-white border-r border-gray-200 flex-col min-h-screen sticky top-0">
-        <div className="px-5 py-5 border-b border-gray-100">
+      <aside className="hidden lg:flex w-56 shrink-0 bg-white ltr:border-r rtl:border-l border-gray-200 flex-col min-h-screen sticky top-0">
+        <div className="px-5 py-5 border-b border-gray-100 flex items-center justify-between">
           <span className="text-lg font-bold text-blue-600">Clean</span>
+          {LangButtons}
         </div>
         <div className="px-4 py-4 border-b border-gray-100 space-y-2">
           <div className="text-base font-medium text-gray-900 truncate">{userName}</div>
-          {status && (
+          {statusLabel && (
             <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>
-              {status}
+              {statusLabel}
             </span>
           )}
-          <form action={signOut}>
-            <button type="submit" className="w-full text-left text-base text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium">
-              Sign out
-            </button>
-          </form>
+          <button
+            onClick={() => setConfirmSignOut(true)}
+            className="w-full text-start text-base text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
+          >
+            {t("nav_signout")}
+          </button>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <button
               key={item.href}
               onClick={() => handleClick(item.href)}
@@ -120,15 +160,35 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
               }`}
             >
               {item.icon}
-              {item.label}
+              {t(item.labelKey)}
             </button>
           ))}
         </nav>
       </aside>
 
+      {/* Sign-out confirmation card */}
+      {confirmSignOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setConfirmSignOut(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-72 flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
+            <p className="text-lg font-semibold text-gray-900 text-center">{t("nav_areyousure")}</p>
+            <form action={signOut} className="flex flex-col gap-2">
+              <button type="submit" className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-semibold rounded-xl py-2.5 transition-colors">
+                {t("nav_yes_signout")}
+              </button>
+              <button type="button" onClick={() => setConfirmSignOut(false)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl py-2.5 transition-colors">
+                {t("nav_cancel")}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── Mobile top bar ── */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3 shadow-sm">
-        <span className="text-lg font-bold text-blue-600">Clean</span>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold text-blue-600">Clean</span>
+          {LangButtons}
+        </div>
         <button
           onClick={() => setMenuOpen((o) => !o)}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -156,20 +216,22 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
             className="bg-white w-full mt-14 shadow-xl pb-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="border-b border-gray-100 px-6 py-4">
-              <div className="text-base text-gray-500 mb-1">{userName}</div>
-              {status && (
-                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-3 ${statusColor}`}>
-                  {status}
-                </span>
-              )}
+            <div className="px-6 pt-4 pb-2">
               <form action={signOut}>
                 <button type="submit" className="w-full text-center text-base text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-xl px-4 py-3 font-semibold">
-                  Sign out
+                  {t("nav_signout")}
                 </button>
               </form>
             </div>
-            {navItems.map((item) => (
+            <div className="border-b border-gray-100 px-6 py-3">
+              <div className="text-base text-gray-500">{userName}</div>
+              {statusLabel && (
+                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${statusColor}`}>
+                  {statusLabel}
+                </span>
+              )}
+            </div>
+            {NAV_ITEMS.map((item) => (
               <button
                 key={item.href}
                 onClick={() => handleClick(item.href)}
@@ -180,7 +242,7 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
                 }`}
               >
                 <span className="w-6 h-6">{item.icon}</span>
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </div>

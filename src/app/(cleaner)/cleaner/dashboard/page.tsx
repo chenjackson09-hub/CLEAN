@@ -1,9 +1,12 @@
 import { createClient, getCurrentUser, getCleanerStatus } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import RequestCard from "../requests/RequestCard";
 import RealtimeBookings from "./RealtimeBookings";
 import type { BookingWithCustomer } from "@/types/database";
+import type { Lang } from "@/lib/lang";
+import { t } from "@/lib/lang";
 
 function formatDate(d: string) {
   const [y, m, day] = d.split("-");
@@ -13,6 +16,8 @@ function formatDate(d: string) {
 export default async function CleanerDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
   const now = new Date();
@@ -45,10 +50,8 @@ export default async function CleanerDashboardPage() {
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
           <div className="text-4xl mb-3">⏳</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-1">Application under review</h2>
-          <p className="text-base text-gray-500">
-            You&apos;ll receive an email once your application is approved.
-          </p>
+          <h2 className="text-xl font-semibold text-gray-800 mb-1">{t(lang, "dash_under_review_title")}</h2>
+          <p className="text-base text-gray-500">{t(lang, "dash_under_review_body")}</p>
         </div>
       </div>
     );
@@ -59,10 +62,8 @@ export default async function CleanerDashboardPage() {
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
           <div className="text-4xl mb-3">❌</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-1">Application not approved</h2>
-          <p className="text-base text-gray-500">
-            Please contact support for more information.
-          </p>
+          <h2 className="text-xl font-semibold text-gray-800 mb-1">{t(lang, "dash_rejected_title")}</h2>
+          <p className="text-base text-gray-500">{t(lang, "dash_rejected_body")}</p>
         </div>
       </div>
     );
@@ -73,24 +74,22 @@ export default async function CleanerDashboardPage() {
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
           <div className="text-4xl mb-3">🚫</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-1">Account suspended</h2>
-          <p className="text-base text-gray-500">Contact support to resolve this.</p>
+          <h2 className="text-xl font-semibold text-gray-800 mb-1">{t(lang, "dash_suspended_title")}</h2>
+          <p className="text-base text-gray-500">{t(lang, "dash_suspended_body")}</p>
         </div>
       </div>
     );
   }
 
-
   return (
     <div className="max-w-3xl">
       <RealtimeBookings cleanerId={user.id} />
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t(lang, "dash_title")}</h1>
 
-      {/* Pending requests */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide">
-            New requests{" "}
+            {t(lang, "dash_new_requests")}{" "}
             {pendingBookings && pendingBookings.length > 0 && (
               <span className="ml-1.5 bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-full">
                 {pendingBookings.length}
@@ -98,7 +97,7 @@ export default async function CleanerDashboardPage() {
             )}
           </h2>
           <Link href="/cleaner/requests" className="text-xs text-blue-600 hover:underline">
-            View all
+            {t(lang, "dash_view_all")}
           </Link>
         </div>
 
@@ -110,15 +109,14 @@ export default async function CleanerDashboardPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-base">
-            No pending requests right now.
+            {t(lang, "dash_no_pending")}
           </div>
         )}
       </section>
 
-      {/* Upcoming jobs */}
       <section>
         <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Upcoming jobs
+          {t(lang, "dash_upcoming")}
         </h2>
 
         {upcomingBookings && upcomingBookings.length > 0 ? (
@@ -130,14 +128,14 @@ export default async function CleanerDashboardPage() {
               >
                 <div>
                   <div className="font-semibold text-xl text-gray-900">
-                    {b.profiles?.full_name ?? "Customer"}
+                    {b.profiles?.full_name ?? t(lang, "req_customer")}
                   </div>
                   <div className="text-base text-gray-500 mt-1">{b.address}</div>
                 </div>
-                <div className="text-right shrink-0">
+                <div className="text-end shrink-0">
                   <div className="text-xl font-semibold text-gray-900">{formatDate(b.scheduled_date)}</div>
                   <div className="text-base text-gray-500 mt-1">
-                    {b.scheduled_start?.slice(0, 5)} · {b.duration_hours}h
+                    {b.scheduled_start?.slice(0, 5)} · {b.duration_hours}{t(lang, "req_h")}
                   </div>
                 </div>
               </div>
@@ -145,7 +143,7 @@ export default async function CleanerDashboardPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-base">
-            No upcoming jobs.
+            {t(lang, "dash_no_upcoming")}
           </div>
         )}
       </section>

@@ -1,12 +1,17 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import ProfileForm from "./ProfileForm";
 import GalleryManager from "./GalleryManager";
 import type { Profile, Cleaner, CleanerGalleryPhoto } from "@/types/database";
+import type { Lang } from "@/lib/lang";
+import { t } from "@/lib/lang";
 
 export default async function CleanerProfilePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
 
@@ -23,10 +28,8 @@ export default async function CleanerProfilePage() {
 
   return (
     <div className="max-w-5xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Profile</h1>
-      <p className="text-base text-gray-500 mb-6">
-        Keep your profile updated so customers can find and trust you.
-      </p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "prof_title")}</h1>
+      <p className="text-base text-gray-500 mb-6">{t(lang, "prof_subtitle")}</p>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
         <ProfileForm profile={profile} cleaner={cleaner} />
         <GalleryManager photos={photos ?? []} />

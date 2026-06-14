@@ -1,12 +1,17 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import AvailabilityGrid from "./AvailabilityGrid";
 import CalendarGrid from "./CalendarGrid";
 import type { CleanerAvailability, CleanerWeeklyAvailability, Booking } from "@/types/database";
+import type { Lang } from "@/lib/lang";
+import { t } from "@/lib/lang";
 
 export default async function AvailabilityPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
 
@@ -45,30 +50,21 @@ export default async function AvailabilityPage() {
 
   return (
     <div className="-mx-8 -mt-20 lg:-mt-8 flex flex-col min-h-screen bg-white">
-      {/* Page header */}
       <div className="px-6 pt-6 pb-3 border-b border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Availability</h1>
-        <p className="text-base text-gray-500">
-          Set a recurring weekly schedule, or mark specific dates you&apos;re available.
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "avail_title")}</h1>
+        <p className="text-base text-gray-500">{t(lang, "avail_subtitle")}</p>
       </div>
 
-      {/* Weekly recurring schedule */}
       <div className="px-6 py-5 border-b border-gray-100">
-        <h2 className="text-base font-semibold text-gray-800 mb-0.5">Weekly schedule</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Hours that repeat every week. Customers can book you on these days automatically.
-        </p>
+        <h2 className="text-base font-semibold text-gray-800 mb-0.5">{t(lang, "avail_weekly")}</h2>
+        <p className="text-sm text-gray-500 mb-4">{t(lang, "avail_weekly_body")}</p>
         <AvailabilityGrid slots={weeklySlots ?? []} />
       </div>
 
-      {/* Specific date availability */}
       <div className="flex flex-col flex-1">
         <div className="px-6 pt-5 pb-3 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-800 mb-0.5">Specific dates</h2>
-          <p className="text-sm text-gray-500">
-            Add availability for a particular date — useful for one-off days or exceptions.
-          </p>
+          <h2 className="text-base font-semibold text-gray-800 mb-0.5">{t(lang, "avail_specific")}</h2>
+          <p className="text-sm text-gray-500">{t(lang, "avail_specific_body")}</p>
         </div>
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} />
       </div>
