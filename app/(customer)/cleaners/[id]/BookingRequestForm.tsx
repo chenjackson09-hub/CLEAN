@@ -32,6 +32,11 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
       address,
       notes: notes || undefined,
       status: 'pending',
+      customer_name: 'Maya Cohen',
+      cleaner_email: cleaner.email,
+      cleaner_phone: cleaner.phone,
+      customer_email: 'maya.cohen@example.com',
+      customer_phone: '050-111-1111',
     }
     addBooking(booking)
 

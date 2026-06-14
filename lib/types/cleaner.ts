@@ -16,4 +16,6 @@ export type CleanerResult = {
   languages: string[]
   distance_km: number
   area?: string
+  email?: string
+  phone?: string
 }

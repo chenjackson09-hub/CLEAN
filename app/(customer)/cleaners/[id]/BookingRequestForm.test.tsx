@@ -16,6 +16,8 @@ const cleaner: CleanerResult = {
   languages: ['EN', 'HE'],
   distance_km: 2.1,
   area: 'Tel Aviv',
+  email: 'sarah.m@example.com',
+  phone: '050-222-1111',
 }
 
 async function openForm(user: ReturnType<typeof userEvent.setup>) {
@@ -111,6 +113,10 @@ describe('BookingRequestForm', () => {
       duration_hours: 2,
       address: '12 Rothschild Blvd, Tel Aviv',
       status: 'pending',
+      cleaner_email: 'sarah.m@example.com',
+      cleaner_phone: '050-222-1111',
+      customer_email: 'maya.cohen@example.com',
+      customer_phone: '050-111-1111',
     })
   })
 })

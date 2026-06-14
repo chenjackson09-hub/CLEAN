@@ -11,4 +11,9 @@ export type BookingResult = {
   address: string
   notes?: string
   status: BookingStatus
+  customer_name?: string
+  cleaner_email?: string
+  cleaner_phone?: string
+  customer_email?: string
+  customer_phone?: string
 }
