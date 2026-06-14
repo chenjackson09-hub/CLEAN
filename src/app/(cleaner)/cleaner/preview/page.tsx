@@ -2,27 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import AvailabilityModal from "./AvailabilityModal";
 import GalleryLightbox from "./GalleryLightbox";
 import AvatarLightbox from "./AvatarLightbox";
-import type { Profile, Cleaner, CleanerAvailability, CleanerWeeklyAvailability, CleanerGalleryPhoto } from "@/types/database";
-import { slotLabel } from "../availability/utils";
-
-const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function getMonday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function toLocalDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+import type { Profile, Cleaner, CleanerGalleryPhoto } from "@/types/database";
 
 export default async function PreviewPage() {
   const supabase = await createClient();
@@ -31,29 +13,9 @@ export default async function PreviewPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date();
-  const from = toLocalDateStr(today);
-  const to = toLocalDateStr(new Date(today.getTime() + 28 * 24 * 60 * 60 * 1000));
-
-  const [{ data: profile }, { data: cleaner }, { data: slots }, { data: weeklySlots }, { data: galleryPhotos }] = await Promise.all([
+  const [{ data: profile }, { data: cleaner }, { data: galleryPhotos }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
     supabase.from("cleaners").select("*").eq("id", user.id).single<Cleaner>(),
-    supabase
-      .from("cleaner_availability")
-      .select("*")
-      .eq("cleaner_id", user.id)
-      .gte("date", from)
-      .lte("date", to)
-      .order("date")
-      .order("start_time")
-      .returns<CleanerAvailability[]>(),
-    supabase
-      .from("cleaner_weekly_availability")
-      .select("*")
-      .eq("cleaner_id", user.id)
-      .order("day_of_week")
-      .order("start_time")
-      .returns<CleanerWeeklyAvailability[]>(),
     supabase
       .from("cleaner_gallery")
       .select("*")
@@ -61,26 +23,6 @@ export default async function PreviewPage() {
       .order("created_at", { ascending: false })
       .returns<CleanerGalleryPhoto[]>(),
   ]);
-
-  const monday = getMonday(today);
-  const days = Array.from({ length: 28 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-  const weeks = Array.from({ length: 4 }, (_, w) =>
-    days.slice(w * 7, w * 7 + 7).map((d) => ({
-      dateStr: toLocalDateStr(d),
-      dayNum: d.getDate(),
-      monthName: d.getDate() === 1 ? MONTHS[d.getMonth()] : null,
-    }))
-  );
-
-  const slotsByDate = (slots ?? []).reduce<Record<string, CleanerAvailability[]>>((acc, s) => {
-    if (!acc[s.date]) acc[s.date] = [];
-    acc[s.date].push(s);
-    return acc;
-  }, {});
 
   return (
     <div className="bg-gray-100 -mx-8 -mt-20 lg:-mt-8 min-h-screen">
@@ -174,71 +116,18 @@ export default async function PreviewPage() {
           </div>
         );
 
-        const desktopAvailability = (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Availability</h2>
-            {(slots ?? []).length === 0 && (weeklySlots ?? []).length === 0 ? (
-              <p className="text-base text-gray-400">No availability set for the next 4 weeks.</p>
-            ) : (
-              <div className="space-y-2">
-                <div className="grid grid-cols-7 gap-2 mb-1">
-                  {WEEK_DAYS.map((d) => (
-                    <div key={d} className="text-center text-base font-bold text-gray-500 py-1">{d}</div>
-                  ))}
-                </div>
-                {weeks.map((week, wi) => (
-                  <div key={wi} className="grid grid-cols-7 gap-2">
-                    {week.map((day) => {
-                      const daySlots = slotsByDate[day.dateStr] ?? [];
-                      const dow = new Date(day.dateStr + "T12:00:00").getDay();
-                      const recurring = (weeklySlots ?? []).filter((s) => s.day_of_week === dow);
-                      const hasAny = daySlots.length > 0 || recurring.length > 0;
-                      return (
-                        <div key={day.dateStr} className={`rounded-xl border p-3 min-h-[90px] flex flex-col ${hasAny ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-100"}`}>
-                          <div className="flex items-center gap-1 mb-1">
-                            <span className="text-base font-bold text-gray-700">{day.dayNum}</span>
-                            {day.monthName && <span className="text-xs text-gray-400">{day.monthName}</span>}
-                          </div>
-                          <div className="space-y-1">
-                            {recurring.map((slot) => (
-                              <div key={slot.id} className="bg-blue-100 rounded px-2 py-0.5">
-                                <span className="text-sm font-medium text-blue-700">
-                                  {slotLabel(slot.start_time, slot.end_time)}
-                                </span>
-                              </div>
-                            ))}
-                            {daySlots.map((slot) => (
-                              <div key={slot.id} className="bg-blue-100 rounded px-2 py-0.5">
-                                <span className="text-sm font-medium text-blue-700">
-                                  {slotLabel(slot.start_time, slot.end_time)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-
         return (
           <>
             {/* ── Mobile layout ── */}
             <div className="lg:hidden px-4 py-6 space-y-4">
               {aboutBlock}
               {galleryBlock}
-              <AvailabilityModal weeks={weeks} slots={slots ?? []} weeklySlots={weeklySlots ?? []} />
             </div>
 
             {/* ── Desktop layout ── */}
             <div className="hidden lg:grid px-10 py-8 grid-cols-3 gap-6">
               <div className="col-span-2 space-y-5">
                 {aboutBlock}
-                {desktopAvailability}
               </div>
               <div className="space-y-5">
                 {galleryBlock}

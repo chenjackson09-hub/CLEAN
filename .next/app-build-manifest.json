@@ -65,6 +65,26 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(cleaner)/cleaner/customers/[id]/page.js"
+    ],
+    "/(auth)/register/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(auth)/register/page.js"
+    ],
+    "/(auth)/register/cleaner/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(auth)/register/cleaner/page.js"
+    ],
+    "/(auth)/register/cleaner/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(auth)/register/cleaner/loading.js"
+    ],
+    "/(cleaner)/cleaner/pending/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(cleaner)/cleaner/pending/page.js"
     ]
   }
 }

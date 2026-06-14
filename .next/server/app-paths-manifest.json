@@ -1,8 +1,8 @@
 {
+  "/(auth)/register/page": "app/(auth)/register/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(cleaner)/cleaner/availability/page": "app/(cleaner)/cleaner/availability/page.js",
-  "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js",
-  "/(cleaner)/cleaner/customers/[id]/page": "app/(cleaner)/cleaner/customers/[id]/page.js",
   "/(cleaner)/cleaner/requests/page": "app/(cleaner)/cleaner/requests/page.js",
-  "/(cleaner)/cleaner/dashboard/page": "app/(cleaner)/cleaner/dashboard/page.js"
+  "/(auth)/register/cleaner/page": "app/(auth)/register/cleaner/page.js",
+  "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js",
+  "/(cleaner)/cleaner/availability/page": "app/(cleaner)/cleaner/availability/page.js"
 }
