@@ -34,3 +34,14 @@ export const getCurrentUser = cache(async () => {
   const { data: { user } } = await supabase.auth.getUser();
   return user;
 });
+
+// Cached per render tree — layout and dashboard share one cleaners.status query
+export const getCleanerStatus = cache(async (userId: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("cleaners")
+    .select("status")
+    .eq("id", userId)
+    .single();
+  return (data?.status ?? null) as string | null;
+});

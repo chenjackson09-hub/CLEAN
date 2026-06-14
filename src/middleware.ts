@@ -53,30 +53,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (user && isAuthOnlyPath) {
+  if (user && (isAuthOnlyPath || pathname.startsWith("/cleaner"))) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role) {
+    const role = profile?.role ?? null;
+
+    if (isAuthOnlyPath && role) {
       return NextResponse.redirect(
-        new URL(`/${profile.role}/dashboard`, request.url)
+        new URL(`/${role}/dashboard`, request.url)
       );
     }
-  }
 
-  if (user && pathname.startsWith("/cleaner")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "cleaner") {
+    if (pathname.startsWith("/cleaner") && role !== "cleaner") {
       return NextResponse.redirect(
-        new URL(profile?.role ? `/${profile.role}/dashboard` : "/login", request.url)
+        new URL(role ? `/${role}/dashboard` : "/login", request.url)
       );
     }
   }

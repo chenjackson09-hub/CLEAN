@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addAvailability, deleteAvailability } from "../../actions";
 import type { CleanerAvailability, CleanerWeeklyAvailability, Booking } from "@/types/database";
 import { TIME_SLOTS, SlotLabel, slotLabel } from "./utils";
@@ -66,7 +67,12 @@ interface DayPanel {
 }
 
 export default function CalendarGrid({ slots: initialSlots, weeklySlots, bookings }: Props) {
+  const router = useRouter();
   const [slots, setSlots] = useState(initialSlots);
+
+  useEffect(() => {
+    setSlots(initialSlots);
+  }, [initialSlots]);
   const [columns, setColumns] = useState(7);
   const [panel, setPanel] = useState<DayPanel>({ open: false, dateStr: "", past: false });
   const [loading, setLoading] = useState(false);
@@ -124,7 +130,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
       const result = await addAvailability(formData);
       if (result?.error) { setError(result.error); setLoading(false); return; }
     }
-    window.location.reload();
+    router.refresh();
     setLoading(false);
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addWeeklyAvailability, deleteWeeklyAvailability } from "../../actions";
 import type { CleanerWeeklyAvailability } from "@/types/database";
 
@@ -22,7 +23,12 @@ interface Props {
 }
 
 export default function AvailabilityGrid({ slots: initialSlots }: Props) {
+  const router = useRouter();
   const [slots, setSlots] = useState(initialSlots);
+
+  useEffect(() => {
+    setSlots(initialSlots);
+  }, [initialSlots]);
   const [modal, setModal] = useState<{ open: boolean; day: number }>({ open: false, day: 1 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +68,7 @@ export default function AvailabilityGrid({ slots: initialSlots }: Props) {
       if (result?.error) { setError(result.error); setLoading(false); return; }
     }
     setModal({ open: false, day: 1 });
-    window.location.reload();
+    router.refresh();
     setLoading(false);
   }
 

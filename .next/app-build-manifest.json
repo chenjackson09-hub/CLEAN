@@ -16,25 +16,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(cleaner)/cleaner/dashboard/page.js"
     ],
-    "/(cleaner)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(cleaner)/layout.js"
-    ],
     "/(cleaner)/cleaner/dashboard/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(cleaner)/cleaner/dashboard/loading.js"
     ],
-    "/(cleaner)/cleaner/requests/page": [
+    "/(cleaner)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(cleaner)/cleaner/requests/page.js"
-    ],
-    "/(cleaner)/cleaner/requests/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(cleaner)/cleaner/requests/loading.js"
+      "static/chunks/app/(cleaner)/layout.js"
     ],
     "/(cleaner)/cleaner/availability/page": [
       "static/chunks/webpack.js",
@@ -61,25 +51,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(auth)/login/page.js"
     ],
-    "/(auth)/register/page": [
+    "/(cleaner)/cleaner/requests/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/register/page.js"
+      "static/chunks/app/(cleaner)/cleaner/requests/page.js"
+    ],
+    "/(cleaner)/cleaner/requests/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(cleaner)/cleaner/requests/loading.js"
     ],
     "/(cleaner)/cleaner/customers/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(cleaner)/cleaner/customers/[id]/page.js"
-    ],
-    "/(auth)/register/cleaner/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/register/cleaner/page.js"
-    ],
-    "/(auth)/register/cleaner/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/register/cleaner/loading.js"
     ]
   }
 }

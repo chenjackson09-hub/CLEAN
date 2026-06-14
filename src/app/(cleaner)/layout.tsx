@@ -1,8 +1,7 @@
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { createClient, getCurrentUser, getCleanerStatus } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/(auth)/actions";
 import NavLinks from "./NavLinks";
-import type { Profile, Cleaner } from "@/types/database";
 
 export default async function CleanerLayout({
   children,
@@ -13,9 +12,9 @@ export default async function CleanerLayout({
   if (!user) redirect("/login");
 
   const supabase = await createClient();
-  const [{ data: profile }, { data: cleaner }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
-    supabase.from("cleaners").select("status").eq("id", user.id).single<Pick<Cleaner, "id" | "status">>(),
+  const [{ data: profile }, status] = await Promise.all([
+    supabase.from("profiles").select("full_name, role").eq("id", user.id).single<{ full_name: string | null; role: string | null }>(),
+    getCleanerStatus(user.id),
   ]);
 
   if (!profile || profile.role !== "cleaner") redirect("/login");
@@ -32,8 +31,8 @@ export default async function CleanerLayout({
       <NavLinks
         signOut={signOut}
         userName={profile.full_name ?? user.email ?? ""}
-        status={cleaner?.status ?? null}
-        statusColor={statusColor[cleaner?.status ?? ""] ?? "bg-gray-100 text-gray-600"}
+        status={status}
+        statusColor={statusColor[status ?? ""] ?? "bg-gray-100 text-gray-600"}
       />
       {/* pt-14 on mobile to clear the fixed top bar */}
       <main className="relative flex-1 p-8 pt-20 lg:pt-8 overflow-y-auto">

@@ -1,9 +1,9 @@
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { createClient, getCurrentUser, getCleanerStatus } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import RequestCard from "../requests/RequestCard";
 import RealtimeBookings from "./RealtimeBookings";
-import type { BookingWithCustomer, Cleaner } from "@/types/database";
+import type { BookingWithCustomer } from "@/types/database";
 
 function formatDate(d: string) {
   const [y, m, day] = d.split("-");
@@ -18,13 +18,9 @@ export default async function CleanerDashboardPage() {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
-  const [{ data: cleaner }, { data: pendingBookings }, { data: upcomingBookings }] =
+  const [cleanerStatus, { data: pendingBookings }, { data: upcomingBookings }] =
     await Promise.all([
-      supabase
-        .from("cleaners")
-        .select("status")
-        .eq("id", user.id)
-        .single<Pick<Cleaner, "id" | "status">>(),
+      getCleanerStatus(user.id),
       supabase
         .from("bookings")
         .select("*, profiles!customer_id(full_name, phone, avatar_url)")
@@ -44,7 +40,7 @@ export default async function CleanerDashboardPage() {
         .returns<BookingWithCustomer[]>(),
     ]);
 
-  if (!cleaner || cleaner.status === "pending") {
+  if (!cleanerStatus || cleanerStatus === "pending") {
     return (
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
@@ -58,7 +54,7 @@ export default async function CleanerDashboardPage() {
     );
   }
 
-  if (cleaner.status === "rejected") {
+  if (cleanerStatus === "rejected") {
     return (
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
@@ -72,7 +68,7 @@ export default async function CleanerDashboardPage() {
     );
   }
 
-  if (cleaner.status === "suspended") {
+  if (cleanerStatus === "suspended") {
     return (
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { uploadGalleryPhoto, deleteGalleryPhoto } from "../../actions";
 import type { CleanerGalleryPhoto } from "@/types/database";
 
@@ -10,7 +11,12 @@ interface Props {
 }
 
 export default function GalleryManager({ photos: initialPhotos }: Props) {
+  const router = useRouter();
   const [photos, setPhotos] = useState(initialPhotos);
+
+  useEffect(() => {
+    setPhotos(initialPhotos);
+  }, [initialPhotos]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,7 +32,7 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
     if (result?.error) {
       setError(result.error);
     } else {
-      window.location.reload();
+      router.refresh();
     }
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";
