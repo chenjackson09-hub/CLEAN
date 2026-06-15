@@ -1,13 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { ROLE_HOME } from '@/lib/roleHome'
 
-const ROLE_HOME: Record<string, string> = {
-  customer: '/browse',
-  cleaner: '/dashboard',
-  admin: '/admin/applications',
-}
-
+// PREVIEW MOCK — auth disabled for visual testing. Revert before merging.
 export async function middleware(request: NextRequest) {
+  return NextResponse.next({ request })
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -45,7 +42,7 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const role = profile?.role as string
+    const role = profile?.role as keyof typeof ROLE_HOME
     return NextResponse.redirect(new URL(ROLE_HOME[role] ?? '/login', request.url))
   }
 
