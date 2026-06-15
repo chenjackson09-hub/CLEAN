@@ -34,20 +34,11 @@ const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode
     ),
   },
   {
-    href: "/cleaner/profile",
+    href: "/cleaner/preview",
     labelKey: "nav_profile",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/cleaner/preview",
-    labelKey: "nav_preview",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
       </svg>
     ),
   },
@@ -70,7 +61,6 @@ interface Props {
 export default function NavLinks({ signOut, userName, status, statusColor }: Props) {
   const { lang, setLang, t } = useLang();
   const [isPending, startTransition] = useTransition();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -79,12 +69,7 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
     NAV_ITEMS.forEach((item) => router.prefetch(item.href));
   }, [router]);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
   function handleClick(href: string) {
-    setMenuOpen(false);
     if (href === pathname) return;
     startTransition(() => router.push(href));
   }
@@ -130,63 +115,45 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
 
       {/* ── Top navbar (all sizes) ── */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-4 h-14 gap-4">
+        {/* Top row: logo + lang + (desktop: nav + user info) + (mobile: sign out) */}
+        <div className="flex items-center justify-between px-4 h-14 gap-2">
           {/* Logo + lang buttons */}
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-lg font-bold text-blue-600">Clean</span>
             {LangButtons}
           </div>
 
-          {/* Desktop nav items */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Nav items — icons only on mobile, icon+label on desktop */}
+          <nav className="flex items-center gap-1">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.href}
                 onClick={() => handleClick(item.href)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                className={`flex flex-col lg:flex-row items-center lg:gap-2 px-2 lg:px-3 py-1.5 rounded-lg transition-colors ${
                   pathname.startsWith(item.href)
                     ? "bg-blue-50 text-blue-700 font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
-                {item.icon}
-                {t(item.labelKey)}
+                <span className="w-5 h-5 shrink-0">{item.icon}</span>
+                <span className="text-[10px] lg:text-sm mt-0.5 lg:mt-0">{t(item.labelKey)}</span>
               </button>
             ))}
           </nav>
 
-          {/* Desktop right side */}
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
-            <span className="text-sm text-gray-700 font-medium truncate max-w-[140px]">{userName}</span>
+          {/* Right side: user info + sign out */}
+          <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+            <span className="hidden lg:inline text-sm text-gray-700 font-medium truncate max-w-[140px]">{userName}</span>
             {statusLabel && (
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor}`}>
+              <span className={`hidden lg:inline text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>
                 {statusLabel}
               </span>
             )}
             <button
               onClick={() => setConfirmSignOut(true)}
-              className="text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-1.5 font-medium shrink-0"
+              className="text-xs lg:text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-2.5 lg:px-3 py-1.5 font-medium shrink-0"
             >
               {t("nav_signout")}
-            </button>
-          </div>
-
-          {/* Mobile right side */}
-          <div className="flex lg:hidden items-center gap-2 shrink-0">
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Menu"
-            >
-              {menuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
             </button>
           </div>
         </div>
@@ -209,48 +176,6 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
         </div>
       )}
 
-      {/* ── Mobile dropdown menu ── */}
-      {menuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-30 bg-black/40"
-          onClick={() => setMenuOpen(false)}
-        >
-          <div
-            className="bg-white w-full mt-14 shadow-xl pb-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-6 pt-4 pb-2">
-              <form action={signOut}>
-                <button type="submit" className="w-full text-center text-base text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-xl px-4 py-3 font-semibold">
-                  {t("nav_signout")}
-                </button>
-              </form>
-            </div>
-            <div className="border-b border-gray-100 px-6 py-3">
-              <div className="text-base text-gray-500">{userName}</div>
-              {statusLabel && (
-                <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${statusColor}`}>
-                  {statusLabel}
-                </span>
-              )}
-            </div>
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.href}
-                onClick={() => handleClick(item.href)}
-                className={`w-full flex items-center gap-4 px-6 py-4 text-lg transition-colors ${
-                  pathname.startsWith(item.href)
-                    ? "bg-blue-50 text-blue-700 font-semibold"
-                    : "text-gray-800 hover:bg-gray-50"
-                }`}
-              >
-                <span className="w-6 h-6">{item.icon}</span>
-                {t(item.labelKey)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </>
   );
 }

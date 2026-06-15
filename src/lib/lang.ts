@@ -5,7 +5,7 @@ export const translations = {
     // Nav
     nav_dashboard: "Dashboard",
     nav_requests: "Requests",
-    nav_availability: "Availability",
+    nav_availability: "Schedule",
     nav_profile: "Profile",
     nav_preview: "Preview",
     nav_signout: "Sign out",
@@ -123,6 +123,7 @@ export const translations = {
     prev_radius: "Service radius",
     prev_rate: "Hourly rate",
     prev_about: "About",
+    prev_service_types: "Service Types",
     prev_no_bio: "No bio written yet.",
     prev_no_name: "No name set",
     prev_year: "year",
@@ -171,7 +172,7 @@ export const translations = {
     // Nav
     nav_dashboard: "לוח בקרה",
     nav_requests: "בקשות",
-    nav_availability: "זמינות",
+    nav_availability: "לוח זמנים",
     nav_profile: "פרופיל",
     nav_preview: "תצוגה מקדימה",
     nav_signout: "התנתק",
@@ -289,6 +290,7 @@ export const translations = {
     prev_radius: "רדיוס שירות",
     prev_rate: "תעריף לשעה",
     prev_about: "אודות",
+    prev_service_types: "סוגי שירות",
     prev_no_bio: "לא נכתב תיאור עדיין.",
     prev_no_name: "לא נקבע שם",
     prev_year: "שנה",

@@ -53,16 +53,6 @@ export default async function PreviewPage() {
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
               {profile?.full_name ?? t(lang, "prev_no_name")}
             </h1>
-            <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
-              {cleaner?.service_types?.map((type) => (
-                <span
-                  key={type}
-                  className="bg-blue-50 text-blue-700 text-base font-medium px-3 py-1 rounded-full capitalize"
-                >
-                  {type === "residential" ? t(lang, "svc_residential") : t(lang, "svc_commercial")}
-                </span>
-              ))}
-            </div>
             {cleaner?.languages && cleaner.languages.length > 0 && (
               <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
                 {cleaner.languages.map((lang_) => (
@@ -120,6 +110,21 @@ export default async function PreviewPage() {
                 {cleaner?.bio ?? <span className="text-gray-400">{t(lang, "prev_no_bio")}</span>}
               </p>
             </div>
+            {cleaner?.service_types && cleaner.service_types.length > 0 && (
+              <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-3">{t(lang, "prev_service_types")}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {cleaner.service_types.map((type) => (
+                    <span
+                      key={type}
+                      className="bg-blue-50 text-blue-700 text-base font-medium px-4 py-1.5 rounded-full"
+                    >
+                      {type === "residential" ? t(lang, "svc_residential") : t(lang, "svc_commercial")}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
 
