@@ -12,11 +12,13 @@ describe('Nav', () => {
     window.localStorage.clear()
   })
 
-  it('renders links for applications and booking requests', () => {
+  it('renders links for applications, booking requests, cleaners, and customers', () => {
     render(<LanguageProvider><Nav /></LanguageProvider>)
 
     expect(screen.getByRole('link', { name: 'Applications' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'Booking Requests' })).toHaveAttribute('href', '/admin/bookings')
+    expect(screen.getByRole('link', { name: 'Cleaners' })).toHaveAttribute('href', '/admin/cleaners')
+    expect(screen.getByRole('link', { name: 'Customers' })).toHaveAttribute('href', '/admin/customers')
   })
 
   it('highlights the current page', () => {
@@ -33,5 +35,7 @@ describe('Nav', () => {
 
     expect(screen.getByRole('link', { name: 'בקשות הצטרפות' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'בקשות הזמנה' })).toHaveAttribute('href', '/admin/bookings')
+    expect(screen.getByRole('link', { name: 'מנקים' })).toHaveAttribute('href', '/admin/cleaners')
+    expect(screen.getByRole('link', { name: 'לקוחות' })).toHaveAttribute('href', '/admin/customers')
   })
 })

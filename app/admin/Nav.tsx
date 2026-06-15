@@ -11,6 +11,8 @@ export function Nav() {
   const links = [
     { href: '/admin/applications', label: t('adminNav.applications') },
     { href: '/admin/bookings', label: t('adminNav.bookings') },
+    { href: '/admin/cleaners', label: t('adminNav.cleaners') },
+    { href: '/admin/customers', label: t('adminNav.customers') },
   ]
 
   return (
