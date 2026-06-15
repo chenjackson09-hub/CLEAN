@@ -10,6 +10,8 @@ const translations = {
     adminNav: {
       applications: 'Applications',
       bookings: 'Booking Requests',
+      cleaners: 'Cleaners',
+      customers: 'Customers',
     },
     common: {
       residential: 'Residential',
@@ -113,6 +115,22 @@ const translations = {
         empty: 'No booking requests yet.',
         requestedBy: '{customer} requested {cleaner}',
       },
+      cleaners: {
+        title: 'Cleaners',
+        empty: 'No cleaners yet.',
+      },
+      customers: {
+        title: 'Customers',
+        empty: 'No customers yet.',
+      },
+      shared: {
+        notes: 'Admin Notes',
+        notesPlaceholder: 'Write a note about this person...',
+        save: 'Save',
+        saved: '✅ Saved',
+        delete: 'Delete',
+        confirmDelete: 'Remove this person from the list?',
+      },
     },
     dashboard: {
       title: 'My Booking Requests',
@@ -212,6 +230,8 @@ const translations = {
     adminNav: {
       applications: 'בקשות הצטרפות',
       bookings: 'בקשות הזמנה',
+      cleaners: 'מנקים',
+      customers: 'לקוחות',
     },
     common: {
       residential: 'ביתי',
@@ -314,6 +334,22 @@ const translations = {
         title: 'בקשות הזמנה',
         empty: 'אין בקשות הזמנה עדיין.',
         requestedBy: '{customer} ביקש/ה את {cleaner}',
+      },
+      cleaners: {
+        title: 'מנקים',
+        empty: 'אין מנקים עדיין.',
+      },
+      customers: {
+        title: 'לקוחות',
+        empty: 'אין לקוחות עדיין.',
+      },
+      shared: {
+        notes: 'הערות מנהל',
+        notesPlaceholder: 'כתבו הערה על האדם הזה...',
+        save: 'שמירה',
+        saved: '✅ נשמר',
+        delete: 'הסרה',
+        confirmDelete: 'להסיר את האדם הזה מהרשימה?',
       },
     },
     dashboard: {
