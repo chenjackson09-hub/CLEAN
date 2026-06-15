@@ -19,9 +19,24 @@ export async function updateCustomerProfile(
   const preferredServiceType = formData.get("preferred_service_type") as string
   const address = formData.get("address") as string
 
+  // Handle avatar upload
+  const avatarFile = formData.get("avatar") as File
+  let avatarUrl: string | undefined
+  if (avatarFile && avatarFile.size > 0) {
+    const ext = avatarFile.name.split(".").pop()
+    const path = `${user.id}/avatar.${ext}`
+    const { error: uploadErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, avatarFile, { upsert: true })
+    if (!uploadErr) {
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path)
+      avatarUrl = urlData.publicUrl
+    }
+  }
+
   const { error: profileErr } = await supabase
     .from("profiles")
-    .update({ full_name: fullName, phone })
+    .update({ full_name: fullName, phone, ...(avatarUrl && { avatar_url: avatarUrl }) })
     .eq("id", user.id)
   if (profileErr) return { error: profileErr.message }
 

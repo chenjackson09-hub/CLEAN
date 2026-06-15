@@ -59,7 +59,7 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
         >
           {t('bookingRequestForm.requestBooking')}
         </button>
@@ -74,7 +74,7 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
       <div className="flex flex-col gap-1">
         <label htmlFor="serviceType" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.serviceType')}</label>
         <select id="serviceType" value={serviceType} onChange={e => setServiceType(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           {cleaner.service_types.map(serviceTypeOption => (
             <option key={serviceTypeOption} value={serviceTypeOption}>{t(`common.${serviceTypeOption}`)}</option>
           ))}
@@ -85,17 +85,17 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
         <div className="flex flex-col gap-1 flex-1">
           <label htmlFor="date" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.date')}</label>
           <input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div className="flex flex-col gap-1 flex-1">
           <label htmlFor="startTime" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.startTime')}</label>
           <input id="startTime" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="duration" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.duration')}</label>
           <select id="duration" value={duration} onChange={e => setDuration(Number(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
@@ -105,14 +105,14 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
         <label htmlFor="address" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.address')}</label>
         <input id="address" type="text" value={address} onChange={e => setAddress(e.target.value)} required
           placeholder={t('bookingRequestForm.addressPlaceholder')}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       <div className="flex flex-col gap-1">
         <label htmlFor="notes" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.notes')}</label>
         <textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3}
           placeholder={t('bookingRequestForm.notesPlaceholder')}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       <div className="flex gap-2 justify-end">
@@ -121,7 +121,7 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
           {t('bookingRequestForm.cancel')}
         </button>
         <button type="submit"
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">
           {t('bookingRequestForm.sendRequest')}
         </button>
       </div>

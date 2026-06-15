@@ -18,7 +18,7 @@ const STATUS_ACCENT: Record<BookingStatus, string> = {
 }
 
 const SERVICE_BADGE: Record<BookingResult['service_type'], string> = {
-  residential: 'bg-indigo-100 text-indigo-700',
+  residential: 'bg-blue-50 text-blue-700',
   commercial: 'bg-green-100 text-green-700',
 }
 
@@ -46,7 +46,7 @@ export function BookingCard({ booking }: { booking: BookingResult }) {
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white">
+            <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-700">
               {initial}
             </div>
           )}

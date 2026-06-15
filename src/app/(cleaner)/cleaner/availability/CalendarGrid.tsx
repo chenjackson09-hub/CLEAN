@@ -54,33 +54,20 @@ function isPast(d: Date): boolean {
 
 function dayCardColor(
   allSlots: Array<{ start_time: string }>,
-  dayBookings: Array<{ scheduled_start: string }>,
-  bold: boolean
+  hasAccepted: boolean,
+  hasPending: boolean,
 ): string {
-  const hasBookings = dayBookings.length > 0;
-  if (allSlots.length === 0 && !hasBookings)
-    return bold
-      ? "bg-purple-100 border-purple-300 hover:bg-purple-200"
-      : "bg-purple-50 border-purple-200 hover:bg-purple-100";
-  if (!hasBookings)
-    return bold
-      ? "bg-blue-100 border-blue-300 hover:bg-blue-200"
-      : "bg-blue-50 border-blue-200 hover:bg-blue-100";
-  const bookedStarts = new Set(dayBookings.map((b) => b.scheduled_start.slice(0, 5)));
-  const freeSlots = allSlots.filter((s) => !bookedStarts.has(s.start_time.slice(0, 5)));
-  if (freeSlots.length > 0)
-    return bold
-      ? "bg-orange-200 border-orange-400 hover:bg-orange-300"
-      : "bg-orange-100 border-orange-200 hover:bg-orange-200";
-  return bold
-    ? "bg-rose-200 border-rose-400 hover:bg-rose-300"
-    : "bg-rose-100 border-rose-200 hover:bg-rose-200";
+  if (hasAccepted) return "bg-blue-500 hover:bg-blue-600";
+  if (hasPending)  return "bg-blue-200 hover:bg-blue-300";
+  if (allSlots.length === 0) return "bg-gray-100 hover:bg-gray-200";
+  return "bg-blue-100 hover:bg-blue-200";
 }
 
 interface Props {
   slots: CleanerAvailability[];
   weeklySlots: CleanerWeeklyAvailability[];
   bookings: Booking[];
+  pendingBookings: Booking[];
 }
 
 interface DayPanel {
@@ -89,7 +76,7 @@ interface DayPanel {
   past: boolean;
 }
 
-export default function CalendarGrid({ slots: initialSlots, weeklySlots, bookings }: Props) {
+export default function CalendarGrid({ slots: initialSlots, weeklySlots, bookings, pendingBookings }: Props) {
   const { t } = useLang();
   const router = useRouter();
   const [slots, setSlots] = useState(initialSlots);
@@ -116,6 +103,12 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
   }, {});
 
   const bookingsByDate = bookings.reduce<Record<string, Booking[]>>((acc, b) => {
+    if (!acc[b.scheduled_date]) acc[b.scheduled_date] = [];
+    acc[b.scheduled_date].push(b);
+    return acc;
+  }, {});
+
+  const pendingByDate = pendingBookings.reduce<Record<string, Booking[]>>((acc, b) => {
     if (!acc[b.scheduled_date]) acc[b.scheduled_date] = [];
     acc[b.scheduled_date].push(b);
     return acc;
@@ -237,29 +230,35 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
               const daySlots = [...(slotsByDate[dateStr] ?? [])].sort((a, b) => a.start_time.localeCompare(b.start_time));
               const recurring = [...weeklySlots.filter((s) => s.day_of_week === day.getDay())].sort((a, b) => a.start_time.localeCompare(b.start_time));
               const dayBookings = bookingsByDate[dateStr] ?? [];
+              const dayPending = pendingByDate[dateStr] ?? [];
               const past = isPast(day);
               const today = isToday(day);
 
-              const now = new Date();
-              const bold = !past && day.getMonth() === now.getMonth() && day.getFullYear() === now.getFullYear();
+              const hasAccepted = dayBookings.length > 0;
+              const hasPending = dayPending.length > 0;
               const colorClass = past
-                ? "bg-gray-50 border-gray-200 hover:bg-gray-100 opacity-40"
-                : dayCardColor([...daySlots, ...recurring], dayBookings, bold);
+                ? "bg-gray-50 hover:bg-gray-100 opacity-40"
+                : dayCardColor([...daySlots, ...recurring], hasAccepted, hasPending);
+
+              const dateTextColor = hasAccepted ? "text-white" : "text-gray-700";
+              const dayNameColor = hasAccepted ? "text-blue-100" : "text-gray-400";
 
               return (
                 <button
                   key={dateStr}
                   onClick={() => openPanel(day)}
-                  className={`flex flex-col items-center p-3 min-h-[90px] rounded-xl border transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
+                  className={`flex flex-col items-center p-3 min-h-[90px] rounded-xl transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
                 >
-                  <span className="text-xl font-bold text-gray-700 w-10 h-10 flex items-center justify-center">
+                  <span className={`text-xl font-bold w-10 h-10 flex items-center justify-center ${dateTextColor}`}>
                     {day.getDate()}
                   </span>
                   {columns < 7 && (
-                    <span className="text-xs text-gray-400 font-medium mt-0.5">{t(WEEK_DAY_KEYS[day.getDay()])}</span>
+                    <span className={`text-xs font-medium mt-0.5 ${dayNameColor}`}>{t(WEEK_DAY_KEYS[day.getDay()])}</span>
                   )}
-                  {!past && (
-                    <span className="mt-auto text-gray-400 text-2xl font-bold leading-none">+</span>
+                  {hasPending && (
+                    <span className="mt-auto text-sm font-bold text-red-600 leading-none">
+                      {dayPending.length}
+                    </span>
                   )}
                 </button>
               );

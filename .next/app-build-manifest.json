@@ -95,6 +95,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(cleaner)/cleaner/profile/loading.js"
+    ],
+    "/(customer)/home/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(customer)/home/page.js"
     ]
   }
 }

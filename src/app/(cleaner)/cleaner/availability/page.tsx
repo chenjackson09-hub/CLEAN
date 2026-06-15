@@ -19,7 +19,7 @@ export default async function AvailabilityPage() {
   const from = today.toISOString().split("T")[0];
   const to = new Date(today.getTime() + 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  const [{ data: weeklySlots }, { data: specificSlots }, { data: bookings }] = await Promise.all([
+  const [{ data: weeklySlots }, { data: specificSlots }, { data: bookings }, { data: pendingBookings }] = await Promise.all([
     supabase
       .from("cleaner_weekly_availability")
       .select("*")
@@ -46,6 +46,16 @@ export default async function AvailabilityPage() {
       .order("scheduled_date")
       .order("scheduled_start")
       .returns<Booking[]>(),
+    supabase
+      .from("bookings")
+      .select("*")
+      .eq("cleaner_id", user.id)
+      .eq("status", "pending")
+      .gte("scheduled_date", from)
+      .lte("scheduled_date", to)
+      .order("scheduled_date")
+      .order("scheduled_start")
+      .returns<Booking[]>(),
   ]);
 
   return (
@@ -66,7 +76,7 @@ export default async function AvailabilityPage() {
           <h2 className="text-base font-semibold text-gray-800 mb-0.5">{t(lang, "avail_specific")}</h2>
           <p className="text-sm text-gray-500">{t(lang, "avail_specific_body")}</p>
         </div>
-        <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} />
+        <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />
       </div>
     </div>
   );
