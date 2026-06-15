@@ -1,62 +1,142 @@
 'use client'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { BookingRequestForm } from './BookingRequestForm'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
-const SERVICE_BADGE: Record<string, string> = {
-  residential: 'bg-indigo-100 text-indigo-700',
-  commercial: 'bg-green-100 text-green-700',
-}
-
-export function CleanerProfile({ cleaner }: { cleaner: CleanerResult }) {
+export function CleanerProfile({ cleaner, gallery = [] }: { cleaner: CleanerResult; gallery?: string[] }) {
   const { t } = useLanguage()
+  const router = useRouter()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Link href="/browse" className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
-        {t('cleanerProfile.backToBrowse')}
-      </Link>
+    <div className="bg-white -mx-8 -mt-2 min-h-screen">
+      {/* Back button — uses browser history so filters are preserved */}
+      <div className="px-6 lg:px-10 pt-5">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          {t('cleanerProfile.backToSearch')}
+        </button>
+      </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="flex items-center gap-4 mb-4">
+      {/* Avatar + name row */}
+      <div className="px-6 lg:px-10 py-6">
+        <div className="flex flex-col items-center text-center gap-4 lg:flex-row lg:items-center lg:text-start lg:gap-6">
           {cleaner.avatar_url ? (
             <img
               src={cleaner.avatar_url}
               alt={cleaner.full_name}
-              className="w-16 h-16 rounded-full object-cover"
+              className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover border-4 border-white shadow"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white text-2xl">
+            <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-blue-100 border-4 border-white shadow flex items-center justify-center text-blue-600 font-bold text-5xl shrink-0">
               {initial}
             </div>
           )}
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{cleaner.full_name}</h1>
-            <p className="text-sm text-gray-500">
-              {t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · {t('common.yearsExp', { years: cleaner.years_experience })}
-              {cleaner.area && <> · 📍 {cleaner.area}</>}
-            </p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{cleaner.full_name}</h1>
+            {cleaner.area && (
+              <p className="inline-flex items-center gap-1.5 text-gray-500 mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {cleaner.area}
+              </p>
+            )}
+            {cleaner.languages.length > 0 && (
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
+                {cleaner.languages.map(lang => (
+                  <span key={lang} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+                    </svg>
+                    {lang}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 lg:px-10 pb-10 space-y-4">
+        {/* Stats */}
+        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-center justify-around text-center">
+            {cleaner.years_experience != null && (
+              <div>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.experience')}</p>
+                <p className="text-base font-semibold text-gray-900">
+                  {cleaner.years_experience} {cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}
+                </p>
+              </div>
+            )}
+            {cleaner.distance_km > 0 && (
+              <div>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.distance')}</p>
+                <p className="text-base font-semibold text-gray-900">{cleaner.distance_km.toFixed(1)} {t('cleanerProfile.km')}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-sm text-gray-500">{t('cleanerProfile.rate')}</p>
+              <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
+            </div>
           </div>
         </div>
 
-        <p className="text-gray-700 leading-relaxed mb-4">{cleaner.bio}</p>
+        {/* About */}
+        {cleaner.bio && (
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.about')}</h2>
+            <p className="text-base text-gray-700 leading-relaxed">{cleaner.bio}</p>
+          </div>
+        )}
 
-        <div className="flex gap-2 flex-wrap mb-4">
-          {cleaner.service_types.map(type => (
-            <span key={type} className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[type] ?? 'bg-gray-100 text-gray-700'}`}>
-              {t(`common.${type}`)}
-            </span>
-          ))}
-          {cleaner.languages.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-              🌐 {cleaner.languages.join(', ')}
-            </span>
-          )}
+        {/* Service types */}
+        {cleaner.service_types.length > 0 && (
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.serviceTypes')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {cleaner.service_types.map(type => (
+                <span key={type} className="bg-blue-50 text-blue-700 text-sm font-medium px-4 py-1.5 rounded-full">
+                  {t(`common.${type}`)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Gallery */}
+        {gallery.length > 0 && (
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.gallery')}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {gallery.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${cleaner.full_name} ${i + 1}`}
+                  className="w-full aspect-square object-cover rounded-xl"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Booking form */}
+        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+          </h2>
+          <BookingRequestForm cleaner={cleaner} />
         </div>
-
-        <BookingRequestForm cleaner={cleaner} />
       </div>
     </div>
   )

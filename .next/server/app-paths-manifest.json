@@ -1,8 +1,9 @@
 {
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(cleaner)/cleaner/dashboard/page": "app/(cleaner)/cleaner/dashboard/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/(customer)/bookings/page": "app/(customer)/bookings/page.js",
+  "/(customer)/profile/page": "app/(customer)/profile/page.js",
+  "/(customer)/browse/page": "app/(customer)/browse/page.js",
+  "/(cleaner)/cleaner/requests/page": "app/(cleaner)/cleaner/requests/page.js",
   "/(cleaner)/cleaner/availability/page": "app/(cleaner)/cleaner/availability/page.js",
-  "/(cleaner)/cleaner/profile/page": "app/(cleaner)/cleaner/profile/page.js",
-  "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js",
-  "/(cleaner)/cleaner/requests/page": "app/(cleaner)/cleaner/requests/page.js"
+  "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js"
 }

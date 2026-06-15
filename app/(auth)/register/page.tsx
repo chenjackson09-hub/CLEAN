@@ -89,7 +89,7 @@ export default function RegisterPage() {
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.register.title")}</h1>
-        <p className="text-sm text-gray-500 mb-6">{t("auth.register.subtitle")}</p>
+        <p className="text-sm text-gray-600 mb-6">{t("auth.register.subtitle")}</p>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button
@@ -104,7 +104,7 @@ export default function RegisterPage() {
           >
             <div className="text-2xl mb-1">🏠</div>
             <div className="font-semibold text-sm text-gray-900">{t("auth.register.customer")}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{t("auth.register.customerDesc")}</div>
+            <div className="text-xs text-gray-600 mt-0.5">{t("auth.register.customerDesc")}</div>
           </button>
           <button
             type="button"
@@ -118,7 +118,7 @@ export default function RegisterPage() {
           >
             <div className="text-2xl mb-1">🧹</div>
             <div className="font-semibold text-sm text-gray-900">{t("auth.register.cleaner")}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{t("auth.register.cleanerDesc")}</div>
+            <div className="text-xs text-gray-600 mt-0.5">{t("auth.register.cleanerDesc")}</div>
           </button>
         </div>
 
@@ -165,7 +165,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <p className="mt-4 text-sm text-center text-gray-500">
+        <p className="mt-4 text-sm text-center text-gray-600">
           {t("auth.register.haveAccount")}{" "}
           <Link href="/login" className="text-blue-600 hover:underline">{t("auth.register.signIn")}</Link>
         </p>

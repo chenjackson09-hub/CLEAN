@@ -113,7 +113,7 @@ export default function CustomerOnboardingPage() {
             type="button"
             onClick={() => router.push("/register")}
             disabled={loading}
-            className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -124,7 +124,7 @@ export default function CustomerOnboardingPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-1">{t("auth.registerCustomer.title")}</h1>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-600 mb-6">
           {t("auth.registerCustomer.subtitle")}
         </p>
 
@@ -187,7 +187,7 @@ export default function CustomerOnboardingPage() {
               placeholder={t("auth.registerCustomer.addressPlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-400 mt-1">{t("auth.registerCustomer.addressHint")}</p>
+            <p className="text-xs text-gray-500 mt-1">{t("auth.registerCustomer.addressHint")}</p>
           </div>
 
           {error && (

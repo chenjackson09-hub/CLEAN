@@ -1,55 +1,28 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { translations } from "@/lib/lang";
 import type { Lang, TranslationKey } from "@/lib/lang";
+import type { ReactNode } from "react";
 
-interface LangContextValue {
-  lang: Lang;
-  setLang: (lang: Lang) => void;
-  t: (key: TranslationKey) => string;
-}
-
-const LangContext = createContext<LangContextValue>({
-  lang: "en",
-  setLang: () => {},
-  t: (key) => translations.en[key],
-});
-
-export function LangProvider({
-  initialLang,
-  children,
-}: {
-  initialLang: Lang;
-  children: React.ReactNode;
-}) {
-  const [lang, setLangState] = useState<Lang>(initialLang);
-  const router = useRouter();
-
-  const setLang = useCallback(
-    (newLang: Lang) => {
-      document.cookie = `lang=${newLang};path=/;max-age=31536000`;
-      document.documentElement.lang = newLang;
-      document.documentElement.dir = newLang === "he" ? "rtl" : "ltr";
-      setLangState(newLang);
-      router.refresh();
-    },
-    [router]
-  );
-
-  const t = useCallback(
-    (key: TranslationKey): string => translations[lang][key],
-    [lang]
-  );
-
-  return (
-    <LangContext.Provider value={{ lang, setLang, t }}>
-      {children}
-    </LangContext.Provider>
-  );
-}
-
+// Adapter: delegates to the shared LanguageProvider in app/layout.tsx.
+// All cleaner components that call useLang() / t() continue to work unchanged.
 export function useLang() {
-  return useContext(LangContext);
+  const { lang, toggleLanguage } = useLanguage();
+
+  function setLang(newLang: Lang) {
+    if (newLang !== (lang as Lang)) toggleLanguage();
+  }
+
+  function t(key: TranslationKey): string {
+    return (translations[lang as Lang] ?? translations.en)[key] ?? translations.en[key];
+  }
+
+  return { lang: lang as Lang, setLang, t };
+}
+
+// No longer needed — LanguageProvider in app/layout.tsx covers everything.
+// Kept so src/app/layout.tsx doesn't break.
+export function LangProvider({ children }: { initialLang?: Lang; children: ReactNode }) {
+  return <>{children}</>;
 }

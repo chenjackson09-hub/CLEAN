@@ -1,51 +1,63 @@
-// PREVIEW MOCK — remove auth + inject fake data for visual testing. Revert before merging.
-'use client'
-import { useEffect, useState } from 'react'
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 import Link from 'next/link'
-import { Nav } from '../Nav'
 import { BookingCard } from './BookingCard'
-import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { MOCK_BOOKINGS } from '@/lib/mockData/bookings'
-import { getAllBookings } from '@/lib/mockBookingsStore'
-import type { BookingResult } from '@/lib/types/booking'
 
-export default function BookingsPage() {
-  const { t } = useLanguage()
-  const [bookings, setBookings] = useState<BookingResult[]>(MOCK_BOOKINGS)
+export default async function BookingsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
 
-  useEffect(() => {
-    setBookings(getAllBookings())
-  }, [])
+  const { data: rawBookings } = await supabase
+    .from("bookings")
+    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, address, notes, status, cleaner_id")
+    .eq("customer_id", user.id)
+    .order("created_at", { ascending: false })
 
-  const error = null
+  const cleanerIds = [...new Set((rawBookings ?? []).map(b => b.cleaner_id))]
+
+  const { data: cleanerProfiles } = cleanerIds.length > 0
+    ? await supabase.from("profiles").select("id, full_name, avatar_url, phone").in("id", cleanerIds)
+    : { data: [] }
+
+  const profileMap = Object.fromEntries((cleanerProfiles ?? []).map(p => [p.id, p]))
+
+  const bookings = (rawBookings ?? []).map(b => {
+    const cleaner = profileMap[b.cleaner_id]
+    return {
+      id: b.id,
+      cleaner_name: cleaner?.full_name ?? 'Cleaner',
+      cleaner_avatar_url: cleaner?.avatar_url ?? null,
+      cleaner_phone: cleaner?.phone ?? undefined,
+      service_type: b.service_type as 'residential' | 'commercial',
+      scheduled_date: b.scheduled_date,
+      scheduled_start: b.scheduled_start,
+      duration_hours: b.duration_hours,
+      address: b.address,
+      notes: b.notes ?? undefined,
+      status: b.status as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
+    }
+  })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <Nav />
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-xl font-bold text-gray-900 mb-6">My Bookings</h1>
 
-      <div className="px-6 py-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-4">{t('bookings.title')}</h1>
+      {bookings.length === 0 && (
+        <p className="text-gray-500 text-sm">
+          No bookings yet.{' '}
+          <Link href="/browse" className="text-blue-600 font-semibold hover:underline">
+            Browse cleaners
+          </Link>{' '}
+          to make your first booking.
+        </p>
+      )}
 
-        {error && (
-          <p className="text-red-600 text-sm">{t('bookings.error')}</p>
-        )}
-
-        {!error && bookings.length === 0 && (
-          <p className="text-gray-500 text-sm">
-            {t('bookings.empty')}{' '}
-            <Link href="/browse" className="text-indigo-600 font-semibold hover:underline">
-              {t('bookings.browseCleaners')}
-            </Link>{' '}
-            {t('bookings.toFindFirst')}
-          </p>
-        )}
-
-        {bookings.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {bookings.map(b => <BookingCard key={b.id} booking={b} />)}
-          </div>
-        )}
-      </div>
+      {bookings.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {bookings.map(b => <BookingCard key={b.id} booking={b} />)}
+        </div>
+      )}
     </div>
   )
 }

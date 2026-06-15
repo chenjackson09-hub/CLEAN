@@ -46,7 +46,7 @@ export default function LoginPage() {
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.login.title")}</h1>
-        <p className="text-sm text-gray-500 mb-6">{t("auth.login.subtitle")}</p>
+        <p className="text-sm text-gray-600 mb-6">{t("auth.login.subtitle")}</p>
 
         <form action={handleSubmit} className="space-y-4">
           <div>
@@ -87,7 +87,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-4 text-sm text-center text-gray-500">
+        <p className="mt-4 text-sm text-center text-gray-600">
           {t("auth.login.noAccount")}{" "}
           <Link href="/register" className="text-blue-600 hover:underline">
             {t("auth.login.register")}

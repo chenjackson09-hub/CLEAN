@@ -1,64 +1,52 @@
+'use client'
 import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
-const SERVICE_BADGE: Record<string, string> = {
-  residential: 'bg-indigo-100 text-indigo-700',
-  commercial: 'bg-green-100 text-green-700',
-  both: 'bg-yellow-100 text-yellow-800',
-}
-
-const SERVICE_ACCENT: Record<string, string> = {
-  residential: 'border-t-indigo-400',
-  commercial: 'border-t-green-400',
-  both: 'border-t-yellow-400',
-}
-
 export function CleanerCard({ cleaner }: { cleaner: CleanerResult }) {
   const { t } = useLanguage()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
-  const bioExcerpt = cleaner.bio.length > 80 ? cleaner.bio.slice(0, 80) + '…' : cleaner.bio
-  const serviceLabel =
-    cleaner.service_types.includes('residential') && cleaner.service_types.includes('commercial')
-      ? 'both'
-      : cleaner.service_types[0] ?? 'residential'
 
   return (
-    <div className={`bg-white rounded-xl p-4 shadow-sm border border-gray-200 border-t-4 ${SERVICE_ACCENT[serviceLabel]} hover:shadow-lg transition-shadow`}>
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-3 mb-3">
         {cleaner.avatar_url ? (
-          <img
-            src={cleaner.avatar_url}
-            alt={cleaner.full_name}
-            className="w-10 h-10 rounded-full object-cover"
-          />
+          <img src={cleaner.avatar_url} alt={cleaner.full_name} className="w-16 h-16 rounded-full object-cover shrink-0" />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white">
+          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-xl shrink-0">
             {initial}
           </div>
         )}
         <div>
           <p className="font-bold text-gray-900">{cleaner.full_name}</p>
           <p className="text-sm text-gray-500">
-            {t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · {t('common.yearsExp', { years: cleaner.years_experience })}
+            {cleaner.distance_km > 0 && <>{t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · </>}
+            {t('common.yearsExp', { years: cleaner.years_experience })}
           </p>
         </div>
       </div>
 
-      <p className="text-sm text-gray-500 mb-3 leading-relaxed">"{bioExcerpt}"</p>
-
       <div className="flex gap-2 flex-wrap mb-3">
-        <span className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[serviceLabel]}`}>
-          {t(`common.${serviceLabel}`)}
-        </span>
+        {cleaner.service_types.map(type => (
+          <span key={type} className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+            {t(`common.${type}`)}
+          </span>
+        ))}
         {cleaner.area && (
-          <span className="text-xs px-2 py-0.5 rounded bg-pink-100 text-pink-700 font-medium">
-            📍 {cleaner.area}
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {cleaner.area}
           </span>
         )}
         {cleaner.languages.length > 0 && (
-          <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-            🌐 {cleaner.languages.join(', ')}
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+            </svg>
+            {cleaner.languages.join(', ')}
           </span>
         )}
       </div>
@@ -67,7 +55,7 @@ export function CleanerCard({ cleaner }: { cleaner: CleanerResult }) {
         <span className="font-bold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</span>
         <Link
           href={`/cleaners/${cleaner.id}`}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
         >
           {t('cleanerCard.viewProfile')}
         </Link>

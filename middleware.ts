@@ -1,10 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { ROLE_HOME } from '@/lib/roleHome'
+import type { UserRole } from '@/types/database'
 
-// PREVIEW MOCK — auth disabled for visual testing. Revert before merging.
 export async function middleware(request: NextRequest) {
-  return NextResponse.next({ request })
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -15,7 +14,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -26,9 +25,22 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { pathname } = request.nextUrl
+  // Skip network round-trip when there's no session cookie
+  const hasSessionCookie = request.cookies.getAll().some(
+    (c) => c.name.includes('-auth-token')
+  )
 
+  let user = null
+  if (hasSessionCookie) {
+    try {
+      const { data } = await supabase.auth.getUser()
+      user = data.user
+    } catch {
+      user = null
+    }
+  }
+
+  const { pathname } = request.nextUrl
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register')
 
   if (!user && !isAuthRoute) {
@@ -42,7 +54,7 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const role = profile?.role as keyof typeof ROLE_HOME
+    const role = profile?.role as UserRole
     return NextResponse.redirect(new URL(ROLE_HOME[role] ?? '/login', request.url))
   }
 
