@@ -6,7 +6,7 @@ import { Nav } from '../Nav'
 import { BookingCard } from './BookingCard'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { MOCK_BOOKINGS } from '@/lib/mockData/bookings'
-import { getStoredBookings } from '@/lib/mockBookingsStore'
+import { getAllBookings } from '@/lib/mockBookingsStore'
 import type { BookingResult } from '@/lib/types/booking'
 
 export default function BookingsPage() {
@@ -14,7 +14,7 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<BookingResult[]>(MOCK_BOOKINGS)
 
   useEffect(() => {
-    setBookings([...getStoredBookings(), ...MOCK_BOOKINGS])
+    setBookings(getAllBookings())
   }, [])
 
   const error = null

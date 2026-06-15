@@ -1,4 +1,5 @@
-import { getStoredBookings, addBooking } from './mockBookingsStore'
+import { getStoredBookings, addBooking, getAllBookings, updateBookingStatus } from './mockBookingsStore'
+import { MOCK_BOOKINGS } from './mockData/bookings'
 import type { BookingResult } from './types/booking'
 
 const booking: BookingResult = {
@@ -35,5 +36,39 @@ describe('mockBookingsStore', () => {
     const stored = getStoredBookings()
     expect(stored[0].id).toBe('new-2')
     expect(stored[1].id).toBe('new-1')
+  })
+
+  describe('getAllBookings', () => {
+    it('returns the seed bookings when nothing has been stored', () => {
+      expect(getAllBookings()).toEqual(MOCK_BOOKINGS)
+    })
+
+    it('includes newly added bookings alongside the seed bookings', () => {
+      addBooking(booking)
+
+      const all = getAllBookings()
+      expect(all[0]).toEqual(booking)
+      expect(all).toHaveLength(MOCK_BOOKINGS.length + 1)
+    })
+  })
+
+  describe('updateBookingStatus', () => {
+    it('updates the status of a stored booking', () => {
+      addBooking(booking)
+      updateBookingStatus('new-1', 'accepted')
+
+      const all = getAllBookings()
+      expect(all.find(b => b.id === 'new-1')?.status).toBe('accepted')
+    })
+
+    it('promotes a seed booking into storage with the new status', () => {
+      const seedId = MOCK_BOOKINGS[0].id
+      updateBookingStatus(seedId, 'declined')
+
+      const all = getAllBookings()
+      const updated = all.find(b => b.id === seedId)
+      expect(updated?.status).toBe('declined')
+      expect(all).toHaveLength(MOCK_BOOKINGS.length)
+    })
   })
 })
