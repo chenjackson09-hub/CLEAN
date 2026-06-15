@@ -9,8 +9,11 @@ out/
 .env
 .env.local
 .env.*.local
+.env*.local
 
 # misc
 .DS_Store
+.superpowers/
 *.pem
+*.tsbuildinfo
 npm-debug.log*

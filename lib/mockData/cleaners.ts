@@ -1,0 +1,10 @@
+import type { CleanerResult } from '@/lib/types/cleaner'
+
+export const MOCK_CLEANERS: CleanerResult[] = [
+  { id: '1', full_name: 'Sarah M.', avatar_url: null, bio: 'Reliable and thorough. Specialise in deep cleans and move-out cleaning for residential homes.', service_types: ['residential'], hourly_rate: 80, years_experience: 5, languages: ['EN', 'HE'], distance_km: 2.1, area: 'Tel Aviv', email: 'sarah.m@example.com', phone: '050-222-1111' },
+  { id: '2', full_name: 'David K.', avatar_url: null, bio: 'Expert in office and retail space cleaning. Fully insured and available on short notice.', service_types: ['commercial'], hourly_rate: 95, years_experience: 8, languages: ['EN', 'AR'], distance_km: 4.7, area: 'Haifa', email: 'david.k@example.com', phone: '050-222-2222' },
+  { id: '3', full_name: 'Lena R.', avatar_url: null, bio: 'Friendly and detail-oriented. Available most weekdays. Eco-friendly products on request.', service_types: ['residential', 'commercial'], hourly_rate: 70, years_experience: 3, languages: ['RU', 'HE'], distance_km: 1.3, area: 'Tel Aviv', email: 'lena.r@example.com', phone: '050-222-3333' },
+  { id: '4', full_name: 'Moshe T.', avatar_url: null, bio: 'Professional cleaner with a focus on post-construction and deep cleaning services.', service_types: ['residential'], hourly_rate: 85, years_experience: 6, languages: ['HE'], distance_km: 3.5, area: 'Ramat Gan', email: 'moshe.t@example.com', phone: '050-222-4444' },
+  { id: '5', full_name: 'Anna P.', avatar_url: null, bio: 'Experienced in both homes and small offices. References available upon request.', service_types: ['residential', 'commercial'], hourly_rate: 75, years_experience: 4, languages: ['RU', 'EN'], distance_km: 0.8, area: 'Tel Aviv', email: 'anna.p@example.com', phone: '050-222-5555' },
+  { id: '6', full_name: 'Yosef B.', avatar_url: null, bio: 'Specialise in large commercial spaces. Background-checked and professionally trained.', service_types: ['commercial'], hourly_rate: 100, years_experience: 10, languages: ['HE', 'EN'], distance_km: 6.2, area: 'Herzliya', email: 'yosef.b@example.com', phone: '050-222-6666' },
+]
