@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 type Props = {
@@ -51,6 +52,12 @@ export function BrowseFilters({ dates, type, sort }: Props) {
       >
         {t('browse.filter')}
       </button>
+      <Link
+        href="/browse"
+        className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+      >
+        {t('browse.clear')}
+      </Link>
     </form>
   )
 }

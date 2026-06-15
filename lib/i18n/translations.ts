@@ -66,6 +66,7 @@ const translations = {
       mostExp: 'Most experienced',
       leastExp: 'Least experienced',
       filter: 'Filter',
+      clear: 'Clear',
     },
     calendar: {
       monthNames: ['January','February','March','April','May','June','July','August','September','October','November','December'],
@@ -322,6 +323,7 @@ const translations = {
       mostExp: 'הכי מנוסה',
       leastExp: 'הכי פחות מנוסה',
       filter: 'סנן',
+      clear: 'איפוס',
     },
     calendar: {
       monthNames: ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'],
