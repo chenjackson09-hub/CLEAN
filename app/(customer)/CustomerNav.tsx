@@ -7,6 +7,16 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const NAV_ITEMS = [
   {
+    href: "/home",
+    label: "Home",
+    labelHe: "בית",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4-8h4m6 0v8m0-8h4" />
+      </svg>
+    ),
+  },
+  {
     href: "/browse",
     label: "Browse",
     labelHe: "חיפוש",

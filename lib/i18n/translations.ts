@@ -3,6 +3,7 @@ export type Locale = 'en' | 'he'
 const translations = {
   en: {
     nav: {
+      home: 'Home',
       browse: 'Browse Cleaners',
       bookings: 'My Bookings',
       profile: 'Profile',
@@ -258,6 +259,7 @@ const translations = {
   },
   he: {
     nav: {
+      home: 'בית',
       browse: 'חיפוש מנקים',
       bookings: 'ההזמנות שלי',
       profile: 'פרופיל',

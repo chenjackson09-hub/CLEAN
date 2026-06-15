@@ -9,10 +9,10 @@ import type { TranslationKey } from "@/lib/lang";
 const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode }[] = [
   {
     href: "/cleaner/dashboard",
-    labelKey: "nav_dashboard",
+    labelKey: "nav_home",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4-8h4m6 0v8m0-8h4" />
       </svg>
     ),
   },

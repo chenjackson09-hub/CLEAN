@@ -3,7 +3,7 @@ export type Lang = "en" | "he";
 export const translations = {
   en: {
     // Nav
-    nav_dashboard: "Dashboard",
+    nav_home: "Home",
     nav_requests: "Requests",
     nav_availability: "Schedule",
     nav_profile: "Profile",
@@ -170,7 +170,7 @@ export const translations = {
   },
   he: {
     // Nav
-    nav_dashboard: "לוח בקרה",
+    nav_home: "בית",
     nav_requests: "בקשות",
     nav_availability: "לוח זמנים",
     nav_profile: "פרופיל",
