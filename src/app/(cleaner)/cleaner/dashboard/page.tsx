@@ -82,7 +82,7 @@ export default async function CleanerDashboardPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <RealtimeBookings cleanerId={user.id} />
       <h1 className="text-2xl font-bold text-gray-900 mb-6">{t(lang, "dash_title")}</h1>
 

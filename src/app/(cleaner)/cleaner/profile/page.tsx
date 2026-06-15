@@ -27,7 +27,7 @@ export default async function CleanerProfilePage() {
   ]);
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "prof_title")}</h1>
       <p className="text-base text-gray-500 mb-6">{t(lang, "prof_subtitle")}</p>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">

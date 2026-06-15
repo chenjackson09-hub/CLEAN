@@ -49,7 +49,7 @@ export default async function AvailabilityPage() {
   ]);
 
   return (
-    <div className="-mx-8 -mt-20 lg:-mt-8 flex flex-col min-h-screen bg-white">
+    <div className="-mx-8 -mt-2 flex flex-col min-h-screen bg-white">
       <div className="px-6 pt-6 pb-3 border-b border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "avail_title")}</h1>
         <p className="text-base text-gray-500">{t(lang, "avail_subtitle")}</p>

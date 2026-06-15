@@ -27,15 +27,14 @@ export default async function CleanerLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 lg:flex">
+    <div className="min-h-screen bg-gray-50">
       <NavLinks
         signOut={signOut}
         userName={profile.full_name ?? user.email ?? ""}
         status={status}
         statusColor={statusColor[status ?? ""] ?? "bg-gray-100 text-gray-600"}
       />
-      {/* pt-14 on mobile to clear the fixed top bar */}
-      <main className="relative flex-1 p-8 pt-20 lg:pt-8 overflow-y-auto">
+      <main className="relative p-8 pt-16">
         {children}
       </main>
     </div>

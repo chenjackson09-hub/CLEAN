@@ -128,43 +128,69 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
         </div>
       )}
 
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-56 shrink-0 bg-white ltr:border-r rtl:border-l border-gray-200 flex-col min-h-screen sticky top-0">
-        <div className="px-5 py-5 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-lg font-bold text-blue-600">Clean</span>
-          {LangButtons}
-        </div>
-        <div className="px-4 py-4 border-b border-gray-100 space-y-2">
-          <div className="text-base font-medium text-gray-900 truncate">{userName}</div>
-          {statusLabel && (
-            <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>
-              {statusLabel}
-            </span>
-          )}
-          <button
-            onClick={() => setConfirmSignOut(true)}
-            className="w-full text-start text-base text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
-          >
-            {t("nav_signout")}
-          </button>
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
+      {/* ── Top navbar (all sizes) ── */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between px-4 h-14 gap-4">
+          {/* Logo + lang buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-lg font-bold text-blue-600">Clean</span>
+            {LangButtons}
+          </div>
+
+          {/* Desktop nav items */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => handleClick(item.href)}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                  pathname.startsWith(item.href)
+                    ? "bg-blue-50 text-blue-700 font-semibold"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {item.icon}
+                {t(item.labelKey)}
+              </button>
+            ))}
+          </nav>
+
+          {/* Desktop right side */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <span className="text-sm text-gray-700 font-medium truncate max-w-[140px]">{userName}</span>
+            {statusLabel && (
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor}`}>
+                {statusLabel}
+              </span>
+            )}
             <button
-              key={item.href}
-              onClick={() => handleClick(item.href)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 text-base rounded-lg transition-colors ${
-                pathname.startsWith(item.href)
-                  ? "bg-blue-50 text-blue-700 font-semibold"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => setConfirmSignOut(true)}
+              className="text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-1.5 font-medium shrink-0"
             >
-              {item.icon}
-              {t(item.labelKey)}
+              {t("nav_signout")}
             </button>
-          ))}
-        </nav>
-      </aside>
+          </div>
+
+          {/* Mobile right side */}
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Menu"
+            >
+              {menuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
 
       {/* Sign-out confirmation card */}
       {confirmSignOut && (
@@ -182,29 +208,6 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
           </div>
         </div>
       )}
-
-      {/* ── Mobile top bar ── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-blue-600">Clean</span>
-          {LangButtons}
-        </div>
-        <button
-          onClick={() => setMenuOpen((o) => !o)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          aria-label="Menu"
-        >
-          {menuOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
-      </div>
 
       {/* ── Mobile dropdown menu ── */}
       {menuOpen && (

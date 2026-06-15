@@ -30,7 +30,7 @@ export default async function PreviewPage() {
   ]);
 
   return (
-    <div className="bg-gray-100 -mx-8 -mt-20 lg:-mt-8 min-h-screen">
+    <div className="bg-white -mx-8 -mt-2 min-h-screen">
       {/* Edit banner */}
       <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 flex items-center justify-between">
         <p className="text-base text-yellow-800 font-medium">{t(lang, "prev_banner")}</p>
@@ -40,20 +40,20 @@ export default async function PreviewPage() {
       </div>
 
       {/* Avatar + name row */}
-      <div className="bg-white border-b border-gray-200 px-10 py-6">
-        <div className="flex items-center gap-6">
+      <div className="px-6 lg:px-10 py-6">
+        <div className="flex flex-col items-center text-center gap-4 lg:flex-row lg:items-center lg:text-start lg:gap-6">
           {profile?.avatar_url ? (
             <AvatarLightbox src={profile.avatar_url} name={profile.full_name ?? t(lang, "prev_no_name")} />
           ) : (
-            <div className="w-48 h-48 rounded-full bg-gray-100 border-4 border-white overflow-hidden shrink-0 shadow flex items-center justify-center text-gray-400 text-5xl">
+            <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-gray-100 border-4 border-white overflow-hidden shrink-0 shadow flex items-center justify-center text-gray-400 text-5xl">
               👤
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
               {profile?.full_name ?? t(lang, "prev_no_name")}
             </h1>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
               {cleaner?.service_types?.map((type) => (
                 <span
                   key={type}
@@ -64,7 +64,7 @@ export default async function PreviewPage() {
               ))}
             </div>
             {cleaner?.languages && cleaner.languages.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
                 {cleaner.languages.map((lang_) => (
                   <span
                     key={lang_}
@@ -83,9 +83,9 @@ export default async function PreviewPage() {
         const galleryBlock = <GalleryLightbox photos={galleryPhotos ?? []} />;
 
         const aboutBlock = (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="space-y-4">
             {(cleaner?.years_experience != null || cleaner?.service_radius_km || cleaner?.hourly_rate) && (
-              <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6 mb-4 pb-4 border-b border-gray-100">
+              <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
                 <button className="w-full lg:w-auto shrink-0 bg-blue-600 text-white text-sm font-semibold rounded-xl px-4 py-2.5 hover:bg-blue-700 transition-colors">
                   {t(lang, "prev_request")}
                 </button>
@@ -114,10 +114,12 @@ export default async function PreviewPage() {
                 </div>
               </div>
             )}
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t(lang, "prev_about")}</h2>
-            <p className="text-base text-gray-700 leading-relaxed">
-              {cleaner?.bio ?? <span className="text-gray-400">{t(lang, "prev_no_bio")}</span>}
-            </p>
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">{t(lang, "prev_about")}</h2>
+              <p className="text-base text-gray-700 leading-relaxed">
+                {cleaner?.bio ?? <span className="text-gray-400">{t(lang, "prev_no_bio")}</span>}
+              </p>
+            </div>
           </div>
         );
 
