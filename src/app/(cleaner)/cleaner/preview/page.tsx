@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import Image from "next/image";
@@ -10,10 +10,7 @@ import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 
 export default async function PreviewPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [user, supabase] = await Promise.all([getCurrentUser(), createClient()]);
   if (!user) redirect("/login");
 
   const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;

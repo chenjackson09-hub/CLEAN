@@ -10,28 +10,33 @@ type Props = {
 
 export default async function CleanerProfilePage({ params }: Props) {
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { data: cleaner, error } = await supabase
-    .from('cleaners')
-    .select('id, bio, service_types, hourly_rate, years_experience, languages')
-    .eq('id', params.id)
-    .neq('status', 'rejected')
-    .single()
+  // All three queries are independent — run in parallel
+  const [
+    { data: cleaner, error },
+    { data: profile },
+    { data: galleryRows },
+  ] = await Promise.all([
+    supabase
+      .from('cleaners')
+      .select('id, bio, service_types, hourly_rate, years_experience, languages')
+      .eq('id', params.id)
+      .neq('status', 'rejected')
+      .single(),
+    admin
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', params.id)
+      .single(),
+    supabase
+      .from('cleaner_gallery')
+      .select('photo_url')
+      .eq('cleaner_id', params.id)
+      .order('id', { ascending: true }),
+  ])
 
   if (error || !cleaner) notFound()
-
-  // RLS blocks customer from reading other users' profiles — use admin client
-  const { data: profile } = await createAdminClient()
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('id', params.id)
-    .single()
-
-  const { data: galleryRows } = await supabase
-    .from('cleaner_gallery')
-    .select('id, photo_url')
-    .eq('cleaner_id', params.id)
-    .order('id', { ascending: true })
 
   const cleanerResult: CleanerResult = {
     id: cleaner.id,
@@ -45,11 +50,12 @@ export default async function CleanerProfilePage({ params }: Props) {
     distance_km: 0,
   }
 
-  const gallery = (galleryRows ?? []).map(r => r.photo_url as string)
-
   return (
     <div className="max-w-3xl mx-auto">
-      <CleanerProfile cleaner={cleanerResult} gallery={gallery} />
+      <CleanerProfile
+        cleaner={cleanerResult}
+        gallery={(galleryRows ?? []).map(r => r.photo_url as string)}
+      />
     </div>
   )
 }
