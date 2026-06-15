@@ -101,10 +101,6 @@ const translations = {
         empty: 'No applications yet.',
         approve: 'Approve',
         reject: 'Reject',
-        rate: 'Rate',
-        experience: 'Experience',
-        languages: 'Languages',
-        address: 'Address',
         submitted: 'Submitted',
         status: {
           pending: 'Pending',
@@ -307,10 +303,6 @@ const translations = {
         empty: 'אין בקשות עדיין.',
         approve: 'אישור',
         reject: 'דחייה',
-        rate: 'תעריף',
-        experience: 'ניסיון',
-        languages: 'שפות',
-        address: 'כתובת',
         submitted: 'הוגש',
         status: {
           pending: 'בהמתנה',
