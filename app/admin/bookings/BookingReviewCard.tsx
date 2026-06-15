@@ -77,7 +77,7 @@ export function BookingReviewCard({ booking }: Props) {
       </div>
 
       {booking.notes && (
-        <p className="text-sm text-gray-500 italic mb-3">"{booking.notes}"</p>
+        <p className="text-sm text-gray-500 italic mb-3">&quot;{booking.notes}&quot;</p>
       )}
     </div>
   )

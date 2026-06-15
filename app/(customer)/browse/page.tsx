@@ -22,9 +22,9 @@ export default async function BrowsePage({ searchParams }: Props) {
   if (hasFilters) {
     const supabase = await createClient()
 
-    const daysOfWeek = [...new Set(
+    const daysOfWeek = Array.from(new Set(
       selectedDates.map(d => new Date(d + 'T00:00:00').getDay())
-    )]
+    ))
 
     // Fetch availability and all cleaners in parallel — no sequential dependency
     const [{ data: availRows }, { data: cleanerRows }] = await Promise.all([

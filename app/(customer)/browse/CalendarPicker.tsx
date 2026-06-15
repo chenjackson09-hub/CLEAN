@@ -50,7 +50,7 @@ export function CalendarPicker() {
     if (next.size === 0) {
       params.delete('dates')
     } else {
-      params.set('dates', [...next].sort().join(','))
+      params.set('dates', Array.from(next).sort().join(','))
     }
     startTransition(() => router.push(`/browse?${params}`))
   }
@@ -77,7 +77,7 @@ export function CalendarPicker() {
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
-  const sortedSelected = [...selectedSet].sort()
+  const sortedSelected = Array.from(selectedSet).sort()
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">

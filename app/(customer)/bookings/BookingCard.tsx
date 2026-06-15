@@ -71,7 +71,7 @@ export function BookingCard({ booking }: { booking: BookingResult }) {
       </div>
 
       {booking.notes && (
-        <p className="text-sm text-gray-500 italic">"{booking.notes}"</p>
+        <p className="text-sm text-gray-500 italic">&quot;{booking.notes}&quot;</p>
       )}
 
       {booking.status === 'accepted' && booking.cleaner_phone && booking.cleaner_email && (

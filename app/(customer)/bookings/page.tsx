@@ -14,7 +14,7 @@ export default async function BookingsPage() {
     .eq("customer_id", user.id)
     .order("created_at", { ascending: false })
 
-  const cleanerIds = [...new Set((rawBookings ?? []).map(b => b.cleaner_id))]
+  const cleanerIds = Array.from(new Set((rawBookings ?? []).map(b => b.cleaner_id)))
 
   const { data: cleanerProfiles } = cleanerIds.length > 0
     ? await supabase.from("profiles").select("id, full_name, avatar_url, phone").in("id", cleanerIds)
