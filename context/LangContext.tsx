@@ -34,8 +34,8 @@ export function useLang() {
   return { lang: lang as Lang, setLang, t };
 }
 
-// No longer needed — LanguageProvider in app/layout.tsx covers everything.
-// Kept so src/app/layout.tsx import doesn't break.
+// No-op: LanguageProvider in app/layout.tsx already wraps the whole tree.
+// Kept only so existing `<LangProvider>` imports keep working.
 export function LangProvider({ children }: { initialLang?: Lang; children: ReactNode }) {
   return <>{children}</>;
 }
