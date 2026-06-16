@@ -62,7 +62,7 @@ export default async function BrowsePage({ searchParams }: Props) {
       filtered = filtered.filter(c => {
         if (!withRows.has(c.id)) return false // no availability set = not bookable
         const daySlots = dayMap.get(c.id)
-        if (!daySlots) return true
+        if (!daySlots) return false
         return daysOfWeek.every(d => {
           const slots = daySlots.get(d)
           if (!slots || slots.length === 0) return false
