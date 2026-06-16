@@ -8,12 +8,18 @@ import { BrowseTitle } from './BrowseTitle'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
+const TIME_RANGES: Record<string, { start: string; end: string }> = {
+  morning: { start: '06:00', end: '12:00' },
+  noon:    { start: '12:00', end: '17:00' },
+  evening: { start: '17:00', end: '22:00' },
+}
+
 type Props = {
-  searchParams: { dates?: string; type?: string; sort?: string }
+  searchParams: { dates?: string; type?: string; sort?: string; time?: string }
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, type, sort } = searchParams
+  const { dates, type, sort, time } = searchParams
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
   const hasFilters = selectedDates.length > 0 || !!type
 
@@ -30,7 +36,7 @@ export default async function BrowsePage({ searchParams }: Props) {
     const [{ data: availRows }, { data: cleanerRows }] = await Promise.all([
       supabase
         .from('cleaner_weekly_availability')
-        .select('cleaner_id, day_of_week'),
+        .select('cleaner_id, day_of_week, start_time, end_time'),
       supabase
         .from('cleaners')
         .select('id, bio, service_types, hourly_rate, years_experience, languages')
@@ -42,16 +48,27 @@ export default async function BrowsePage({ searchParams }: Props) {
 
     // Filter by availability client-side (no extra round-trip)
     if (daysOfWeek.length > 0 && avail.length > 0) {
-      const map = new Map<string, Set<number>>()
+      // Map: cleaner_id → day_of_week → [{start_time, end_time}]
+      const dayMap = new Map<string, Map<number, Array<{ start: string; end: string }>>>()
       for (const row of avail) {
-        if (!map.has(row.cleaner_id)) map.set(row.cleaner_id, new Set())
-        map.get(row.cleaner_id)!.add(row.day_of_week)
+        if (!dayMap.has(row.cleaner_id)) dayMap.set(row.cleaner_id, new Map())
+        const d = dayMap.get(row.cleaner_id)!
+        if (!d.has(row.day_of_week)) d.set(row.day_of_week, [])
+        d.get(row.day_of_week)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
       }
       const withRows = new Set(avail.map(r => r.cleaner_id))
+      const requestedSlot = time ? TIME_RANGES[time] : null
+
       filtered = filtered.filter(c => {
         if (!withRows.has(c.id)) return true // no rows = open schedule
-        const days = map.get(c.id)
-        return !!days && daysOfWeek.every(d => days.has(d))
+        const daySlots = dayMap.get(c.id)
+        if (!daySlots) return true
+        return daysOfWeek.every(d => {
+          const slots = daySlots.get(d)
+          if (!slots || slots.length === 0) return false
+          if (!requestedSlot) return true
+          return slots.some(s => s.start < requestedSlot.end && s.end > requestedSlot.start)
+        })
       })
     }
 
@@ -100,7 +117,7 @@ export default async function BrowsePage({ searchParams }: Props) {
       </Suspense>
 
       {selectedDates.length > 0 && (
-        <BrowseFilters dates={dates} type={type} sort={sort} />
+        <BrowseFilters dates={dates} type={type} sort={sort} time={time} />
       )}
 
       <BrowseResults hasFilters={hasFilters} error={false} cleaners={cleaners} />

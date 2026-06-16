@@ -6,14 +6,31 @@ type Props = {
   dates: string | undefined
   type: string | undefined
   sort: string | undefined
+  time: string | undefined
 }
 
-export function BrowseFilters({ dates, type, sort }: Props) {
+export function BrowseFilters({ dates, type, sort, time }: Props) {
   const { t } = useLanguage()
 
   return (
     <form method="get" action="/browse" className="flex flex-wrap gap-3 items-end mb-4">
       <input type="hidden" name="dates" value={dates ?? ''} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="time" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+          {t('filterBar.timeOfDay')}
+        </label>
+        <select
+          id="time"
+          name="time"
+          defaultValue={time ?? ''}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">{t('filterBar.anytime')}</option>
+          <option value="morning">{t('filterBar.morning')}</option>
+          <option value="noon">{t('filterBar.noon')}</option>
+          <option value="evening">{t('filterBar.evening')}</option>
+        </select>
+      </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="type" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
           {t('browse.serviceType')}

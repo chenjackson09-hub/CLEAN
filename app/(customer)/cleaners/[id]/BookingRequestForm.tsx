@@ -1,9 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { addBooking } from '@/lib/mockBookingsStore'
+import { createBooking } from '@/app/(customer)/actions'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
-import type { BookingResult } from '@/lib/types/booking'
 
 const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -11,6 +10,8 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [serviceType, setServiceType] = useState(cleaner.service_types[0] ?? 'residential')
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -18,28 +19,24 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-
-    const booking: BookingResult = {
-      id: `${cleaner.id}-${Date.now()}`,
-      cleaner_name: cleaner.full_name,
-      cleaner_avatar_url: cleaner.avatar_url,
-      service_type: serviceType as BookingResult['service_type'],
+    setLoading(true)
+    setError(null)
+    const result = await createBooking({
+      cleaner_id: cleaner.id,
+      service_type: serviceType,
       scheduled_date: date,
       scheduled_start: startTime,
       duration_hours: duration,
       address,
       notes: notes || undefined,
-      status: 'pending',
-      customer_name: 'Maya Cohen',
-      cleaner_email: cleaner.email,
-      cleaner_phone: cleaner.phone,
-      customer_email: 'maya.cohen@example.com',
-      customer_phone: '050-111-1111',
+    })
+    setLoading(false)
+    if (result?.error) {
+      setError(result.error)
+      return
     }
-    addBooking(booking)
-
     setSubmitted(true)
   }
 
@@ -115,14 +112,17 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
           className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+      )}
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={() => setOpen(false)}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-5 py-2 rounded-md font-semibold text-sm transition-colors">
+        <button type="button" onClick={() => setOpen(false)} disabled={loading}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-5 py-2 rounded-md font-semibold text-sm transition-colors disabled:opacity-50">
           {t('bookingRequestForm.cancel')}
         </button>
-        <button type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">
-          {t('bookingRequestForm.sendRequest')}
+        <button type="submit" disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
+          {loading ? '...' : t('bookingRequestForm.sendRequest')}
         </button>
       </div>
     </form>

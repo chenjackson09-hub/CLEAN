@@ -57,3 +57,37 @@ export async function updateCustomerProfile(
   revalidatePath("/profile")
   return { success: true }
 }
+
+export async function createBooking(data: {
+  cleaner_id: string
+  service_type: string
+  scheduled_date: string
+  scheduled_start: string
+  duration_hours: number
+  address: string
+  notes?: string
+}): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  const deadline = new Date()
+  deadline.setHours(deadline.getHours() + 24)
+
+  const { error } = await supabase.from("bookings").insert({
+    customer_id: user.id,
+    cleaner_id: data.cleaner_id,
+    service_type: data.service_type,
+    scheduled_date: data.scheduled_date,
+    scheduled_start: data.scheduled_start,
+    duration_hours: data.duration_hours,
+    address: data.address,
+    notes: data.notes ?? null,
+    status: "pending",
+    response_deadline: deadline.toISOString(),
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath("/bookings")
+  return { success: true }
+}
