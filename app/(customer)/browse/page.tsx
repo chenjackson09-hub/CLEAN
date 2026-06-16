@@ -46,8 +46,10 @@ export default async function BrowsePage({ searchParams }: Props) {
     const avail = availRows ?? []
     let filtered = cleanerRows ?? []
 
-    // Filter by availability client-side (no extra round-trip)
-    if (daysOfWeek.length > 0 && avail.length > 0) {
+    // Filter by availability — if dates selected but no availability data at all, show nothing
+    if (daysOfWeek.length > 0 && avail.length === 0) {
+      filtered = []
+    } else if (daysOfWeek.length > 0 && avail.length > 0) {
       // Map: cleaner_id → day_of_week → [{start_time, end_time}]
       const dayMap = new Map<string, Map<number, Array<{ start: string; end: string }>>>()
       for (const row of avail) {
