@@ -60,7 +60,7 @@ export default async function BrowsePage({ searchParams }: Props) {
       const requestedSlot = time ? TIME_RANGES[time] : null
 
       filtered = filtered.filter(c => {
-        if (!withRows.has(c.id)) return true // no rows = open schedule
+        if (!withRows.has(c.id)) return false // no availability set = not bookable
         const daySlots = dayMap.get(c.id)
         if (!daySlots) return true
         return daysOfWeek.every(d => {
