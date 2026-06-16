@@ -54,13 +54,25 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && (isAuthOnlyPath || pathname.startsWith("/cleaner"))) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    // Read role from short-lived cookie to skip DB on repeated navigations
+    let role = request.cookies.get("x-user-role")?.value ?? null;
 
-    const role = profile?.role ?? null;
+    if (!role) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      role = profile?.role ?? null;
+      if (role) {
+        supabaseResponse.cookies.set("x-user-role", role, {
+          httpOnly: true,
+          maxAge: 60 * 60,
+          sameSite: "lax",
+          path: "/",
+        });
+      }
+    }
 
     if (isAuthOnlyPath && role) {
       return NextResponse.redirect(

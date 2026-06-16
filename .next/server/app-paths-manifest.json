@@ -1,9 +1,8 @@
 {
-  "/(cleaner)/cleaner/availability/page": "app/(cleaner)/cleaner/availability/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(cleaner)/cleaner/dashboard/page": "app/(cleaner)/cleaner/dashboard/page.js",
+  "/(customer)/home/page": "app/(customer)/home/page.js",
   "/(cleaner)/cleaner/requests/page": "app/(cleaner)/cleaner/requests/page.js",
-  "/(customer)/cleaners/[id]/page": "app/(customer)/cleaners/[id]/page.js",
-  "/(customer)/browse/page": "app/(customer)/browse/page.js",
-  "/(customer)/bookings/page": "app/(customer)/bookings/page.js",
-  "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js",
-  "/(customer)/profile/page": "app/(customer)/profile/page.js"
+  "/(cleaner)/cleaner/availability/page": "app/(cleaner)/cleaner/availability/page.js",
+  "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js"
 }
