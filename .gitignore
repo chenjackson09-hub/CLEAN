@@ -17,3 +17,4 @@ out/
 *.pem
 *.tsbuildinfo
 npm-debug.log*
+.vercel
