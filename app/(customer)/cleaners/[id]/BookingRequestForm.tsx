@@ -6,7 +6,28 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 
 const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 
-export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
+type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
+
+function generateTimeSlots(start: string, end: string): string[] {
+  const slots: string[] = []
+  const [sh, sm] = start.split(':').map(Number)
+  const [eh, em] = end.split(':').map(Number)
+  let cur = sh * 60 + sm
+  const endMin = eh * 60 + em - 60 // need at least 1 hour
+  while (cur <= endMin) {
+    slots.push(`${Math.floor(cur / 60).toString().padStart(2, '0')}:${(cur % 60).toString().padStart(2, '0')}`)
+    cur += 30
+  }
+  return slots
+}
+
+export function BookingRequestForm({
+  cleaner,
+  weeklyAvailability = [],
+}: {
+  cleaner: CleanerResult
+  weeklyAvailability?: WeeklySlot[]
+}) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -18,6 +39,15 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
   const [duration, setDuration] = useState(2)
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
+
+  const hasAvailability = weeklyAvailability.length > 0
+
+  // Compute available slots for the selected date
+  const daySlots = date
+    ? weeklyAvailability.filter(s => s.day_of_week === new Date(date + 'T12:00:00').getDay())
+    : []
+  const availableTimes = daySlots.flatMap(s => generateTimeSlots(s.start_time, s.end_time))
+  const noAvailabilityOnDay = date && hasAvailability && daySlots.length === 0
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -81,14 +111,46 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
       <div className="flex gap-3">
         <div className="flex flex-col gap-1 flex-1">
           <label htmlFor="date" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.date')}</label>
-          <input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input
+            id="date"
+            type="date"
+            value={date}
+            onChange={e => { setDate(e.target.value); setStartTime('') }}
+            required
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
+
         <div className="flex flex-col gap-1 flex-1">
           <label htmlFor="startTime" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.startTime')}</label>
-          <input id="startTime" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          {hasAvailability ? (
+            <select
+              id="startTime"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              required
+              disabled={!date || noAvailabilityOnDay === true}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            >
+              <option value="" disabled>
+                {noAvailabilityOnDay ? 'Not available' : 'Select time'}
+              </option>
+              {availableTimes.map(time => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="startTime"
+              type="time"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              required
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          )}
         </div>
+
         <div className="flex flex-col gap-1">
           <label htmlFor="duration" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.duration')}</label>
           <select id="duration" value={duration} onChange={e => setDuration(Number(e.target.value))}
@@ -97,6 +159,12 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
           </select>
         </div>
       </div>
+
+      {noAvailabilityOnDay && (
+        <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+          This cleaner is not available on the selected day. Please choose a different date.
+        </p>
+      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="address" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.address')}</label>
@@ -120,7 +188,7 @@ export function BookingRequestForm({ cleaner }: { cleaner: CleanerResult }) {
           className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-5 py-2 rounded-md font-semibold text-sm transition-colors disabled:opacity-50">
           {t('bookingRequestForm.cancel')}
         </button>
-        <button type="submit" disabled={loading}
+        <button type="submit" disabled={loading || noAvailabilityOnDay === true}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
           {loading ? '...' : t('bookingRequestForm.sendRequest')}
         </button>

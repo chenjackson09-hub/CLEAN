@@ -13,6 +13,7 @@ export function Nav() {
     { href: '/admin/bookings', label: t('adminNav.bookings') },
     { href: '/admin/cleaners', label: t('adminNav.cleaners') },
     { href: '/admin/customers', label: t('adminNav.customers') },
+    { href: '/admin/availability', label: 'Availability' },
   ]
 
   return (
