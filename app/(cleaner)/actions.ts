@@ -70,7 +70,7 @@ export async function updateCleanerProfile(formData: FormData) {
   }
 
   // Both DB updates target different tables — run in parallel
-  const [, { error }] = await Promise.all([
+  const [profileResult, cleanerResult] = await Promise.all([
     supabase
       .from("profiles")
       .update({ full_name: fullName, phone, ...(avatarUrl && { avatar_url: avatarUrl }) })
@@ -78,7 +78,8 @@ export async function updateCleanerProfile(formData: FormData) {
     supabase.from("cleaners").update(cleanerUpdate).eq("id", user.id),
   ]);
 
-  if (error) return { error: error.message };
+  if (profileResult.error) return { error: profileResult.error.message };
+  if (cleanerResult.error) return { error: cleanerResult.error.message };
 
   revalidatePath("/cleaner/profile");
   return { success: true };
