@@ -1,48 +1,37 @@
-// PREVIEW MOCK — remove auth + inject fake data for visual testing. Revert before merging.
-'use client'
-import { useEffect, useState } from 'react'
 import { Nav } from '../Nav'
-import { CustomerListCard } from './CustomerListCard'
-import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { MOCK_CUSTOMERS } from '@/lib/mockData/customers'
-import { applyOverrides, setNotes, removePerson } from '@/lib/mockAdminOverridesStore'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { CustomersList } from './CustomersList'
 import type { CustomerResult } from '@/lib/types/customer'
 
-type CustomerWithNotes = CustomerResult & { adminNotes: string }
+export default async function AdminCustomersPage() {
+  const admin = createAdminClient()
 
-export default function AdminCustomersPage() {
-  const { t } = useLanguage()
-  const [customers, setCustomers] = useState<CustomerWithNotes[]>(() => applyOverrides('customers', MOCK_CUSTOMERS))
+  const [{ data: customerRows }, { data: profileRows }, authData] = await Promise.all([
+    admin.from('customers').select('id, address'),
+    admin.from('profiles').select('id, full_name, phone').eq('role', 'customer'),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ])
 
-  useEffect(() => {
-    setCustomers(applyOverrides('customers', MOCK_CUSTOMERS))
-  }, [])
+  const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
+  const emailMap = new Map((authData.data?.users ?? []).map(u => [u.id, u.email ?? '']))
 
-  function handleSaveNotes(id: string, notes: string) {
-    setNotes('customers', id, notes)
-    setCustomers(applyOverrides('customers', MOCK_CUSTOMERS))
-  }
-
-  function handleDelete(id: string) {
-    removePerson('customers', id)
-    setCustomers(applyOverrides('customers', MOCK_CUSTOMERS))
-  }
+  const customers = (customerRows ?? []).map(c => {
+    const profile = profileMap.get(c.id)
+    return {
+      id: c.id,
+      full_name: profile?.full_name ?? '',
+      email: emailMap.get(c.id) ?? '',
+      phone: profile?.phone ?? '',
+      address: c.address ?? '',
+      adminNotes: '',
+    } satisfies CustomerResult & { adminNotes: string }
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <Nav />
       <div className="px-6 py-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-4">{t('admin.customers.title')}</h1>
-        {customers.length === 0 && (
-          <p className="text-gray-500 text-sm">{t('admin.customers.empty')}</p>
-        )}
-        {customers.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {customers.map(customer => (
-              <CustomerListCard key={customer.id} customer={customer} onSaveNotes={handleSaveNotes} onDelete={handleDelete} />
-            ))}
-          </div>
-        )}
+        <CustomersList customers={customers} />
       </div>
     </div>
   )
