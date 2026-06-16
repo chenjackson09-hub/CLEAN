@@ -15,7 +15,8 @@ const STATUS_STYLES: Record<BookingStatus, string> = {
   cancelled: "bg-gray-100 text-gray-500",
 };
 
-function formatDate(d: string) {
+function formatDate(d: string | null | undefined) {
+  if (!d || typeof d !== "string") return "";
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
 }

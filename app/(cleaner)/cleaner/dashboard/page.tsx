@@ -8,7 +8,8 @@ import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 
-function formatDate(d: string) {
+function formatDate(d: string | null | undefined) {
+  if (!d || typeof d !== "string") return "";
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
 }

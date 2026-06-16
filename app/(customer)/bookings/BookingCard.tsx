@@ -23,8 +23,10 @@ const SERVICE_BADGE: Record<BookingResult['service_type'], string> = {
   commercial: 'bg-green-100 text-green-700',
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string | null | undefined) {
+  if (!dateStr || typeof dateStr !== 'string') return ''
   const [y, m, d] = dateStr.split('-').map(Number)
+  if (!y || !m || !d) return dateStr
   return new Date(y, m - 1, d).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

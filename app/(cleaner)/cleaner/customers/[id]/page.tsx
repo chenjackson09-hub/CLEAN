@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Profile, Booking } from "@/types/database";
 
-function formatDate(d: string) {
+function formatDate(d: string | null | undefined) {
+  if (!d || typeof d !== "string") return "";
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
 }

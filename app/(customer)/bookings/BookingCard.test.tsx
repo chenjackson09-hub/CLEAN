@@ -97,4 +97,11 @@ describe('BookingCard', () => {
 
     expect(screen.queryByText('Contact Info')).not.toBeInTheDocument()
   })
+
+  it('renders without crashing when scheduled_date is null', () => {
+    expect(() =>
+      render(<BookingCard booking={{ ...baseBooking, scheduled_date: null as unknown as string }} />)
+    ).not.toThrow()
+    expect(screen.getByText('Sarah M.')).toBeInTheDocument()
+  })
 })
