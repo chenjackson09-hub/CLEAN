@@ -45,26 +45,16 @@ const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode
   },
 ];
 
-const STATUS_KEY: Record<string, TranslationKey> = {
-  approved: "status_approved",
-  pending: "status_pending",
-  rejected: "status_rejected",
-  suspended: "status_suspended",
-};
-
 interface Props {
   signOut: () => Promise<void>;
   userName: string;
-  status: string | null;
-  statusColor: string;
+  statusBadge?: React.ReactNode;
 }
 
-export default function NavLinks({ signOut, userName, status, statusColor }: Props) {
+export default function NavLinks({ signOut, userName, statusBadge }: Props) {
   const { lang, setLang, t } = useLang();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const pathname = usePathname();
-
-  const statusLabel = status ? t(STATUS_KEY[status] ?? ("status_pending" as TranslationKey)) : null;
 
   const LangButtons = (
     <div className="flex gap-1">
@@ -118,11 +108,7 @@ export default function NavLinks({ signOut, userName, status, statusColor }: Pro
           {/* Right side: user info + sign out */}
           <div className="flex items-center gap-2 lg:gap-3 shrink-0">
             <span className="hidden lg:inline text-sm text-gray-700 font-medium truncate max-w-[140px]">{userName}</span>
-            {statusLabel && (
-              <span className={`hidden lg:inline text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>
-                {statusLabel}
-              </span>
-            )}
+            {statusBadge}
             <button
               onClick={() => setConfirmSignOut(true)}
               className="text-xs lg:text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-2.5 lg:px-3 py-1.5 font-medium shrink-0"

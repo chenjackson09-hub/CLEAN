@@ -1,7 +1,8 @@
 {
   "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/(cleaner)/cleaner/dashboard/page": "app/(cleaner)/cleaner/dashboard/page.js",
-  "/(customer)/home/page": "app/(customer)/home/page.js",
   "/(cleaner)/cleaner/requests/page": "app/(cleaner)/cleaner/requests/page.js",
   "/(cleaner)/cleaner/availability/page": "app/(cleaner)/cleaner/availability/page.js",
   "/(cleaner)/cleaner/preview/page": "app/(cleaner)/cleaner/preview/page.js"

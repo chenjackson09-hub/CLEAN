@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { signOut } from "@/app/(auth)/actions";
+import { signOut } from "../(auth)/actions";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import CustomerNav from "./CustomerNav";
 

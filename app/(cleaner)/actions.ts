@@ -26,44 +26,36 @@ export async function updateCleanerProfile(formData: FormData) {
   const serviceTypes = formData.getAll("service_types") as string[];
   const address = formData.get("address") as string;
 
-  // Geocode address via Nominatim
-  let lat: number | null = null;
-  let lng: number | null = null;
-  if (address) {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-        { headers: { "User-Agent": "CleanApp/1.0" } }
-      );
-      const results = await res.json();
-      if (results[0]) {
-        lat = parseFloat(results[0].lat);
-        lng = parseFloat(results[0].lon);
-      }
-    } catch {
-      // Geocoding failed — location won't be set
-    }
-  }
-
-  // Handle avatar upload
   const avatarFile = formData.get("avatar") as File;
-  let avatarUrl: string | undefined;
-  if (avatarFile && avatarFile.size > 0) {
-    const ext = avatarFile.name.split(".").pop();
-    const path = `${user.id}/avatar.${ext}`;
-    const { error: uploadErr } = await supabase.storage
-      .from("avatars")
-      .upload(path, avatarFile, { upsert: true });
-    if (!uploadErr) {
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-      avatarUrl = urlData.publicUrl;
-    }
-  }
 
-  await supabase
-    .from("profiles")
-    .update({ full_name: fullName, phone, ...(avatarUrl && { avatar_url: avatarUrl }) })
-    .eq("id", user.id);
+  // Geocoding and avatar upload are independent — run in parallel
+  const [geocodeResult, avatarUrl] = await Promise.all([
+    address
+      ? fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+          { headers: { "User-Agent": "CleanApp/1.0" } }
+        )
+          .then((r) => r.json())
+          .then((results: Array<{ lat: string; lon: string }>) =>
+            results[0]
+              ? { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) }
+              : null
+          )
+          .catch(() => null)
+      : Promise.resolve(null),
+    avatarFile && avatarFile.size > 0
+      ? (async () => {
+          const ext = avatarFile.name.split(".").pop();
+          const path = `${user.id}/avatar.${ext}`;
+          const { error } = await supabase.storage
+            .from("avatars")
+            .upload(path, avatarFile, { upsert: true });
+          if (error) return null;
+          const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+          return data.publicUrl;
+        })()
+      : Promise.resolve(null),
+  ]);
 
   const cleanerUpdate: Record<string, unknown> = {
     bio,
@@ -73,15 +65,18 @@ export async function updateCleanerProfile(formData: FormData) {
     languages,
     service_types: serviceTypes,
   };
-
-  if (lat !== null && lng !== null) {
-    cleanerUpdate.location = `POINT(${lng} ${lat})`;
+  if (geocodeResult) {
+    cleanerUpdate.location = `POINT(${geocodeResult.lng} ${geocodeResult.lat})`;
   }
 
-  const { error } = await supabase
-    .from("cleaners")
-    .update(cleanerUpdate)
-    .eq("id", user.id);
+  // Both DB updates target different tables — run in parallel
+  const [, { error }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .update({ full_name: fullName, phone, ...(avatarUrl && { avatar_url: avatarUrl }) })
+      .eq("id", user.id),
+    supabase.from("cleaners").update(cleanerUpdate).eq("id", user.id),
+  ]);
 
   if (error) return { error: error.message };
 
@@ -241,6 +236,44 @@ export async function deleteAvailability(id: string) {
   return { success: true };
 }
 
+async function sendBookingEmail(
+  booking: { customer_id: string; scheduled_date: string; scheduled_start: string; address: string },
+  response: "accepted" | "declined",
+  cleanerId: string,
+) {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const [{ data: customerAuth }, { data: customerProfile }, { data: cleanerProfile }] =
+    await Promise.all([
+      admin.auth.admin.getUserById(booking.customer_id),
+      supabase.from("profiles").select("full_name").eq("id", booking.customer_id).single(),
+      supabase.from("profiles").select("full_name, phone").eq("id", cleanerId).single(),
+    ]);
+
+  const customerEmail = customerAuth?.user?.email;
+  if (!customerEmail || !customerProfile || !cleanerProfile) return;
+
+  if (response === "accepted") {
+    await sendBookingAccepted({
+      customerEmail,
+      customerName: customerProfile.full_name ?? "there",
+      cleanerName: cleanerProfile.full_name ?? "Your cleaner",
+      cleanerPhone: cleanerProfile.phone ?? "",
+      scheduledDate: booking.scheduled_date,
+      scheduledStart: booking.scheduled_start,
+      address: booking.address,
+    });
+  } else {
+    await sendBookingDeclined({
+      customerEmail,
+      customerName: customerProfile.full_name ?? "there",
+      cleanerName: cleanerProfile.full_name ?? "Your cleaner",
+      scheduledDate: booking.scheduled_date,
+    });
+  }
+}
+
 export async function respondToBooking(
   bookingId: string,
   response: "accepted" | "declined"
@@ -271,41 +304,8 @@ export async function respondToBooking(
 
   if (error) return { error: error.message };
 
-  // Send email notification — use admin client to look up customer email
-  try {
-    const admin = createAdminClient();
-
-    const [{ data: customerAuth }, { data: customerProfile }, { data: cleanerProfile }] =
-      await Promise.all([
-        admin.auth.admin.getUserById(booking.customer_id),
-        supabase.from("profiles").select("full_name").eq("id", booking.customer_id).single(),
-        supabase.from("profiles").select("full_name, phone").eq("id", user.id).single(),
-      ]);
-
-    const customerEmail = customerAuth?.user?.email;
-    if (customerEmail && customerProfile && cleanerProfile) {
-      if (response === "accepted") {
-        await sendBookingAccepted({
-          customerEmail,
-          customerName: customerProfile.full_name ?? "there",
-          cleanerName: cleanerProfile.full_name ?? "Your cleaner",
-          cleanerPhone: cleanerProfile.phone ?? "",
-          scheduledDate: booking.scheduled_date,
-          scheduledStart: booking.scheduled_start,
-          address: booking.address,
-        });
-      } else {
-        await sendBookingDeclined({
-          customerEmail,
-          customerName: customerProfile.full_name ?? "there",
-          cleanerName: cleanerProfile.full_name ?? "Your cleaner",
-          scheduledDate: booking.scheduled_date,
-        });
-      }
-    }
-  } catch {
-    // Email failure should not block the booking response
-  }
+  // Fire and forget — email failure must not delay the booking response
+  sendBookingEmail(booking, response, user.id).catch(() => {});
 
   revalidatePath("/cleaner/requests");
   revalidatePath("/cleaner/dashboard");
