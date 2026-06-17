@@ -22,18 +22,14 @@ const SLOT_KEYS: Record<SlotLabel, TranslationKey> = {
   Evening: "slot_evening",
 };
 
-function getSunday(date: Date): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function get4Weeks(): Date[] {
-  const sunday = getSunday(new Date());
-  return Array.from({ length: 28 }, (_, i) => {
-    const d = new Date(sunday);
-    d.setDate(sunday.getDate() + i);
+function getMonthDays(): Date[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const d = new Date(year, month, i + 1);
+    d.setHours(0, 0, 0, 0);
     return d;
   });
 }
@@ -90,10 +86,13 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<SlotLabel>>(new Set());
 
-  const days = get4Weeks();
-  const rows: Date[][] = [];
-  for (let i = 0; i < days.length; i += columns) {
-    rows.push(days.slice(i, i + columns));
+  const days = getMonthDays();
+  // Pad the start so the 1st lands under the correct weekday (only in the 7-column view).
+  const leadingBlanks = columns === 7 ? days[0].getDay() : 0;
+  const cells: (Date | null)[] = [...Array(leadingBlanks).fill(null), ...days];
+  const rows: (Date | null)[][] = [];
+  for (let i = 0; i < cells.length; i += columns) {
+    rows.push(cells.slice(i, i + columns));
   }
 
   const slotsByDate = slots.reduce<Record<string, CleanerAvailability[]>>((acc, s) => {
@@ -182,7 +181,10 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
   return (
     <>
       {/* Column control */}
-      <div className="flex items-center justify-end px-4 py-3 border-b border-gray-200 bg-white sticky top-0 z-10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 z-10">
+        <h2 className="text-lg font-bold text-gray-900">
+          {t(MONTH_KEYS[days[0].getMonth()])} {days[0].getFullYear()}
+        </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setColumns((c) => Math.max(1, c - 1))}
@@ -225,7 +227,8 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
             className="grid gap-2"
             style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           >
-            {row.map((day) => {
+            {row.map((day, ci) => {
+              if (!day) return <div key={`blank-${ri}-${ci}`} />;
               const dateStr = toLocalDateStr(day);
               const daySlots = [...(slotsByDate[dateStr] ?? [])].sort((a, b) => a.start_time.localeCompare(b.start_time));
               const recurring = [...weeklySlots.filter((s) => s.day_of_week === day.getDay())].sort((a, b) => a.start_time.localeCompare(b.start_time));

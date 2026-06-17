@@ -1,7 +1,6 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import AvailabilityGrid from "./AvailabilityGrid";
 import CalendarGrid from "./CalendarGrid";
 import type { CleanerAvailability, CleanerWeeklyAvailability, Booking } from "@/types/database";
 import type { Lang } from "@/lib/lang";
@@ -59,23 +58,13 @@ export default async function AvailabilityPage() {
   ]);
 
   return (
-    <div className="-mx-8 -mt-2 flex flex-col min-h-screen bg-white">
-      <div className="px-6 pt-6 pb-3 border-b border-gray-100">
+    <div className="-mt-2 -mx-4 md:mx-0 flex flex-col min-h-screen">
+      <div className="px-6 pt-6 pb-3 border-b border-gray-100 w-full md:w-[45vw] md:mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "avail_title")}</h1>
         <p className="text-base text-gray-500">{t(lang, "avail_subtitle")}</p>
       </div>
 
-      <div className="px-6 py-5 border-b border-gray-100">
-        <h2 className="text-base font-semibold text-gray-800 mb-0.5">{t(lang, "avail_weekly")}</h2>
-        <p className="text-sm text-gray-500 mb-4">{t(lang, "avail_weekly_body")}</p>
-        <AvailabilityGrid slots={weeklySlots ?? []} />
-      </div>
-
-      <div className="flex flex-col flex-1">
-        <div className="px-6 pt-5 pb-3 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-800 mb-0.5">{t(lang, "avail_specific")}</h2>
-          <p className="text-sm text-gray-500">{t(lang, "avail_specific_body")}</p>
-        </div>
+      <div className="flex flex-col flex-1 w-full md:w-[45vw] md:mx-auto">
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />
       </div>
     </div>
