@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { geocodeAddress } from "@/lib/geocode"
+import { sendNewBookingRequest } from "@/lib/resend"
 
 type ActionResult = { error?: string; success?: boolean } | null
 
@@ -77,10 +78,22 @@ export async function createBooking(data: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
+  const adminClient = createAdminClient()
+
+  // Verify the cleaner exists and is approved — never let a customer book a
+  // pending, rejected, or suspended cleaner by passing a cleaner_id directly.
+  const { data: cleaner } = await adminClient
+    .from('cleaners')
+    .select('status')
+    .eq('id', data.cleaner_id)
+    .single()
+  if (!cleaner || cleaner.status !== 'approved') {
+    return { error: 'This cleaner is not available for booking.' }
+  }
+
   // Validate that the requested time falls within the cleaner's availability
   // Must use admin client — RLS blocks customer from reading cleaner_weekly_availability
   const dayOfWeek = new Date(data.scheduled_date + 'T12:00:00').getDay()
-  const adminClient = createAdminClient()
   const { data: availRows } = await adminClient
     .from('cleaner_weekly_availability')
     .select('start_time, end_time')
@@ -118,6 +131,39 @@ export async function createBooking(data: {
   })
 
   if (error) return { error: error.message }
+
+  // Notify the cleaner of the new request — fire and forget, must not block or
+  // fail the booking if email delivery has a problem.
+  notifyCleanerOfBooking(adminClient, supabase, data.cleaner_id, user.id, data).catch(() => {})
+
   revalidatePath("/bookings")
   return { success: true }
+}
+
+async function notifyCleanerOfBooking(
+  adminClient: ReturnType<typeof createAdminClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  cleanerId: string,
+  customerId: string,
+  data: { service_type: string; scheduled_date: string; scheduled_start: string; address: string },
+) {
+  const [{ data: cleanerAuth }, { data: cleanerProfile }, { data: customerProfile }] =
+    await Promise.all([
+      adminClient.auth.admin.getUserById(cleanerId),
+      supabase.from("profiles").select("full_name").eq("id", cleanerId).single(),
+      supabase.from("profiles").select("full_name").eq("id", customerId).single(),
+    ])
+
+  const cleanerEmail = cleanerAuth?.user?.email
+  if (!cleanerEmail) return
+
+  await sendNewBookingRequest({
+    cleanerEmail,
+    cleanerName: cleanerProfile?.full_name ?? "there",
+    customerName: customerProfile?.full_name ?? "A customer",
+    scheduledDate: data.scheduled_date,
+    scheduledStart: data.scheduled_start,
+    address: data.address,
+    serviceType: data.service_type,
+  })
 }
