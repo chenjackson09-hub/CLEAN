@@ -101,7 +101,7 @@ export default async function BrowsePage({ searchParams }: Props) {
     } else {
       // Fetch profiles for matched cleaners (RLS bypass via admin)
       const ids = filtered.map(c => c.id)
-      const { data: profileRows } = await createAdminClient()
+      const { data: profileRows } = await admin
         .from('profiles')
         .select('id, full_name, avatar_url')
         .in('id', ids)

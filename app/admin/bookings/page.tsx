@@ -16,10 +16,10 @@ export default async function AdminBookingsPage() {
     .order('scheduled_date', { ascending: false })
     .limit(500)
 
-  const allIds = [...new Set([
+  const allIds = Array.from(new Set([
     ...(bookingRows ?? []).map(b => b.cleaner_id),
     ...(bookingRows ?? []).map(b => b.customer_id),
-  ])]
+  ]))
 
   const { data: profileRows } = allIds.length > 0
     ? await admin.from('profiles').select('id, full_name, avatar_url').in('id', allIds)

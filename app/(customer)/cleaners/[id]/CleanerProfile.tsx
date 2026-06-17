@@ -18,7 +18,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   const initial = cleaner.full_name.charAt(0).toUpperCase()
 
   return (
-    <div className="bg-white -mx-8 -mt-2 min-h-screen">
+    <div className="-mx-8 -mt-2 min-h-screen">
       {/* Back button — uses browser history so filters are preserved */}
       <div className="px-6 lg:px-10 pt-5">
         <button
@@ -39,7 +39,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             <img
               src={cleaner.avatar_url}
               alt={cleaner.full_name}
-              className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover border-4 border-white shadow"
+              className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover shadow"
             />
           ) : (
             <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-blue-100 border-4 border-white shadow flex items-center justify-center text-blue-600 font-bold text-5xl shrink-0">
@@ -75,8 +75,15 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
       {/* Content */}
       <div className="px-4 lg:px-10 pb-10 space-y-4">
+                {/* Booking form */}
+        <div className="bg-white shadow-md rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+          </h2>
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} />
+        </div>
         {/* Stats */}
-        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white shadow-md rounded-2xl p-6">
           <div className="flex items-center justify-around text-center">
             {cleaner.years_experience != null && (
               <div>
@@ -101,7 +108,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
         {/* About */}
         {cleaner.bio && (
-          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white shadow-md rounded-2xl p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.about')}</h2>
             <p className="text-base text-gray-700 leading-relaxed">{cleaner.bio}</p>
           </div>
@@ -109,7 +116,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
         {/* Service types */}
         {cleaner.service_types.length > 0 && (
-          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white shadow-sm rounded-2xl p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.serviceTypes')}</h2>
             <div className="flex flex-wrap gap-2">
               {cleaner.service_types.map(type => (
@@ -123,7 +130,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
         {/* Gallery */}
         {gallery.length > 0 && (
-          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white shadow-md rounded-2xl p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.gallery')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {gallery.map((url, i) => (
@@ -138,13 +145,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           </div>
         )}
 
-        {/* Booking form */}
-        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
-          </h2>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} />
-        </div>
+
       </div>
     </div>
   )

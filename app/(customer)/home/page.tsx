@@ -12,13 +12,13 @@ export default async function CustomerHomePage() {
 
   return (
     <div className="max-w-xl mx-auto pt-4">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Hi, {firstName} 👋</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Hi, {firstName} </h1>
       <p className="text-gray-500 mb-8">What would you like to do today?</p>
 
       <div className="grid grid-cols-1 gap-4">
         <Link
           href="/browse"
-          className="flex items-center gap-4 bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md transition-shadow"
+          className="flex items-center gap-4 bg-white rounded-2xl shadow-md hover:shadow-xl p-5 hover:shadow-md transition-shadow"
         >
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -33,7 +33,7 @@ export default async function CustomerHomePage() {
 
         <Link
           href="/bookings"
-          className="flex items-center gap-4 bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md transition-shadow"
+          className="flex items-center gap-4 bg-white rounded-2xl shadow-md hover:shadow-xl p-5 hover:shadow-md transition-shadow"
         >
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -48,7 +48,7 @@ export default async function CustomerHomePage() {
 
         <Link
           href="/profile"
-          className="flex items-center gap-4 bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md transition-shadow"
+          className="flex items-center gap-4 bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-shadow"
         >
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
