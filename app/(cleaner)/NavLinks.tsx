@@ -49,9 +49,10 @@ interface Props {
   signOut: () => Promise<void>;
   userName: string;
   statusBadge?: React.ReactNode;
+  pendingCount?: number;
 }
 
-export default function NavLinks({ signOut, userName, statusBadge }: Props) {
+export default function NavLinks({ signOut, userName, statusBadge, pendingCount = 0 }: Props) {
   const { lang, setLang, t } = useLang();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const pathname = usePathname();
@@ -93,7 +94,7 @@ export default function NavLinks({ signOut, userName, statusBadge }: Props) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col lg:flex-row items-center lg:gap-2 px-2 lg:px-3 py-1.5 rounded-lg transition-colors ${
+                className={`relative flex flex-col lg:flex-row items-center lg:gap-2 px-2 lg:px-3 py-1.5 rounded-lg transition-colors ${
                   pathname.startsWith(item.href)
                     ? "bg-blue-50 text-blue-700 font-semibold"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -101,6 +102,11 @@ export default function NavLinks({ signOut, userName, statusBadge }: Props) {
               >
                 <span className="w-5 h-5 shrink-0">{item.icon}</span>
                 <span className="text-[10px] lg:text-sm mt-0.5 lg:mt-0">{t(item.labelKey)}</span>
+                {item.href === "/cleaner/requests" && pendingCount > 0 && (
+                  <span className="absolute top-0 right-0 lg:-top-1 lg:-right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-600 rounded-full">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

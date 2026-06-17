@@ -14,11 +14,20 @@ export default async function CleanerLayout({
   if (!user) redirect("/login");
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role")
-    .eq("id", user.id)
-    .single<{ full_name: string | null; role: string | null }>();
+  const now = new Date().toISOString();
+  const [{ data: profile }, { count: pendingCount }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, role")
+      .eq("id", user.id)
+      .single<{ full_name: string | null; role: string | null }>(),
+    supabase
+      .from("bookings")
+      .select("id", { count: "exact", head: true })
+      .eq("cleaner_id", user.id)
+      .eq("status", "pending")
+      .gt("response_deadline", now),
+  ]);
 
   if (!profile || profile.role !== "cleaner") redirect("/login");
 
@@ -27,6 +36,7 @@ export default async function CleanerLayout({
       <NavLinks
         signOut={signOut}
         userName={profile.full_name ?? user.email ?? ""}
+        pendingCount={pendingCount ?? 0}
         statusBadge={
           <Suspense>
             <StatusBadge userId={user.id} />
