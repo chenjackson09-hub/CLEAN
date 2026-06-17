@@ -2,6 +2,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendApplicationApproved, sendApplicationRejected } from '@/lib/resend'
 
 type ActionResult = { error?: string }
 
@@ -22,16 +23,41 @@ export async function updateApplicationStatus(
   const authError = await requireAdmin()
   if (authError) return authError
   const admin = createAdminClient()
+  const reviewer = await getCurrentUser()
   const [appRes, cleanerRes] = await Promise.all([
     admin.from('cleaner_applications')
-      .update({ status, reviewed_at: new Date().toISOString() })
+      .update({ status, reviewed_at: new Date().toISOString(), reviewed_by: reviewer?.id ?? null })
       .eq('id', applicationId),
     admin.from('cleaners').update({ status }).eq('id', cleanerId),
   ])
   if (appRes.error) return { error: appRes.error.message }
   if (cleanerRes.error) return { error: cleanerRes.error.message }
+
+  // Notify the cleaner of the decision — fire and forget, never block the action.
+  notifyApplicationDecision(admin, cleanerId, status).catch(() => {})
+
   revalidatePath('/admin/applications')
   return {}
+}
+
+async function notifyApplicationDecision(
+  admin: ReturnType<typeof createAdminClient>,
+  cleanerId: string,
+  status: 'approved' | 'rejected',
+) {
+  const [{ data: cleanerAuth }, { data: profile }] = await Promise.all([
+    admin.auth.admin.getUserById(cleanerId),
+    admin.from('profiles').select('full_name').eq('id', cleanerId).single(),
+  ])
+  const cleanerEmail = cleanerAuth?.user?.email
+  if (!cleanerEmail) return
+  const cleanerName = profile?.full_name ?? 'there'
+
+  if (status === 'approved') {
+    await sendApplicationApproved({ cleanerEmail, cleanerName })
+  } else {
+    await sendApplicationRejected({ cleanerEmail, cleanerName })
+  }
 }
 
 export async function deleteCleanerAdmin(id: string): Promise<ActionResult> {

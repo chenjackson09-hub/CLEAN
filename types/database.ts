@@ -53,7 +53,22 @@ export interface CleanerApplication {
 export interface CleanerAvailability {
   id: string;
   cleaner_id: string;
-  day_of_week: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface CleanerGalleryPhoto {
+  id: string;
+  cleaner_id: string;
+  photo_url: string;
+  created_at: string;
+}
+
+export interface CleanerWeeklyAvailability {
+  id: string;
+  cleaner_id: string;
+  day_of_week: number; // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
   start_time: string;
   end_time: string;
 }

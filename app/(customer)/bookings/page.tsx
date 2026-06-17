@@ -10,9 +10,11 @@ export default async function BookingsPage() {
 
   const { data: rawBookings } = await supabase
     .from("bookings")
-    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, address, notes, status, cleaner_id")
+    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, address, notes, status, response_deadline, cleaner_id")
     .eq("customer_id", user.id)
     .order("created_at", { ascending: false })
+
+  const now = Date.now()
 
   const cleanerIds = Array.from(new Set((rawBookings ?? []).map(b => b.cleaner_id)))
 
@@ -24,6 +26,9 @@ export default async function BookingsPage() {
 
   const bookings = (rawBookings ?? []).map(b => {
     const cleaner = profileMap[b.cleaner_id]
+    // A pending request past its 24h response deadline is effectively cancelled —
+    // surface that to the customer instead of leaving it "pending" forever.
+    const expired = b.status === 'pending' && new Date(b.response_deadline).getTime() < now
     return {
       id: b.id,
       cleaner_name: cleaner?.full_name ?? 'Cleaner',
@@ -35,7 +40,7 @@ export default async function BookingsPage() {
       duration_hours: b.duration_hours,
       address: b.address,
       notes: b.notes ?? undefined,
-      status: b.status as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
+      status: (expired ? 'cancelled' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
     }
   })
 

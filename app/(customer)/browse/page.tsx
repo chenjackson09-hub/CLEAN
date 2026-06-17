@@ -40,7 +40,7 @@ export default async function BrowsePage({ searchParams }: Props) {
       admin
         .from('cleaners')
         .select('id, bio, service_types, hourly_rate, years_experience, languages')
-        .neq('status', 'rejected')
+        .eq('status', 'approved')
         .limit(500),
     ])
 
