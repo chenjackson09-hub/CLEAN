@@ -40,8 +40,8 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
 
   return (
     <div
-      className={`rounded-2xl border p-6 flex items-center gap-4 ${
-        completed ? "bg-gray-100 border-gray-200 opacity-60" : "bg-white border-gray-200"
+      className={`rounded-2xl shadow-md p-6 flex items-center gap-4 ${
+        completed ? "bg-gray-100 opacity-60" : "bg-white"
       }`}
     >
       <DateBlock day={parseInt(dd)} month={monthName} />
