@@ -5,12 +5,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # Start dev server (polling flags are set for WSL file-watching)
-npm run build    # Production build
-npm run lint     # ESLint via next lint
+npm run dev        # Start dev server (polling flags are set for WSL file-watching)
+npm run build      # Production build (also type-checks and lints)
+npm run lint       # ESLint via next lint
+npm test           # Jest unit/component tests (jsdom)
+npm run test:watch # Jest in watch mode
 ```
 
-There is no test suite currently.
+**Do not run `npm run build` while `npm run dev` is running** — both write to `.next/`, and the production build will clobber the dev server's compiled assets (the page then renders unstyled). Stop dev first, or build in a separate checkout.
+
+### Tests
+
+Colocated `*.test.tsx` / `*.test.ts` run under Jest + Testing Library (jsdom). `jest.setup.ts` polyfills React Server Component / form APIs that the jsdom runtime lacks (`cache`, `useFormState`, `useFormStatus`) and provides a default `next/navigation` mock.
+
+Many existing suites predate the current implementation (they target removed mock-data stores, older routes, and pre-refactor markup) and currently fail — they need updating to the current components. Add/refresh a colocated test when you change a component's behavior.
 
 ## Architecture
 
@@ -21,13 +29,23 @@ Stack: Next.js 14 App Router · TypeScript · Supabase (Postgres + Auth + Storag
 ### Route groups
 
 ```
-src/app/
-├── (auth)/       # /login  /register  /register/cleaner
-├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /pending  /preview
+app/
+├── (auth)/       # /login  /register  /register/cleaner  /register/customer
+├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /customers/[id]
+├── (customer)/   # /browse  /cleaners/[id]  /bookings  /profile  /home
+├── admin/        # /admin/applications  /cleaners  /customers  /bookings  /availability
 └── api/auth/signout/
 ```
 
-The `(customer)/` and `(admin)/` route groups are specified in `spec.md` but not yet implemented.
+After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/applications`).
+
+### Availability & booking
+
+- Cleaners set availability **per specific date** in `cleaner_availability` (the calendar at `/cleaner/availability`, 15-minute granularity). The older recurring `cleaner_weekly_availability` table still exists and is honored as a fallback, but its dedicated weekly-schedule UI has been removed.
+- Customer browse (`/browse`) and booking validation (`createBooking`) match against the **union** of per-date and weekly slots. Browse filters by selected dates + start time + duration (a slot must fully contain the requested window).
+- On approval, `respondToBooking` carves the booked time out of that day's `cleaner_availability` (splitting/trimming/removing slots) and guards against double-booking (the slot must still be available and not overlap an already-accepted booking).
+- Booking requests carry a 24h `response_deadline`. There are no scheduled jobs, so `lib/expireRequests.ts` lazily marks expired-but-still-pending requests as `declined` on cleaner page loads (run in the cleaner layout and the availability page).
+- The cleaner dashboard shows **Upcoming cleans** (accepted, start time in the future) and **Past cleans** (`completed`), with a "Complete" action (`completeBooking`).
 
 ### Supabase client hierarchy
 
