@@ -3,6 +3,14 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { ROLE_HOME } from '@/lib/roleHome'
 import type { UserRole } from '@/types/database'
 
+const CUSTOMER_PATHS = ['/browse', '/bookings', '/home', '/cleaners', '/profile']
+const CLEANER_PATHS = ['/cleaner']
+const ADMIN_PATHS = ['/admin']
+
+function matchesPath(pathname: string, prefixes: string[]) {
+  return prefixes.some((p) => pathname === p || pathname.startsWith(p + '/'))
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -25,10 +33,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Skip network round-trip when there's no session cookie
-  const hasSessionCookie = request.cookies.getAll().some(
-    (c) => c.name.includes('-auth-token')
-  )
+  const hasSessionCookie = request.cookies.getAll().some((c) => c.name.includes('-auth-token'))
 
   let user = null
   if (hasSessionCookie) {
@@ -41,42 +46,48 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl
-  const isAuthOnlyPath = pathname === '/login' || pathname === '/register'
+  const isAuthPath = pathname === '/login' || pathname === '/register'
   const isOnboardingPath = pathname.startsWith('/register/')
 
-  if (!user && !isAuthOnlyPath && !isOnboardingPath) {
+  if (!user && !isAuthPath && !isOnboardingPath) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && (isAuthOnlyPath || pathname.startsWith('/cleaner'))) {
-    // Read role from short-lived cookie to skip DB on repeated navigations
-    let role = request.cookies.get('x-user-role')?.value ?? null
+  if (user) {
+    const isRoleProtected =
+      isAuthPath ||
+      isOnboardingPath ||
+      matchesPath(pathname, CLEANER_PATHS) ||
+      matchesPath(pathname, CUSTOMER_PATHS) ||
+      matchesPath(pathname, ADMIN_PATHS)
 
-    if (!role) {
+    let role: string | null = null
+    if (isRoleProtected) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single()
       role = profile?.role ?? null
-      if (role) {
-        supabaseResponse.cookies.set('x-user-role', role, {
-          httpOnly: true,
-          maxAge: 60 * 60,
-          sameSite: 'lax',
-          path: '/',
-        })
-      }
     }
 
-    if (isAuthOnlyPath && role) {
-      return NextResponse.redirect(new URL(ROLE_HOME[role as UserRole] ?? '/login', request.url))
+    const home = role ? (ROLE_HOME[role as UserRole] ?? '/login') : '/login'
+
+    // Fix 3: redirect authenticated users away from auth/onboarding pages only if they
+    // already have a role — a null role means they're mid-registration and need to continue
+    if ((isAuthPath || isOnboardingPath) && role) {
+      return NextResponse.redirect(new URL(home, request.url))
     }
 
-    if (pathname.startsWith('/cleaner') && role !== 'cleaner') {
-      return NextResponse.redirect(
-        new URL(role ? ROLE_HOME[role as UserRole] ?? '/login' : '/login', request.url)
-      )
+    // Fix 4: enforce role on all protected route groups
+    if (matchesPath(pathname, CLEANER_PATHS) && role !== 'cleaner') {
+      return NextResponse.redirect(new URL(home, request.url))
+    }
+    if (matchesPath(pathname, CUSTOMER_PATHS) && role !== 'customer') {
+      return NextResponse.redirect(new URL(home, request.url))
+    }
+    if (matchesPath(pathname, ADMIN_PATHS) && role !== 'admin') {
+      return NextResponse.redirect(new URL(home, request.url))
     }
   }
 

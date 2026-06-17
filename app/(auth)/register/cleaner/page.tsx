@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { addApplication } from "@/lib/mockApplicationsStore";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 
@@ -89,20 +88,31 @@ export default function CleanerOnboardingPage() {
 
     const serviceTypes = serviceType === "both" ? ["residential", "commercial"] : [serviceType];
 
-    addApplication({
+    const { error: cleanerErr } = await supabase.from("cleaners").insert({
       id: user.id,
-      full_name: fullName,
-      email: creds.email,
-      phone,
       bio,
-      service_types: serviceTypes as ("residential" | "commercial")[],
+      service_types: serviceTypes,
       hourly_rate: hourlyRate,
       years_experience: yearsExperience,
       languages,
-      address,
       status: "pending",
-      submitted_at: new Date().toISOString().slice(0, 10),
     });
+    if (cleanerErr) {
+      setError(cleanerErr.message);
+      setLoading(false);
+      return;
+    }
+
+    const { error: appErr } = await supabase.from("cleaner_applications").insert({
+      cleaner_id: user.id,
+      status: "pending",
+      submitted_at: new Date().toISOString(),
+    });
+    if (appErr) {
+      setError(appErr.message);
+      setLoading(false);
+      return;
+    }
 
     localStorage.removeItem("pending_signup");
     setLoading(false);

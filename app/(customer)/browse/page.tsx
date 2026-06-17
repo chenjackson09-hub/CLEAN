@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CalendarPicker } from './CalendarPicker'
 import { BrowseResults } from './BrowseResults'
@@ -26,28 +25,32 @@ export default async function BrowsePage({ searchParams }: Props) {
   let cleaners: CleanerResult[] | null = null
 
   if (hasFilters) {
-    const supabase = await createClient()
+    const admin = createAdminClient()
 
     const daysOfWeek = Array.from(new Set(
       selectedDates.map(d => new Date(d + 'T00:00:00').getDay())
     ))
 
-    // Fetch availability and all cleaners in parallel — no sequential dependency
+    // Use admin client so RLS doesn't block reading availability or cleaners
     const [{ data: availRows }, { data: cleanerRows }] = await Promise.all([
-      supabase
+      admin
         .from('cleaner_weekly_availability')
-        .select('cleaner_id, day_of_week, start_time, end_time'),
-      supabase
+        .select('cleaner_id, day_of_week, start_time, end_time')
+        .limit(500),
+      admin
         .from('cleaners')
         .select('id, bio, service_types, hourly_rate, years_experience, languages')
-        .neq('status', 'rejected'),
+        .neq('status', 'rejected')
+        .limit(500),
     ])
 
     const avail = availRows ?? []
     let filtered = cleanerRows ?? []
 
-    // Filter by availability client-side (no extra round-trip)
-    if (daysOfWeek.length > 0 && avail.length > 0) {
+    // Filter by availability — if dates selected but no availability data at all, show nothing
+    if (daysOfWeek.length > 0 && avail.length === 0) {
+      filtered = []
+    } else if (daysOfWeek.length > 0 && avail.length > 0) {
       // Map: cleaner_id → day_of_week → [{start_time, end_time}]
       const dayMap = new Map<string, Map<number, Array<{ start: string; end: string }>>>()
       for (const row of avail) {
@@ -60,9 +63,9 @@ export default async function BrowsePage({ searchParams }: Props) {
       const requestedSlot = time ? TIME_RANGES[time] : null
 
       filtered = filtered.filter(c => {
-        if (!withRows.has(c.id)) return true // no rows = open schedule
+        if (!withRows.has(c.id)) return false // no availability set = not bookable
         const daySlots = dayMap.get(c.id)
-        if (!daySlots) return true
+        if (!daySlots) return false
         return daysOfWeek.every(d => {
           const slots = daySlots.get(d)
           if (!slots || slots.length === 0) return false

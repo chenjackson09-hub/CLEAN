@@ -4,7 +4,13 @@ import { BookingRequestForm } from './BookingRequestForm'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
-export function CleanerProfile({ cleaner, gallery = [] }: { cleaner: CleanerResult; gallery?: string[] }) {
+type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
+
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [] }: {
+  cleaner: CleanerResult
+  gallery?: string[]
+  weeklyAvailability?: WeeklySlot[]
+}) {
   const { t } = useLanguage()
   const router = useRouter()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
@@ -135,7 +141,7 @@ export function CleanerProfile({ cleaner, gallery = [] }: { cleaner: CleanerResu
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
           </h2>
-          <BookingRequestForm cleaner={cleaner} />
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} />
         </div>
       </div>
     </div>

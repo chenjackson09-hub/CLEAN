@@ -1,9 +1,15 @@
 "use server"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { geocodeAddress } from "@/lib/geocode"
 
 type ActionResult = { error?: string; success?: boolean } | null
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.slice(0, 5).split(':').map(Number)
+  return h * 60 + m
+}
 
 export async function updateCustomerProfile(
   _: ActionResult,
@@ -70,6 +76,30 @@ export async function createBooking(data: {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
+
+  // Validate that the requested time falls within the cleaner's availability
+  // Must use admin client — RLS blocks customer from reading cleaner_weekly_availability
+  const dayOfWeek = new Date(data.scheduled_date + 'T12:00:00').getDay()
+  const adminClient = createAdminClient()
+  const { data: availRows } = await adminClient
+    .from('cleaner_weekly_availability')
+    .select('start_time, end_time')
+    .eq('cleaner_id', data.cleaner_id)
+    .eq('day_of_week', dayOfWeek)
+
+  if (!availRows || availRows.length === 0) {
+    return { error: 'The cleaner is not available on the selected day.' }
+  }
+
+  const startMin = timeToMinutes(data.scheduled_start)
+  const endMin = startMin + data.duration_hours * 60
+  const withinSlot = availRows.some(slot =>
+    timeToMinutes(slot.start_time) <= startMin &&
+    timeToMinutes(slot.end_time) >= endMin
+  )
+  if (!withinSlot) {
+    return { error: 'Selected time or duration is outside the cleaner\'s availability.' }
+  }
 
   const deadline = new Date()
   deadline.setHours(deadline.getHours() + 24)

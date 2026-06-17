@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { ROLE_HOME } from "@/lib/roleHome";
 import type { UserRole } from "@/types/database";
 
@@ -20,7 +19,7 @@ export async function signIn(formData: FormData) {
     .eq("id", user.id)
     .single();
 
-  redirect(ROLE_HOME[(profile?.role as UserRole) ?? "customer"] ?? "/login");
+  redirect(profile?.role ? (ROLE_HOME[profile.role as UserRole] ?? "/login") : "/login");
 }
 
 export async function signUp(
@@ -46,13 +45,11 @@ export async function signUp(
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  (await cookies()).delete("x-user-role");
   redirect("/login");
 }
 
 export async function signOutToRegister() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  (await cookies()).delete("x-user-role");
   redirect("/register");
 }

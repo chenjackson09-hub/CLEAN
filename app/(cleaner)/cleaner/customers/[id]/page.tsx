@@ -43,7 +43,7 @@ export default async function CustomerProfilePage({
       .returns<Booking[]>(),
   ]);
 
-  if (!profile) notFound();
+  if (!profile || !bookings || bookings.length === 0) notFound();
 
   return (
     <div className="max-w-2xl">
