@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addAvailability, deleteAvailability } from "../../actions";
-import type { CleanerAvailability, CleanerWeeklyAvailability, Booking } from "@/types/database";
+import type { CleanerAvailability, CleanerWeeklyAvailability, Booking, BookingWithCustomer } from "@/types/database";
 import { useLang } from "@/context/LangContext";
 import type { TranslationKey } from "@/lib/lang";
 
@@ -91,7 +92,7 @@ interface Props {
   slots: CleanerAvailability[];
   weeklySlots: CleanerWeeklyAvailability[];
   bookings: Booking[];
-  pendingBookings: Booking[];
+  pendingBookings: BookingWithCustomer[];
 }
 
 interface DayPanel {
@@ -145,7 +146,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
     return acc;
   }, {});
 
-  const pendingByDate = pendingBookings.reduce<Record<string, Booking[]>>((acc, b) => {
+  const pendingByDate = pendingBookings.reduce<Record<string, BookingWithCustomer[]>>((acc, b) => {
     if (!acc[b.scheduled_date]) acc[b.scheduled_date] = [];
     acc[b.scheduled_date].push(b);
     return acc;
@@ -192,6 +193,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
 
   const panelSlots = [...(slotsByDate[panel.dateStr] ?? [])].sort((a, b) => a.start_time.localeCompare(b.start_time));
   const panelBookings = bookingsByDate[panel.dateStr] ?? [];
+  const panelPending = [...(pendingByDate[panel.dateStr] ?? [])].sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start));
   const panelRecurring = [...(panel.dateStr
     ? weeklySlots.filter((s) => {
         const d = new Date(panel.dateStr + "T12:00:00");
@@ -353,6 +355,19 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                 ✕
               </button>
             </div>
+
+            {/* Pending requests — links to the requests page */}
+            {panelPending.length > 0 && (
+              <Link
+                href="/cleaner/requests"
+                className="flex items-center justify-between gap-2 mx-6 mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-semibold hover:bg-red-100 transition-colors"
+              >
+                <span>
+                  {panelPending.length} {panelPending.length === 1 ? t("avail_pending_request") : t("avail_pending_requests")}
+                </span>
+                <span className="text-lg leading-none">›</span>
+              </Link>
+            )}
 
             {/* Slots list */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">

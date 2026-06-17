@@ -7,6 +7,7 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
+type DateSlot = { date: string; start_time: string; end_time: string }
 
 function generateTimeSlots(start: string, end: string): string[] {
   const slots: string[] = []
@@ -24,9 +25,11 @@ function generateTimeSlots(start: string, end: string): string[] {
 export function BookingRequestForm({
   cleaner,
   weeklyAvailability = [],
+  dateAvailability = [],
 }: {
   cleaner: CleanerResult
   weeklyAvailability?: WeeklySlot[]
+  dateAvailability?: DateSlot[]
 }) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
@@ -40,13 +43,17 @@ export function BookingRequestForm({
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
 
-  const hasAvailability = weeklyAvailability.length > 0
+  const hasAvailability = weeklyAvailability.length > 0 || dateAvailability.length > 0
 
-  // Compute available slots for the selected date
+  // Compute available slots for the selected date — union of the recurring
+  // weekly slots for that weekday and any specific-date slots for that date.
   const daySlots = date
-    ? weeklyAvailability.filter(s => s.day_of_week === new Date(date + 'T12:00:00').getDay())
+    ? [
+        ...weeklyAvailability.filter(s => s.day_of_week === new Date(date + 'T12:00:00').getDay()),
+        ...dateAvailability.filter(s => s.date === date),
+      ]
     : []
-  const availableTimes = daySlots.flatMap(s => generateTimeSlots(s.start_time, s.end_time))
+  const availableTimes = Array.from(new Set(daySlots.flatMap(s => generateTimeSlots(s.start_time, s.end_time)))).sort()
   const noAvailabilityOnDay = date && hasAvailability && daySlots.length === 0
 
   async function handleSubmit(e: React.FormEvent) {

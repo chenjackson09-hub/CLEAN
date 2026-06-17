@@ -1,16 +1,12 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import CalendarGrid from "./CalendarGrid";
-import type { CleanerAvailability, CleanerWeeklyAvailability, Booking } from "@/types/database";
-import type { Lang } from "@/lib/lang";
-import { t } from "@/lib/lang";
+import AvailabilityHeader from "./AvailabilityHeader";
+import type { CleanerAvailability, CleanerWeeklyAvailability, Booking, BookingWithCustomer } from "@/types/database";
 
 export default async function AvailabilityPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-
-  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
 
@@ -50,22 +46,19 @@ export default async function AvailabilityPage() {
       .returns<Booking[]>(),
     supabase
       .from("bookings")
-      .select("*")
+      .select("*, profiles!customer_id(full_name, phone, avatar_url)")
       .eq("cleaner_id", user.id)
       .eq("status", "pending")
       .gte("scheduled_date", from)
       .lte("scheduled_date", to)
       .order("scheduled_date")
       .order("scheduled_start")
-      .returns<Booking[]>(),
+      .returns<BookingWithCustomer[]>(),
   ]);
 
   return (
     <div className="-mt-2 -mx-4 md:mx-0 flex flex-col min-h-screen">
-      <div className="px-6 pt-6 pb-3 border-b border-gray-100 w-full md:w-[45vw] md:mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "avail_title")}</h1>
-        <p className="text-base text-gray-500">{t(lang, "avail_subtitle")}</p>
-      </div>
+      <AvailabilityHeader />
 
       <div className="flex flex-col flex-1 w-full md:w-[45vw] md:mx-auto">
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />

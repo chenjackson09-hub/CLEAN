@@ -5,11 +5,13 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
+type DateSlot = { date: string; start_time: string; end_time: string }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [] }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [] }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
+  dateAvailability?: DateSlot[]
 }) {
   const { t } = useLanguage()
   const router = useRouter()
@@ -141,7 +143,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [] 
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
           </h2>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} />
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} />
         </div>
       </div>
     </div>

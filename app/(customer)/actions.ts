@@ -91,16 +91,26 @@ export async function createBooking(data: {
     return { error: 'This cleaner is not available for booking.' }
   }
 
-  // Validate that the requested time falls within the cleaner's availability
-  // Must use admin client — RLS blocks customer from reading cleaner_weekly_availability
+  // Validate that the requested time falls within the cleaner's availability.
+  // A time is bookable if it falls within either a recurring weekly slot for
+  // that weekday OR a specific-date slot the cleaner set for that exact date.
+  // Must use admin client — RLS blocks customers from reading these tables.
   const dayOfWeek = new Date(data.scheduled_date + 'T12:00:00').getDay()
-  const { data: availRows } = await adminClient
-    .from('cleaner_weekly_availability')
-    .select('start_time, end_time')
-    .eq('cleaner_id', data.cleaner_id)
-    .eq('day_of_week', dayOfWeek)
+  const [{ data: weeklyRows }, { data: dateRows }] = await Promise.all([
+    adminClient
+      .from('cleaner_weekly_availability')
+      .select('start_time, end_time')
+      .eq('cleaner_id', data.cleaner_id)
+      .eq('day_of_week', dayOfWeek),
+    adminClient
+      .from('cleaner_availability')
+      .select('start_time, end_time')
+      .eq('cleaner_id', data.cleaner_id)
+      .eq('date', data.scheduled_date),
+  ])
+  const availRows = [...(weeklyRows ?? []), ...(dateRows ?? [])]
 
-  if (!availRows || availRows.length === 0) {
+  if (availRows.length === 0) {
     return { error: 'The cleaner is not available on the selected day.' }
   }
 

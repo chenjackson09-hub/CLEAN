@@ -8,6 +8,57 @@ import {
   sendBookingDeclined,
 } from "@/lib/resend";
 
+function timeToMinutes(t: string): number {
+  const [h, m] = t.slice(0, 5).split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(mins: number): string {
+  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+}
+
+// Removes a booked time range from the cleaner's specific-date availability for
+// that day, re-inserting whatever time is left before/after the booking. A slot
+// fully covered by the booking is simply dropped; a booking in the middle of a
+// slot splits it into two.
+async function carveAvailability(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  cleanerId: string,
+  date: string,
+  bookedStart: number,
+  bookedEnd: number,
+) {
+  const { data: slots } = await supabase
+    .from("cleaner_availability")
+    .select("id, start_time, end_time")
+    .eq("cleaner_id", cleanerId)
+    .eq("date", date);
+
+  for (const slot of slots ?? []) {
+    const slotStart = timeToMinutes(slot.start_time);
+    const slotEnd = timeToMinutes(slot.end_time);
+    // Skip slots that don't overlap the booked range.
+    if (bookedStart >= slotEnd || bookedEnd <= slotStart) continue;
+
+    await supabase.from("cleaner_availability").delete().eq("id", slot.id);
+
+    const leftEnd = Math.min(bookedStart, slotEnd);
+    const rightStart = Math.max(bookedEnd, slotStart);
+    const remainders: Array<{ start: number; end: number }> = [];
+    if (leftEnd > slotStart) remainders.push({ start: slotStart, end: leftEnd });
+    if (slotEnd > rightStart) remainders.push({ start: rightStart, end: slotEnd });
+
+    for (const r of remainders) {
+      await supabase.from("cleaner_availability").insert({
+        cleaner_id: cleanerId,
+        date,
+        start_time: minutesToTime(r.start),
+        end_time: minutesToTime(r.end),
+      });
+    }
+  }
+}
+
 export async function updateCleanerProfile(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -298,6 +349,51 @@ export async function respondToBooking(
     return { error: "Response deadline has passed." };
   }
 
+  const bookedStart = timeToMinutes(booking.scheduled_start);
+  const bookedEnd = bookedStart + booking.duration_hours * 60;
+
+  if (response === "accepted") {
+    // Guard against double-booking: the slot must still be within the cleaner's
+    // availability and must not overlap a booking already accepted for that day.
+    const dayOfWeek = new Date(booking.scheduled_date + "T12:00:00").getDay();
+    const [{ data: dateSlots }, { data: weeklySlots }, { data: acceptedBookings }] =
+      await Promise.all([
+        supabase
+          .from("cleaner_availability")
+          .select("start_time, end_time")
+          .eq("cleaner_id", user.id)
+          .eq("date", booking.scheduled_date),
+        supabase
+          .from("cleaner_weekly_availability")
+          .select("start_time, end_time")
+          .eq("cleaner_id", user.id)
+          .eq("day_of_week", dayOfWeek),
+        supabase
+          .from("bookings")
+          .select("scheduled_start, duration_hours")
+          .eq("cleaner_id", user.id)
+          .eq("scheduled_date", booking.scheduled_date)
+          .eq("status", "accepted"),
+      ]);
+
+    const slots = [...(dateSlots ?? []), ...(weeklySlots ?? [])];
+    const stillAvailable = slots.some(
+      (s) => timeToMinutes(s.start_time) <= bookedStart && timeToMinutes(s.end_time) >= bookedEnd
+    );
+    if (!stillAvailable) {
+      return { error: "This time is no longer available." };
+    }
+
+    const overlapsExisting = (acceptedBookings ?? []).some((b) => {
+      const s = timeToMinutes(b.scheduled_start);
+      const e = s + b.duration_hours * 60;
+      return bookedStart < e && bookedEnd > s;
+    });
+    if (overlapsExisting) {
+      return { error: "This time overlaps a booking you already accepted." };
+    }
+  }
+
   const { error } = await supabase
     .from("bookings")
     .update({ status: response, responded_at: new Date().toISOString() })
@@ -305,10 +401,49 @@ export async function respondToBooking(
 
   if (error) return { error: error.message };
 
+  // On approval, remove the booked time from the cleaner's availability so the
+  // remaining hours stay open (e.g. 08:00–12:00 booked 08:00–10:00 → 10:00–12:00).
+  if (response === "accepted") {
+    await carveAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
+    revalidatePath("/cleaner/availability");
+  }
+
   // Fire and forget — email failure must not delay the booking response
   sendBookingEmail(booking, response, user.id).catch(() => {});
 
   revalidatePath("/cleaner/requests");
+  revalidatePath("/cleaner/dashboard");
+  return { success: true };
+}
+
+export async function completeBooking(bookingId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const { data: booking, error: fetchErr } = await supabase
+    .from("bookings")
+    .select("status, scheduled_date, scheduled_start")
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id)
+    .single();
+
+  if (fetchErr || !booking) return { error: "Booking not found." };
+  if (booking.status !== "accepted") return { error: "Only accepted cleans can be completed." };
+
+  const startDt = new Date(`${booking.scheduled_date}T${booking.scheduled_start}`);
+  if (startDt > new Date()) return { error: "This clean hasn't started yet." };
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "completed" })
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id);
+
+  if (error) return { error: error.message };
+
   revalidatePath("/cleaner/dashboard");
   return { success: true };
 }

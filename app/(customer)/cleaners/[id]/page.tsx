@@ -12,11 +12,14 @@ export default async function CleanerProfilePage({ params }: Props) {
   const supabase = await createClient()
   const admin = createAdminClient()
 
+  const today = new Date().toISOString().split('T')[0]
+
   const [
     { data: cleaner, error },
     { data: profile },
     { data: galleryRows },
     { data: weeklyAvailability },
+    { data: dateAvailability },
   ] = await Promise.all([
     supabase
       .from('cleaners')
@@ -38,6 +41,11 @@ export default async function CleanerProfilePage({ params }: Props) {
       .from('cleaner_weekly_availability')
       .select('day_of_week, start_time, end_time')
       .eq('cleaner_id', params.id),
+    admin
+      .from('cleaner_availability')
+      .select('date, start_time, end_time')
+      .eq('cleaner_id', params.id)
+      .gte('date', today),
   ])
 
   if (error || !cleaner) notFound()
@@ -60,6 +68,7 @@ export default async function CleanerProfilePage({ params }: Props) {
         cleaner={cleanerResult}
         gallery={(galleryRows ?? []).map(r => r.photo_url as string)}
         weeklyAvailability={weeklyAvailability ?? []}
+        dateAvailability={dateAvailability ?? []}
       />
     </div>
   )
