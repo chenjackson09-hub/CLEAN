@@ -299,7 +299,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                 ? "bg-gray-50 hover:bg-gray-100 opacity-40"
                 : dayCardColor([...daySlots, ...recurring], hasAccepted, hasPending);
 
-              const dateTextColor = hasAccepted ? "text-white" : "text-gray-700";
+              const dateTextColor = "text-gray-900";
               const dayNameColor = hasAccepted ? "text-blue-100" : "text-gray-400";
 
               return (
@@ -420,7 +420,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <span className="text-xs font-medium text-gray-500">{t("avail_from")}</span>
-                      <div className="mt-1 flex items-center gap-2">
+                      <div dir="ltr" className="mt-1 flex items-center gap-2">
                         <select
                           value={startTime.slice(0, 2)}
                           onChange={(e) => setStartTime(`${e.target.value}:${startTime.slice(3, 5)}`)}
@@ -444,7 +444,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                     </div>
                     <div>
                       <span className="text-xs font-medium text-gray-500">{t("avail_to")}</span>
-                      <div className="mt-1 flex items-center gap-2">
+                      <div dir="ltr" className="mt-1 flex items-center gap-2">
                         <select
                           value={endTime.slice(0, 2)}
                           onChange={(e) => setEndTime(`${e.target.value}:${endTime.slice(3, 5)}`)}
