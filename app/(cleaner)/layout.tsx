@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { signOut } from "../(auth)/actions";
+import { declineExpiredRequests } from "@/lib/expireRequests";
 import NavLinks from "./NavLinks";
 import { StatusBadge } from "./StatusBadge";
 
@@ -15,6 +16,10 @@ export default async function CleanerLayout({
 
   const supabase = await createClient();
   const now = new Date().toISOString();
+
+  // Resolve any requests that expired without a response before counting.
+  await declineExpiredRequests(user.id);
+
   const [{ data: profile }, { count: pendingCount }] = await Promise.all([
     supabase
       .from("profiles")

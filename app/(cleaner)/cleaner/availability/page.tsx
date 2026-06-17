@@ -2,11 +2,16 @@ import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import CalendarGrid from "./CalendarGrid";
 import AvailabilityHeader from "./AvailabilityHeader";
+import { declineExpiredRequests } from "@/lib/expireRequests";
 import type { CleanerAvailability, CleanerWeeklyAvailability, Booking, BookingWithCustomer } from "@/types/database";
 
 export default async function AvailabilityPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  // Resolve expired requests first so the calendar's pending counts match the
+  // requests page (which excludes deadline-passed requests).
+  await declineExpiredRequests(user.id);
 
   const supabase = await createClient();
 
