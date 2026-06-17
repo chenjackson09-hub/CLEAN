@@ -209,7 +209,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
   return (
     <>
       {/* Column control */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 z-10">
+      <div className="flex items-center justify-between px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <button
             onClick={prevMonth}
@@ -279,7 +279,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                   <button
                     key={dateStr}
                     onClick={() => setViewDate(new Date(day.getFullYear(), day.getMonth(), 1))}
-                    className="flex flex-col items-center p-3 min-h-[90px] rounded-xl transition-opacity opacity-30 bg-gray-50 hover:opacity-60"
+                    className="flex flex-col items-center p-3 min-h-[90px] rounded-xl shadow-md transition-opacity opacity-30 bg-gray-50 hover:opacity-60"
                   >
                     <span className="text-xl font-bold w-10 h-10 flex items-center justify-center text-gray-400">
                       {day.getDate()}
@@ -308,7 +308,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                 <button
                   key={dateStr}
                   onClick={() => openPanel(day)}
-                  className={`flex flex-col items-center p-3 min-h-[90px] rounded-xl transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
+                  className={`flex flex-col items-center p-3 min-h-[90px] rounded-xl shadow-md transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
                 >
                   <span className={`text-xl font-bold w-10 h-10 flex items-center justify-center ${dateTextColor}`}>
                     {day.getDate()}
