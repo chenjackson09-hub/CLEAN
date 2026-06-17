@@ -14,9 +14,12 @@ export default async function AvailabilityPage() {
 
   const supabase = await createClient();
 
+  const fmtDate = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const today = new Date();
-  const from = today.toISOString().split("T")[0];
-  const to = new Date(today.getTime() + 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  // Cover the previous month through several months ahead so calendar navigation has data.
+  const from = fmtDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+  const to = fmtDate(new Date(today.getFullYear(), today.getMonth() + 4, 0));
 
   const [{ data: weeklySlots }, { data: specificSlots }, { data: bookings }, { data: pendingBookings }] = await Promise.all([
     supabase

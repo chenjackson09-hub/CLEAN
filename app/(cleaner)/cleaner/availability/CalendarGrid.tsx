@@ -6,7 +6,6 @@ import { addAvailability, deleteAvailability } from "../../actions";
 import type { CleanerAvailability, CleanerWeeklyAvailability, Booking } from "@/types/database";
 import { useLang } from "@/context/LangContext";
 import type { TranslationKey } from "@/lib/lang";
-import { TIME_SLOTS, SlotLabel, slotLabel } from "./utils";
 
 const WEEK_DAY_KEYS: TranslationKey[] = [
   "day_sun", "day_mon", "day_tue", "day_wed", "day_thu", "day_fri", "day_sat",
@@ -16,22 +15,51 @@ const MONTH_KEYS: TranslationKey[] = [
   "month_jul", "month_aug", "month_sep", "month_oct", "month_nov", "month_dec",
 ];
 
-const SLOT_KEYS: Record<SlotLabel, TranslationKey> = {
-  Morning: "slot_morning",
-  Noon:    "slot_noon",
-  Evening: "slot_evening",
-};
+// Separate hour (06 → 22) and minute (00/15/30/45) options for the start/end pickers.
+const HOUR_OPTIONS = Array.from({ length: 17 }, (_, i) => String(i + 6).padStart(2, "0"));
+const MINUTE_OPTIONS = ["00", "15", "30", "45"];
 
-function getMonthDays(): Date[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+function minutesOf(time: string): number {
+  return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+}
+
+function formatRange(start: string, end: string): string {
+  return `${start.slice(0, 5)}–${end.slice(0, 5)}`;
+}
+
+interface Cell {
+  date: Date;
+  inMonth: boolean;
+}
+
+function buildMonthCells(viewDate: Date, withAdjacent: boolean): Cell[] {
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  return Array.from({ length: daysInMonth }, (_, i) => {
+  const monthCells: Cell[] = Array.from({ length: daysInMonth }, (_, i) => {
     const d = new Date(year, month, i + 1);
     d.setHours(0, 0, 0, 0);
-    return d;
+    return { date: d, inMonth: true };
   });
+  if (!withAdjacent) return monthCells;
+
+  // Leading days from the previous month so the 1st lands under the right weekday.
+  const cells: Cell[] = [];
+  const lead = monthCells[0].date.getDay();
+  for (let i = lead; i > 0; i--) {
+    const d = new Date(year, month, 1 - i);
+    d.setHours(0, 0, 0, 0);
+    cells.push({ date: d, inMonth: false });
+  }
+  cells.push(...monthCells);
+  // Trailing days from the next month to complete the final week.
+  while (cells.length % 7 !== 0) {
+    const last = cells[cells.length - 1].date;
+    const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
+    d.setHours(0, 0, 0, 0);
+    cells.push({ date: d, inMonth: false });
+  }
+  return cells;
 }
 
 function toLocalDateStr(d: Date): string {
@@ -81,18 +109,28 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
     setSlots(initialSlots);
   }, [initialSlots]);
   const [columns, setColumns] = useState(7);
+  const [viewDate, setViewDate] = useState(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), 1);
+  });
   const [panel, setPanel] = useState<DayPanel>({ open: false, dateStr: "", past: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<SlotLabel>>(new Set());
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("12:00");
 
-  const days = getMonthDays();
-  // Pad the start so the 1st lands under the correct weekday (only in the 7-column view).
-  const leadingBlanks = columns === 7 ? days[0].getDay() : 0;
-  const cells: (Date | null)[] = [...Array(leadingBlanks).fill(null), ...days];
-  const rows: (Date | null)[][] = [];
+  // Adjacent (faint) days only make sense in the aligned 7-column grid.
+  const cells = buildMonthCells(viewDate, columns === 7);
+  const rows: Cell[][] = [];
   for (let i = 0; i < cells.length; i += columns) {
     rows.push(cells.slice(i, i + columns));
+  }
+
+  function prevMonth() {
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  }
+  function nextMonth() {
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
 
   const slotsByDate = slots.reduce<Record<string, CleanerAvailability[]>>((acc, s) => {
@@ -115,16 +153,9 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
 
   function openPanel(day: Date) {
     setError(null);
-    setSelected(new Set());
+    setStartTime("08:00");
+    setEndTime("12:00");
     setPanel({ open: true, dateStr: toLocalDateStr(day), past: isPast(day) });
-  }
-
-  function toggleSlot(label: SlotLabel) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(label) ? next.delete(label) : next.add(label);
-      return next;
-    });
   }
 
   function closePanel() {
@@ -134,18 +165,18 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
 
   async function handleAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (selected.size === 0) return;
+    if (endTime <= startTime) {
+      setError(t("avail_end_after_start"));
+      return;
+    }
     setLoading(true);
     setError(null);
-    for (const label of TIME_SLOTS.map((ts) => ts.label).filter((l) => selected.has(l) && !existingLabels.has(l))) {
-      const ts = TIME_SLOTS.find((t) => t.label === label)!;
-      const formData = new FormData();
-      formData.set("date", panel.dateStr);
-      formData.set("start_time", ts.start);
-      formData.set("end_time", ts.end);
-      const result = await addAvailability(formData);
-      if (result?.error) { setError(result.error); setLoading(false); return; }
-    }
+    const formData = new FormData();
+    formData.set("date", panel.dateStr);
+    formData.set("start_time", startTime);
+    formData.set("end_time", endTime);
+    const result = await addAvailability(formData);
+    if (result?.error) { setError(result.error); setLoading(false); return; }
     router.refresh();
     setLoading(false);
   }
@@ -168,11 +199,6 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
       })
     : [])].sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-  const existingLabels = new Set([
-    ...panelRecurring.map((s) => slotLabel(s.start_time, s.end_time)),
-    ...panelSlots.map((s) => slotLabel(s.start_time, s.end_time)),
-  ]);
-
   function formatFullDate(dateStr: string): string {
     const d = new Date(dateStr + "T12:00:00");
     return `${t(WEEK_DAY_KEYS[d.getDay()])}, ${d.getDate()} ${t(MONTH_KEYS[d.getMonth()])} ${d.getFullYear()}`;
@@ -182,9 +208,23 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
     <>
       {/* Column control */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 z-10">
-        <h2 className="text-lg font-bold text-gray-900">
-          {t(MONTH_KEYS[days[0].getMonth()])} {days[0].getFullYear()}
-        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={prevMonth}
+            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-lg font-bold flex items-center justify-center"
+          >
+            ‹
+          </button>
+          <h2 className="text-lg font-bold text-gray-900 min-w-[150px] text-center">
+            {t(MONTH_KEYS[viewDate.getMonth()])} {viewDate.getFullYear()}
+          </h2>
+          <button
+            onClick={nextMonth}
+            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-lg font-bold flex items-center justify-center"
+          >
+            ›
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setColumns((c) => Math.max(1, c - 1))}
@@ -227,9 +267,25 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
             className="grid gap-2"
             style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           >
-            {row.map((day, ci) => {
-              if (!day) return <div key={`blank-${ri}-${ci}`} />;
+            {row.map((cell) => {
+              const day = cell.date;
               const dateStr = toLocalDateStr(day);
+
+              // Faint preview of days that belong to the previous/next month.
+              if (!cell.inMonth) {
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => setViewDate(new Date(day.getFullYear(), day.getMonth(), 1))}
+                    className="flex flex-col items-center p-3 min-h-[90px] rounded-xl transition-opacity opacity-30 bg-gray-50 hover:opacity-60"
+                  >
+                    <span className="text-xl font-bold w-10 h-10 flex items-center justify-center text-gray-400">
+                      {day.getDate()}
+                    </span>
+                  </button>
+                );
+              }
+
               const daySlots = [...(slotsByDate[dateStr] ?? [])].sort((a, b) => a.start_time.localeCompare(b.start_time));
               const recurring = [...weeklySlots.filter((s) => s.day_of_week === day.getDay())].sort((a, b) => a.start_time.localeCompare(b.start_time));
               const dayBookings = bookingsByDate[dateStr] ?? [];
@@ -318,46 +374,40 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                       <p className="text-sm text-orange-700 mt-0.5">{b.address}</p>
                     </div>
                   ))}
-                  {panelRecurring.map((slot) => {
-                    const label = slotLabel(slot.start_time, slot.end_time) as SlotLabel;
-                    return (
-                      <div
-                        key={slot.id}
-                        className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3"
-                      >
-                        <div>
-                          <p className="text-xs font-medium text-indigo-400 mb-0.5">{t("avail_recurring_label")}</p>
-                          <p className="text-lg font-semibold text-indigo-700">
-                            {SLOT_KEYS[label] ? t(SLOT_KEYS[label]) : label}
-                          </p>
-                        </div>
+                  {panelRecurring.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-xs font-medium text-indigo-400 mb-0.5">{t("avail_recurring_label")}</p>
+                        <p className="text-lg font-semibold text-indigo-700">
+                          {formatRange(slot.start_time, slot.end_time)}
+                        </p>
                       </div>
-                    );
-                  })}
-                  {panelSlots.map((slot) => {
-                    const label = slotLabel(slot.start_time, slot.end_time) as SlotLabel;
-                    return (
-                      <div
-                        key={slot.id}
-                        className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-3"
-                      >
-                        <div>
-                          <p className="text-lg font-semibold text-blue-800">
-                            {SLOT_KEYS[label] ? t(SLOT_KEYS[label]) : label}
-                          </p>
-                        </div>
-                        {!panel.past && (
-                          <button
-                            onClick={() => handleDelete(slot.id)}
-                            className="text-red-400 hover:text-red-600 text-2xl font-bold leading-none ml-4"
-                            title="Remove"
-                          >
-                            ×
-                          </button>
-                        )}
+                    </div>
+                  ))}
+                  {panelSlots.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-lg font-semibold text-blue-800">
+                          {formatRange(slot.start_time, slot.end_time)}
+                        </p>
                       </div>
-                    );
-                  })}
+                      {!panel.past && (
+                        <button
+                          onClick={() => handleDelete(slot.id)}
+                          className="text-red-400 hover:text-red-600 text-2xl font-bold leading-none ml-4"
+                          title="Remove"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </>
               )}
             </div>
@@ -367,30 +417,65 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
               <div className="border-t border-gray-100 px-6 py-5">
                 <p className="text-base font-semibold text-gray-700 mb-3">{t("avail_add_section")}</p>
                 <form onSubmit={handleAdd} className="space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    {TIME_SLOTS.map((ts) => (
-                      <button
-                        key={ts.label}
-                        type="button"
-                        disabled={existingLabels.has(ts.label)}
-                        onClick={() => toggleSlot(ts.label)}
-                        className={`rounded-xl border-2 py-3 text-center transition-colors ${
-                          existingLabels.has(ts.label)
-                            ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                            : selected.has(ts.label)
-                            ? "border-blue-600 bg-blue-600 text-white"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-blue-300"
-                        }`}
-                      >
-                        <p className="text-sm font-semibold">{t(SLOT_KEYS[ts.label])}</p>
-                        <p className="text-xs mt-0.5 opacity-70">{ts.start}–{ts.end}</p>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-xs font-medium text-gray-500">{t("avail_from")}</span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <select
+                          value={startTime.slice(0, 2)}
+                          onChange={(e) => setStartTime(`${e.target.value}:${startTime.slice(3, 5)}`)}
+                          className="flex-1 rounded-xl border-2 border-gray-200 bg-white py-3 px-3 text-base font-semibold text-gray-700 focus:border-blue-400 focus:outline-none"
+                        >
+                          {HOUR_OPTIONS.map((h) => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                        <span className="font-bold text-gray-400">:</span>
+                        <select
+                          value={startTime.slice(3, 5)}
+                          onChange={(e) => setStartTime(`${startTime.slice(0, 2)}:${e.target.value}`)}
+                          className="flex-1 rounded-xl border-2 border-gray-200 bg-white py-3 px-3 text-base font-semibold text-gray-700 focus:border-blue-400 focus:outline-none"
+                        >
+                          {MINUTE_OPTIONS.map((m) => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs font-medium text-gray-500">{t("avail_to")}</span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <select
+                          value={endTime.slice(0, 2)}
+                          onChange={(e) => setEndTime(`${e.target.value}:${endTime.slice(3, 5)}`)}
+                          className="flex-1 rounded-xl border-2 border-gray-200 bg-white py-3 px-3 text-base font-semibold text-gray-700 focus:border-blue-400 focus:outline-none"
+                        >
+                          {HOUR_OPTIONS.map((h) => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                        <span className="font-bold text-gray-400">:</span>
+                        <select
+                          value={endTime.slice(3, 5)}
+                          onChange={(e) => setEndTime(`${endTime.slice(0, 2)}:${e.target.value}`)}
+                          className="flex-1 rounded-xl border-2 border-gray-200 bg-white py-3 px-3 text-base font-semibold text-gray-700 focus:border-blue-400 focus:outline-none"
+                        >
+                          {MINUTE_OPTIONS.map((m) => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
+                  {endTime > startTime && minutesOf(endTime) - minutesOf(startTime) <= 60 && (
+                    <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      ⚠ {t("avail_short_warning")}
+                    </p>
+                  )}
                   {error && <p className="text-base text-red-600">{error}</p>}
                   <button
                     type="submit"
-                    disabled={loading || selected.size === 0}
+                    disabled={loading || endTime <= startTime}
                     className="w-full bg-blue-600 text-white rounded-xl py-3 text-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
                     {loading ? t("avail_adding") : t("avail_add")}
