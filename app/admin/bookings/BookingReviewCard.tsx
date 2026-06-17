@@ -1,3 +1,4 @@
+'use client'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { BookingResult, BookingStatus } from '@/lib/types/booking'
 

@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CalendarPicker } from './CalendarPicker'
 import { BrowseResults } from './BrowseResults'
@@ -26,21 +25,23 @@ export default async function BrowsePage({ searchParams }: Props) {
   let cleaners: CleanerResult[] | null = null
 
   if (hasFilters) {
-    const supabase = await createClient()
+    const admin = createAdminClient()
 
     const daysOfWeek = Array.from(new Set(
       selectedDates.map(d => new Date(d + 'T00:00:00').getDay())
     ))
 
-    // Fetch availability and all cleaners in parallel — no sequential dependency
+    // Use admin client so RLS doesn't block reading availability or cleaners
     const [{ data: availRows }, { data: cleanerRows }] = await Promise.all([
-      supabase
+      admin
         .from('cleaner_weekly_availability')
-        .select('cleaner_id, day_of_week, start_time, end_time'),
-      supabase
+        .select('cleaner_id, day_of_week, start_time, end_time')
+        .limit(500),
+      admin
         .from('cleaners')
         .select('id, bio, service_types, hourly_rate, years_experience, languages')
-        .neq('status', 'rejected'),
+        .neq('status', 'rejected')
+        .limit(500),
     ])
 
     const avail = availRows ?? []

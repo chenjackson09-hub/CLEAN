@@ -1,5 +1,6 @@
 "use server"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { geocodeAddress } from "@/lib/geocode"
 
@@ -77,8 +78,10 @@ export async function createBooking(data: {
   if (!user) return { error: "Not authenticated" }
 
   // Validate that the requested time falls within the cleaner's availability
+  // Must use admin client — RLS blocks customer from reading cleaner_weekly_availability
   const dayOfWeek = new Date(data.scheduled_date + 'T12:00:00').getDay()
-  const { data: availRows } = await supabase
+  const adminClient = createAdminClient()
+  const { data: availRows } = await adminClient
     .from('cleaner_weekly_availability')
     .select('start_time, end_time')
     .eq('cleaner_id', data.cleaner_id)

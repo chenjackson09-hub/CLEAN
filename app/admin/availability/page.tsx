@@ -1,9 +1,13 @@
 import { Nav } from '../Nav'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { unstable_noStore as noStore } from 'next/cache'
+
+export const dynamic = 'force-dynamic'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default async function AdminAvailabilityPage() {
+  noStore()
   const admin = createAdminClient()
 
   const [{ data: weeklyRows }, { data: profileRows }] = await Promise.all([
@@ -12,8 +16,9 @@ export default async function AdminAvailabilityPage() {
       .select('id, cleaner_id, day_of_week, start_time, end_time')
       .order('cleaner_id')
       .order('day_of_week')
-      .order('start_time'),
-    admin.from('profiles').select('id, full_name').eq('role', 'cleaner'),
+      .order('start_time')
+      .limit(500),
+    admin.from('profiles').select('id, full_name').eq('role', 'cleaner').limit(500),
   ])
 
   const profileMap = new Map((profileRows ?? []).map(p => [p.id, p.full_name ?? p.id]))

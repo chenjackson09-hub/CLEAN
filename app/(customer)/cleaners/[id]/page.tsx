@@ -34,7 +34,7 @@ export default async function CleanerProfilePage({ params }: Props) {
       .select('photo_url')
       .eq('cleaner_id', params.id)
       .order('id', { ascending: true }),
-    supabase
+    admin
       .from('cleaner_weekly_availability')
       .select('day_of_week, start_time, end_time')
       .eq('cleaner_id', params.id),

@@ -2,13 +2,17 @@ import { Nav } from '../Nav'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CustomersList } from './CustomersList'
 import type { CustomerResult } from '@/lib/types/customer'
+import { unstable_noStore as noStore } from 'next/cache'
+
+export const dynamic = 'force-dynamic'
 
 export default async function AdminCustomersPage() {
+  noStore()
   const admin = createAdminClient()
 
   const [{ data: customerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('customers').select('id, address'),
-    admin.from('profiles').select('id, full_name, phone').eq('role', 'customer'),
+    admin.from('customers').select('id, address').limit(500),
+    admin.from('profiles').select('id, full_name, phone').eq('role', 'customer').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 

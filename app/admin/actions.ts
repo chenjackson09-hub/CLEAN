@@ -48,8 +48,17 @@ export async function deleteCustomerAdmin(id: string): Promise<ActionResult> {
   const authError = await requireAdmin()
   if (authError) return authError
   const admin = createAdminClient()
-  const { error } = await admin.from('customers').delete().eq('id', id)
-  if (error) return { error: error.message }
+  // Delete bookings first — bookings.customer_id FK references profiles.id
+  const { error: bookErr } = await admin.from('bookings').delete().eq('customer_id', id)
+  if (bookErr) return { error: bookErr.message }
+  const [custRes, profRes] = await Promise.all([
+    admin.from('customers').delete().eq('id', id),
+    admin.from('profiles').delete().eq('id', id),
+  ])
+  if (custRes.error) return { error: custRes.error.message }
+  if (profRes.error) return { error: profRes.error.message }
+  const { error: authErr } = await admin.auth.admin.deleteUser(id)
+  if (authErr) return { error: authErr.message }
   revalidatePath('/admin/customers')
   return {}
 }
