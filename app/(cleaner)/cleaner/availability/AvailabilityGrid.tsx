@@ -121,7 +121,7 @@ export default function AvailabilityGrid({ slots: initialSlots }: Props) {
             </div>
             <button
               onClick={() => openModal(value)}
-              className="mt-2 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-sm rounded-lg py-1.5 transition-colors"
+              className="mt-2 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-sm rounded-xl py-1.5 transition-colors"
             >
               + {t("avail_add")}
             </button>

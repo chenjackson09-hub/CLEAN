@@ -27,7 +27,7 @@ export default async function PreviewPage() {
   ]);
 
   return (
-    <div className="bg-white -mx-8 -mt-2 min-h-screen">
+    <div className="-mx-8 -mt-2 min-h-screen">
       {/* Edit banner */}
       <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 flex items-center justify-between">
         <p className="text-base text-yellow-800 font-medium">{t(lang, "prev_banner")}</p>
@@ -42,7 +42,7 @@ export default async function PreviewPage() {
           {profile?.avatar_url ? (
             <AvatarLightbox src={profile.avatar_url} name={profile.full_name ?? t(lang, "prev_no_name")} />
           ) : (
-            <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-gray-100 border-4 border-white overflow-hidden shrink-0 shadow flex items-center justify-center text-gray-400 text-5xl">
+            <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-gray-100 bg-white overflow-hidden shrink-0 shadow flex shadow-md items-center justify-center text-gray-400 text-5xl">
               👤
             </div>
           )}
@@ -72,7 +72,7 @@ export default async function PreviewPage() {
         const aboutBlock = (
           <div className="space-y-4">
             {(cleaner?.years_experience != null || cleaner?.service_radius_km || cleaner?.hourly_rate) && (
-              <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
+              <div className="bg-gray-50 rounded-2xl bg-white p-6 flex flex-col lg:flex-row shadow-md lg:items-center gap-4 lg:gap-6">
                 <button className="w-full lg:w-auto shrink-0 bg-blue-600 text-white text-sm font-semibold rounded-xl px-4 py-2.5 hover:bg-blue-700 transition-colors">
                   {t(lang, "prev_request")}
                 </button>
@@ -101,14 +101,14 @@ export default async function PreviewPage() {
                 </div>
               </div>
             )}
-            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+            <div className="bg-gray-50 rounded-2xl bg-white p-6 shadow-md">
               <h2 className="text-lg font-bold text-gray-900 mb-3">{t(lang, "prev_about")}</h2>
               <p className="text-base text-gray-700 leading-relaxed">
                 {cleaner?.bio ?? <span className="text-gray-400">{t(lang, "prev_no_bio")}</span>}
               </p>
             </div>
             {cleaner?.service_types && cleaner.service_types.length > 0 && (
-              <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+              <div className="bg-gray-50 rounded-2xl bg-white p-6 shadow-md">
                 <h2 className="text-lg font-bold text-gray-900 mb-3">{t(lang, "prev_service_types")}</h2>
                 <div className="flex flex-wrap gap-2">
                   {cleaner.service_types.map((type) => (

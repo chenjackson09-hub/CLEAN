@@ -6,29 +6,52 @@ type Props = {
   dates: string | undefined
   type: string | undefined
   sort: string | undefined
-  time: string | undefined
+  start: string | undefined
+  duration: string | undefined
 }
 
-export function BrowseFilters({ dates, type, sort, time }: Props) {
+// Start-time options every 30 minutes from 06:00 to 22:00.
+const START_OPTIONS = Array.from({ length: 33 }, (_, i) => {
+  const mins = 6 * 60 + i * 30
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
+})
+const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
+
+export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
   const { t } = useLanguage()
 
   return (
     <form method="get" action="/browse" className="flex flex-wrap gap-3 items-end mb-4">
       <input type="hidden" name="dates" value={dates ?? ''} />
       <div className="flex flex-col gap-1">
-        <label htmlFor="time" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-          {t('filterBar.timeOfDay')}
+        <label htmlFor="start" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+          {t('filterBar.startTime')}
         </label>
         <select
-          id="time"
-          name="time"
-          defaultValue={time ?? ''}
+          id="start"
+          name="start"
+          defaultValue={start ?? ''}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">{t('filterBar.anytime')}</option>
-          <option value="morning">{t('filterBar.morning')}</option>
-          <option value="noon">{t('filterBar.noon')}</option>
-          <option value="evening">{t('filterBar.evening')}</option>
+          <option value="">{t('filterBar.anyStartTime')}</option>
+          {START_OPTIONS.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="duration" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+          {t('filterBar.duration')}
+        </label>
+        <select
+          id="duration"
+          name="duration"
+          defaultValue={duration ?? '2'}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {DURATION_OPTIONS.map(d => (
+            <option key={d} value={d}>{d}{t('filterBar.hoursShort')}</option>
+          ))}
         </select>
       </div>
       <div className="flex flex-col gap-1">

@@ -15,7 +15,7 @@ export default function AvatarLightbox({ src, name }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-48 h-48 rounded-full bg-gray-200 border-4 border-white overflow-hidden shrink-0 shadow hover:opacity-90 transition-opacity cursor-zoom-in"
+        className="w-48 h-48 rounded-full bg-gray-200 overflow-hidden shrink-0 shadow hover:opacity-90 transition-opacity cursor-zoom-in"
       >
         <Image src={src} alt={name} width={192} height={192} className="object-cover w-full h-full" />
       </button>

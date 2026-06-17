@@ -25,7 +25,7 @@ export default function GalleryLightbox({ photos }: Props) {
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-md p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Gallery</h2>
         <div className="grid grid-cols-2 gap-2">
           {photos.map((photo, i) => (

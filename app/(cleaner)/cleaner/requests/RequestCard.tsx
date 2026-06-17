@@ -73,9 +73,9 @@ export default function RequestCard({ booking, showActions }: Props) {
   return (
     <>
       {/* ── Card ── */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 flex items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl p-6 flex items-center shadow-md justify-between gap-6">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="shrink-0 w-14 h-14 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
+          <div className="shrink-0 w-14 h-14 rounded-full bg-gray-100 overflow-hidden">
             {booking.profiles?.avatar_url ? (
               <Image
                 src={booking.profiles.avatar_url}
