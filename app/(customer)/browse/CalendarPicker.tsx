@@ -80,7 +80,7 @@ export function CalendarPicker() {
   const sortedSelected = Array.from(selectedSet).sort()
 
   return (
-    <div className="p-4 mb-4">
+    <div className="mb-4">
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-3">
         <button
@@ -127,7 +127,7 @@ export function CalendarPicker() {
           const isSelected = selectedSet.has(dateStr)
           const avail = AVAILABILITY[date.getDay()]
 
-          let cls ='flex items-center justify-center w-10 h-10 sm:w-13 sm:h-13 md:w-16 md:h-16 mx-auto rounded-xl text-sm sm:text-base font-medium transition-colors select-none '
+          let cls ='flex items-center justify-center w-full aspect-square rounded-xl text-sm sm:text-base font-medium transition-colors select-none '
           if (isPast) cls += 'text-gray-300 cursor-not-allowed'
           else if (isSelected) cls += 'bg-blue-600 text-white cursor-pointer shadow-sm'
           else if (isToday) cls += 'ring-2 ring-blue-500 text-blue-700 cursor-pointer hover:bg-blue-50'

@@ -43,7 +43,7 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
   return (
     <div>
       {locationError && (
-        <p className="text-amber-700 bg-amber-50 rounded-lg px-3 py-2 text-sm">
+        <p className="text-amber-700 bg-amber-50 rounded-xl px-3 py-2 text-sm">
           {t('browse.locationNotFound')}
         </p>
       )}
@@ -66,7 +66,7 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
             const isOpen = open.has(g.date)
             const count = g.cleaners.length
             return (
-              <div key={g.date} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div key={g.date} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggle(g.date)}

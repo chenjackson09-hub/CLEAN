@@ -15,7 +15,7 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
   const href = qs ? `/cleaners/${cleaner.id}?${qs}` : `/cleaners/${cleaner.id}`
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl p-4 border border-gray-200">
       <div className="flex items-center gap-3 mb-3">
         {cleaner.avatar_url ? (
           <img src={cleaner.avatar_url} alt={cleaner.full_name} className="w-16 h-16 rounded-full object-cover shrink-0" />
