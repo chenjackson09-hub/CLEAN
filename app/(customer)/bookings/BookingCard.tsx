@@ -10,78 +10,61 @@ const STATUS_BADGE: Record<BookingStatus, string> = {
   cancelled: 'bg-gray-100 text-gray-600',
 }
 
-const STATUS_ACCENT: Record<BookingStatus, string> = {
-  pending: 'border-t-yellow-400',
-  accepted: 'border-t-green-400',
-  declined: 'border-t-red-400',
-  completed: 'border-t-blue-400',
-  cancelled: 'border-t-gray-300',
-}
-
-const SERVICE_BADGE: Record<BookingResult['service_type'], string> = {
-  residential: 'bg-blue-50 text-blue-700',
-  commercial: 'bg-green-100 text-green-700',
-}
-
-function formatDate(dateStr: string) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+// Date-cube colour: green when accepted, orange while pending, black for past
+// cleans (completed/declined/cancelled).
+const DATE_BLOCK_COLOR: Record<BookingStatus, string> = {
+  accepted: 'bg-green-600',
+  pending: 'bg-orange-500',
+  completed: 'bg-black',
+  declined: 'bg-black',
+  cancelled: 'bg-black',
 }
 
 export function BookingCard({ booking }: { booking: BookingResult }) {
-  const { t } = useLanguage()
-  const initial = booking.cleaner_name.charAt(0).toUpperCase()
+  const { t, lang } = useLanguage()
+
+  const [y, m, d] = booking.scheduled_date.split('-').map(Number)
+  const month = new Date(y, m - 1, d).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US', { month: 'short' })
+
+  // End time = start + duration, for a "09:00 - 12:00" range.
+  const start = new Date(`1970-01-01T${booking.scheduled_start}`)
+  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000)
+  const endStr = end.toTimeString().slice(0, 5)
 
   return (
-    <div className={`bg-white rounded-xl p-4  hover:shadow-lg transition-shadow`}>
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-3">
-          {booking.cleaner_avatar_url ? (
-            <img
-              src={booking.cleaner_avatar_url}
-              alt={booking.cleaner_name}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-700">
-              {initial}
-            </div>
-          )}
-          <div>
-            <p className="font-bold text-gray-900">{booking.cleaner_name}</p>
-            <p className="text-sm text-gray-500">
-              {formatDate(booking.scheduled_date)} · {booking.scheduled_start} · {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
-            </p>
+    <div className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4">
+      {/* Calendar-style date cube, coloured by status */}
+      <div className={`${DATE_BLOCK_COLOR[booking.status]} rounded-xl px-3 py-2 text-center leading-tight min-w-[3.5rem] shrink-0`}>
+        <div className="text-2xl font-bold text-white">{d}</div>
+        <div className="text-xs font-medium text-white/80 uppercase tracking-wide">{month}</div>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex justify-between items-start gap-2 mb-1">
+          <p className="font-bold text-gray-900 truncate">{booking.cleaner_name}</p>
+          <span className={`text-xs px-2 py-0.5 rounded font-semibold whitespace-nowrap ${STATUS_BADGE[booking.status]}`}>
+            {t(`bookingCard.status.${booking.status}`)}
+          </span>
+        </div>
+
+        <p className="text-sm text-gray-500">
+          {booking.scheduled_start.slice(0, 5)} - {endStr} · {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
+        </p>
+
+        <p className="text-sm text-gray-600 mt-1">{booking.address}</p>
+
+        {booking.notes && (
+          <p className="text-sm text-gray-500 italic mt-2">&quot;{booking.notes}&quot;</p>
+        )}
+
+        {booking.status === 'accepted' && booking.cleaner_phone && booking.cleaner_email && (
+          <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-700 flex flex-col gap-1">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingCard.contact.title')}</p>
+            <p>{t('bookingCard.contact.phone')}: {booking.cleaner_phone}</p>
+            <p>{t('bookingCard.contact.email')}: {booking.cleaner_email}</p>
           </div>
-        </div>
-        <span className={`text-xs px-2 py-0.5 rounded font-semibold whitespace-nowrap ${STATUS_BADGE[booking.status]}`}>
-          {t(`bookingCard.status.${booking.status}`)}
-        </span>
+        )}
       </div>
-
-      <p className="text-sm text-gray-600 mb-3"> {booking.address}</p>
-
-      <div className="flex gap-2 flex-wrap mb-3">
-        <span className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[booking.service_type]}`}>
-          {t(`common.${booking.service_type}`)}
-        </span>
-      </div>
-
-      {booking.notes && (
-        <p className="text-sm text-gray-500 italic">&quot;{booking.notes}&quot;</p>
-      )}
-
-      {booking.status === 'accepted' && booking.cleaner_phone && booking.cleaner_email && (
-        <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-700 flex flex-col gap-1">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingCard.contact.title')}</p>
-          <p>{t('bookingCard.contact.phone')}: {booking.cleaner_phone}</p>
-          <p>{t('bookingCard.contact.email')}: {booking.cleaner_email}</p>
-        </div>
-      )}
     </div>
   )
 }

@@ -31,7 +31,7 @@ export function BookingsSections({
   return (
     <div className="flex flex-col gap-8">
       {/* Confirmed */}
-      <section className="bg-white rounded-3xl shadow-md p-5">
+      <section className="transition-shadow">
         <h2 className=" p-2 text-lg font-bold text-gray-900 mb-3">
           {t('bookings.confirmed')}
           {confirmed.length > 0 && (
@@ -46,7 +46,7 @@ export function BookingsSections({
         <button
           type="button"
           onClick={() => setPendingOpen(o => !o)}
-          className="w-full flex items-center justify-between gap-3 bg-white rounded-3xl px-4 py-3 shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center justify-between gap-3 bg-white rounded-3xl px-4 py-3 shadow-sm border border-gray-100"
         >
           <span className="flex items-center gap-2 text-lg font-bold text-gray-900">
             {t('bookings.pendingRequests')}
