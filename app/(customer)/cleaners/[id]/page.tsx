@@ -6,9 +6,10 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
   params: { id: string }
+  searchParams: { date?: string; location?: string }
 }
 
-export default async function CleanerProfilePage({ params }: Props) {
+export default async function CleanerProfilePage({ params, searchParams }: Props) {
   const supabase = await createClient()
   const admin = createAdminClient()
 
@@ -69,6 +70,8 @@ export default async function CleanerProfilePage({ params }: Props) {
         gallery={(galleryRows ?? []).map(r => r.photo_url as string)}
         weeklyAvailability={weeklyAvailability ?? []}
         dateAvailability={dateAvailability ?? []}
+        presetDate={searchParams.date}
+        presetAddress={searchParams.location}
       />
     </div>
   )

@@ -26,21 +26,29 @@ export function BookingRequestForm({
   cleaner,
   weeklyAvailability = [],
   dateAvailability = [],
+  presetDate,
+  presetAddress,
 }: {
   cleaner: CleanerResult
   weeklyAvailability?: WeeklySlot[]
   dateAvailability?: DateSlot[]
+  presetDate?: string
+  presetAddress?: string
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [open, setOpen] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [serviceType, setServiceType] = useState(cleaner.service_types[0] ?? 'residential')
-  const [date, setDate] = useState('')
+  // When the customer arrived from a date-grouped search result, the date is
+  // fixed to the day the cleaner was matched under — they don't pick it again.
+  const [date, setDate] = useState(presetDate ?? '')
   const [startTime, setStartTime] = useState('')
   const [duration, setDuration] = useState(2)
-  const [address, setAddress] = useState('')
+  // Prefilled from the location the customer searched, and locked — the cleaner
+  // only matched because that location is within their service radius.
+  const [address, setAddress] = useState(presetAddress ?? '')
   const [notes, setNotes] = useState('')
 
   const hasAvailability = weeklyAvailability.length > 0 || dateAvailability.length > 0
@@ -118,14 +126,26 @@ export function BookingRequestForm({
       <div className="flex gap-3">
         <div className="flex flex-col gap-1 flex-1">
           <label htmlFor="date" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.date')}</label>
-          <input
-            id="date"
-            type="date"
-            value={date}
-            onChange={e => { setDate(e.target.value); setStartTime('') }}
-            required
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          {presetDate ? (
+            <div
+              id="date"
+              className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium"
+            >
+              {new Date(presetDate + 'T00:00:00').toLocaleDateString(
+                lang === 'he' ? 'he-IL' : 'en-US',
+                { weekday: 'long', month: 'short', day: 'numeric' }
+              )}
+            </div>
+          ) : (
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={e => { setDate(e.target.value); setStartTime('') }}
+              required
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-1 flex-1">
@@ -175,9 +195,18 @@ export function BookingRequestForm({
 
       <div className="flex flex-col gap-1">
         <label htmlFor="address" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.address')}</label>
-        <input id="address" type="text" value={address} onChange={e => setAddress(e.target.value)} required
-          placeholder={t('bookingRequestForm.addressPlaceholder')}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        {presetAddress ? (
+          <div
+            id="address"
+            className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium"
+          >
+            {presetAddress}
+          </div>
+        ) : (
+          <input id="address" type="text" value={address} onChange={e => setAddress(e.target.value)} required
+            placeholder={t('bookingRequestForm.addressPlaceholder')}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        )}
       </div>
 
       <div className="flex flex-col gap-1">

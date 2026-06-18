@@ -3,9 +3,16 @@ import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
-export function CleanerCard({ cleaner }: { cleaner: CleanerResult }) {
+export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResult; date?: string; location?: string }) {
   const { t } = useLanguage()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
+  // Carry the date this cleaner was matched under and the searched location into
+  // the profile/booking flow so the customer doesn't re-enter either.
+  const params = new URLSearchParams()
+  if (date) params.set('date', date)
+  if (location) params.set('location', location)
+  const qs = params.toString()
+  const href = qs ? `/cleaners/${cleaner.id}?${qs}` : `/cleaners/${cleaner.id}`
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -54,7 +61,7 @@ export function CleanerCard({ cleaner }: { cleaner: CleanerResult }) {
       <div className="flex justify-between items-center">
         <span className="font-bold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</span>
         <Link
-          href={`/cleaners/${cleaner.id}`}
+          href={href}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
         >
           {t('cleanerCard.viewProfile')}

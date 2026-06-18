@@ -165,7 +165,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
       )}
 
-      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} groups={groups} />
+      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} groups={groups} />
     </div>
   )
 }
