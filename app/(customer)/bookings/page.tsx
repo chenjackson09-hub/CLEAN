@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from 'next/link'
-import { BookingCard } from './BookingCard'
+import { BookingsSections } from './BookingsSections'
 import { MarkBookingsSeen } from './MarkBookingsSeen'
 
 export default async function BookingsPage() {
@@ -45,12 +45,18 @@ export default async function BookingsPage() {
     }
   })
 
+  // Three buckets: confirmed (accepted) up top, pending requests (collapsible),
+  // and past cleans — completed plus all terminal states (declined/cancelled/expired).
+  const confirmed = bookings.filter(b => b.status === 'accepted')
+  const pending = bookings.filter(b => b.status === 'pending')
+  const past = bookings.filter(b => b.status === 'completed' || b.status === 'declined' || b.status === 'cancelled')
+
   return (
     <div className="max-w-3xl mx-auto">
       <MarkBookingsSeen />
       <h1 className="text-xl font-bold text-gray-900 mb-6">My Bookings</h1>
 
-      {bookings.length === 0 && (
+      {bookings.length === 0 ? (
         <p className="text-gray-500 text-sm">
           No bookings yet.{' '}
           <Link href="/browse" className="text-blue-600 font-semibold hover:underline">
@@ -58,12 +64,8 @@ export default async function BookingsPage() {
           </Link>{' '}
           to make your first booking.
         </p>
-      )}
-
-      {bookings.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {bookings.map(b => <BookingCard key={b.id} booking={b} />)}
-        </div>
+      ) : (
+        <BookingsSections confirmed={confirmed} pending={pending} past={past} />
       )}
     </div>
   )

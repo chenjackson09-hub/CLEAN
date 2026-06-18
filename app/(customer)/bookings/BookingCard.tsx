@@ -37,7 +37,7 @@ export function BookingCard({ booking }: { booking: BookingResult }) {
   const initial = booking.cleaner_name.charAt(0).toUpperCase()
 
   return (
-    <div className={`bg-white rounded-xl p-4 shadow-md border-t-4 ${STATUS_ACCENT[booking.status]} hover:shadow-lg transition-shadow`}>
+    <div className={`bg-white rounded-xl p-4  hover:shadow-lg transition-shadow`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
           {booking.cleaner_avatar_url ? (
