@@ -406,6 +406,20 @@ export async function respondToBooking(
   if (response === "accepted") {
     await carveAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
     revalidatePath("/cleaner/availability");
+
+    // The customer typically fans the same job out to several cleaners (and may
+    // have requested other days too). Now that one cleaner has accepted, cancel
+    // ALL of the customer's other still-pending requests so they stop showing as
+    // actionable for every other cleaner. These belong to other cleaners, so the
+    // acting cleaner's RLS-scoped session can't touch them — use the service-role
+    // client to bypass RLS for this cross-cleaner cleanup.
+    const admin = createAdminClient();
+    await admin
+      .from("bookings")
+      .update({ status: "cancelled", responded_at: new Date().toISOString() })
+      .eq("customer_id", booking.customer_id)
+      .eq("status", "pending")
+      .neq("id", bookingId);
   }
 
   // Fire and forget — email failure must not delay the booking response
