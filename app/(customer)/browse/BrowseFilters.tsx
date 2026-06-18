@@ -22,7 +22,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
   const { t } = useLanguage()
 
   return (
-    <form method="get" action="/browse" className="flex flex-wrap gap-3 items-end mb-4">
+    <form method="get" action="/browse" className="bg-white rounded-2xl justify-center items-center shadow-sm p-4 flex flex-wrap gap-3  mb-4">
       <input type="hidden" name="dates" value={dates ?? ''} />
       <div className="flex flex-col gap-1">
         <label htmlFor="start" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">

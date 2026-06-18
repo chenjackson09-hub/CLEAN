@@ -133,9 +133,11 @@ const translations = {
       confirmed: 'Confirmed',
       pendingRequests: 'Pending requests',
       pastCleans: 'Past cleans',
+      cancelled: 'Cancelled',
       noneConfirmed: 'No confirmed bookings.',
       nonePending: 'No pending requests.',
       nonePast: 'No past cleans yet.',
+      noneCancelled: 'No cancelled bookings.',
     },
     bookingCard: {
       hour: 'hr',
@@ -409,9 +411,11 @@ const translations = {
       confirmed: 'מאושרות',
       pendingRequests: 'בקשות בהמתנה',
       pastCleans: 'ניקיונות קודמים',
+      cancelled: 'בוטלו',
       noneConfirmed: 'אין הזמנות מאושרות.',
       nonePending: 'אין בקשות בהמתנה.',
       nonePast: 'אין ניקיונות קודמים עדיין.',
+      noneCancelled: 'אין הזמנות שבוטלו.',
     },
     bookingCard: {
       hour: 'שעה',

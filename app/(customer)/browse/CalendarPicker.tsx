@@ -149,16 +149,16 @@ export function CalendarPicker() {
       </div>
 
       {/* Color legend */}
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 flex-wrap">
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+      <div className="bg-white p-3 shadow-sm flex items-center gap-4 mt-3 pt-3 rounded-xl flex-wrap">
+        <div className="flex items-center gap-1.5 text-sm text-gray-600">
           <span className="w-3 h-3 rounded-full bg-blue-100 inline-block" />
           {t('calendar.manyCleaners')}
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+        <div className="flex items-center gap-1.5 text-sm text-gray-600">
           <span className="w-3 h-3 rounded-full bg-blue-50 border border-blue-200 inline-block" />
           {t('calendar.fewerCleaners')}
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+        <div className="flex items-center gap-1.5 text-sm text-gray-600">
           <span className="w-3 h-3 rounded-full bg-gray-100 inline-block" />
           {t('calendar.limited')}
         </div>
@@ -166,7 +166,7 @@ export function CalendarPicker() {
 
       {/* Selected dates summary */}
       {sortedSelected.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
               {sortedSelected.length === 1

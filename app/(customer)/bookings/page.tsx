@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
 import Link from 'next/link'
 import { BookingsSections } from './BookingsSections'
@@ -19,8 +20,13 @@ export default async function BookingsPage() {
 
   const cleanerIds = Array.from(new Set((rawBookings ?? []).map(b => b.cleaner_id)))
 
+  // Read cleaner profiles with the service-role client: RLS prevents a customer's
+  // session from reading other users' `profiles` rows, so the session client would
+  // return nothing and every booking would fall back to the literal "Cleaner".
+  // (Browse and the cleaner-detail page use the admin client for the same reason.)
+  const admin = createAdminClient()
   const { data: cleanerProfiles } = cleanerIds.length > 0
-    ? await supabase.from("profiles").select("id, full_name, avatar_url, phone").in("id", cleanerIds)
+    ? await admin.from("profiles").select("id, full_name, avatar_url, phone").in("id", cleanerIds)
     : { data: [] }
 
   const profileMap = Object.fromEntries((cleanerProfiles ?? []).map(p => [p.id, p]))
@@ -45,11 +51,14 @@ export default async function BookingsPage() {
     }
   })
 
-  // Three buckets: confirmed (accepted) up top, pending requests (collapsible),
-  // and past cleans — completed plus all terminal states (declined/cancelled/expired).
+  // Four buckets: confirmed (accepted) up top, pending requests (collapsible),
+  // cancelled (collapsible, capped at the 20 most recent — bookings are already
+  // ordered newest-first), and past cleans (completed + declined). Cancelled
+  // includes expired-pending requests, which are mapped to 'cancelled' above.
   const confirmed = bookings.filter(b => b.status === 'accepted')
   const pending = bookings.filter(b => b.status === 'pending')
-  const past = bookings.filter(b => b.status === 'completed' || b.status === 'declined' || b.status === 'cancelled')
+  const cancelled = bookings.filter(b => b.status === 'cancelled').slice(0, 20)
+  const past = bookings.filter(b => b.status === 'completed' || b.status === 'declined')
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -65,7 +74,7 @@ export default async function BookingsPage() {
           to make your first booking.
         </p>
       ) : (
-        <BookingsSections confirmed={confirmed} pending={pending} past={past} />
+        <BookingsSections confirmed={confirmed} pending={pending} cancelled={cancelled} past={past} />
       )}
     </div>
   )

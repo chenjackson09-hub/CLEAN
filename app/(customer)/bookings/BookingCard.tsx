@@ -20,7 +20,7 @@ const DATE_BLOCK_COLOR: Record<BookingStatus, string> = {
   cancelled: 'bg-black',
 }
 
-export function BookingCard({ booking }: { booking: BookingResult }) {
+export function BookingCard({ booking, muted = false }: { booking: BookingResult; muted?: boolean }) {
   const { t, lang } = useLanguage()
 
   const [y, m, d] = booking.scheduled_date.split('-').map(Number)
@@ -32,7 +32,7 @@ export function BookingCard({ booking }: { booking: BookingResult }) {
   const endStr = end.toTimeString().slice(0, 5)
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4">
+    <div className={`rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4 ${muted ? 'bg-gray-50 opacity-75' : 'bg-white'}`}>
       {/* Calendar-style date cube, coloured by status */}
       <div className={`${DATE_BLOCK_COLOR[booking.status]} rounded-xl px-3 py-2 text-center leading-tight min-w-[3.5rem] shrink-0`}>
         <div className="text-2xl font-bold text-white">{d}</div>
