@@ -28,7 +28,13 @@ export async function geocodeAddress(
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-      { headers: { 'User-Agent': 'Clean-App' } }
+      {
+        headers: { 'User-Agent': 'Clean-App' },
+        // A given address always resolves to the same coordinates, so cache the
+        // lookup for a day. This avoids a slow external round-trip on every
+        // repeated search and stays within Nominatim's 1 req/sec usage policy.
+        next: { revalidate: 86400 },
+      }
     )
     if (!res.ok) return null
 

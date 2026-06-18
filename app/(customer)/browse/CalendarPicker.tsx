@@ -80,7 +80,7 @@ export function CalendarPicker() {
   const sortedSelected = Array.from(selectedSet).sort()
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+    <div className="p-4 mb-4">
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-3">
         <button
@@ -92,7 +92,7 @@ export function CalendarPicker() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="font-semibold text-gray-900 text-sm">
+        <span className="font-semibold text-gray-900 text-xl">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
         <button
@@ -116,7 +116,7 @@ export function CalendarPicker() {
       </div>
 
       {/* Date cells */}
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 gap-1">
         {cells.map((day, i) => {
           if (!day) return <div key={i} />
 
@@ -127,7 +127,7 @@ export function CalendarPicker() {
           const isSelected = selectedSet.has(dateStr)
           const avail = AVAILABILITY[date.getDay()]
 
-          let cls = 'flex items-center justify-center w-9 h-9 mx-auto rounded-full text-sm font-medium transition-colors select-none '
+          let cls ='flex items-center justify-center w-10 h-10 sm:w-13 sm:h-13 md:w-16 md:h-16 mx-auto rounded-xl text-sm sm:text-base font-medium transition-colors select-none '
           if (isPast) cls += 'text-gray-300 cursor-not-allowed'
           else if (isSelected) cls += 'bg-blue-600 text-white cursor-pointer shadow-sm'
           else if (isToday) cls += 'ring-2 ring-blue-500 text-blue-700 cursor-pointer hover:bg-blue-50'
