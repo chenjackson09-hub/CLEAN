@@ -1,4 +1,5 @@
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,7 +27,10 @@ export default async function CustomerProfilePage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const supabase = await createClient();
+  // Service-role client: the "users manage own profile" RLS policy hides the
+  // customer's profile row from the cleaner. Authorization is still enforced
+  // below — the page 404s unless this cleaner has a booking with this customer.
+  const supabase = createAdminClient();
 
   const [{ data: profile }, { data: bookings }] = await Promise.all([
     supabase

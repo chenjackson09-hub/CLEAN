@@ -360,7 +360,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
             {panelPending.length > 0 && (
               <Link
                 href="/cleaner/requests"
-                className="flex items-center justify-between gap-2 mx-6 mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-semibold hover:bg-red-100 transition-colors"
+                className="flex items-center justify-between gap-2 mx-6 mt-4 px-4 py-3 rounded-xl bg-red-100 text-red-700 font-semibold hover:bg-red-100 transition-colors"
               >
                 <span>
                   {panelPending.length} {panelPending.length === 1 ? t("avail_pending_request") : t("avail_pending_requests")}
@@ -380,9 +380,9 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                   {panelBookings.map((b) => (
                     <div
                       key={b.id}
-                      className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3"
+                      className="bg-orange-100 rounded-xl px-4 py-3"
                     >
-                      <p className="text-xs font-medium text-orange-500 mb-0.5">{t("avail_booked")}</p>
+                      <p className="text-sm font-medium text-orange-500 mb-0.5">{t("avail_booked")}</p>
                       <p className="text-lg font-semibold text-orange-800">
                         {b.scheduled_start.slice(0, 5)} · {b.duration_hours}{t("req_h")}
                       </p>
@@ -392,7 +392,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                   {panelRecurring.map((slot) => (
                     <div
                       key={slot.id}
-                      className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3"
+                      className="flex items-center justify-between bg-indigo-100 border border-indigo-100 rounded-xl px-4 py-3"
                     >
                       <div>
                         <p className="text-xs font-medium text-indigo-400 mb-0.5">{t("avail_recurring_label")}</p>
@@ -405,7 +405,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                   {panelSlots.map((slot) => (
                     <div
                       key={slot.id}
-                      className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-3"
+                      className="flex items-center justify-between bg-blue-100 rounded-xl px-4 py-3"
                     >
                       <div>
                         <p className="text-lg font-semibold text-blue-800">

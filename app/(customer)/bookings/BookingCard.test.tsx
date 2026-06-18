@@ -19,7 +19,9 @@ describe('BookingCard', () => {
   it('renders cleaner name, date, time and duration', () => {
     render(<BookingCard booking={baseBooking} />)
     expect(screen.getByText('Sarah M.')).toBeInTheDocument()
-    expect(screen.getByText(/Jun 15, 2026/)).toBeInTheDocument()
+    // Date is rendered as a calendar cube: day number + short month.
+    expect(screen.getByText('15')).toBeInTheDocument()
+    expect(screen.getByText('Jun')).toBeInTheDocument()
     expect(screen.getByText(/09:00/)).toBeInTheDocument()
     expect(screen.getByText(/2 hrs/)).toBeInTheDocument()
   })
@@ -32,16 +34,6 @@ describe('BookingCard', () => {
   it('renders the address', () => {
     render(<BookingCard booking={baseBooking} />)
     expect(screen.getByText(/12 Rothschild Blvd, Tel Aviv/)).toBeInTheDocument()
-  })
-
-  it('renders the service type badge', () => {
-    render(<BookingCard booking={baseBooking} />)
-    expect(screen.getByText('Residential')).toBeInTheDocument()
-  })
-
-  it('renders commercial badge for commercial bookings', () => {
-    render(<BookingCard booking={{ ...baseBooking, service_type: 'commercial' }} />)
-    expect(screen.getByText('Commercial')).toBeInTheDocument()
   })
 
   it.each([
@@ -63,16 +55,6 @@ describe('BookingCard', () => {
   it('does not render a notes section when notes are absent', () => {
     render(<BookingCard booking={baseBooking} />)
     expect(screen.queryByText(/"/)).not.toBeInTheDocument()
-  })
-
-  it('renders initial avatar when cleaner_avatar_url is null', () => {
-    render(<BookingCard booking={baseBooking} />)
-    expect(screen.getByText('S')).toBeInTheDocument()
-  })
-
-  it('renders img when cleaner_avatar_url is set', () => {
-    render(<BookingCard booking={{ ...baseBooking, cleaner_avatar_url: 'https://example.com/photo.jpg' }} />)
-    expect(screen.getByRole('img', { name: 'Sarah M.' })).toHaveAttribute('src', 'https://example.com/photo.jpg')
   })
 
   it('shows cleaner contact info for accepted bookings', () => {

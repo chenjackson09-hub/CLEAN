@@ -29,9 +29,10 @@ describe('CleanerProfile', () => {
 
   it('renders the hourly rate, experience, distance and area', () => {
     render(<CleanerProfile cleaner={cleaner} />)
-    expect(screen.getByText('₪80/hr')).toBeInTheDocument()
-    expect(screen.getByText(/5 yrs exp/i)).toBeInTheDocument()
-    expect(screen.getByText(/2\.1km away/i)).toBeInTheDocument()
+    // The rate shows in both the booking form and the stats block.
+    expect(screen.getAllByText('₪80/hr').length).toBeGreaterThan(0)
+    expect(screen.getByText(/5 years/i)).toBeInTheDocument()
+    expect(screen.getByText(/2\.1 km/i)).toBeInTheDocument()
     expect(screen.getByText(/Tel Aviv/i)).toBeInTheDocument()
   })
 
@@ -43,7 +44,9 @@ describe('CleanerProfile', () => {
 
   it('renders languages', () => {
     render(<CleanerProfile cleaner={cleaner} />)
-    expect(screen.getByText(/EN, HE/i)).toBeInTheDocument()
+    // Each language renders as its own chip.
+    expect(screen.getByText('EN')).toBeInTheDocument()
+    expect(screen.getByText('HE')).toBeInTheDocument()
   })
 
   it('renders a Request Booking button', () => {
@@ -51,10 +54,10 @@ describe('CleanerProfile', () => {
     expect(screen.getByRole('button', { name: /request booking/i })).toBeInTheDocument()
   })
 
-  it('renders a back to browse link', () => {
+  it('renders a back to search button', () => {
     render(<CleanerProfile cleaner={cleaner} />)
-    const link = screen.getByRole('link', { name: /back to browse/i })
-    expect(link).toHaveAttribute('href', '/browse')
+    // Back navigation uses router.back() (preserves filters), so it's a button.
+    expect(screen.getByRole('button', { name: /back to search/i })).toBeInTheDocument()
   })
 
   it('renders initial avatar when avatar_url is null', () => {

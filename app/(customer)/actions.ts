@@ -18,7 +18,7 @@ export async function markBookingsSeen(): Promise<void> {
   revalidatePath("/bookings")
 }
 
-type ActionResult = { error?: string; success?: boolean } | null
+type ActionResult = { error?: string; success?: boolean; avatarUrl?: string } | null
 
 function timeToMinutes(t: string): number {
   const [h, m] = t.slice(0, 5).split(':').map(Number)
@@ -47,11 +47,14 @@ export async function updateCustomerProfile(
     const path = `${user.id}/avatar.${ext}`
     const { error: uploadErr } = await supabase.storage
       .from("avatars")
-      .upload(path, avatarFile, { upsert: true })
-    if (!uploadErr) {
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path)
-      avatarUrl = urlData.publicUrl
-    }
+      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
+    if (uploadErr) return { error: uploadErr.message }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path)
+    // The storage path is stable (upsert overwrites the same file), so the public
+    // URL never changes between uploads — the browser and next/image would keep
+    // serving the cached old photo. A unique version query string forces a fresh
+    // fetch each time the photo is replaced.
+    avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`
   }
 
   const { error: profileErr } = await supabase
@@ -75,7 +78,7 @@ export async function updateCustomerProfile(
   if (customerErr) return { error: customerErr.message }
 
   revalidatePath("/profile")
-  return { success: true }
+  return { success: true, avatarUrl: avatarUrl ?? undefined }
 }
 
 export async function createBooking(data: {

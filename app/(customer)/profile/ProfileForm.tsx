@@ -1,8 +1,9 @@
 'use client'
 import { useFormState, useFormStatus } from 'react-dom'
-import { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 
-type ActionResult = { error?: string; success?: boolean } | null
+type ActionResult = { error?: string; success?: boolean; avatarUrl?: string } | null
 
 type DefaultValues = {
   full_name: string
@@ -33,8 +34,18 @@ function SubmitButton() {
 
 export function ProfileForm({ defaultValues, action }: Props) {
   const [state, formAction] = useFormState(action, null)
+  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(defaultValues.avatar_url)
+
+  // On a successful save, adopt the freshly-saved (cache-busted) avatar URL and
+  // re-fetch server data so the photo no longer shows the previous one.
+  useEffect(() => {
+    if (state?.success) {
+      if (state.avatarUrl) setPreview(state.avatarUrl)
+      router.refresh()
+    }
+  }, [state, router])
 
   const fieldClass = 'border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full'
   const labelClass = 'text-xs font-semibold text-gray-600 uppercase tracking-wide'
@@ -74,7 +85,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
 
         <div>
           <p className="text-lg font-bold text-gray-900">{defaultValues.full_name || 'Your name'}</p>
-          <p className="text-sm text-gray-500">📍 {defaultValues.address || 'Add your address'}</p>
+          <p className="text-sm text-gray-500">{defaultValues.address || 'Add your address'}</p>
           <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-100">
             {defaultValues.preferred_service_type === 'commercial' ? 'Commercial' : 'Residential'}
           </span>

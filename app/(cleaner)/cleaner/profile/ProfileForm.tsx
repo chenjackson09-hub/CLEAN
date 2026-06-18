@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
 import { useLang } from "@/context/LangContext";
@@ -13,6 +14,7 @@ interface Props {
 
 export default function ProfileForm({ profile, cleaner }: Props) {
   const { t } = useLang();
+  const router = useRouter();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url ?? null);
@@ -25,6 +27,10 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       setMessage({ type: "error", text: result.error });
     } else {
       setMessage({ type: "success", text: t("prof_saved") });
+      // Adopt the freshly-saved (cache-busted) avatar URL and re-fetch server
+      // data so the preview/edit pages no longer show the previous photo.
+      if (result?.avatarUrl) setAvatarPreview(result.avatarUrl);
+      router.refresh();
     }
     setLoading(false);
   }

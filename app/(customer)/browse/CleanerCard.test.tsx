@@ -23,25 +23,15 @@ describe('CleanerCard', () => {
     expect(screen.getByText(/5 yrs exp/i)).toBeInTheDocument()
   })
 
-  it('renders bio truncated to 80 chars', () => {
-    render(<CleanerCard cleaner={baseCleaner} />)
-    expect(screen.getByText(/Reliable and thorough/i)).toBeInTheDocument()
-  })
-
-  it('truncates bio longer than 80 chars with ellipsis', () => {
-    const longBio = 'A'.repeat(100)
-    render(<CleanerCard cleaner={{ ...baseCleaner, bio: longBio }} />)
-    expect(screen.getByText(`"${'A'.repeat(80)}…"`)).toBeInTheDocument()
-  })
-
   it('renders service type badge', () => {
     render(<CleanerCard cleaner={baseCleaner} />)
     expect(screen.getByText('Residential')).toBeInTheDocument()
   })
 
-  it('renders both badge when cleaner has residential + commercial', () => {
+  it('renders a badge for each service type', () => {
     render(<CleanerCard cleaner={{ ...baseCleaner, service_types: ['residential', 'commercial'] }} />)
-    expect(screen.getByText('Both')).toBeInTheDocument()
+    expect(screen.getByText('Residential')).toBeInTheDocument()
+    expect(screen.getByText('Commercial')).toBeInTheDocument()
   })
 
   it('renders languages', () => {

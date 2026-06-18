@@ -81,7 +81,7 @@ export async function updateCleanerProfile(formData: FormData) {
   const avatarFile = formData.get("avatar") as File;
 
   // Geocoding and avatar upload are independent — run in parallel
-  const [geocodeResult, avatarUrl] = await Promise.all([
+  const [geocodeResult, avatarResult] = await Promise.all([
     address ? geocodeAddress(address) : Promise.resolve(null),
     avatarFile && avatarFile.size > 0
       ? (async () => {
@@ -89,13 +89,20 @@ export async function updateCleanerProfile(formData: FormData) {
           const path = `${user.id}/avatar.${ext}`;
           const { error } = await supabase.storage
             .from("avatars")
-            .upload(path, avatarFile, { upsert: true });
-          if (error) return null;
+            .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
+          if (error) return { url: null, error: error.message };
           const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-          return data.publicUrl;
+          // The storage path is stable (upsert overwrites the same file), so the
+          // public URL never changes between uploads — the browser and next/image
+          // would keep serving the cached old photo. A unique version query string
+          // forces a fresh fetch each time the photo is replaced.
+          return { url: `${data.publicUrl}?v=${Date.now()}`, error: null };
         })()
-      : Promise.resolve(null),
+      : Promise.resolve({ url: null, error: null }),
   ]);
+
+  if (avatarResult.error) return { error: avatarResult.error };
+  const avatarUrl = avatarResult.url;
 
   const cleanerUpdate: Record<string, unknown> = {
     bio,
@@ -122,8 +129,11 @@ export async function updateCleanerProfile(formData: FormData) {
   if (profileResult.error) return { error: profileResult.error.message };
   if (cleanerResult.error) return { error: cleanerResult.error.message };
 
+  // Both the edit form and the public preview render the avatar, so refresh both
+  // — revalidating only the profile page left the preview showing the old photo.
   revalidatePath("/cleaner/profile");
-  return { success: true };
+  revalidatePath("/cleaner/preview");
+  return { success: true, avatarUrl: avatarUrl ?? undefined };
 }
 
 export async function addAvailability(formData: FormData) {

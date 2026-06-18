@@ -1,4 +1,5 @@
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import RequestCard from "./RequestCard";
@@ -25,7 +26,11 @@ export default async function RequestsPage() {
 
   const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
 
-  const supabase = await createClient();
+  // Use the service-role client so the embedded customer profile (name, phone,
+  // avatar) is readable — the "users manage own profile" RLS policy otherwise
+  // hides the customer's profile row from the cleaner. The explicit
+  // `cleaner_id = user.id` filter still scopes results to this cleaner's requests.
+  const supabase = createAdminClient();
   const now = new Date().toISOString();
 
   const { data: pending } = await supabase
