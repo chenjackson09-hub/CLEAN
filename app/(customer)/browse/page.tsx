@@ -5,10 +5,12 @@ import { BrowseResults } from './BrowseResults'
 import { BrowseFilters } from './BrowseFilters'
 import { BrowseTitle } from './BrowseTitle'
 import { sortCleaners } from '@/lib/cleanerSearch'
-import type { CleanerResult } from '@/lib/types/cleaner'
+import { geocodeAddress } from '@/lib/geocode'
+import { parsePoint, distanceKm } from '@/lib/geo'
+import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
-  searchParams: { dates?: string; type?: string; sort?: string; start?: string; duration?: string }
+  searchParams: { dates?: string; type?: string; sort?: string; start?: string; duration?: string; location?: string }
 }
 
 function toMin(t: string): number {
@@ -17,13 +19,20 @@ function toMin(t: string): number {
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, type, sort, start, duration } = searchParams
+  const { dates, type, sort, start, duration, location } = searchParams
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
-  const hasFilters = selectedDates.length > 0 || !!type
+  const locationQuery = location?.trim() ?? ''
+  const hasDates = selectedDates.length > 0
+  // Location is required: we only search once the customer tells us where they
+  // are, so every result is guaranteed to be a cleaner whose radius covers them.
+  const hasLocation = !!locationQuery
 
-  let cleaners: CleanerResult[] | null = null
+  let groups: DateGroup[] | null = null
+  // True when the customer entered a location we couldn't resolve to coordinates
+  // — distinct from "resolved fine but no cleaner covers it".
+  let locationError = false
 
-  if (hasFilters) {
+  if (hasLocation && hasDates) {
     const admin = createAdminClient()
 
     // Use admin client so RLS doesn't block reading availability or cleaners
@@ -39,46 +48,97 @@ export default async function BrowsePage({ searchParams }: Props) {
         .limit(1000),
       admin
         .from('cleaners')
-        .select('id, bio, service_types, hourly_rate, years_experience, languages')
+        .select('id, bio, service_types, hourly_rate, years_experience, languages, location, service_radius_km')
         .eq('status', 'approved')
         .limit(500),
     ])
 
     const weekly = weeklyRows ?? []
     const dated = dateRows ?? []
-    let filtered = cleanerRows ?? []
+    let base = cleanerRows ?? []
 
     // Requested window from the start time + duration filters (if a start is set).
     const reqStart = start ? toMin(start) : null
     const reqEnd = reqStart !== null ? reqStart + (duration ? parseInt(duration) : 2) * 60 : null
 
-    // Filter by availability. A cleaner is bookable on a selected date if they
-    // have a specific-date slot for that exact date OR a recurring weekly slot
-    // for that weekday that covers the requested window. If no availability
-    // exists at all, show nothing.
-    if (selectedDates.length > 0 && weekly.length === 0 && dated.length === 0) {
-      filtered = []
-    } else if (selectedDates.length > 0) {
-      // cleaner_id → day_of_week → [{start, end}]
-      const weeklyMap = new Map<string, Map<number, Array<{ start: string; end: string }>>>()
-      for (const row of weekly) {
-        if (!weeklyMap.has(row.cleaner_id)) weeklyMap.set(row.cleaner_id, new Map())
-        const m = weeklyMap.get(row.cleaner_id)!
-        if (!m.has(row.day_of_week)) m.set(row.day_of_week, [])
-        m.get(row.day_of_week)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
-      }
-      // cleaner_id → date → [{start, end}]
-      const dateMap = new Map<string, Map<string, Array<{ start: string; end: string }>>>()
-      for (const row of dated) {
-        if (!dateMap.has(row.cleaner_id)) dateMap.set(row.cleaner_id, new Map())
-        const m = dateMap.get(row.cleaner_id)!
-        if (!m.has(row.date)) m.set(row.date, [])
-        m.get(row.date)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
-      }
+    // Apply service type filter (date-independent).
+    if (type) {
+      base = base.filter(c => (c.service_types as string[]).includes(type))
+    }
 
-      filtered = filtered.filter(c =>
-        selectedDates.every(dateStr => {
-          const dow = new Date(dateStr + 'T00:00:00').getDay()
+    // Location filter: keep only cleaners whose service radius covers the
+    // customer's location. A cleaner with no saved location can't be shown to
+    // cover it, so they're excluded once a location is being searched. Distance
+    // is the same regardless of date, so we compute it once here.
+    const distanceById = new Map<string, number>()
+    const customerLoc = await geocodeAddress(locationQuery)
+    if (!customerLoc) {
+      // Address couldn't be resolved — we can't guarantee any match.
+      base = []
+      locationError = true
+    } else {
+      base = base.filter(c => {
+        const cleanerLoc = parsePoint((c as { location?: unknown }).location)
+        if (!cleanerLoc) return false
+        const dist = distanceKm(customerLoc, cleanerLoc)
+        const radius = (c as { service_radius_km?: number }).service_radius_km ?? 10
+        if (dist > radius) return false
+        distanceById.set(c.id, dist)
+        return true
+      })
+    }
+
+    // Availability lookups, keyed for per-date grouping.
+    // cleaner_id → day_of_week → [{start, end}]
+    const weeklyMap = new Map<string, Map<number, Array<{ start: string; end: string }>>>()
+    for (const row of weekly) {
+      if (!weeklyMap.has(row.cleaner_id)) weeklyMap.set(row.cleaner_id, new Map())
+      const m = weeklyMap.get(row.cleaner_id)!
+      if (!m.has(row.day_of_week)) m.set(row.day_of_week, [])
+      m.get(row.day_of_week)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
+    }
+    // cleaner_id → date → [{start, end}]
+    const dateMap = new Map<string, Map<string, Array<{ start: string; end: string }>>>()
+    for (const row of dated) {
+      if (!dateMap.has(row.cleaner_id)) dateMap.set(row.cleaner_id, new Map())
+      const m = dateMap.get(row.cleaner_id)!
+      if (!m.has(row.date)) m.set(row.date, [])
+      m.get(row.date)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
+    }
+
+    // Build a CleanerResult for every candidate so each date group can reuse it.
+    const ids = base.map(c => c.id)
+    const { data: profileRows } = ids.length
+      ? await admin.from('profiles').select('id, full_name, avatar_url').in('id', ids)
+      : { data: [] as { id: string; full_name: string | null; avatar_url: string | null }[] }
+    const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
+
+    const resultById = new Map<string, CleanerResult>()
+    for (const c of base) {
+      const p = profileMap.get(c.id)
+      resultById.set(c.id, {
+        id: c.id,
+        full_name: p?.full_name ?? 'Cleaner',
+        avatar_url: p?.avatar_url ?? null,
+        bio: c.bio ?? '',
+        service_types: (c.service_types ?? []) as string[],
+        hourly_rate: c.hourly_rate ?? 0,
+        years_experience: c.years_experience ?? 0,
+        languages: (c.languages ?? []) as string[],
+        distance_km: distanceById.get(c.id) ?? 0,
+      } satisfies CleanerResult)
+    }
+
+    // Default to nearest-first within each day; honor an explicit sort instead.
+    const sortKey = sort || 'distance_asc'
+
+    // One group per selected date, earliest (closest) date first. A cleaner
+    // appears under a date if they have a specific-date or weekly slot for that
+    // day that covers the requested window.
+    groups = [...selectedDates].sort().map(dateStr => {
+      const dow = new Date(dateStr + 'T00:00:00').getDay()
+      const dayCleaners = base
+        .filter(c => {
           const slots = [
             ...(weeklyMap.get(c.id)?.get(dow) ?? []),
             ...(dateMap.get(c.id)?.get(dateStr) ?? []),
@@ -88,43 +148,9 @@ export default async function BrowsePage({ searchParams }: Props) {
           // The slot must fully contain the requested start→end window.
           return slots.some(s => toMin(s.start) <= reqStart && toMin(s.end) >= reqEnd)
         })
-      )
-    }
-
-    // Apply service type filter client-side
-    if (type) {
-      filtered = filtered.filter(c => (c.service_types as string[]).includes(type))
-    }
-
-    if (filtered.length === 0) {
-      cleaners = []
-    } else {
-      // Fetch profiles for matched cleaners (RLS bypass via admin)
-      const ids = filtered.map(c => c.id)
-      const { data: profileRows } = await admin
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', ids)
-
-      const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
-
-      cleaners = filtered.map(c => {
-        const p = profileMap.get(c.id)
-        return {
-          id: c.id,
-          full_name: p?.full_name ?? 'Cleaner',
-          avatar_url: p?.avatar_url ?? null,
-          bio: c.bio ?? '',
-          service_types: (c.service_types ?? []) as string[],
-          hourly_rate: c.hourly_rate ?? 0,
-          years_experience: c.years_experience ?? 0,
-          languages: (c.languages ?? []) as string[],
-          distance_km: 0,
-        } satisfies CleanerResult
-      })
-
-      cleaners = sortCleaners(cleaners, sort ?? '')
-    }
+        .map(c => resultById.get(c.id)!)
+      return { date: dateStr, cleaners: sortCleaners(dayCleaners, sortKey) }
+    })
   }
 
   return (
@@ -135,11 +161,11 @@ export default async function BrowsePage({ searchParams }: Props) {
         <CalendarPicker />
       </Suspense>
 
-      {selectedDates.length > 0 && (
-        <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} />
+      {hasDates && (
+        <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
       )}
 
-      <BrowseResults hasFilters={hasFilters} error={false} cleaners={cleaners} />
+      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} groups={groups} />
     </div>
   )
 }

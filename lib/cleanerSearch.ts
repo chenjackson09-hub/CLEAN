@@ -17,6 +17,8 @@ export function sortCleaners(cleaners: CleanerResult[], sort: string): CleanerRe
       return [...cleaners].sort((a, b) => a.years_experience - b.years_experience)
     case 'experience_desc':
       return [...cleaners].sort((a, b) => b.years_experience - a.years_experience)
+    case 'distance_asc':
+      return [...cleaners].sort((a, b) => a.distance_km - b.distance_km)
     default:
       return cleaners
   }

@@ -19,3 +19,9 @@ export type CleanerResult = {
   email?: string
   phone?: string
 }
+
+// Browse results grouped by a selected date (one accordion section per day).
+export type DateGroup = {
+  date: string // 'YYYY-MM-DD'
+  cleaners: CleanerResult[]
+}

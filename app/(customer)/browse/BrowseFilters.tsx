@@ -8,6 +8,7 @@ type Props = {
   sort: string | undefined
   start: string | undefined
   duration: string | undefined
+  location: string | undefined
 }
 
 // Start-time options every 30 minutes from 06:00 to 22:00.
@@ -17,7 +18,7 @@ const START_OPTIONS = Array.from({ length: 33 }, (_, i) => {
 })
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 
-export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
+export function BrowseFilters({ dates, type, sort, start, duration, location }: Props) {
   const { t } = useLanguage()
 
   return (
@@ -55,6 +56,20 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
         </select>
       </div>
       <div className="flex flex-col gap-1">
+        <label htmlFor="location" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+          {t('browse.location')}
+        </label>
+        <input
+          id="location"
+          name="location"
+          type="text"
+          required
+          defaultValue={location ?? ''}
+          placeholder={t('browse.locationPlaceholder')}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div className="flex flex-col gap-1">
         <label htmlFor="type" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
           {t('browse.serviceType')}
         </label>
@@ -80,6 +95,7 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">{t('browse.sortDefault')}</option>
+          <option value="distance_asc">{t('browse.nearest')}</option>
           <option value="price_asc">{t('browse.priceLow')}</option>
           <option value="price_desc">{t('browse.priceHigh')}</option>
           <option value="experience_desc">{t('browse.mostExp')}</option>

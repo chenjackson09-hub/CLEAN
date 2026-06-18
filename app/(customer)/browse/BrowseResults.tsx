@@ -1,42 +1,109 @@
 'use client'
+import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { CleanerCard } from './CleanerCard'
-import type { CleanerResult } from '@/lib/types/cleaner'
+import type { DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
-  hasFilters: boolean
-  error: boolean
-  cleaners: CleanerResult[] | null
+  hasDates: boolean
+  hasLocation: boolean
+  locationError: boolean
+  groups: DateGroup[] | null
 }
 
-export function BrowseResults({ hasFilters, error, cleaners }: Props) {
-  const { t } = useLanguage()
+export function BrowseResults({ hasDates, hasLocation, locationError, groups }: Props) {
+  const { t, lang } = useLanguage()
+
+  // Open the first day that actually has cleaners by default (fall back to the
+  // first selected day).
+  const [open, setOpen] = useState<Set<string>>(() => {
+    const initial = groups?.find(g => g.cleaners.length > 0)?.date ?? groups?.[0]?.date
+    return new Set(initial ? [initial] : [])
+  })
+
+  function toggle(date: string) {
+    setOpen(prev => {
+      const next = new Set(prev)
+      if (next.has(date)) next.delete(date)
+      else next.add(date)
+      return next
+    })
+  }
+
+  function formatDate(dateStr: string) {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString(
+      lang === 'he' ? 'he-IL' : 'en-US',
+      { weekday: 'long', month: 'short', day: 'numeric' }
+    )
+  }
+
+  const total = groups?.reduce((n, g) => n + g.cleaners.length, 0) ?? 0
 
   return (
     <div>
-      {error && (
-        <p className="text-red-600 text-sm">{t('browse.error')}</p>
+      {locationError && (
+        <p className="text-amber-700 bg-amber-50 rounded-lg px-3 py-2 text-sm">
+          {t('browse.locationNotFound')}
+        </p>
       )}
 
-      {!hasFilters && !error && (
+      {!hasDates && !locationError && (
         <p className="text-gray-600 text-sm">{t('browse.selectDate')}</p>
       )}
 
-      {hasFilters && !error && cleaners?.length === 0 && (
-        <p className="text-gray-500 text-sm">{t('browse.noResultsDates')}</p>
+      {hasDates && !hasLocation && !locationError && (
+        <p className="text-gray-600 text-sm">{t('browse.enterLocation')}</p>
       )}
 
-      {cleaners && cleaners.length > 0 && (
-        <>
-          <p className="text-sm text-gray-600 mb-4">
-            {cleaners.length === 1
-              ? t('browse.cleanerFound')
-              : t('browse.cleanersFound').replace('{count}', String(cleaners.length))}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {cleaners.map(c => <CleanerCard key={c.id} cleaner={c} />)}
-          </div>
-        </>
+      {hasLocation && !locationError && groups && total === 0 && (
+        <p className="text-gray-500 text-sm">{t('browse.noResults')}</p>
+      )}
+
+      {hasLocation && !locationError && groups && total > 0 && (
+        <div className="space-y-3">
+          {groups.map(g => {
+            const isOpen = open.has(g.date)
+            const count = g.cleaners.length
+            return (
+              <div key={g.date} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggle(g.date)}
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-semibold text-gray-900">{formatDate(g.date)}</span>
+                  <span className="flex items-center gap-2 text-sm text-gray-500">
+                    {count === 1
+                      ? t('browse.cleanerFound')
+                      : t('browse.cleanersFound').replace('{count}', String(count))}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4">
+                    {count === 0 ? (
+                      <p className="text-gray-500 text-sm py-2">{t('browse.noneThisDay')}</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {g.cleaners.map(c => <CleanerCard key={c.id} cleaner={c} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )

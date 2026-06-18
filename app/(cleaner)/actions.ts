@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { geocodeAddress } from "@/lib/geocode";
 import {
   sendBookingAccepted,
   sendBookingDeclined,
@@ -81,19 +82,7 @@ export async function updateCleanerProfile(formData: FormData) {
 
   // Geocoding and avatar upload are independent — run in parallel
   const [geocodeResult, avatarUrl] = await Promise.all([
-    address
-      ? fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-          { headers: { "User-Agent": "CleanApp/1.0" } }
-        )
-          .then((r) => r.json())
-          .then((results: Array<{ lat: string; lon: string }>) =>
-            results[0]
-              ? { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) }
-              : null
-          )
-          .catch(() => null)
-      : Promise.resolve(null),
+    address ? geocodeAddress(address) : Promise.resolve(null),
     avatarFile && avatarFile.size > 0
       ? (async () => {
           const ext = avatarFile.name.split(".").pop();
@@ -115,6 +104,7 @@ export async function updateCleanerProfile(formData: FormData) {
     years_experience: yearsExp,
     languages,
     service_types: serviceTypes,
+    address,
   };
   if (geocodeResult) {
     cleanerUpdate.location = `POINT(${geocodeResult.lng} ${geocodeResult.lat})`;

@@ -33,7 +33,7 @@ export function ApplicationCard({ application, onUpdateStatus }: Props) {
       : application.service_types[0] ?? 'residential'
 
   return (
-    <div className={`bg-white rounded-xl p-4 shadow-sm border border-gray-200 border-t-4 ${SERVICE_ACCENT[serviceLabel]} hover:shadow-lg transition-shadow`}>
+    <div className={`bg-white rounded-xl p-4 shadow-sm border-t-4 ${SERVICE_ACCENT[serviceLabel]} hover:shadow-lg transition-shadow`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white">

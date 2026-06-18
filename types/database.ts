@@ -32,6 +32,7 @@ export interface Cleaner {
   bio: string | null;
   service_types: string[] | null;
   hourly_rate: number | null;
+  address: string | null;
   location: unknown | null;
   service_radius_km: number;
   status: CleanerStatus;
