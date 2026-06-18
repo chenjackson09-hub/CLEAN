@@ -2,8 +2,21 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
 import { sendNewBookingRequest } from "@/lib/resend"
+
+// Records that the customer has now seen their bookings, clearing the "newly
+// accepted" badge on the Bookings nav item. Called when the bookings page opens.
+export async function markBookingsSeen(): Promise<void> {
+  cookies().set("bookings_seen_at", new Date().toISOString(), {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  })
+  revalidatePath("/bookings")
+}
 
 type ActionResult = { error?: string; success?: boolean } | null
 

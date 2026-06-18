@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { signOut } from "../(auth)/actions";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import CustomerNav from "./CustomerNav";
+import RealtimeCustomerBookings from "./RealtimeCustomerBookings";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()])
@@ -15,9 +17,25 @@ export default async function CustomerLayout({ children }: { children: React.Rea
 
   if (!profile || profile.role !== "customer") redirect("/login")
 
+  // Count bookings a cleaner accepted since the customer last opened /bookings,
+  // to show a red badge on the Bookings nav item (cleared on visit).
+  const seenAt = cookies().get("bookings_seen_at")?.value
+  let acceptedQuery = supabase
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", user.id)
+    .eq("status", "accepted")
+  if (seenAt) acceptedQuery = acceptedQuery.gt("responded_at", seenAt)
+  const { count: acceptedCount } = await acceptedQuery
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <CustomerNav signOut={signOut} userName={profile.full_name ?? user.email ?? ""} />
+      <RealtimeCustomerBookings customerId={user.id} />
+      <CustomerNav
+        signOut={signOut}
+        userName={profile.full_name ?? user.email ?? ""}
+        acceptedCount={acceptedCount ?? 0}
+      />
       <main className="p-8 pt-16">{children}</main>
     </div>
   )

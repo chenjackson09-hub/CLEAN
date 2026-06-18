@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from 'next/link'
 import { BookingCard } from './BookingCard'
+import { MarkBookingsSeen } from './MarkBookingsSeen'
 
 export default async function BookingsPage() {
   const supabase = await createClient()
@@ -46,6 +47,7 @@ export default async function BookingsPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
+      <MarkBookingsSeen />
       <h1 className="text-xl font-bold text-gray-900 mb-6">My Bookings</h1>
 
       {bookings.length === 0 && (

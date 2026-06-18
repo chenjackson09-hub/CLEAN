@@ -46,10 +46,18 @@ export function BookingRequestForm({
   const [date, setDate] = useState(presetDate ?? '')
   const [startTime, setStartTime] = useState('')
   const [duration, setDuration] = useState(2)
-  // Prefilled from the location the customer searched, and locked — the cleaner
-  // only matched because that location is within their service radius.
-  const [address, setAddress] = useState(presetAddress ?? '')
+  // When the customer came from a location search, the area is fixed (read-only)
+  // and they add their street + house number alongside it. Otherwise they type
+  // the full address themselves.
+  const [address, setAddress] = useState('')
+  const [street, setStreet] = useState('')
   const [notes, setNotes] = useState('')
+
+  // Final address sent to the booking: street + searched area, or the manually
+  // typed address when there was no search.
+  const fullAddress = presetAddress
+    ? [street.trim(), presetAddress.trim()].filter(Boolean).join(', ')
+    : address.trim()
 
   const hasAvailability = weeklyAvailability.length > 0 || dateAvailability.length > 0
 
@@ -74,7 +82,7 @@ export function BookingRequestForm({
       scheduled_date: date,
       scheduled_start: startTime,
       duration_hours: duration,
-      address,
+      address: fullAddress,
       notes: notes || undefined,
     })
     setLoading(false)
@@ -193,21 +201,29 @@ export function BookingRequestForm({
         </p>
       )}
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="address" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.address')}</label>
-        {presetAddress ? (
-          <div
-            id="address"
-            className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium"
-          >
-            {presetAddress}
+      {presetAddress ? (
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1 flex-1">
+            <label htmlFor="street" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.street')}</label>
+            <input id="street" type="text" value={street} onChange={e => setStreet(e.target.value)} required
+              placeholder={t('bookingRequestForm.streetPlaceholder')}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
-        ) : (
+          <div className="flex flex-col gap-1 flex-1">
+            <label htmlFor="area" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.area')}</label>
+            <div id="area" className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium">
+              {presetAddress}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="address" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.address')}</label>
           <input id="address" type="text" value={address} onChange={e => setAddress(e.target.value)} required
             placeholder={t('bookingRequestForm.addressPlaceholder')}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="notes" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.notes')}</label>
