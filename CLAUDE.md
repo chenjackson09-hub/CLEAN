@@ -10,6 +10,7 @@ npm run build      # Production build (also type-checks and lints)
 npm run lint       # ESLint via next lint
 npm test           # Jest unit/component tests (jsdom)
 npm run test:watch # Jest in watch mode
+npm run regeocode  # Re-geocode cleaners that have an address (supports --dry-run)
 ```
 
 **Do not run `npm run build` while `npm run dev` is running** — both write to `.next/`, and the production build will clobber the dev server's compiled assets (the page then renders unstyled). Stop dev first, or build in a separate checkout.
@@ -82,7 +83,11 @@ Realtime is implemented via headless `"use client"` components that subscribe to
 
 ### Geocoding & location
 
-Cleaner base location is geocoded via OpenStreetMap Nominatim on profile save (`(cleaner)/actions.ts`). The result is stored as a PostGIS `POINT(lng lat)` string in `cleaners.location`. Browse queries use `ST_DWithin` to filter by distance.
+Cleaners enter a free-text `address` (persisted in `cleaners.address`) plus a `service_radius_km`. On profile save (`(cleaner)/actions.ts`) the address is geocoded via OpenStreetMap Nominatim and stored as a PostGIS `POINT(lng lat)` in `cleaners.location`.
+
+- **Shared geocoder** `lib/geocode.ts` is used by both cleaner save and customer browse. It biases results to Israel/Hebrew (`countrycodes=il&accept-language=he`, overridable via `GEOCODE_COUNTRY_CODES` / `GEOCODE_LANGUAGE` env vars) — without this, ambiguous place names resolved to the wrong country.
+- **Distance filtering happens in-app, not in SQL.** Browse fetches each cleaner's `location` + `service_radius_km`, parses the PostGIS point with `lib/geo.ts` `parsePoint()` (handles EWKB hex / WKT / GeoJSON), and keeps a cleaner only when `distanceKm(customer, cleaner) <= service_radius_km` (haversine). Customer location is **required** for search; results are then grouped by date.
+- **Re-geocoding existing rows:** `npm run regeocode` (`scripts/regeocode-cleaners.mjs`) backfills/refreshes `location` for cleaners that have an `address`, with rate-limiting and a `--dry-run` flag.
 
 ### Email notifications
 
