@@ -20,9 +20,11 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setLoading(true);
     setError(null);
+    const formData = new FormData(e.currentTarget);
     const result = await signIn(formData);
     if (result?.error) {
       setError(result.error);
@@ -48,7 +50,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.login.title")}</h1>
         <p className="text-sm text-gray-600 mb-6">{t("auth.login.subtitle")}</p>
 
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("auth.login.email")}

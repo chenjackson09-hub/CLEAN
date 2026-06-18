@@ -32,7 +32,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
           id="start"
           name="start"
           defaultValue={start ?? ''}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">{t('filterBar.anyStartTime')}</option>
           {START_OPTIONS.map(s => (
@@ -48,7 +48,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
           id="duration"
           name="duration"
           defaultValue={duration ?? '2'}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {DURATION_OPTIONS.map(d => (
             <option key={d} value={d}>{d}{t('filterBar.hoursShort')}</option>
@@ -66,7 +66,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
           required
           defaultValue={location ?? ''}
           placeholder={t('browse.locationPlaceholder')}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div className="flex flex-col gap-1">
@@ -77,7 +77,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
           id="type"
           name="type"
           defaultValue={type ?? ''}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">{t('browse.allTypes')}</option>
           <option value="residential">{t('browse.residential')}</option>
@@ -92,7 +92,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
           id="sort"
           name="sort"
           defaultValue={sort ?? ''}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">{t('browse.sortDefault')}</option>
           <option value="distance_asc">{t('browse.nearest')}</option>
@@ -104,13 +104,13 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
       </div>
       <button
         type="submit"
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
       >
         {t('browse.filter')}
       </button>
       <Link
         href="/browse"
-        className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+        className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
       >
         {t('browse.clear')}
       </Link>

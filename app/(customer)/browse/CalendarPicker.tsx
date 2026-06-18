@@ -131,8 +131,8 @@ export function CalendarPicker() {
           if (isPast) cls += 'text-gray-300 cursor-not-allowed'
           else if (isSelected) cls += 'bg-blue-600 text-white cursor-pointer shadow-sm'
           else if (isToday) cls += 'ring-2 ring-blue-500 text-blue-700 cursor-pointer hover:bg-blue-50'
-          else if (avail === 'high') cls += 'bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200'
-          else if (avail === 'medium') cls += 'bg-blue-50 text-blue-600 cursor-pointer hover:bg-blue-100'
+          else if (avail === 'high') cls += 'bg-blue-200 text-blue-800 cursor-pointer hover:bg-blue-200'
+          else if (avail === 'medium') cls += 'bg-blue-100 text-blue-600 cursor-pointer hover:bg-blue-100'
           else cls += 'bg-gray-100 text-gray-500 cursor-pointer hover:bg-gray-200'
 
           return (
@@ -175,7 +175,7 @@ export function CalendarPicker() {
             </span>
             <button
               onClick={clearAll}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+              className="text-sm text-gray-400 hover:text-red-500 transition-colors"
             >
               {t('calendar.clearAll')}
             </button>
