@@ -161,9 +161,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         <CalendarPicker />
       </Suspense>
 
-      {hasDates && (
-        <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
-      )}
+      <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
 
       <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} groups={groups} />
     </div>
