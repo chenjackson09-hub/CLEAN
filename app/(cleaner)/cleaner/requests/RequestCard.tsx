@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { respondToBooking } from "../../actions";
@@ -47,6 +48,7 @@ interface Props {
 
 export default function RequestCard({ booking, showActions }: Props) {
   const { t } = useLang();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<"accepted" | "declined" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +63,26 @@ export default function RequestCard({ booking, showActions }: Props) {
     setLoading(response);
     setError(null);
     const result = await respondToBooking(booking.id, response);
+    setLoading(null);
     if (result?.error) {
       setError(result.error);
-    } else {
-      setCurrentStatus(response);
-      if (response === "declined") setOpen(false);
+      return;
     }
-    setLoading(null);
+    setCurrentStatus(response);
+    // On decline, dismiss right away. On accept, keep the modal open so the
+    // cleaner can read the customer's phone number until they close it.
+    if (response === "declined") {
+      setOpen(false);
+      router.refresh();
+    }
+  }
+
+  // Closing the modal after a response refreshes the list so the answered card
+  // drops off (the page only lists still-pending requests). We deliberately
+  // don't auto-refresh on accept, so the phone number stays put until dismissal.
+  function handleClose() {
+    setOpen(false);
+    if (currentStatus !== "pending") router.refresh();
   }
 
   return (
@@ -122,7 +137,7 @@ export default function RequestCard({ booking, showActions }: Props) {
       {open && (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-          onClick={() => setOpen(false)}
+          onClick={handleClose}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
@@ -153,7 +168,7 @@ export default function RequestCard({ booking, showActions }: Props) {
                 </div>
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={handleClose}
                 className="text-3xl text-gray-400 hover:text-gray-700 font-bold leading-none ml-4"
               >
                 ✕
@@ -221,6 +236,19 @@ export default function RequestCard({ booking, showActions }: Props) {
                   className="flex-1 border border-gray-300 text-gray-700 rounded-xl py-4 text-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
                 >
                   {loading === "declined" ? t("req_declining") : t("req_decline")}
+                </button>
+              </div>
+            )}
+
+            {/* After accepting, the modal stays open so the cleaner can note the
+                customer's phone; an explicit Done button closes it. */}
+            {currentStatus === "accepted" && (
+              <div className="px-8 pb-8">
+                <button
+                  onClick={handleClose}
+                  className="w-full bg-green-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-green-700 transition-colors"
+                >
+                  {t("req_done")}
                 </button>
               </div>
             )}

@@ -411,7 +411,10 @@ export async function respondToBooking(
   // Fire and forget — email failure must not delay the booking response
   sendBookingEmail(booking, response, user.id).catch(() => {});
 
-  revalidatePath("/cleaner/requests");
+  // Note: intentionally NOT revalidating "/cleaner/requests" here. Doing so would
+  // refresh the page immediately and unmount the just-answered card — closing the
+  // confirmation modal (which shows the customer's phone) before the cleaner can
+  // read it. RequestCard refreshes the list itself once the cleaner dismisses it.
   revalidatePath("/cleaner/dashboard");
   return { success: true };
 }
