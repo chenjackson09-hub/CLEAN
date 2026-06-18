@@ -151,6 +151,42 @@ export async function addAvailability(formData: FormData) {
     return { error: "End time must be after start time." };
   }
 
+  const newStart = timeToMinutes(startTime);
+  const newEnd = timeToMinutes(endTime);
+
+  // Reject a slot that overlaps an already-submitted availability slot or an
+  // already-accepted booking on the same date. Touching edges (e.g. 08:00–10:00
+  // then 10:00–12:00) don't count as a clash — only true overlap does.
+  const [{ data: existingSlots }, { data: acceptedBookings }] = await Promise.all([
+    supabase
+      .from("cleaner_availability")
+      .select("start_time, end_time")
+      .eq("cleaner_id", user.id)
+      .eq("date", date),
+    supabase
+      .from("bookings")
+      .select("scheduled_start, duration_hours")
+      .eq("cleaner_id", user.id)
+      .eq("scheduled_date", date)
+      .eq("status", "accepted"),
+  ]);
+
+  const overlapsSlot = (existingSlots ?? []).some(
+    (s) => newStart < timeToMinutes(s.end_time) && newEnd > timeToMinutes(s.start_time)
+  );
+  if (overlapsSlot) {
+    return { error: "This time overlaps availability you already added." };
+  }
+
+  const overlapsBooking = (acceptedBookings ?? []).some((b) => {
+    const s = timeToMinutes(b.scheduled_start);
+    const e = s + b.duration_hours * 60;
+    return newStart < e && newEnd > s;
+  });
+  if (overlapsBooking) {
+    return { error: "This time overlaps a booking you already accepted." };
+  }
+
   const { error } = await supabase.from("cleaner_availability").insert({
     cleaner_id: user.id,
     date,
