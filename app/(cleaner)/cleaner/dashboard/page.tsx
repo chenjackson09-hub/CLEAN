@@ -1,4 +1,5 @@
 import { createClient, getCurrentUser, getCleanerStatus } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import RealtimeBookings from "./RealtimeBookings";
@@ -16,6 +17,11 @@ export default async function CleanerDashboardPage() {
   const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
+  // Service-role client for the booking queries below: the embedded customer
+  // profile (notably `phone`) is hidden from the cleaner by the "users manage
+  // own profile" RLS policy. Both queries still filter `cleaner_id = user.id`,
+  // so results stay scoped to this cleaner. (Mirrors /cleaner/requests.)
+  const admin = createAdminClient();
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
@@ -32,7 +38,7 @@ export default async function CleanerDashboardPage() {
         .single<{ full_name: string | null }>(),
       // Accepted cleans from today onward; today's already-started ones are
       // dropped below so only genuinely upcoming cleans remain.
-      supabase
+      admin
         .from("bookings")
         .select("*, profiles!customer_id(full_name, phone, avatar_url)")
         .eq("cleaner_id", user.id)
@@ -44,7 +50,7 @@ export default async function CleanerDashboardPage() {
         .returns<BookingWithCustomer[]>(),
       // Accepted or completed cleans up to today; today's not-yet-started ones
       // are dropped below so only cleans whose start time has passed remain.
-      supabase
+      admin
         .from("bookings")
         .select("*, profiles!customer_id(full_name, phone, avatar_url)")
         .eq("cleaner_id", user.id)

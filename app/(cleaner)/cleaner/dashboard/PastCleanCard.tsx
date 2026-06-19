@@ -7,6 +7,7 @@ import { useLang } from "@/context/LangContext";
 import type { TranslationKey } from "@/lib/lang";
 import type { BookingWithCustomer } from "@/types/database";
 import DateBlock from "./DateBlock";
+import CleanDetailModal from "./CleanDetailModal";
 
 const MONTH_KEYS: TranslationKey[] = [
   "month_jan", "month_feb", "month_mar", "month_apr", "month_may", "month_jun",
@@ -19,6 +20,7 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
   const [status, setStatus] = useState(booking.status);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   const completed = status === "completed";
   const [, mm, dd] = booking.scheduled_date.split("-");
@@ -43,8 +45,17 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
 
   return (
     <div
-      className={`rounded-2xl shadow-md p-6 flex items-center gap-4 ${
-        completed ? "bg-gray-100 opacity-60" : "bg-white"
+      role="button"
+      tabIndex={0}
+      onClick={() => setOpen(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen(true);
+        }
+      }}
+      className={`rounded-2xl shadow-md p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition ${
+        completed ? "bg-gray-100" : "bg-white"
       }`}
     >
       <DateBlock day={parseInt(dd)} month={monthName} />
@@ -56,14 +67,9 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
         <div className="text-sm text-gray-500 mt-1">
           {booking.scheduled_start?.slice(0, 5)} - {formatted} · {booking.duration_hours}{t("req_h")}
         </div>
-        {completed && (
-          <span className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-gray-500">
-            ✓ {t("dash_completed")}
-          </span>
-        )}
       </div>
       {!completed && (
-        <div className="shrink-0 text-end">
+        <div className="shrink-0 text-end" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={complete}
             disabled={loading}
@@ -74,6 +80,8 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
           {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
         </div>
       )}
+
+      {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} />}
     </div>
   );
 }
