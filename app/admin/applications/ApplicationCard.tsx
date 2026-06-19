@@ -22,9 +22,13 @@ const STATUS_BADGE: Record<ApplicationStatus, string> = {
 type Props = {
   application: CleanerApplicationResult
   onUpdateStatus: (id: string, status: 'approved' | 'rejected') => void
+  // The action currently running on this card (null if none), and whether any
+  // action anywhere is running — used to lock the buttons during a request.
+  pendingStatus?: 'approved' | 'rejected' | null
+  disabled?: boolean
 }
 
-export function ApplicationCard({ application, onUpdateStatus }: Props) {
+export function ApplicationCard({ application, onUpdateStatus, pendingStatus = null, disabled = false }: Props) {
   const { t } = useLanguage()
   const initial = application.full_name.charAt(0).toUpperCase()
   const serviceLabel =
@@ -33,24 +37,26 @@ export function ApplicationCard({ application, onUpdateStatus }: Props) {
       : application.service_types[0] ?? 'residential'
 
   return (
-    <div className={`bg-white rounded-xl p-4 shadow-sm border-t-4 ${SERVICE_ACCENT[serviceLabel]} hover:shadow-lg transition-shadow`}>
+    <div className={`bg-[#fffcf2] rounded-3xl p-4 shadow-md hover:shadow-lg transition-shadow`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white">
             {initial}
           </div>
           <div>
+            
             <p className="font-bold text-gray-900">{application.full_name}</p>
             <p className="text-sm text-gray-500">
               {t('common.yearsExp', { years: application.years_experience })}
             </p>
+            
           </div>
         </div>
         <span className={`text-xs px-2 py-0.5 rounded font-semibold whitespace-nowrap ${STATUS_BADGE[application.status]}`}>
           {t(`admin.applications.status.${application.status}`)}
         </span>
       </div>
-
+      <p> <span>{application.phone}</span></p>
       <p className="text-sm text-gray-500 mb-3 leading-relaxed">&quot;{application.bio}&quot;</p>
 
       <div className="flex gap-2 flex-wrap mb-3">
@@ -108,20 +114,63 @@ export function ApplicationCard({ application, onUpdateStatus }: Props) {
         <span className="font-bold text-gray-900">₪{application.hourly_rate}{t('common.perHour')}</span>
         {application.status === 'pending' && (
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onUpdateStatus(application.id, 'rejected')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
-            >
-              {t('admin.applications.reject')}
-            </button>
-            <button
-              type="button"
-              onClick={() => onUpdateStatus(application.id, 'approved')}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
-            >
-              {t('admin.applications.approve')}
-            </button>
+            {/** reject button */}
+<button
+  type="button"
+  onClick={() => onUpdateStatus(application.id, 'rejected')}
+  disabled={disabled}
+  className={`text-white px-4 py-1.5 rounded-2xl text-sm font-semibold transition-colors flex items-center gap-2 disabled:cursor-not-allowed ${
+    pendingStatus === 'rejected' ? 'bg-red-700' : 'bg-red-500 hover:bg-red-600 disabled:opacity-50'
+  }`}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-4 h-4"
+  >
+    <path d="M2 21a8 8 0 0 1 13.292-6" />
+    <circle cx="10" cy="8" r="5" />
+    <path d="M22 19h-6" />
+  </svg>
+
+  {t('admin.applications.reject')}
+</button>
+            {/** approve button */}
+<button
+  type="button"
+  onClick={() => onUpdateStatus(application.id, 'approved')}
+  disabled={disabled}
+  className={`text-white px-4 py-1.5 rounded-2xl text-sm font-semibold transition-colors flex items-center gap-2 disabled:cursor-not-allowed ${
+    pendingStatus === 'approved' ? 'bg-green-700' : 'bg-green-500 hover:bg-green-600 disabled:opacity-50'
+  }`}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-4 h-4"
+  >
+    <path d="M2 21a8 8 0 0 1 13.292-6" />
+    <circle cx="10" cy="8" r="5" />
+    <path d="M19 16v6" />
+    <path d="M22 19h-6" />
+  </svg>
+
+  {t('admin.applications.approve')}
+</button>
           </div>
         )}
       </div>

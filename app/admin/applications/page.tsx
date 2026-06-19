@@ -7,7 +7,7 @@ export default async function ApplicationsPage() {
   const admin = createAdminClient()
 
   const [{ data: appRows }, { data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaner_applications').select('id, status, submitted_at, cleaner_id').order('submitted_at', { ascending: false }),
+    admin.from('cleaner_applications').select('id, status, submitted_at, cleaner_id').eq('status', 'pending').order('submitted_at', { ascending: false }),
     admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages'),
     admin.from('profiles').select('id, full_name, phone'),
     admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -38,7 +38,7 @@ export default async function ApplicationsPage() {
       submitted_at: row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '',
     }
   })
-
+{/*  bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50*/}
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <Nav />

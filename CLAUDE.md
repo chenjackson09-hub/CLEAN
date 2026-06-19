@@ -83,6 +83,16 @@ All mutations are Next.js Server Actions (`"use server"`) in `actions.ts` files 
 - Return `{ error: string }` on failure or `{ success: true }` on success.
 - Call `revalidatePath(...)` after mutations so Server Components re-fetch.
 
+### Admin moderation actions (hard deletes)
+
+`app/admin/actions.ts` removes users **permanently** — there are no soft-delete/suspend states for these flows:
+
+- **Cleaner card "Delete"** (`deleteCleanerAdmin`) and **application "Reject"** (`updateApplicationStatus` with `status: 'rejected'`) both route through the shared `hardDeleteCleaner` helper. **Approve** is unchanged — it only flips statuses. Reject sends the rejection email *before* deleting, since the auth lookup for the address is gone afterward.
+- **Customer card "Delete"** (`deleteCustomerAdmin`) hard-deletes the customer.
+- All deletes run in a fixed order: **storage → child rows → role row + `profiles` → auth user**. Storage is cleared first via `deleteUserStorage` so a failure aborts before any rows are gone (the user id is needed to find the files, so a half-delete would be unretryable). Child rows (anything FK-referencing `cleaners.id` / `profiles.id` — `bookings`, `cleaner_availability`, `cleaner_weekly_availability`, `cleaner_gallery`, `cleaner_applications`) are deleted before the parent rows.
+- `deleteUserStorage` wipes every per-user file by clearing the `${userId}/` folder in each bucket in `USER_STORAGE_BUCKETS` (`avatars`, `gallery`). All uploads namespace by user id, and listing a missing folder returns empty (not an error), so it's safe for any user. **Add new per-user buckets here** so they're cleaned up too.
+- These actions are **not transactional** (the Supabase JS client has no multi-statement transaction). The ordering minimizes risk, but a mid-delete failure can leave partial state.
+
 ### Realtime
 
 Realtime is implemented via headless `"use client"` components that subscribe to Supabase Postgres changes and call `router.refresh()` to re-render Server Components. See `RealtimeBookings.tsx` for the pattern.
