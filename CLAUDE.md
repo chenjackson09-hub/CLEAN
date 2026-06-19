@@ -71,6 +71,25 @@ Three distinct clients — use the right one per context:
 
 Role is stored in the `profiles.role` column and read from Supabase (not the JWT) inside middleware.
 
+### Signup & email confirmation
+
+Registration requires a **real email confirmation** (Supabase Auth "Confirm email" is enabled), so signup is a two-step, mostly client-side flow:
+
+1. `/register` collects role + email/password and stashes them in `localStorage` (`pending_signup`) — **no account is created yet**, so pressing "Go back" never leaves a half-created account behind.
+2. `/register/{customer,cleaner}` collects the profile fields and calls `supabase.auth.signUp(...)` **client-side** with all fields in `options.data` (metadata) and `emailRedirectTo: ${window.location.origin}/auth/confirm`, then shows a "check your email" screen.
+3. Because the user has **no session before confirming**, the client can't insert profile rows under RLS. Instead the `handle_new_user` trigger (migration `0002`, `SECURITY DEFINER`) reads the signup metadata and creates the `profiles` + `customers`/`cleaners`/`cleaner_applications` rows server-side at signup time.
+4. The confirmation email links to `/auth/confirm`, which runs `verifyOtp` (token_hash) or `exchangeCodeForSession` (PKCE fallback), establishing the session, then redirects to the role's home. A bad/expired link redirects to `/login?error=could_not_confirm`, which the login page surfaces via the `auth.login.confirmError` i18n string.
+
+There is intentionally **no `signUp` server action** — account creation lives in the onboarding pages. `app/(auth)/actions.ts` only holds `signIn` / `signOut`.
+
+**Trigger gotcha:** `handle_new_user` inserts metadata (`text`) into enum columns, which requires explicit casts (`v_role::user_role`, `...::service_type`). A missing cast makes the trigger throw and Supabase returns the opaque **"Database error saving new user"** on signup.
+
+**Required Supabase dashboard config** (hosted project — there is no `config.toml`, so these are not in the repo):
+- Apply migration `0002_handle_new_user.sql` (SQL Editor).
+- Authentication: enable **Confirm email**.
+- Authentication → URL Configuration: **Site URL** = the live origin (`https://clean-kappa-silk.vercel.app`); add `<origin>/auth/confirm` to **Redirect URLs**.
+- Authentication → Email Templates → **Confirm signup**: link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup`.
+
 ### Server Actions pattern
 
 All mutations are Next.js Server Actions (`"use server"`) in `actions.ts` files co-located with their route group. They always:
@@ -94,6 +113,14 @@ Cleaners enter a free-text `address` (persisted in `cleaners.address`) plus a `s
 
 `src/lib/resend.ts` exports typed functions for each notification event (booking accepted/declined, application approved/rejected, new booking request). These are called from Server Actions. Email failure is caught and swallowed — it must not block the primary mutation.
 
+**Two separate email senders — don't conflate them:**
+- **Auth/confirmation emails** are sent by **Supabase Auth**, not by `resend.ts`. By default Supabase uses its built-in service, which is **rate-limited (~2–4/hour, testing only)** and surfaces **"Error sending confirmation email"** when the cap is hit. For production, configure Custom SMTP in Supabase (Authentication → SMTP) pointing at Resend (`smtp.resend.com`, port 465, user `resend`, password = `RESEND_API_KEY`).
+- **App notification emails** are sent directly by `resend.ts`.
+
+**Both require a verified Resend domain to reach real users.** Resend only delivers to arbitrary recipients from a verified domain; otherwise it can only email the Resend account owner. `resend.ts` currently uses `from: "Clean <noreply@resend.dev>"` as a placeholder — switch this to `noreply@<verified-domain>` once a domain is verified, or notification emails silently fail.
+
+**Current status (as of 2026-06-19):** no domain verified yet; running on Supabase's built-in email for testing. Going live needs: buy a domain (~$10–15/yr, the only hard cost — Resend/Supabase/Vercel free tiers suffice to launch), verify it in Resend, set Supabase Custom SMTP, and update the `resend.ts` `FROM`.
+
 ### Types
 
 All shared DB types live in `src/types/database.ts`. The key enums are `UserRole`, `BookingStatus`, `CleanerStatus`, `ApplicationStatus`, and `ServiceType`.
@@ -104,5 +131,6 @@ Required in `.env`:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_SITE_URL`
 - `RESEND_API_KEY`
+
+`NEXT_PUBLIC_SITE_URL` is present in `.env`/`.env.example` but **not read anywhere in the code** — signup builds its redirect from `window.location.origin`, and the auth-email base comes from the Supabase **Site URL** dashboard setting. It does not need to be set in Vercel.

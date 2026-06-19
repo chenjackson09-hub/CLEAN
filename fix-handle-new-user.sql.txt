@@ -1,12 +1,3 @@
--- Create application rows when a new auth user signs up.
---
--- With email confirmation enabled, supabase.auth.signUp() returns a user but NO
--- session, so the client can no longer insert into profiles/customers/cleaners
--- (RLS blocks an unauthenticated insert). Instead the signup carries all profile
--- fields in raw_user_meta_data, and this SECURITY DEFINER trigger creates the
--- rows server-side at signup time. Rows exist immediately; the user just can't
--- sign in until they confirm their email.
-
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -17,7 +8,6 @@ declare
   meta   jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
   v_role text := coalesce(meta->>'role', 'customer');
 begin
-  -- profiles row for every user
   insert into public.profiles (id, role, full_name, phone)
   values (new.id, v_role::user_role, meta->>'full_name', meta->>'phone')
   on conflict (id) do nothing;

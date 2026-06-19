@@ -222,6 +222,7 @@ const translations = {
         signingIn: 'Signing in…',
         noAccount: "Don't have an account?",
         register: 'Register',
+        confirmError: 'That confirmation link was invalid or has expired. Please sign in, or register again to get a new link.',
       },
       register: {
         title: 'Create account',
@@ -503,6 +504,7 @@ const translations = {
         signingIn: 'מתחבר…',
         noAccount: 'אין לך חשבון?',
         register: 'הרשמה',
+        confirmError: 'קישור האישור אינו תקין או שפג תוקפו. התחברו, או הירשמו מחדש כדי לקבל קישור חדש.',
       },
       register: {
         title: 'יצירת חשבון',
