@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "regeocode": "node scripts/regeocode-cleaners.mjs"
+    "regeocode": "node scripts/regeocode-cleaners.mjs",
+    "clear-weekly": "node scripts/clear-weekly-availability.mjs"
   },
   "dependencies": {
     "next": "14.2.35",
