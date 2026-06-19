@@ -74,7 +74,7 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
                 >
                   <span className="font-semibold text-gray-900">{formatDate(g.date)}</span>
-                  <span className="flex items-center gap-2 text-sm text-gray-500">
+                  <span className={`flex items-center gap-2 text-sm ${count === 0 ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                     {count === 1
                       ? t('browse.cleanerFound')
                       : t('browse.cleanersFound').replace('{count}', String(count))}
