@@ -1,5 +1,5 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
@@ -20,9 +20,17 @@ export function CalendarPicker() {
   const MONTH_NAMES = messages.calendar.monthNames
   const DAY_NAMES = messages.calendar.dayNames
 
-  const selectedSet = new Set(
-    (searchParams.get('dates') ?? '').split(',').filter(Boolean)
+  // Selection is held in local state so a tapped day recolors immediately,
+  // instead of waiting for the router.push round-trip to update the URL.
+  const datesParam = searchParams.get('dates') ?? ''
+  const [selectedSet, setSelectedSet] = useState<Set<string>>(
+    () => new Set(datesParam.split(',').filter(Boolean))
   )
+
+  // Re-sync from the URL when it changes elsewhere (back/forward, external links).
+  useEffect(() => {
+    setSelectedSet(new Set(datesParam.split(',').filter(Boolean)))
+  }, [datesParam])
 
   const todayRaw = new Date()
   todayRaw.setHours(0, 0, 0, 0)
@@ -45,6 +53,7 @@ export function CalendarPicker() {
     const next = new Set(selectedSet)
     if (next.has(dateStr)) next.delete(dateStr)
     else next.add(dateStr)
+    setSelectedSet(next) // instant visual feedback
 
     const params = new URLSearchParams(searchParams.toString())
     if (next.size === 0) {
@@ -56,6 +65,7 @@ export function CalendarPicker() {
   }
 
   function clearAll() {
+    setSelectedSet(new Set()) // instant visual feedback
     const params = new URLSearchParams(searchParams.toString())
     params.delete('dates')
     startTransition(() => router.push(`/browse?${params}`))
