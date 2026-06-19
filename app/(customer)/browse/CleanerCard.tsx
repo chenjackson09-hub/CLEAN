@@ -3,9 +3,18 @@ import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
+// "Sarah Cohen" → "Sarah C." — shorten the surname to its first initial for privacy.
+function shortenName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length < 2) return fullName
+  const last = parts[parts.length - 1]
+  return `${parts.slice(0, -1).join(' ')} ${last.charAt(0).toUpperCase()}.`
+}
+
 export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResult; date?: string; location?: string }) {
   const { t } = useLanguage()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
+  const displayName = shortenName(cleaner.full_name)
   // Carry the date this cleaner was matched under and the searched location into
   // the profile/booking flow so the customer doesn't re-enter either.
   const params = new URLSearchParams()
@@ -30,7 +39,7 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
       {/* Middle column — cleaner info */}
       <div className="flex-1 min-w-0">
         <div className="mb-3 min-w-0">
-          <p className="font-bold text-gray-900 truncate">{cleaner.full_name}</p>
+          <p className="font-bold text-gray-900 truncate">{displayName}</p>
           <p className="text-sm text-gray-500">
             {cleaner.distance_km > 0 && <>{t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · </>}
             {t('common.yearsExp', { years: cleaner.years_experience })}

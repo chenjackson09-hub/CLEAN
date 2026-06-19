@@ -32,11 +32,13 @@ Stack: Next.js 14 App Router · TypeScript · Supabase (Postgres + Auth + Storag
 ```
 app/
 ├── (auth)/       # /login  /register  /register/cleaner  /register/customer
-├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /customers/[id]
+├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /pending  /customers/[id]
 ├── (customer)/   # /browse  /cleaners/[id]  /bookings  /profile  /home
 ├── admin/        # /admin/applications  /cleaners  /customers  /bookings  /availability
 └── api/auth/signout/
 ```
+
+Each route group has a co-located layout that renders its own nav: `(cleaner)/layout.tsx` → `NavLinks.tsx`, `(customer)/layout.tsx` → `CustomerNav.tsx`, `admin/Nav.tsx`. Both the cleaner and customer navs put the language toggle and sign-out inside a **Settings gear dropdown** (the cleaner nav's dropdown also shows the cleaner's name + status badge). Keep the two navs visually in sync when changing one.
 
 After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/applications`).
 
@@ -56,15 +58,15 @@ Three distinct clients — use the right one per context:
 
 | File | Use when |
 |---|---|
-| `src/lib/supabase/server.ts` | Server Components, Server Actions, Route Handlers |
-| `src/lib/supabase/client.ts` | Client Components (`"use client"`) |
-| `src/lib/supabase/admin.ts` | Admin-only operations requiring service role (bypasses RLS) |
+| `lib/supabase/server.ts` | Server Components, Server Actions, Route Handlers |
+| `lib/supabase/client.ts` | Client Components (`"use client"`) |
+| `lib/supabase/admin.ts` | Admin-only operations requiring service role (bypasses RLS) |
 
 `createAdminClient()` uses `SUPABASE_SERVICE_ROLE_KEY` and must never be called from client-side code.
 
 ### Middleware & auth
 
-`src/middleware.ts` runs at the edge on every non-static request. It:
+`middleware.ts` (project root) runs at the edge on every non-static request. It:
 1. Skips `supabase.auth.getUser()` entirely when no session cookie is present (avoids a network hang).
 2. Redirects unauthenticated users to `/login`.
 3. Redirects authenticated users away from `/login`/`/register` to `/{role}/dashboard`.
@@ -93,11 +95,22 @@ Cleaners enter a free-text `address` (persisted in `cleaners.address`) plus a `s
 
 ### Email notifications
 
-`src/lib/resend.ts` exports typed functions for each notification event (booking accepted/declined, application approved/rejected, new booking request). These are called from Server Actions. Email failure is caught and swallowed — it must not block the primary mutation.
+`lib/resend.ts` exports typed functions for each notification event (booking accepted/declined, application approved/rejected, new booking request). These are called from Server Actions. Email failure is caught and swallowed — it must not block the primary mutation.
 
 ### Types
 
-All shared DB types live in `src/types/database.ts`. The key enums are `UserRole`, `BookingStatus`, `CleanerStatus`, `ApplicationStatus`, and `ServiceType`.
+All shared DB types live in `types/database.ts`. The key enums are `UserRole`, `BookingStatus`, `CleanerStatus`, `ApplicationStatus`, and `ServiceType`. Per-feature view models live under `lib/types/` (`booking.ts`, `cleaner.ts`, etc.).
+
+### Internationalization (two separate systems)
+
+The app has **two independent i18n setups** — don't mix them:
+
+| Side | Import | Hook | Usage | Strings |
+|---|---|---|---|---|
+| Customer + auth + admin | `@/lib/i18n/LanguageContext` | `useLanguage()` | `t('namespace.key')`, `toggleLanguage()`, `messages.*` | `lib/i18n/translations.ts` |
+| Cleaner | `@/context/LangContext` | `useLang()` | `t(translationKey)`, `setLang('en'\|'he')` | `lib/lang.ts` |
+
+Both drive RTL the same way: `document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr'`. With `dir` set, Tailwind logical utilities (`text-start`, `end-0`, `justify-start`) flip automatically — prefer them over `left`/`right` so layouts work in both directions.
 
 ### Environment variables
 
