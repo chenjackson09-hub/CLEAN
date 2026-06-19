@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addAvailability, deleteAvailability } from "../../actions";
-import type { CleanerAvailability, CleanerWeeklyAvailability, Booking, BookingWithCustomer } from "@/types/database";
+import type { CleanerAvailability, CleanerWeeklyAvailability, BookingWithCustomer } from "@/types/database";
 import { useLang } from "@/context/LangContext";
 import type { TranslationKey } from "@/lib/lang";
 
@@ -91,7 +91,7 @@ function dayCardColor(
 interface Props {
   slots: CleanerAvailability[];
   weeklySlots: CleanerWeeklyAvailability[];
-  bookings: Booking[];
+  bookings: BookingWithCustomer[];
   pendingBookings: BookingWithCustomer[];
 }
 
@@ -140,7 +140,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
     return acc;
   }, {});
 
-  const bookingsByDate = bookings.reduce<Record<string, Booking[]>>((acc, b) => {
+  const bookingsByDate = bookings.reduce<Record<string, BookingWithCustomer[]>>((acc, b) => {
     if (!acc[b.scheduled_date]) acc[b.scheduled_date] = [];
     acc[b.scheduled_date].push(b);
     return acc;
@@ -341,9 +341,11 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
             {/* Panel header */}
             <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div>
-                <p className="text-sm text-gray-400 font-medium uppercase tracking-wide">
-                  {panel.past ? t("avail_past_day") : t("nav_availability")}
-                </p>
+                {panel.past && (
+                  <p className="text-sm text-gray-400 font-medium uppercase tracking-wide">
+                    {t("avail_past_day")}
+                  </p>
+                )}
                 <h2 className="text-2xl font-bold text-gray-900 mt-0.5">
                   {formatFullDate(panel.dateStr)}
                 </h2>
@@ -377,18 +379,25 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                 </p>
               ) : (
                 <>
-                  {panelBookings.map((b) => (
-                    <div
-                      key={b.id}
-                      className="bg-orange-100 rounded-xl px-4 py-3"
-                    >
-                      <p className="text-sm font-medium text-orange-500 mb-0.5">{t("avail_booked")}</p>
-                      <p className="text-lg font-semibold text-orange-800">
-                        {b.scheduled_start.slice(0, 5)} · {b.duration_hours}{t("req_h")}
-                      </p>
-                      <p className="text-sm text-orange-700 mt-0.5">{b.address}</p>
-                    </div>
-                  ))}
+                  {panelBookings.map((b) => {
+                    const start = new Date(`1970-01-01T${b.scheduled_start}`);
+                    const end = new Date(start.getTime() + b.duration_hours * 60 * 60 * 1000);
+                    const endStr = end.toTimeString().slice(0, 5);
+                    return (
+                      <div
+                        key={b.id}
+                        className="bg-orange-100 rounded-xl px-4 py-3"
+                      >
+                        <p className="text-sm font-bold text-orange-800 mb-0.5">
+                          {t("avail_booked")} {b.profiles?.full_name ?? t("req_customer")}
+                        </p>
+                        <p className="text-lg font-semibold text-orange-600">
+                          {b.scheduled_start.slice(0, 5)} - {endStr} · {b.duration_hours}{t("req_h")}
+                        </p>
+                        <p className="text-sm text-orange-700 mt-0.5">{b.address}</p>
+                      </div>
+                    );
+                  })}
                   {panelRecurring.map((slot) => (
                     <div
                       key={slot.id}
@@ -434,7 +443,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                 <form onSubmit={handleAdd} className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <span className="text-xs font-medium text-gray-500">{t("avail_from")}</span>
+                      <span className="text-base font-medium text-gray-500">{t("avail_from")}</span>
                       <div dir="ltr" className="mt-1 flex items-center gap-2">
                         <select
                           value={startTime.slice(0, 2)}
@@ -458,7 +467,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                       </div>
                     </div>
                     <div>
-                      <span className="text-xs font-medium text-gray-500">{t("avail_to")}</span>
+                      <span className="text-base font-medium text-gray-500">{t("avail_to")}</span>
                       <div dir="ltr" className="mt-1 flex items-center gap-2">
                         <select
                           value={endTime.slice(0, 2)}

@@ -1,9 +1,10 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import CalendarGrid from "./CalendarGrid";
 import AvailabilityHeader from "./AvailabilityHeader";
 import { declineExpiredRequests } from "@/lib/expireRequests";
-import type { CleanerAvailability, CleanerWeeklyAvailability, Booking, BookingWithCustomer } from "@/types/database";
+import type { CleanerAvailability, CleanerWeeklyAvailability, BookingWithCustomer } from "@/types/database";
 
 export default async function AvailabilityPage() {
   const user = await getCurrentUser();
@@ -14,6 +15,10 @@ export default async function AvailabilityPage() {
   await declineExpiredRequests(user.id);
 
   const supabase = await createClient();
+  // Service-role client for the booking queries below so the embedded customer
+  // profile (name) is readable — the "users manage own profile" RLS policy
+  // otherwise hides it. Both queries still filter `cleaner_id = user.id`.
+  const admin = createAdminClient();
 
   const fmtDate = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -39,17 +44,17 @@ export default async function AvailabilityPage() {
       .order("date")
       .order("start_time")
       .returns<CleanerAvailability[]>(),
-    supabase
+    admin
       .from("bookings")
-      .select("*")
+      .select("*, profiles!customer_id(full_name, phone, avatar_url)")
       .eq("cleaner_id", user.id)
       .eq("status", "accepted")
       .gte("scheduled_date", from)
       .lte("scheduled_date", to)
       .order("scheduled_date")
       .order("scheduled_start")
-      .returns<Booking[]>(),
-    supabase
+      .returns<BookingWithCustomer[]>(),
+    admin
       .from("bookings")
       .select("*, profiles!customer_id(full_name, phone, avatar_url)")
       .eq("cleaner_id", user.id)

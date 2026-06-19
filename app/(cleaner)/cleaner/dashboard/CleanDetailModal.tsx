@@ -77,6 +77,13 @@ export default function CleanDetailModal({
             </div>
           </div>
 
+          {booking.notes && (
+            <div>
+              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_notes")}</p>
+              <p className="text-lg text-gray-700 bg-gray-50 rounded-xl px-4 py-3">{booking.notes}</p>
+            </div>
+          )}
+
           {booking.profiles?.phone && (
             <div className="bg-green-50 border border-green-100 rounded-xl px-5 py-4">
               <p className="text-sm text-green-600 uppercase tracking-wide mb-1">{t("req_customer_phone")}</p>
