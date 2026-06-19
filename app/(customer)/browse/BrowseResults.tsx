@@ -95,7 +95,7 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
                     {count === 0 ? (
                       <p className="text-gray-500 text-sm py-2">{t('browse.noneThisDay')}</p>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         {g.cleaners.map(c => <CleanerCard key={c.id} cleaner={c} date={g.date} location={location} />)}
                       </div>
                     )}

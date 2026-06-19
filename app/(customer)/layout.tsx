@@ -36,7 +36,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         userName={profile.full_name ?? user.email ?? ""}
         acceptedCount={acceptedCount ?? 0}
       />
-      <main className="p-8 pt-16">{children}</main>
+      <main className="px-3 pb-4 pt-16 sm:px-8 sm:pb-8">{children}</main>
     </div>
   )
 }

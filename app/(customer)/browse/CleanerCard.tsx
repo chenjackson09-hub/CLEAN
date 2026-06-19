@@ -15,7 +15,7 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
   const href = qs ? `/cleaners/${cleaner.id}?${qs}` : `/cleaners/${cleaner.id}`
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-200 flex gap-4">
+    <div className="bg-white flex gap-4">
       {/* Left column — profile picture */}
       <div className="shrink-0">
         {cleaner.avatar_url ? (
@@ -38,11 +38,6 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {cleaner.service_types.map(type => (
-            <span key={type} className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
-              {t(`common.${type}`)}
-            </span>
-          ))}
           {cleaner.area && (
             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
