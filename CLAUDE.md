@@ -90,6 +90,20 @@ There is intentionally **no `signUp` server action** — account creation lives 
 - Authentication → URL Configuration: **Site URL** = the live origin (`https://clean-kappa-silk.vercel.app`); add `<origin>/auth/confirm` to **Redirect URLs**.
 - Authentication → Email Templates → **Confirm signup**: link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup`.
 
+#### Email auth — where we left off (branch `real-email`, 2026-06-19)
+
+Done:
+- ✅ Code: two-step signup, `/auth/confirm` route, middleware allowance, "check your email" screens, i18n (en+he), login `confirmError` handling.
+- ✅ Removed the dead `signUp` server action; `tsc` clean, auth tests pass (7/7).
+- ✅ Migration `0002` applied to the hosted DB, **including the enum-cast fix** (`v_role::user_role`, `preferred_service_type::service_type`) — this fixed "Database error saving new user".
+- ✅ Supabase dashboard: Confirm email enabled, Site URL + `/auth/confirm` redirect allowlist, Confirm-signup template set.
+
+Remaining:
+- ⏳ **Blocked on the built-in email rate limit** — last signup returned "Error sending confirmation email". Waiting ~1h for the cap to reset, then: delete the orphaned unconfirmed user (Authentication → Users), sign up once with a real inbox, click the link, confirm it lands logged-in on the role home.
+- 🔜 **Production email:** buy + verify a domain in Resend (~$10–15/yr, only hard cost), set Supabase Custom SMTP (`smtp.resend.com`:465, user `resend`, pw = `RESEND_API_KEY`), and update `resend.ts` `FROM` from `noreply@resend.dev` to `noreply@<verified-domain>`.
+- 🔜 **Commit** the branch changes (trigger fix, login handling, dead-action removal, i18n, this doc), then **merge `real-email` → main** — only after the live signup test passes. Not committed/merged yet.
+- 🧹 Throwaway helper `CLEAN/fix-handle-new-user.sql.txt` can be deleted (the real fix is in migration `0002`).
+
 ### Server Actions pattern
 
 All mutations are Next.js Server Actions (`"use server"`) in `actions.ts` files co-located with their route group. They always:
