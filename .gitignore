@@ -11,6 +11,9 @@ out/
 .env.*.local
 .env*.local
 
+# local-only demo/test credentials — never commit
+demo-users.md
+
 # misc
 .DS_Store
 .superpowers/
