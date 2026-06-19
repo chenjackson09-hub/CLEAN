@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   ])
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-gray-900 mb-6">My Profile</h1>
       <ProfileForm
         action={updateCustomerProfile}
