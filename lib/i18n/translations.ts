@@ -13,6 +13,7 @@ const translations = {
       bookings: 'Booking Requests',
       cleaners: 'Cleaners',
       customers: 'Customers',
+      availability: 'Availability',
     },
     common: {
       residential: 'Residential',
@@ -291,6 +292,7 @@ const translations = {
       bookings: 'בקשות הזמנה',
       cleaners: 'מנקים',
       customers: 'לקוחות',
+      availability: 'זמינות',
     },
     common: {
       residential: 'ביתי',

@@ -38,7 +38,9 @@ app/
 └── api/auth/signout/
 ```
 
-Each route group has a co-located layout that renders its own nav: `(cleaner)/layout.tsx` → `NavLinks.tsx`, `(customer)/layout.tsx` → `CustomerNav.tsx`, `admin/Nav.tsx`. Both the cleaner and customer navs put the language toggle and sign-out inside a **Settings gear dropdown** (the cleaner nav's dropdown also shows the cleaner's name + status badge). Keep the two navs visually in sync when changing one.
+Each route group has a co-located layout that renders its own nav: `(cleaner)/layout.tsx` → `NavLinks.tsx`, `(customer)/layout.tsx` → `CustomerNav.tsx`, `admin/Nav.tsx`. All three navs share the same responsive shape — icon-over-label on mobile, icon-beside-label on `lg` — and put the language toggle and sign-out inside a **Settings gear dropdown** (the cleaner nav's dropdown also shows the cleaner's name + status badge). The admin nav renders inline per-page (each `admin/*/page.tsx` renders `<Nav />`) and is `sticky` rather than `fixed`, so the pages need no top padding. Keep the three navs visually in sync when changing one.
+
+- **Admin "Availability" nav button is temporarily hidden.** The `/admin/availability` page still exists and is reachable by URL, but its entry in `admin/Nav.tsx`'s `NAV_ITEMS` is commented out because we're not yet sure admins need it. Uncomment that entry to restore the button (the `adminNav.availability` translations are already in place).
 
 After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/applications`).
 

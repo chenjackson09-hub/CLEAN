@@ -21,17 +21,25 @@ describe('Nav', () => {
     expect(screen.getByRole('link', { name: 'Customers' })).toHaveAttribute('href', '/admin/customers')
   })
 
+  it('does not render the temporarily-hidden availability link', () => {
+    render(<LanguageProvider><Nav /></LanguageProvider>)
+
+    expect(screen.queryByRole('link', { name: 'Availability' })).toBeNull()
+  })
+
   it('highlights the current page', () => {
     render(<LanguageProvider><Nav /></LanguageProvider>)
 
-    expect(screen.getByRole('link', { name: 'Booking Requests' }).className).toContain('underline')
+    expect(screen.getByRole('link', { name: 'Booking Requests' }).className).toContain('bg-blue-50')
   })
 
   it('switches all links to Hebrew when the language is toggled', async () => {
     const user = userEvent.setup()
     render(<LanguageProvider><Nav /></LanguageProvider>)
 
-    await user.click(screen.getByRole('button', { name: 'עברית' }))
+    // Language toggle lives inside the Settings dropdown
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'HE' }))
 
     expect(screen.getByRole('link', { name: 'בקשות הצטרפות' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'בקשות הזמנה' })).toHaveAttribute('href', '/admin/bookings')
