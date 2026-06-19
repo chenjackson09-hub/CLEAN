@@ -47,25 +47,6 @@ export default function CleanerOnboardingPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const supabase = createClient();
-
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-      email: creds.email,
-      password: creds.password,
-    });
-    if (signUpErr) {
-      setError(signUpErr.message);
-      setLoading(false);
-      return;
-    }
-
-    const user = signUpData.user;
-    if (!user) {
-      setError(t("auth.registerCleaner.signUpFailed"));
-      setLoading(false);
-      return;
-    }
-
     const fullName = formData.get("full_name") as string;
     const phone = formData.get("phone") as string;
     const bio = formData.get("bio") as string;
@@ -73,43 +54,32 @@ export default function CleanerOnboardingPage() {
     const hourlyRate = Number(formData.get("hourly_rate"));
     const yearsExperience = Number(formData.get("years_experience"));
     const address = formData.get("address") as string;
-
-    const { error: profileErr } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "cleaner",
-      full_name: fullName,
-      phone,
-    });
-    if (profileErr) {
-      setError(profileErr.message);
-      setLoading(false);
-      return;
-    }
-
     const serviceTypes = serviceType === "both" ? ["residential", "commercial"] : [serviceType];
 
-    const { error: cleanerErr } = await supabase.from("cleaners").insert({
-      id: user.id,
-      bio,
-      service_types: serviceTypes,
-      hourly_rate: hourlyRate,
-      years_experience: yearsExperience,
-      languages,
-      status: "pending",
+    // Pass all fields as signup metadata; the handle_new_user DB trigger creates
+    // the profile, cleaner, and application rows (the client has no session until
+    // the email is confirmed, so it can't insert directly).
+    const supabase = createClient();
+    const { error: signUpErr } = await supabase.auth.signUp({
+      email: creds.email,
+      password: creds.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        data: {
+          role: "cleaner",
+          full_name: fullName,
+          phone,
+          bio,
+          service_types: serviceTypes,
+          hourly_rate: hourlyRate,
+          years_experience: yearsExperience,
+          languages,
+          address,
+        },
+      },
     });
-    if (cleanerErr) {
-      setError(cleanerErr.message);
-      setLoading(false);
-      return;
-    }
-
-    const { error: appErr } = await supabase.from("cleaner_applications").insert({
-      cleaner_id: user.id,
-      status: "pending",
-      submitted_at: new Date().toISOString(),
-    });
-    if (appErr) {
-      setError(appErr.message);
+    if (signUpErr) {
+      setError(signUpErr.message);
       setLoading(false);
       return;
     }
@@ -123,7 +93,8 @@ export default function CleanerOnboardingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
         <div className="w-full max-w-lg bg-white rounded-2xl shadow p-8 text-center">
-          <p className="text-green-700 font-semibold mb-4">{t("auth.registerCleaner.submitted")}</p>
+          <p className="text-green-700 font-semibold mb-2">{t("auth.registerCleaner.submitted")}</p>
+          <p className="text-sm text-gray-600 mb-4">{t("auth.registerCleaner.checkEmailBody")}</p>
           <Link href="/login" className="text-blue-600 hover:underline font-medium">
             {t("auth.login.signIn")}
           </Link>

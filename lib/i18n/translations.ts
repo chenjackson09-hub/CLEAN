@@ -254,6 +254,8 @@ const translations = {
         finishing: 'Finishing…',
         settingUp: 'Setting up your profile…',
         signUpFailed: 'Sign up failed. Please try again.',
+        checkEmailTitle: '✅ Almost there — check your email',
+        checkEmailBody: 'We sent a confirmation link to your email. Click it to activate your account, then sign in.',
       },
       registerCleaner: {
         goBack: 'Go back',
@@ -276,6 +278,7 @@ const translations = {
         settingUp: 'Setting up your account…',
         signUpFailed: 'Sign up failed. Please try again.',
         submitted: '✅ Application submitted — pending admin review.',
+        checkEmailBody: 'We also sent a confirmation link to your email — click it to activate your account.',
       },
     },
   },
@@ -532,6 +535,8 @@ const translations = {
         finishing: 'מסיים…',
         settingUp: 'מגדיר את הפרופיל שלך…',
         signUpFailed: 'ההרשמה נכשלה. נסו שוב.',
+        checkEmailTitle: '✅ עוד רגע — בדקו את האימייל',
+        checkEmailBody: 'שלחנו קישור אישור לאימייל שלכם. לחצו עליו כדי להפעיל את החשבון, ואז התחברו.',
       },
       registerCleaner: {
         goBack: 'חזרה',
@@ -554,6 +559,7 @@ const translations = {
         settingUp: 'מגדיר את החשבון שלך…',
         signUpFailed: 'ההרשמה נכשלה. נסו שוב.',
         submitted: '✅ הבקשה נשלחה — בהמתנה לאישור מנהל.',
+        checkEmailBody: 'שלחנו גם קישור אישור לאימייל שלכם — לחצו עליו כדי להפעיל את החשבון.',
       },
     },
   },

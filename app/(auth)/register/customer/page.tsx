@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/lib/geocode";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -21,6 +22,7 @@ export default function CustomerOnboardingPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [creds, setCreds] = useState<{ email: string; password: string } | null>(null);
 
   useEffect(() => {
@@ -39,11 +41,34 @@ export default function CustomerOnboardingPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const supabase = createClient();
+    const fullName = formData.get("full_name") as string;
+    const phone = formData.get("phone") as string;
+    const bio = formData.get("bio") as string;
+    const preferredServiceType = formData.get("preferred_service_type") as string;
+    const address = formData.get("address") as string;
 
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+    // Geocode client-side and pass the coordinates as signup metadata; the
+    // handle_new_user DB trigger creates the profile + customer rows (the client
+    // has no session until the email is confirmed, so it can't insert directly).
+    const location = await geocodeAddress(address);
+
+    const supabase = createClient();
+    const { error: signUpErr } = await supabase.auth.signUp({
       email: creds.email,
       password: creds.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        data: {
+          role: "customer",
+          full_name: fullName,
+          phone,
+          bio,
+          address,
+          lat: location?.lat ?? null,
+          lng: location?.lng ?? null,
+          preferred_service_type: preferredServiceType,
+        },
+      },
     });
     if (signUpErr) {
       setError(signUpErr.message);
@@ -51,49 +76,23 @@ export default function CustomerOnboardingPage() {
       return;
     }
 
-    const user = signUpData.user;
-    if (!user) {
-      setError(t("auth.registerCustomer.signUpFailed"));
-      setLoading(false);
-      return;
-    }
-
-    const fullName = formData.get("full_name") as string;
-    const phone = formData.get("phone") as string;
-    const bio = formData.get("bio") as string;
-    const preferredServiceType = formData.get("preferred_service_type") as string;
-    const address = formData.get("address") as string;
-
-    const { error: profileErr } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "customer",
-      full_name: fullName,
-      phone,
-    });
-    if (profileErr) {
-      setError(profileErr.message);
-      setLoading(false);
-      return;
-    }
-
-    const location = await geocodeAddress(address);
-
-    const { error: customerErr } = await supabase.from("customers").insert({
-      id: user.id,
-      bio,
-      address,
-      lat: location?.lat ?? null,
-      lng: location?.lng ?? null,
-      preferred_service_type: preferredServiceType,
-    });
-    if (customerErr) {
-      setError(customerErr.message);
-      setLoading(false);
-      return;
-    }
-
     localStorage.removeItem("pending_signup");
-    router.push("/browse");
+    setLoading(false);
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow p-8 text-center">
+          <p className="text-green-700 font-semibold mb-2">{t("auth.registerCustomer.checkEmailTitle")}</p>
+          <p className="text-sm text-gray-600 mb-4">{t("auth.registerCustomer.checkEmailBody")}</p>
+          <Link href="/login" className="text-blue-600 hover:underline font-medium">
+            {t("auth.login.signIn")}
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

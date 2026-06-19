@@ -61,7 +61,7 @@ describe('CustomerOnboardingPage', () => {
     expect(screen.getByLabelText(/address/i)).toBeInTheDocument()
   })
 
-  it('creates the account, geocodes the address, and saves the profile + customer rows', async () => {
+  it('geocodes the address and signs up with profile metadata, then shows the check-email screen', async () => {
     localStorage.setItem(
       'pending_signup',
       JSON.stringify({ email: 'a@b.com', password: 'pass123' })
@@ -77,35 +77,34 @@ describe('CustomerOnboardingPage', () => {
     await user.type(screen.getByLabelText(/address/i), '1 Rothschild Blvd, Tel Aviv')
     await user.click(screen.getByRole('button', { name: /finish/i }))
 
-    await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pass123' })
-    })
-
     expect(mockedGeocode).toHaveBeenCalledWith('1 Rothschild Blvd, Tel Aviv')
 
-    expect(mockFrom).toHaveBeenCalledWith('profiles')
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'user-1',
-        role: 'customer',
-        full_name: 'Jane Doe',
-      })
-    )
+    // signUp carries the profile data as metadata for the handle_new_user trigger
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'a@b.com',
+          password: 'pass123',
+          options: expect.objectContaining({
+            data: expect.objectContaining({
+              role: 'customer',
+              full_name: 'Jane Doe',
+              lat: 32.08,
+              lng: 34.78,
+              preferred_service_type: 'residential',
+            }),
+          }),
+        })
+      )
+    })
 
-    expect(mockFrom).toHaveBeenCalledWith('customers')
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'user-1',
-        address: '1 Rothschild Blvd, Tel Aviv',
-        lat: 32.08,
-        lng: 34.78,
-        preferred_service_type: 'residential',
-      })
-    )
+    // No direct DB writes — the trigger creates the rows after email confirmation
+    expect(mockFrom).not.toHaveBeenCalled()
 
     await waitFor(() => {
       expect(localStorage.getItem('pending_signup')).toBeNull()
     })
-    expect(mockPush).toHaveBeenCalledWith('/browse')
+    expect(screen.getByText(/check your email/i)).toBeInTheDocument()
+    expect(mockPush).not.toHaveBeenCalledWith('/browse')
   })
 })

@@ -48,8 +48,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthPath = pathname === '/login' || pathname === '/register'
   const isOnboardingPath = pathname.startsWith('/register/')
+  // Email-confirmation landing — the user has no session yet when they click the
+  // link, so it must be reachable while unauthenticated.
+  const isAuthCallback = pathname.startsWith('/auth/confirm')
 
-  if (!user && !isAuthPath && !isOnboardingPath) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isAuthCallback) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
