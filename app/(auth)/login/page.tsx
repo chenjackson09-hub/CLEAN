@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "../actions";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -19,6 +19,13 @@ export default function LoginPage() {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Distinct, descriptive page title (WCAG 2.4.2). Client component, so set it
+  // via document.title rather than the metadata API.
+  const pageTitle = t("auth.login.title");
+  useEffect(() => {
+    document.title = `${pageTitle} · Clean`;
+  }, [pageTitle]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,10 +59,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">
               {t("auth.login.email")}
             </label>
             <input
+              id="login-email"
               type="email"
               name="email"
               required
@@ -63,10 +71,11 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">
               {t("auth.login.password")}
             </label>
             <input
+              id="login-password"
               type="password"
               name="password"
               required
@@ -75,7 +84,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
               {error}
             </p>
           )}

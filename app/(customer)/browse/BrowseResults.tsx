@@ -43,7 +43,7 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
   return (
     <div>
       {locationError && (
-        <p className="text-amber-700 bg-amber-50 rounded-xl px-3 py-2 text-sm">
+        <p role="alert" className="text-amber-700 bg-amber-50 rounded-xl px-3 py-2 text-sm">
           {t('browse.locationNotFound')}
         </p>
       )}

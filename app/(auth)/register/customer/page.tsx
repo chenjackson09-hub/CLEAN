@@ -32,6 +32,11 @@ export default function CustomerOnboardingPage() {
     setCreds(JSON.parse(raw));
   }, [router]);
 
+  const pageTitle = t("auth.registerCustomer.title");
+  useEffect(() => {
+    document.title = `${pageTitle} · Clean`;
+  }, [pageTitle]);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!creds) return;
@@ -191,7 +196,7 @@ export default function CustomerOnboardingPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <button

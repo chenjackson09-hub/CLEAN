@@ -48,8 +48,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthPath = pathname === '/login' || pathname === '/register'
   const isOnboardingPath = pathname.startsWith('/register/')
+  // The accessibility statement (הצהרת נגישות) is legally required to be
+  // publicly reachable, including by users who are not logged in.
+  const isPublicPath = pathname === '/accessibility'
 
-  if (!user && !isAuthPath && !isOnboardingPath) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

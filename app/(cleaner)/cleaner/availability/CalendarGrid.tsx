@@ -496,7 +496,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                       ⚠ {t("avail_short_warning")}
                     </p>
                   )}
-                  {error && <p className="text-base text-red-600">{error}</p>}
+                  {error && <p role="alert" className="text-base text-red-600">{error}</p>}
                   <button
                     type="submit"
                     disabled={loading || endTime <= startTime}

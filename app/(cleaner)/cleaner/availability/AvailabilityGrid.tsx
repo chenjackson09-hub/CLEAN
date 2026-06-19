@@ -130,7 +130,7 @@ export default function AvailabilityGrid({ slots: initialSlots }: Props) {
       </div>
 
       {error && (
-        <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+        <p role="alert" className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
       )}
 
       {modal.open && (
@@ -161,7 +161,7 @@ export default function AvailabilityGrid({ slots: initialSlots }: Props) {
                   </button>
                 ))}
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
               <div className="flex gap-3">
                 <button
                   type="button"

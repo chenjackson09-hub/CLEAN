@@ -164,7 +164,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
         </div>
 
         {state?.error && (
-          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{state.error}</p>
+          <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{state.error}</p>
         )}
         {state?.success && (
           <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Profile saved!</p>

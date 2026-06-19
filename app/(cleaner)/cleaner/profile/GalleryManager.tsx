@@ -73,7 +73,7 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
       </div>
 
       {error && (
-        <p className="mb-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+        <p role="alert" className="mb-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
       )}
 
       {photos.length === 0 ? (

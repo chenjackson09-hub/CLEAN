@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { UserRole } from "@/types/database";
@@ -38,6 +38,11 @@ export default function RegisterPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const pageTitle = t("auth.register.title");
+  useEffect(() => {
+    document.title = `${pageTitle} · Clean`;
+  }, [pageTitle]);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -124,8 +129,9 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.email")}</label>
+            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.email")}</label>
             <input
+              id="register-email"
               type="email"
               name="email"
               required
@@ -134,8 +140,9 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.password")}</label>
+            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.password")}</label>
             <input
+              id="register-password"
               type="password"
               name="password"
               required
@@ -146,7 +153,7 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <button

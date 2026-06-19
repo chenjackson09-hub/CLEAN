@@ -216,7 +216,7 @@ export default function RequestCard({ booking, showActions }: Props) {
               )}
 
               {error && (
-                <p className="text-base text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
+                <p role="alert" className="text-base text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
               )}
             </div>
 

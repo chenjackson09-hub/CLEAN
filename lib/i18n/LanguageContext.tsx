@@ -34,18 +34,25 @@ function translate(lang: Locale, key: string, vars?: Record<string, string | num
   )
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Locale>('en')
+export function LanguageProvider({ children, initialLang }: { children: ReactNode; initialLang?: Locale }) {
+  const [lang, setLang] = useState<Locale>(initialLang ?? 'en')
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (stored === 'en' || stored === 'he') setLang(stored)
-  }, [])
+    // Only fall back to localStorage when the server didn't already supply a
+    // language via cookie — otherwise the cookie (used for SSR lang/dir) wins.
+    if (!initialLang) {
+      const stored = window.localStorage.getItem(STORAGE_KEY)
+      if (stored === 'en' || stored === 'he') setLang(stored)
+    }
+  }, [initialLang])
 
   useEffect(() => {
     document.documentElement.lang = lang
     document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr'
     window.localStorage.setItem(STORAGE_KEY, lang)
+    // Persist to a cookie too so the server layout can render the correct
+    // lang/dir on the next request (IS 5568 first-paint correctness).
+    document.cookie = `lang=${lang};path=/;max-age=31536000`
   }, [lang])
 
   const dir = lang === 'he' ? 'rtl' : 'ltr'

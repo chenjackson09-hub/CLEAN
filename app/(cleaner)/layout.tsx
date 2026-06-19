@@ -48,7 +48,7 @@ export default async function CleanerLayout({
           </Suspense>
         }
       />
-      <main className="relative p-8 pt-16">
+      <main id="main-content" tabIndex={-1} className="relative p-8 pt-16">
         {children}
       </main>
     </div>

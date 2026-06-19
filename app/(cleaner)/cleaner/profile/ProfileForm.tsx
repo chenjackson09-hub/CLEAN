@@ -47,8 +47,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           )}
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_photo")}</label>
+          <label htmlFor="prof-avatar" className="block text-base font-medium text-gray-700 mb-1">{t("prof_photo")}</label>
           <input
+            id="prof-avatar"
             type="file"
             name="avatar"
             accept="image/*"
@@ -63,8 +64,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_full_name")}</label>
+          <label htmlFor="prof-full_name" className="block text-base font-medium text-gray-700 mb-1">{t("prof_full_name")}</label>
           <input
+            id="prof-full_name"
             type="text"
             name="full_name"
             defaultValue={profile?.full_name ?? ""}
@@ -72,9 +74,11 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_phone")}</label>
+          <label htmlFor="prof-phone" className="block text-base font-medium text-gray-700 mb-1">{t("prof_phone")}</label>
           <input
+            id="prof-phone"
             type="tel"
+            dir="ltr"
             name="phone"
             defaultValue={profile?.phone ?? ""}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -83,8 +87,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_bio")}</label>
+        <label htmlFor="prof-bio" className="block text-base font-medium text-gray-700 mb-1">{t("prof_bio")}</label>
         <textarea
+          id="prof-bio"
           name="bio"
           rows={3}
           defaultValue={cleaner?.bio ?? ""}
@@ -94,8 +99,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
+          <label htmlFor="prof-hourly_rate" className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
           <input
+            id="prof-hourly_rate"
             type="number"
             name="hourly_rate"
             min="0"
@@ -105,8 +111,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_service_radius")}</label>
+          <label htmlFor="prof-service_radius_km" className="block text-base font-medium text-gray-700 mb-1">{t("prof_service_radius")}</label>
           <input
+            id="prof-service_radius_km"
             type="number"
             name="service_radius_km"
             min="1"
@@ -136,8 +143,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
+        <label htmlFor="prof-address" className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
         <input
+          id="prof-address"
           type="text"
           name="address"
           defaultValue={cleaner?.address ?? ""}
@@ -148,8 +156,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
+          <label htmlFor="prof-years_experience" className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
           <input
+            id="prof-years_experience"
             type="number"
             name="years_experience"
             min="0"
@@ -159,8 +168,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
+          <label htmlFor="prof-languages" className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
           <input
+            id="prof-languages"
             type="text"
             name="languages"
             defaultValue={cleaner?.languages?.join(", ") ?? ""}
@@ -172,6 +182,8 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       {message && (
         <p
+          role="status"
+          aria-live="polite"
           className={`text-base rounded-lg px-3 py-2 ${
             message.type === "success"
               ? "bg-green-50 text-green-700"

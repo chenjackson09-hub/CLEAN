@@ -36,6 +36,11 @@ export default function CleanerOnboardingPage() {
     setCreds(JSON.parse(raw));
   }, [router]);
 
+  const pageTitle = t("auth.registerCleaner.title");
+  useEffect(() => {
+    document.title = `${pageTitle} · Clean`;
+  }, [pageTitle]);
+
   function toggleLanguage(lang: string) {
     setLanguages(prev => prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]);
   }
@@ -270,7 +275,7 @@ export default function CleanerOnboardingPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <button

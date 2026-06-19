@@ -77,7 +77,7 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
           >
             {loading ? t("dash_completing") : t("dash_complete")}
           </button>
-          {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-600 mt-1">{error}</p>}
         </div>
       )}
 
