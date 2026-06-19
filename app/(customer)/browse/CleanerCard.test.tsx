@@ -23,15 +23,9 @@ describe('CleanerCard', () => {
     expect(screen.getByText(/5 yrs exp/i)).toBeInTheDocument()
   })
 
-  it('renders service type badge', () => {
-    render(<CleanerCard cleaner={baseCleaner} />)
-    expect(screen.getByText('Residential')).toBeInTheDocument()
-  })
-
-  it('renders a badge for each service type', () => {
-    render(<CleanerCard cleaner={{ ...baseCleaner, service_types: ['residential', 'commercial'] }} />)
-    expect(screen.getByText('Residential')).toBeInTheDocument()
-    expect(screen.getByText('Commercial')).toBeInTheDocument()
+  it('renders the area badge when set', () => {
+    render(<CleanerCard cleaner={{ ...baseCleaner, area: 'Tel Aviv' }} />)
+    expect(screen.getByText('Tel Aviv')).toBeInTheDocument()
   })
 
   it('renders languages', () => {

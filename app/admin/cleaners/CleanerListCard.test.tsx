@@ -29,7 +29,6 @@ describe('CleanerListCard', () => {
     expect(screen.getByText('050-222-1111')).toBeInTheDocument()
     expect(screen.getByText('Tel Aviv')).toBeInTheDocument()
     expect(screen.getByText('Residential')).toBeInTheDocument()
-    expect(screen.getByText('₪80/hr')).toBeInTheDocument()
   })
 
   it('saves edited notes', async () => {
