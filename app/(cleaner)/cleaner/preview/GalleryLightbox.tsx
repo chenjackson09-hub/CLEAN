@@ -34,7 +34,7 @@ export default function GalleryLightbox({ photos }: Props) {
               onClick={() => setIndex(i)}
               className="relative rounded-xl overflow-hidden aspect-square bg-gray-100 hover:opacity-90 transition-opacity cursor-zoom-in"
             >
-              <Image src={photo.photo_url} alt="Gallery photo" fill className="object-cover" />
+              <Image src={photo.photo_url} alt="Gallery photo" fill sizes="(max-width: 640px) 50vw, 200px" className="object-cover" />
             </button>
           ))}
         </div>

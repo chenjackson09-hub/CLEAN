@@ -35,7 +35,7 @@ export default function AvatarLightbox({ src, name }: Props) {
             className="relative w-72 h-72 sm:w-96 sm:h-96 rounded-full overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image src={src} alt={name} fill className="object-cover" />
+            <Image src={src} alt={name} fill sizes="(min-width: 640px) 384px, 288px" className="object-cover" />
           </div>
         </div>
       )}

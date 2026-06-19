@@ -172,6 +172,7 @@ export function FilterBar({ defaultValues }: Props) {
       <div className="flex flex-col gap-1">
         <label htmlFor="location" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('filterBar.location')}</label>
         <input id="location" type="text" value={location} onChange={e => setLocation(e.target.value)}
+          autoComplete="street-address"
           placeholder={t('filterBar.locationPlaceholder')}
           className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
       </div>

@@ -40,6 +40,8 @@ app/
 
 Each route group has a co-located layout that renders its own nav: `(cleaner)/layout.tsx` → `NavLinks.tsx`, `(customer)/layout.tsx` → `CustomerNav.tsx`, `admin/Nav.tsx`. All three navs share the same responsive shape — icon-over-label on mobile, icon-beside-label on `lg` — and put the language toggle and sign-out inside a **Settings gear dropdown** (the cleaner nav's dropdown also shows the cleaner's name + status badge). The admin nav renders inline per-page (each `admin/*/page.tsx` renders `<Nav />`) and is `sticky` rather than `fixed`, so the pages need no top padding. Keep the three navs visually in sync when changing one.
 
+All three navs **optimistically highlight the pressed tab**: clicking a `<Link>` sets a `pendingHref` state that drives the active style immediately (before the route loads, which can lag behind `<Link>` prefetch), and a `useEffect` clears it when `usePathname()` catches up. The `active` check prefers `pendingHref` when set, otherwise falls back to the pathname match. Preserve this pattern (and each nav's existing pathname-match rule — admin/customer use exact-or-`/`-prefix, cleaner uses `startsWith`) when editing a nav.
+
 - **Admin "Availability" nav button is temporarily hidden.** The `/admin/availability` page still exists and is reachable by URL, but its entry in `admin/Nav.tsx`'s `NAV_ITEMS` is commented out because we're not yet sure admins need it. Uncomment that entry to restore the button (the `adminNav.availability` translations are already in place).
 
 After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/applications`).
@@ -92,6 +94,7 @@ All mutations are Next.js Server Actions (`"use server"`) in `actions.ts` files 
 - All deletes run in a fixed order: **storage → child rows → role row + `profiles` → auth user**. Storage is cleared first via `deleteUserStorage` so a failure aborts before any rows are gone (the user id is needed to find the files, so a half-delete would be unretryable). Child rows (anything FK-referencing `cleaners.id` / `profiles.id` — `bookings`, `cleaner_availability`, `cleaner_weekly_availability`, `cleaner_gallery`, `cleaner_applications`) are deleted before the parent rows.
 - `deleteUserStorage` wipes every per-user file by clearing the `${userId}/` folder in each bucket in `USER_STORAGE_BUCKETS` (`avatars`, `gallery`). All uploads namespace by user id, and listing a missing folder returns empty (not an error), so it's safe for any user. **Add new per-user buckets here** so they're cleaned up too.
 - These actions are **not transactional** (the Supabase JS client has no multi-statement transaction). The ordering minimizes risk, but a mid-delete failure can leave partial state.
+- Because reject/delete now block on a full hard-delete, the application cards give **immediate pressed feedback**: `ApplicationsList` tracks a `pendingAction` ({ id, status }) set on click, which darkens the pressed button (`bg-red-700`/`bg-green-700`) and disables both buttons until the action resolves (and ignores further clicks while one is in flight).
 
 ### Realtime
 
@@ -112,6 +115,8 @@ Cleaners enter a free-text `address` (persisted in `cleaners.address`) plus a `s
 ### Types
 
 All shared DB types live in `types/database.ts`. The key enums are `UserRole`, `BookingStatus`, `CleanerStatus`, `ApplicationStatus`, and `ServiceType`. Per-feature view models live under `lib/types/` (`booking.ts`, `cleaner.ts`, etc.).
+
+`globals.d.ts` (project root) declares `module "*.css"` so the TS language server doesn't report `ts(2882)` on `import "./globals.css"` under `moduleResolution: "bundler"`. Don't delete it — Next handles CSS at build time, but the editor needs the ambient declaration.
 
 ### Internationalization (two separate systems)
 

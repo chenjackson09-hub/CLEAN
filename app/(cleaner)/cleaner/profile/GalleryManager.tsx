@@ -89,6 +89,7 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
                 src={photo.photo_url}
                 alt="Gallery photo"
                 fill
+                sizes="(max-width: 640px) 50vw, 33vw"
                 className="object-cover"
               />
               <button

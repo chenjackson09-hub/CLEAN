@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -11,8 +11,8 @@ const NAV_ITEMS = [
     label: "Home",
     labelHe: "בית",
     icon: (
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-5 h-5">
-  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
 </svg>
     ),
   },
@@ -59,6 +59,12 @@ export default function CustomerNav({ signOut, userName, acceptedCount = 0 }: Pr
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const pathname = usePathname();
+  // Optimistically highlight the tab the moment it's clicked, before the new
+  // route finishes loading. Cleared once the pathname catches up (navigation done).
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   const LangButtons = (
     <div className="flex gap-1">
@@ -93,12 +99,17 @@ export default function CustomerNav({ signOut, userName, acceptedCount = 0 }: Pr
           {/* Nav items — Link-based for instant prefetched navigation */}
           <nav className="flex items-center gap-4 lg:gap-6">
             {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(item.href + "/");
+              // While a click is pending, only the clicked tab is active; otherwise
+              // fall back to the current route. This makes the color switch instant.
+              const active = pendingHref
+                ? pendingHref === item.href
+                : pathname === item.href || pathname.startsWith(item.href + "/");
               const label = lang === "he" ? item.labelHe : item.label;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setPendingHref(item.href)}
                   className={`relative flex flex-col lg:flex-row items-center lg:gap-2 px-2 lg:px-3 py-1.5 rounded-lg transition-colors ${
                     active
                       ? "bg-blue-50 text-blue-700 font-semibold"
@@ -138,7 +149,7 @@ export default function CustomerNav({ signOut, userName, acceptedCount = 0 }: Pr
               <>
                 {/* Click-away backdrop */}
                 <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
-                <div className="absolute end-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4 flex flex-col gap-3">
+                <div className="absolute end-0 mt-2 w-52 bg-white rounded-2xl shadow-lg border border-gray-200 z-50 p-4 flex flex-col gap-3">
                   <p className="text-sm text-gray-700 font-medium truncate">{userName}</p>
                   <div>
                     <p className="text-xs text-gray-400 mb-1.5">{lang === "he" ? "שפה" : "Language"}</p>
@@ -146,7 +157,7 @@ export default function CustomerNav({ signOut, userName, acceptedCount = 0 }: Pr
                   </div>
                   <button
                     onClick={() => { setSettingsOpen(false); setConfirmSignOut(true); }}
-                    className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
+                    className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-2xl px-3 py-2 font-medium"
                   >
                     {lang === "he" ? "התנתק" : "Sign out"}
                   </button>

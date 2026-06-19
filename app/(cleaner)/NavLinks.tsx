@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLang } from "@/context/LangContext";
@@ -11,8 +11,8 @@ const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode
     href: "/cleaner/dashboard",
     labelKey: "nav_home",
     icon: (
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-5 h-5">
-  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
 </svg>
 
     ),
@@ -58,6 +58,12 @@ export default function NavLinks({ signOut, userName, statusBadge, pendingCount 
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const pathname = usePathname();
+  // Optimistically highlight the tab the moment it's clicked, before the new
+  // route finishes loading. Cleared once the pathname catches up (navigation done).
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   const LangButtons = (
     <div className="flex gap-1">
@@ -91,12 +97,19 @@ export default function NavLinks({ signOut, userName, statusBadge, pendingCount 
 
           {/* Nav items — Link-based for instant prefetched navigation */}
           <nav className="flex items-center gap-4 lg:gap-6">
-            {NAV_ITEMS.map((item) => (
+            {NAV_ITEMS.map((item) => {
+              // While a click is pending, only the clicked tab is active; otherwise
+              // fall back to the current route. This makes the color switch instant.
+              const active = pendingHref
+                ? pendingHref === item.href
+                : pathname.startsWith(item.href);
+              return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setPendingHref(item.href)}
                 className={`relative flex flex-col lg:flex-row items-center lg:gap-2 px-2 lg:px-3 py-1.5 rounded-lg transition-colors ${
-                  pathname.startsWith(item.href)
+                  active
                     ? "bg-blue-50 text-blue-700 font-semibold"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
@@ -109,7 +122,8 @@ export default function NavLinks({ signOut, userName, statusBadge, pendingCount 
                   </span>
                 )}
               </Link>
-            ))}
+              );
+            })}
           </nav>
 
           {/* Settings dropdown — holds language + sign out */}

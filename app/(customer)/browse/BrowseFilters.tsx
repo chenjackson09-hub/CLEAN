@@ -92,6 +92,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
               name="location"
               type="text"
               required
+              autoComplete="street-address"
               defaultValue={location ?? ''}
               placeholder={t('browse.locationPlaceholder')}
               className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
