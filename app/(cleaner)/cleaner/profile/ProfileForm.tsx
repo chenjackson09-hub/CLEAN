@@ -41,7 +41,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden shrink-0">
           {avatarPreview ? (
-            <Image src={avatarPreview} alt="Avatar" width={64} height={64} className="object-cover w-full h-full" />
+            <Image src={avatarPreview} alt="Avatar" width={64} height={64} priority className="object-cover w-full h-full" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">👤</div>
           )}

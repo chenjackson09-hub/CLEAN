@@ -44,12 +44,14 @@ export async function signUp(
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Local scope clears the session cookies without a network round-trip to
+  // revoke the session server-side — that revoke is what made logout slow.
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }
 
 export async function signOutToRegister() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/register");
 }

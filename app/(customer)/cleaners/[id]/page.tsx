@@ -64,15 +64,13 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <CleanerProfile
-        cleaner={cleanerResult}
-        gallery={(galleryRows ?? []).map(r => r.photo_url as string)}
-        weeklyAvailability={weeklyAvailability ?? []}
-        dateAvailability={dateAvailability ?? []}
-        presetDate={searchParams.date}
-        presetAddress={searchParams.location}
-      />
-    </div>
+    <CleanerProfile
+      cleaner={cleanerResult}
+      gallery={(galleryRows ?? []).map(r => r.photo_url as string)}
+      weeklyAvailability={weeklyAvailability ?? []}
+      dateAvailability={dateAvailability ?? []}
+      presetDate={searchParams.date}
+      presetAddress={searchParams.location}
+    />
   )
 }

@@ -27,7 +27,7 @@ export default async function PreviewPage() {
   ]);
 
   return (
-    <div className="-mx-8 -mt-2 min-h-screen">
+    <div className="-mx-8 -mt-2 min-h-screen ">
       {/* Edit banner */}
       <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 flex items-center justify-between">
         <p className="text-base text-yellow-800 font-medium">{t(lang, "prev_banner")}</p>

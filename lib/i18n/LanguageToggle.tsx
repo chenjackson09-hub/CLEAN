@@ -8,7 +8,7 @@ export function LanguageToggle() {
     <button
       type="button"
       onClick={toggleLanguage}
-      className="text-xs font-semibold text-gray-700 border border-gray-300 rounded-full px-2.5 py-1 hover:bg-gray-100 transition-colors"
+      className="text-sm font-semibold text-gray-700 bg-gray-100 rounded-full px-3 py-1 hover:bg-gray-200 transition-colors"
     >
       {lang === 'en' ? 'עברית' : 'English'}
     </button>

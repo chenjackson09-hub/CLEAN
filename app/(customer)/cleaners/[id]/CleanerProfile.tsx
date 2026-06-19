@@ -20,7 +20,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   const initial = cleaner.full_name.charAt(0).toUpperCase()
 
   return (
-    <div className="-mx-8 -mt-2 min-h-screen">
+    <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen">
       {/* Back button — uses browser history so filters are preserved */}
       <div className="px-6 lg:px-10 pt-5">
         <button
@@ -41,7 +41,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             <img
               src={cleaner.avatar_url}
               alt={cleaner.full_name}
-              className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover shadow"
+              className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover shadow shrink-0"
             />
           ) : (
             <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-blue-100 border-4 border-white shadow flex items-center justify-center text-blue-600 font-bold text-5xl shrink-0">
@@ -62,10 +62,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             {cleaner.languages.length > 0 && (
               <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
                 {cleaner.languages.map(lang => (
-                  <span key={lang} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
-                    </svg>
+                  <span key={lang} className="bg-gray-100 text-gray-700 text-base px-3 py-1 rounded-full">
                     {lang}
                   </span>
                 ))}
@@ -75,79 +72,83 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 lg:px-10 pb-10 space-y-4">
-                {/* Booking form */}
-        <div className="bg-white shadow-sm rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
-          </h2>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} />
-        </div>
-        {/* Stats */}
-        <div className="bg-white shadow-sm rounded-2xl p-6">
-          <div className="flex items-center justify-around text-center">
-            {cleaner.years_experience != null && (
+      {/* Content — about column (2/3) + gallery sidebar (1/3) on desktop, stacked on mobile */}
+      <div className="px-4 lg:px-10 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="lg:col-span-2 space-y-4 lg:space-y-5">
+          {/* Booking form */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+            </h2>
+            <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} />
+          </div>
+
+          {/* Stats */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <div className="flex items-center gap-6">
+              {cleaner.years_experience != null && (
+                <div>
+                  <p className="text-sm text-gray-500">{t('cleanerProfile.experience')}</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {cleaner.years_experience} {cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}
+                  </p>
+                </div>
+              )}
+              {cleaner.distance_km > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500">{t('cleanerProfile.distance')}</p>
+                  <p className="text-base font-semibold text-gray-900">{cleaner.distance_km.toFixed(1)} {t('cleanerProfile.km')}</p>
+                </div>
+              )}
               <div>
-                <p className="text-sm text-gray-500">{t('cleanerProfile.experience')}</p>
-                <p className="text-base font-semibold text-gray-900">
-                  {cleaner.years_experience} {cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}
-                </p>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.rate')}</p>
+                <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
               </div>
-            )}
-            {cleaner.distance_km > 0 && (
-              <div>
-                <p className="text-sm text-gray-500">{t('cleanerProfile.distance')}</p>
-                <p className="text-base font-semibold text-gray-900">{cleaner.distance_km.toFixed(1)} {t('cleanerProfile.km')}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-gray-500">{t('cleanerProfile.rate')}</p>
-              <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
             </div>
           </div>
+
+          {/* About */}
+          {cleaner.bio && (
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.about')}</h2>
+              <p className="text-base text-gray-700 leading-relaxed">{cleaner.bio}</p>
+            </div>
+          )}
+
+          {/* Service types */}
+          {cleaner.service_types.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.serviceTypes')}</h2>
+              <div className="flex flex-wrap gap-2">
+                {cleaner.service_types.map(type => (
+                  <span key={type} className="bg-blue-50 text-blue-700 text-base font-medium px-4 py-1.5 rounded-full">
+                    {t(`common.${type}`)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* About */}
-        {cleaner.bio && (
-          <div className="bg-white shadow-sm rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.about')}</h2>
-            <p className="text-base text-gray-700 leading-relaxed">{cleaner.bio}</p>
-          </div>
-        )}
-
-        {/* Service types */}
-        {cleaner.service_types.length > 0 && (
-          <div className="bg-white shadow-sm rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.serviceTypes')}</h2>
-            <div className="flex flex-wrap gap-2">
-              {cleaner.service_types.map(type => (
-                <span key={type} className="bg-blue-50 text-blue-700 text-sm font-medium px-4 py-1.5 rounded-full">
-                  {t(`common.${type}`)}
-                </span>
-              ))}
+        {/* Gallery sidebar */}
+        <div className="space-y-4 lg:space-y-5">
+          {gallery.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">{t('cleanerProfile.gallery')}</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {gallery.map((url, i) => (
+                  <div key={i} className="relative rounded-xl overflow-hidden aspect-square bg-gray-100">
+                    <img
+                      src={url}
+                      alt={`${cleaner.full_name} ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Gallery */}
-        {gallery.length > 0 && (
-          <div className="bg-white shadow-md rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.gallery')}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {gallery.map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`${cleaner.full_name} ${i + 1}`}
-                  className="w-full aspect-square object-cover rounded-xl"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-
+          )}
+        </div>
       </div>
     </div>
   )

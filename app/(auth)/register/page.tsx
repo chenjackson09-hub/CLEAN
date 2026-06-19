@@ -96,7 +96,7 @@ export default function RegisterPage() {
             type="button"
             onClick={() => setRole("customer")}
             disabled={loading}
-            className={`border-2 rounded-xl p-4 text-start transition-colors ${
+            className={`border-2 rounded-2xl p-4 text-start transition-colors ${
               role === "customer"
                 ? "border-blue-500 bg-blue-50"
                 : "border-gray-200 hover:border-gray-300"
@@ -110,7 +110,7 @@ export default function RegisterPage() {
             type="button"
             onClick={() => setRole("cleaner")}
             disabled={loading}
-            className={`border-2 rounded-xl p-4 text-start transition-colors ${
+            className={`border-2 rounded-2xl p-4 text-start transition-colors ${
               role === "cleaner"
                 ? "border-blue-500 bg-blue-50"
                 : "border-gray-200 hover:border-gray-300"
@@ -130,7 +130,7 @@ export default function RegisterPage() {
               name="email"
               required
               disabled={loading}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
           </div>
           <div>
@@ -141,7 +141,7 @@ export default function RegisterPage() {
               required
               minLength={6}
               disabled={loading}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
           </div>
 
@@ -152,7 +152,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={!role || loading}
-            className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+            className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
             {loading ? (
               <>
