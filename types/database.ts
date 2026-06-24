@@ -1,7 +1,7 @@
 export type UserRole = "customer" | "cleaner" | "admin";
 export type ServiceType = "residential" | "commercial";
 export type CleanerStatus = "pending" | "approved" | "rejected" | "suspended";
-export type ApplicationStatus = "pending" | "approved" | "rejected";
+export type ApplicationStatus = "pending" | "approved" | "rejected" | "needs_info";
 export type BookingStatus =
   | "pending"
   | "accepted"
@@ -25,6 +25,7 @@ export interface Customer {
   lat: number | null;
   lng: number | null;
   preferred_service_type: ServiceType | null;
+  admin_notes: string | null;
 }
 
 export interface Cleaner {
@@ -38,6 +39,7 @@ export interface Cleaner {
   status: CleanerStatus;
   years_experience: number | null;
   languages: string[] | null;
+  admin_notes: string | null;
 }
 
 export interface CleanerApplication {
