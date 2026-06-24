@@ -24,7 +24,7 @@ describe('LanguageProvider', () => {
 
     expect(screen.getByTestId('lang')).toHaveTextContent('en')
     expect(screen.getByTestId('dir')).toHaveTextContent('ltr')
-    expect(screen.getByTestId('text')).toHaveTextContent('Browse Cleaners')
+    expect(screen.getByTestId('text')).toHaveTextContent('Schedule')
   })
 
   it('toggles to Hebrew with rtl direction and translated text', async () => {
@@ -35,7 +35,7 @@ describe('LanguageProvider', () => {
 
     expect(screen.getByTestId('lang')).toHaveTextContent('he')
     expect(screen.getByTestId('dir')).toHaveTextContent('rtl')
-    expect(screen.getByTestId('text')).toHaveTextContent('חיפוש מנקים')
+    expect(screen.getByTestId('text')).toHaveTextContent('לוח זמנים')
   })
 
   it('persists the chosen language across remounts', async () => {

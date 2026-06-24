@@ -41,10 +41,8 @@ export default async function AdminDashboardPage() {
 
   const cleaners = cleanerRows ?? []
   const totalCleaners = cleaners.length
-  const activeCleaners = cleaners.filter((c) => c.status === 'approved').length
-  // "New" approximates the spec's intent until the Phase 1b status-enum migration lands —
-  // a cleaner awaiting first review reads as "new," not yet "active."
-  const newCleaners = cleaners.filter((c) => c.status === 'pending').length
+  const activeCleaners = cleaners.filter((c) => c.status === 'active').length
+  const newCleaners = cleaners.filter((c) => c.status === 'new').length
 
   const customers = customerProfileRows ?? []
   const totalHosts = customers.length

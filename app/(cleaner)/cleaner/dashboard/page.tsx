@@ -69,7 +69,7 @@ export default async function CleanerDashboardPage() {
     .filter((b) => startDateTime(b) < now)
     .slice(0, 20);
 
-  if (!cleanerStatus || cleanerStatus === "pending") {
+  if (!cleanerStatus || cleanerStatus === "new" || cleanerStatus === "in_training") {
     return (
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
@@ -81,25 +81,13 @@ export default async function CleanerDashboardPage() {
     );
   }
 
-  if (cleanerStatus === "rejected") {
-    return (
-      <div className="flex items-center justify-center h-full min-h-[60vh]">
-        <div className="text-center">
-          <div className="text-4xl mb-3">❌</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-1">{t(lang, "dash_rejected_title")}</h2>
-          <p className="text-base text-gray-500">{t(lang, "dash_rejected_body")}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (cleanerStatus === "suspended") {
+  if (cleanerStatus === "blocked" || cleanerStatus === "inactive") {
     return (
       <div className="flex items-center justify-center h-full min-h-[60vh]">
         <div className="text-center">
           <div className="text-4xl mb-3">🚫</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-1">{t(lang, "dash_suspended_title")}</h2>
-          <p className="text-base text-gray-500">{t(lang, "dash_suspended_body")}</p>
+          <h2 className="text-xl font-semibold text-gray-800 mb-1">{t(lang, "dash_blocked_title")}</h2>
+          <p className="text-base text-gray-500">{t(lang, "dash_blocked_body")}</p>
         </div>
       </div>
     );

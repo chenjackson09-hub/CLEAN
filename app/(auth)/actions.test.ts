@@ -56,12 +56,12 @@ describe('signIn', () => {
     expect(mockedRedirect).toHaveBeenCalledWith('/cleaner/dashboard')
   })
 
-  it('redirects an admin to /admin/applications', async () => {
+  it('redirects an admin to /admin/dashboard', async () => {
     mockSingle.mockResolvedValue({ data: { role: 'admin' } })
 
     await signIn(formData('a@b.com', 'pw'))
 
-    expect(mockedRedirect).toHaveBeenCalledWith('/admin/applications')
+    expect(mockedRedirect).toHaveBeenCalledWith('/admin/dashboard')
   })
 
   it('returns an error when sign in fails', async () => {

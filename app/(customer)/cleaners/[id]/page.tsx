@@ -26,7 +26,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
       .from('cleaners')
       .select('id, bio, service_types, hourly_rate, years_experience, languages')
       .eq('id', params.id)
-      .neq('status', 'rejected')
+      .neq('status', 'blocked')
       .single(),
     admin
       .from('profiles')

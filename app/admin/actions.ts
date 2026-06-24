@@ -15,6 +15,11 @@ async function requireAdmin(): Promise<{ error: string } | null> {
   return null
 }
 
+// cleaner_applications.status (pending/approved/rejected/needs_info) and
+// cleaners.status (new/active/in_training/inactive/blocked) are different
+// enums — approving/rejecting an application maps to a different cleaner status.
+const CLEANER_STATUS_FOR_DECISION = { approved: 'active', rejected: 'blocked' } as const
+
 export async function updateApplicationStatus(
   applicationId: string,
   cleanerId: string,
@@ -28,7 +33,7 @@ export async function updateApplicationStatus(
     admin.from('cleaner_applications')
       .update({ status, reviewed_at: new Date().toISOString(), reviewed_by: reviewer?.id ?? null })
       .eq('id', applicationId),
-    admin.from('cleaners').update({ status }).eq('id', cleanerId),
+    admin.from('cleaners').update({ status: CLEANER_STATUS_FOR_DECISION[status] }).eq('id', cleanerId),
   ])
   if (appRes.error) return { error: appRes.error.message }
   if (cleanerRes.error) return { error: cleanerRes.error.message }
@@ -64,7 +69,7 @@ export async function deleteCleanerAdmin(id: string): Promise<ActionResult> {
   const authError = await requireAdmin()
   if (authError) return authError
   const admin = createAdminClient()
-  const { error } = await admin.from('cleaners').update({ status: 'suspended' }).eq('id', id)
+  const { error } = await admin.from('cleaners').update({ status: 'blocked' }).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/cleaners')
   return {}

@@ -4,17 +4,19 @@ import { t } from "@/lib/lang";
 import type { Lang, TranslationKey } from "@/lib/lang";
 
 const STATUS_COLOR: Record<string, string> = {
-  approved: "bg-green-100 text-green-700",
-  pending: "bg-yellow-100 text-yellow-700",
-  rejected: "bg-red-100 text-red-700",
-  suspended: "bg-gray-100 text-gray-600",
+  new: "bg-yellow-100 text-yellow-700",
+  active: "bg-green-100 text-green-700",
+  in_training: "bg-blue-100 text-blue-700",
+  inactive: "bg-gray-100 text-gray-600",
+  blocked: "bg-red-100 text-red-700",
 };
 
 const STATUS_KEY: Record<string, TranslationKey> = {
-  approved: "status_approved",
-  pending: "status_pending",
-  rejected: "status_rejected",
-  suspended: "status_suspended",
+  new: "status_new",
+  active: "status_active",
+  in_training: "status_in_training",
+  inactive: "status_inactive",
+  blocked: "status_blocked",
 };
 
 export async function StatusBadge({ userId }: { userId: string }) {
@@ -28,7 +30,7 @@ export async function StatusBadge({ userId }: { userId: string }) {
         STATUS_COLOR[status] ?? "bg-gray-100 text-gray-600"
       }`}
     >
-      {t(lang, STATUS_KEY[status] ?? "status_pending")}
+      {t(lang, STATUS_KEY[status] ?? "status_new")}
     </span>
   );
 }

@@ -15,7 +15,7 @@ describe('Nav', () => {
   it('renders links for browse, bookings and profile', () => {
     render(<LanguageProvider><Nav /></LanguageProvider>)
 
-    expect(screen.getByRole('link', { name: 'Browse Cleaners' })).toHaveAttribute('href', '/browse')
+    expect(screen.getByRole('link', { name: 'Schedule' })).toHaveAttribute('href', '/browse')
     expect(screen.getByRole('link', { name: 'My Bookings' })).toHaveAttribute('href', '/bookings')
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute('href', '/profile')
   })
@@ -32,7 +32,7 @@ describe('Nav', () => {
 
     await user.click(screen.getByRole('button', { name: 'עברית' }))
 
-    expect(screen.getByRole('link', { name: 'חיפוש מנקים' })).toHaveAttribute('href', '/browse')
+    expect(screen.getByRole('link', { name: 'לוח זמנים' })).toHaveAttribute('href', '/browse')
     expect(screen.getByRole('link', { name: 'ההזמנות שלי' })).toHaveAttribute('href', '/bookings')
     expect(screen.getByRole('link', { name: 'פרופיל' })).toHaveAttribute('href', '/profile')
   })

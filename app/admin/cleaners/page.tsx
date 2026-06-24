@@ -11,7 +11,7 @@ export default async function AdminCleanersPage() {
   const admin = createAdminClient()
 
   const [{ data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status').neq('status', 'suspended').limit(500),
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status').neq('status', 'blocked').limit(500),
     admin.from('profiles').select('id, full_name, phone, avatar_url').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])

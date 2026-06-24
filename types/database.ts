@@ -1,6 +1,6 @@
 export type UserRole = "customer" | "cleaner" | "admin";
 export type ServiceType = "residential" | "commercial";
-export type CleanerStatus = "pending" | "approved" | "rejected" | "suspended";
+export type CleanerStatus = "new" | "active" | "in_training" | "inactive" | "blocked";
 export type ApplicationStatus = "pending" | "approved" | "rejected" | "needs_info";
 export type BookingStatus =
   | "pending"

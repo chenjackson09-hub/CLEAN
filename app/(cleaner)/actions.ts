@@ -497,6 +497,14 @@ export async function completeBooking(bookingId: string) {
 
   if (error) return { error: error.message };
 
+  // First completed job promotes a cleaner out of "new" automatically — status
+  // is otherwise admin-only, but this specific transition is meant to be automatic.
+  const admin = createAdminClient();
+  const { data: cleaner } = await admin.from("cleaners").select("status").eq("id", user.id).single();
+  if (cleaner?.status === "new") {
+    await admin.from("cleaners").update({ status: "active" }).eq("id", user.id);
+  }
+
   revalidatePath("/cleaner/dashboard");
   return { success: true };
 }
