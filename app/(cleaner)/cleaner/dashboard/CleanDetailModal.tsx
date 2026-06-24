@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useLang } from "@/context/LangContext";
 import type { TranslationKey } from "@/lib/lang";
@@ -9,6 +10,13 @@ const MONTH_KEYS: TranslationKey[] = [
   "month_jan", "month_feb", "month_mar", "month_apr", "month_may", "month_jun",
   "month_jul", "month_aug", "month_sep", "month_oct", "month_nov", "month_dec",
 ];
+
+function daysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr + "T00:00:00");
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 export default function CleanDetailModal({
   booking,
@@ -21,9 +29,8 @@ export default function CleanDetailModal({
 
   const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`);
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
-  const endFormatted = end.toTimeString().slice(0, 5);
+  const days = daysUntil(booking.scheduled_date);
+  const countdown = days <= 0 ? t("req_today") : days === 1 ? t("req_in_one_day") : t("req_in_days", { n: days });
 
   // Render at document.body via a portal so an ancestor's CSS transform (e.g.
   // the card's hover `-translate-y`) can't become the containing block for this
@@ -39,9 +46,18 @@ export default function CleanDetailModal({
       >
         {/* Header */}
         <div className="flex items-start justify-between px-8 pt-8 pb-5 border-b border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {booking.profiles?.full_name ?? t("req_customer")}
-          </h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {booking.customer_id ? (
+                <Link href={`/cleaner/customers/${booking.customer_id}`} className="hover:text-blue-600 hover:underline">
+                  {booking.profiles?.full_name ?? t("req_customer")}
+                </Link>
+              ) : (
+                booking.profiles?.full_name ?? t("req_customer")
+              )}
+            </h2>
+            <p className="text-sm font-semibold text-blue-600 mt-1">{countdown}</p>
+          </div>
           <button
             onClick={onClose}
             className="text-3xl text-gray-400 hover:text-gray-700 font-bold leading-none ml-4"
@@ -62,16 +78,10 @@ export default function CleanDetailModal({
             <div>
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_time")}</p>
               <p className="text-lg font-semibold text-gray-900">
-                {booking.scheduled_start?.slice(0, 5)} - {endFormatted}
+                {booking.scheduled_start?.slice(0, 5)}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_duration")}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {booking.duration_hours}{t("req_h")}
-              </p>
-            </div>
-            <div>
+            <div className="col-span-2">
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_address")}</p>
               <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
             </div>

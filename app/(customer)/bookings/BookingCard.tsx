@@ -20,6 +20,15 @@ const DATE_BLOCK_COLOR: Record<BookingStatus, string> = {
   cancelled: 'bg-black',
 }
 
+const FUTURE_STATUSES: BookingStatus[] = ['pending', 'accepted']
+
+function daysUntil(dateStr: string): number {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(dateStr + 'T00:00:00')
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
 export function BookingCard({ booking, muted = false }: { booking: BookingResult; muted?: boolean }) {
   const { t, lang } = useLanguage()
 
@@ -30,6 +39,10 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
   const start = new Date(`1970-01-01T${booking.scheduled_start}`)
   const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000)
   const endStr = end.toTimeString().slice(0, 5)
+
+  const days = daysUntil(booking.scheduled_date)
+  const showCountdown = FUTURE_STATUSES.includes(booking.status) && days >= 0
+  const countdown = days === 0 ? t('bookingCard.today') : days === 1 ? t('bookingCard.tomorrow') : t('bookingCard.inDays', { days })
 
   return (
     <div className={`rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4 ${muted ? 'bg-gray-50 opacity-75' : 'bg-white'}`}>
@@ -49,6 +62,7 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
 
         <p className="text-sm text-gray-500">
           {booking.scheduled_start.slice(0, 5)} - {endStr} · {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
+          {showCountdown && <> · <span className="font-semibold text-blue-600">{countdown}</span></>}
         </p>
 
         <p className="text-sm text-gray-600 mt-1">{booking.address}</p>

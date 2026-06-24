@@ -12,14 +12,20 @@ const MONTH_KEYS: TranslationKey[] = [
   "month_jul", "month_aug", "month_sep", "month_oct", "month_nov", "month_dec",
 ];
 
+function daysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr + "T00:00:00");
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export default function UpcomingCleanCard({ booking }: { booking: BookingWithCustomer }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`);
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
-  const formatted = end.toTimeString().slice(0, 5);
+  const days = daysUntil(booking.scheduled_date);
+  const countdown = days <= 0 ? t("req_today") : days === 1 ? t("req_in_one_day") : t("req_in_days", { n: days });
 
   return (
     <>
@@ -35,7 +41,7 @@ export default function UpcomingCleanCard({ booking }: { booking: BookingWithCus
           </div>
           <div className="text-base text-gray-500 mt-1">{booking.address}</div>
           <div className="text-sm text-gray-500 mt-1">
-            {booking.scheduled_start?.slice(0, 5)} - {formatted} · {booking.duration_hours}{t("req_h")}
+            {booking.scheduled_start?.slice(0, 5)} · {countdown}
           </div>
         </div>
       </button>

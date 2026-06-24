@@ -69,7 +69,7 @@ export default async function BookingsPage() {
         <p className="text-gray-500 text-sm">
           No bookings yet.{' '}
           <Link href="/browse" className="text-blue-600 font-semibold hover:underline">
-            Browse cleaners
+            Go to Schedule
           </Link>{' '}
           to make your first booking.
         </p>

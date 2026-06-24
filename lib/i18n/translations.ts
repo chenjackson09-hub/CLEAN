@@ -4,11 +4,12 @@ const translations = {
   en: {
     nav: {
       home: 'Home',
-      browse: 'Browse Cleaners',
+      browse: 'Schedule',
       bookings: 'My Bookings',
       profile: 'Profile',
     },
     adminNav: {
+      dashboard: 'Dashboard',
       applications: 'Applications',
       bookings: 'Booking Requests',
       cleaners: 'Cleaners',
@@ -51,7 +52,7 @@ const translations = {
       clear: 'Clear',
     },
     browse: {
-      title: 'Find a Cleaner',
+      title: 'Schedule a Clean',
       useFilters: 'Use the filters above to find cleaners near you.',
       selectDate: 'Select a day on the calendar above to see available cleaners.',
       enterLocation: 'Enter your location to find cleaners who serve your area.',
@@ -93,7 +94,7 @@ const translations = {
       viewProfile: 'View Profile',
     },
     cleanerProfile: {
-      backToBrowse: '← Back to Browse',
+      backToBrowse: '← Back to Schedule',
       backToSearch: '← Back to search',
       experience: 'Experience',
       distance: 'Distance',
@@ -143,6 +144,9 @@ const translations = {
     bookingCard: {
       hour: 'hr',
       hours: 'hrs',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      inDays: 'In {days} days',
       status: {
         pending: 'Pending',
         accepted: 'Accepted',
@@ -190,6 +194,27 @@ const translations = {
         delete: 'Delete',
         confirmDelete: 'Remove this person from the list?',
       },
+      dashboard: {
+        title: 'Dashboard',
+        cleaners: 'Cleaners',
+        cleanersSub: '{active} active · {new} new',
+        hosts: 'Hosts',
+        hostsSub: '+{count} this month',
+        applications: 'Applications',
+        applicationsSub: 'awaiting review',
+        matches: 'Matches this week',
+        cancellationRate: 'Cancellation rate',
+        unmatched: 'Unmatched requests',
+        unmatchedSub: 'need attention',
+        needsAttention: 'Needs attention',
+        needsAttentionEmpty: "Nothing needs attention right now.",
+        attentionUnmatched: '{count} requests unmatched 24h+',
+        attentionApplications: '{count} applications pending review',
+        recentActivity: 'Recent activity',
+        recentActivityEmpty: 'No recent activity yet.',
+        topAreas: 'Top areas this week',
+        topAreasEmpty: 'Not enough bookings yet to show areas.',
+      },
     },
     dashboard: {
       title: 'My Booking Requests',
@@ -215,7 +240,7 @@ const translations = {
     },
     auth: {
       login: {
-        title: 'Welcome back',
+        title: 'Login',
         subtitle: 'Sign in to your account',
         email: 'Email',
         password: 'Password',
@@ -283,11 +308,12 @@ const translations = {
   he: {
     nav: {
       home: 'בית',
-      browse: 'חיפוש מנקים',
+      browse: 'לוח זמנים',
       bookings: 'ההזמנות שלי',
       profile: 'פרופיל',
     },
     adminNav: {
+      dashboard: 'דשבורד',
       applications: 'בקשות הצטרפות',
       bookings: 'בקשות הזמנה',
       cleaners: 'מנקים',
@@ -330,7 +356,7 @@ const translations = {
       clear: 'איפוס',
     },
     browse: {
-      title: 'מצאו מנקה',
+      title: 'תזמון ניקיון',
       useFilters: 'השתמשו במסננים מעל כדי למצוא מנקים בקרבתכם.',
       selectDate: 'בחרו יום בלוח השנה למעלה כדי לראות מנקים זמינים.',
       enterLocation: 'הזינו את המיקום שלכם כדי למצוא מנקים שמשרתים את האזור שלכם.',
@@ -372,7 +398,7 @@ const translations = {
       viewProfile: 'צפייה בפרופיל',
     },
     cleanerProfile: {
-      backToBrowse: '→ חזרה לחיפוש',
+      backToBrowse: '→ חזרה ללוח הזמנים',
       backToSearch: 'חזרה לחיפוש →',
       experience: 'ניסיון',
       distance: 'מרחק',
@@ -422,6 +448,9 @@ const translations = {
     bookingCard: {
       hour: 'שעה',
       hours: 'שעות',
+      today: 'היום',
+      tomorrow: 'מחר',
+      inDays: 'בעוד {days} ימים',
       status: {
         pending: 'בהמתנה',
         accepted: 'התקבל',
@@ -469,6 +498,27 @@ const translations = {
         delete: 'הסרה',
         confirmDelete: 'להסיר את האדם הזה מהרשימה?',
       },
+      dashboard: {
+        title: 'דשבורד',
+        cleaners: 'מנקים',
+        cleanersSub: '{active} פעילים · {new} חדשים',
+        hosts: 'לקוחות',
+        hostsSub: '+{count} החודש',
+        applications: 'בקשות הצטרפות',
+        applicationsSub: 'מחכות לבדיקה',
+        matches: 'התאמות השבוע',
+        cancellationRate: 'שיעור ביטולים',
+        unmatched: 'בקשות לא משובצות',
+        unmatchedSub: 'דורש תשומת לב',
+        needsAttention: 'דורש תשומת לב',
+        needsAttentionEmpty: 'אין כרגע דבר שדורש תשומת לב.',
+        attentionUnmatched: '{count} בקשות לא משובצות מעל 24 שעות',
+        attentionApplications: '{count} בקשות הצטרפות מחכות לבדיקה',
+        recentActivity: 'פעילות אחרונה',
+        recentActivityEmpty: 'אין פעילות אחרונה עדיין.',
+        topAreas: 'האזורים המובילים השבוע',
+        topAreasEmpty: 'אין עדיין מספיק הזמנות כדי להציג אזורים.',
+      },
     },
     dashboard: {
       title: 'בקשות ההזמנה שלי',
@@ -494,7 +544,7 @@ const translations = {
     },
     auth: {
       login: {
-        title: 'ברוכים השבים',
+        title: 'התחברות',
         subtitle: 'התחברו לחשבון שלכם',
         email: 'אימייל',
         password: 'סיסמה',
