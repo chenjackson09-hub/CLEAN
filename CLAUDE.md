@@ -34,7 +34,7 @@ app/
 ├── (auth)/       # /login  /register  /register/cleaner  /register/customer
 ├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /pending  /customers/[id]
 ├── (customer)/   # /browse  /cleaners/[id]  /bookings  /profile  /home
-├── admin/        # /admin/applications  /cleaners  /customers  /bookings  /availability
+├── admin/        # /admin/dashboard  /applications  /cleaners  /customers  /bookings  /availability
 └── api/auth/signout/
 ```
 
@@ -42,7 +42,11 @@ Each route group has a co-located layout that renders its own nav: `(cleaner)/la
 
 - **Admin "Availability" nav button is temporarily hidden.** The `/admin/availability` page still exists and is reachable by URL, but its entry in `admin/Nav.tsx`'s `NAV_ITEMS` is commented out because we're not yet sure admins need it. Uncomment that entry to restore the button (the `adminNav.availability` translations are already in place).
 
-After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/applications`).
+After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/dashboard`).
+
+### Admin panel rebuild (in progress)
+
+The admin panel is being rebuilt screen-by-screen against a stakeholder spec describing 6 target screens (Dashboard, Applications, Cleaners, Hosts, Requests, Matching Queue). Only **Dashboard** (`/admin/dashboard`) is built so far — it's the new admin landing page, with schema-backed KPI cards (no fabricated metrics: avg rating/disputes are omitted entirely since there's no review or dispute table yet). The remaining screens, sequencing, and the open product decisions behind them (e.g. why `cleaners.status` uses the values below) are tracked outside the repo in the planning doc from that work; `docs/chen-notes.md` tracks the broader, non-admin backlog of stakeholder feedback this rebuild is part of.
 
 ### Availability & booking
 
@@ -65,6 +69,10 @@ Three distinct clients — use the right one per context:
 | `lib/supabase/admin.ts` | Admin-only operations requiring service role (bypasses RLS) |
 
 `createAdminClient()` uses `SUPABASE_SERVICE_ROLE_KEY` and must never be called from client-side code.
+
+### Database migrations
+
+`supabase/migrations/000N_*.sql`, applied via `supabase db push` (Supabase CLI, linked to the one shared project). **All git branches share the same Supabase project** — the remote's migration-history table is flat and doesn't know about branches, so two branches both starting their next migration at the same number will collide (`supabase migration repair --status reverted <N>` fixes the bookkeeping after the fact, but check `supabase migration list` for the real next-available number before naming a new file, don't just increment off what's in your local branch). Postgres enum columns (`cleaner_status`, `application_status`) can have values added (`ALTER TYPE ... ADD VALUE`) but not cleanly removed — old/retired values are left defined-but-unused rather than attempting a type recreation.
 
 ### Middleware & auth
 
@@ -103,6 +111,11 @@ Cleaners enter a free-text `address` (persisted in `cleaners.address`) plus a `s
 
 All shared DB types live in `types/database.ts`. The key enums are `UserRole`, `BookingStatus`, `CleanerStatus`, `ApplicationStatus`, and `ServiceType`. Per-feature view models live under `lib/types/` (`booking.ts`, `cleaner.ts`, etc.).
 
+- `CleanerStatus` is `new | active | in_training | inactive | blocked`. The cleaner row is created at **registration** (status `new`), not at admin approval — approving an application sets it to `active` (see `app/admin/actions.ts` `updateApplicationStatus`); `completeBooking` auto-promotes `new` → `active` on a cleaner's first completed job. Older `pending/approved/rejected/suspended` values still exist in the Postgres enum (Postgres can't drop enum values without recreating the type) but no code should read/write them.
+- `ApplicationStatus` (`cleaner_applications.status`) is a **separate** enum from `CleanerStatus` — `pending | approved | rejected | needs_info`. Don't assume the two strings line up (approving an application sets `cleaner_applications.status = 'approved'` but `cleaners.status = 'active'`).
+- `cleaners.admin_notes` and `customers.admin_notes` (both nullable `text`) hold free-text admin-only notes — persisted, unlike the admin UI's notes fields before this column existed.
+- `admin_action_log` (admin_id, target_type, target_id, action, payload jsonb) is a generic audit table for admin-triggered actions (e.g. the Matching Queue's "notify cleaners").
+
 ### Internationalization (two separate systems)
 
 The app has **two independent i18n setups** — don't mix them:
@@ -113,6 +126,8 @@ The app has **two independent i18n setups** — don't mix them:
 | Cleaner | `@/context/LangContext` | `useLang()` | `t(translationKey)`, `setLang('en'\|'he')` | `lib/lang.ts` |
 
 Both drive RTL the same way: `document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr'`. With `dir` set, Tailwind logical utilities (`text-start`, `end-0`, `justify-start`) flip automatically — prefer them over `left`/`right` so layouts work in both directions.
+
+Both `t()` functions accept an optional `vars` record for `{placeholder}` interpolation (e.g. `t('req_in_days', { n: 3 })` → `"In 3 days"`), matching string `{name}` tokens via simple `.replace()` — keep this in sync if you touch either `t()` implementation.
 
 ### Environment variables
 
