@@ -80,7 +80,7 @@ Chen supplied the real spec (6 screens: Dashboard, Applications, Cleaners, Hosts
 1. [x] ✅ **Phase 0 — foundation migration** (`admin_notes` columns, `needs_info` status, `admin_action_log` table). Done.
 2. [x] ✅ **Phase 1 — Dashboard** (`/admin/dashboard`, schema-backed KPIs, needs-attention panel, recent activity, top areas). Done, verified live.
 3. [x] ✅ **Phase 1b — cleaner status enum migration** (`new/active/in_training/inactive/blocked`, all ~9 call sites updated). Done.
-4. [ ] 🟡 **Phase 2 — Applications** (status tabs, "Needs info" action, persisted admin notes, ID-doc link). **In progress.**
+4. [x] ✅ **Phase 2 — Applications** (status tabs, "Needs info" action, persisted admin notes, ID-doc link). Done.
 5. [ ] 🔴 **Phase 3 — Cleaners** (per-cleaner detail page, performance stats, status management). Next up — mine.
 6. [ ] 🔴 **Phase 4 — Hosts** (per-host detail page, home details, favorite cleaner). **Assigned to a friend.**
 7. [ ] 🔴 **Phase 5 — Requests** (filter/search on the existing log, response time). **Assigned to a friend.**
