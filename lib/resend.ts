@@ -79,6 +79,24 @@ export async function sendApplicationRejected(opts: {
   });
 }
 
+export async function sendApplicationNeedsInfo(opts: {
+  cleanerEmail: string;
+  cleanerName: string;
+  notes?: string;
+}) {
+  return resend.emails.send({
+    from: FROM,
+    to: opts.cleanerEmail,
+    subject: "We need more info on your Clean application",
+    html: `
+      <p>Hi ${opts.cleanerName},</p>
+      <p>We're reviewing your application, but we need a bit more information before we can continue.</p>
+      ${opts.notes ? `<p><strong>What we need:</strong> ${opts.notes}</p>` : ""}
+      <p>Please log in and update your application, or contact support if you have questions.</p>
+    `,
+  });
+}
+
 export async function sendNewBookingRequest(opts: {
   cleanerEmail: string;
   cleanerName: string;

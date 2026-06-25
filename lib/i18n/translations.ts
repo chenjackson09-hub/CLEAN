@@ -163,12 +163,22 @@ const translations = {
     admin: {
       applications: {
         title: 'Cleaner Applications',
-        empty: 'No applications yet.',
+        empty: 'No applications match this filter.',
         approve: 'Approve',
         reject: 'Reject',
+        needsInfo: 'Needs Info',
+        idDocument: '📄 View ID document',
         submitted: 'Submitted',
         status: {
           pending: 'Pending',
+          approved: 'Approved',
+          rejected: 'Rejected',
+          needs_info: 'Needs Info',
+        },
+        tabs: {
+          all: 'All',
+          pending: 'Pending review',
+          needs_info: 'Needs info',
           approved: 'Approved',
           rejected: 'Rejected',
         },
@@ -467,14 +477,24 @@ const translations = {
     admin: {
       applications: {
         title: 'בקשות הצטרפות מנקים',
-        empty: 'אין בקשות עדיין.',
+        empty: 'אין בקשות התואמות את הסינון.',
         approve: 'אישור',
         reject: 'דחייה',
+        needsInfo: 'דרוש מידע',
+        idDocument: '📄 צפייה במסמך זיהוי',
         submitted: 'הוגש',
         status: {
           pending: 'בהמתנה',
           approved: 'אושר',
           rejected: 'נדחה',
+          needs_info: 'דרוש מידע',
+        },
+        tabs: {
+          all: 'הכל',
+          pending: 'מחכות לבדיקה',
+          needs_info: 'דרוש מידע',
+          approved: 'אושרו',
+          rejected: 'נדחו',
         },
       },
       bookings: {

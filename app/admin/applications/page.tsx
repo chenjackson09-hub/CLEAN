@@ -7,7 +7,7 @@ export default async function ApplicationsPage() {
   const admin = createAdminClient()
 
   const [{ data: appRows }, { data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaner_applications').select('id, status, submitted_at, cleaner_id').order('submitted_at', { ascending: false }),
+    admin.from('cleaner_applications').select('id, status, submitted_at, cleaner_id, id_document_url, admin_notes').order('submitted_at', { ascending: false }),
     admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages'),
     admin.from('profiles').select('id, full_name, phone'),
     admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -36,6 +36,8 @@ export default async function ApplicationsPage() {
       address: '',
       status: row.status as CleanerApplicationResult['status'],
       submitted_at: row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '',
+      id_document_url: row.id_document_url ?? null,
+      admin_notes: row.admin_notes ?? null,
     }
   })
 

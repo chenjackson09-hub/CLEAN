@@ -15,6 +15,8 @@ const application: CleanerApplicationResult = {
   address: '1 Test St',
   status: 'pending',
   submitted_at: '2026-06-13',
+  id_document_url: null,
+  admin_notes: null,
 }
 
 describe('mockApplicationsStore', () => {
