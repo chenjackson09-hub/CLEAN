@@ -1,8 +1,12 @@
 # Chen's Feedback — Tracking Backlog
 
-Source: Chen's review of clean-kappa-silk.vercel.app on 6/21/2026. Items are checked off as they're implemented — work through them one at a time (or in small batches), not all at once.
+Source: Chen's review of clean-kappa-silk.vercel.app on 6/21/2026, plus the GitHub Issues opened since (cross-referenced at the bottom). Items are checked off as they're implemented — work through them one at a time (or in small batches), not all at once.
 
 Status legend: ✅ already works · 🟡 partial · 🔴 missing · ❓ question (answered below)
+
+⚠️ **Branch divergence (as of 2026-06-26):** `main` has moved on independently of this `chen-notes` branch — another contributor (`rafael-mishayev`) merged PRs #26/#27 fixing issues #14 and #19 directly to `main`. PR #27 touches `app/(cleaner)/cleaner/dashboard/UpcomingCleanCard.tsx` and `lib/lang.ts` — **the same files** this branch's Batch-1 countdown work touched, independently implementing overlapping logic. Merging/rebasing `chen-notes` onto `main` will need a manual reconciliation of that file, not a trivial merge. Do this before starting more cleaner-dashboard work on either branch.
+
+⚠️ **Issue/code mismatch:** GitHub issue #24 ("add cancelation option") is closed with both checkboxes ticked, but no cancellation flow exists in the code on any branch I can find — confirm with Chen whether it was closed in error.
 
 ---
 
@@ -12,10 +16,9 @@ Status legend: ✅ already works · 🟡 partial · 🔴 missing · ❓ question
   No. Auth is Supabase email/password (`app/(auth)/actions.ts`). Vercel is only the hosting platform — end users never see or need a Vercel account.
 
 - [x] ✅ **Hebrew/English toggle works and switches quickly.**
-  Two separate i18n systems (`lib/i18n/LanguageContext.tsx` for customer/auth/admin, `lib/lang.ts` for cleaner side) — both work, persist, and flip RTL/LTR instantly.
+  Two separate i18n systems (`lib/i18n/LanguageContext.tsx` for customer/auth/admin, `lib/lang.ts` for cleaner side) — both work, persist, and flip RTL/LTR instantly. Both `t()` functions now also support `{var}` interpolation (added during the countdown work below).
 
-- [ ] 🟡 **"Welcome back" should maybe just say "Login" instead.**
-  `lib/i18n/translations.ts` (`auth.login.title`) — currently renders "Welcome back" / "ברוך שובך" as the login page `<h1>`. Simple copy change.
+- [x] ✅ **"Welcome back" should maybe just say "Login" instead.** Done — `lib/i18n/translations.ts` `auth.login.title`.
 
 - [ ] 🔴 **(Future, not now) Add a cleaning-themed image to the login/landing area.**
   Not implemented. Explicitly deprioritized by Chen.
@@ -26,22 +29,18 @@ Status legend: ✅ already works · 🟡 partial · 🔴 missing · ❓ question
 
 `app/(cleaner)/cleaner/dashboard/`
 
-- [x] ✅ Opens to "Welcome back, {name}" fast — `page.tsx` lines 112–114, uses `profiles.full_name`.
-- [x] ✅ Upcoming/Past clean separation with bold date and "No past cleans yet" empty state — `page.tsx` lines 116–150.
-- [ ] 🔴 **Search bar on the dashboard.** Does not exist — no filter/search input anywhere on this page.
-- [ ] 🔴 **Upcoming-clean card: show only start time (not end/duration, since real finish time is unknown) + "in N days" countdown.**
-  `UpcomingCleanCard.tsx` / `CleanDetailModal.tsx` currently show a computed start–end range and duration, not a countdown. Needs both a display change (start-only) and new logic (days-until).
-- [ ] 🔴 **Link to the customer's profile from the clean-detail modal (maybe replacing "Done").**
-  `CleanDetailModal.tsx` — "Done" button (line 105) just closes the modal, no navigation. No profile link exists from this modal (a similar link exists elsewhere, in `RequestCard.tsx`, to `/cleaner/customers/[id]`, but not here).
-- [ ] 🟡 **Same modal: show only start time, drop duration (as above).**
-- [ ] 🔴 **Add a comments field per clean** (e.g. "will be in the office" / "kitchen is most important").
-  No such field in the `bookings` schema or UI.
-- [x] ✅ Customer phone shown in green, centered, tappable — `CleanDetailModal.tsx` lines 87–97.
-- [ ] 🔴 **"Talked to host / haven't talked to host" checkbox.** No such field exists in the schema or UI.
+- [x] ✅ Opens to "Welcome back, {name}" fast.
+- [x] ✅ Upcoming/Past clean separation with bold date and "No past cleans yet" empty state.
+- [ ] 🔴 **Search bar on the dashboard.** Still missing.
+- [x] ✅ **Upcoming-clean card: start time only + "in N days" countdown.**
+  Done in `UpcomingCleanCard.tsx` / `CleanDetailModal.tsx`. ⚠️ Also independently re-implemented on `main` for the same files via #27 — reconcile on merge (see branch-divergence note above).
+- [x] ✅ **Link to the customer's profile from the clean-detail modal.** Done — the customer name in `CleanDetailModal.tsx`'s header now links to `/cleaner/customers/[id]`; "Done" stays as the close action. (Likely satisfies issue #22 — verify live and close it rather than redoing this.)
+- [ ] 🔴 **Add a comments field per clean** (e.g. "will be in the office" / "kitchen is most important"). No such field in the `bookings` schema or UI.
+- [x] ✅ Customer phone shown in green, centered, tappable.
+- [ ] 🔴 **"Talked to host / haven't talked to host" checkbox.** No such field exists. = GitHub issue #23.
 - [ ] 🔴 **Cancellation flow for an accepted booking, with a reason-prompt popup.**
-  Does not exist. The only existing "cancel" logic auto-cancels a customer's *other* pending requests once one is accepted (`actions.ts` `respondToBooking`) — there's no cleaner-facing way to cancel an already-accepted booking.
-- [x] ❓ **"Request Cleaner" — what is this?**
-  This is the same button as "Request for cleaning" on the cleaner's public preview page (`app/(cleaner)/cleaner/preview/page.tsx` lines 76–78) — intended for a customer to start a booking from there. It currently has **no `onClick` handler**, so it's a non-functional placeholder.
+  Does not exist on any branch. = GitHub issue #24 (closed, but see mismatch warning above — likely closed in error).
+- [x] ❓ **"Request Cleaner" — what is this?** Placeholder, non-functional button on the cleaner's public preview page. Unimplemented.
 
 ---
 
@@ -51,17 +50,13 @@ Status legend: ✅ already works · 🟡 partial · 🔴 missing · ❓ question
 
 - [x] ✅ Hovering-cube grid formatting.
 - [x] ✅ Two time blocks per day supported.
-- [x] ✅ Smart warning on very short slots.
-  Actually a **warning, not a hard block**: shows "⚠ This slot is an hour or less" for slots ≤60 min, but still allows saving. Close enough to what Chen described — worth confirming whether she wants it to actually be blocking.
-- [x] ✅ Clicking a booked cube shows where you're cleaning (inline, in the day panel).
-- [ ] 🔴 **Link to that customer's profile from the booked-cube view.** Currently just text ("Booked {name} / {time} / {address}"), not a link.
-- [ ] 🔴 **Visual redesign: day-of-week banner (Sun/Mon/Tue…) instead of resizing cubes; month/week toggle like Google Calendar.**
-  Current grid is a custom-built component (not a calendar library) with a column-count "zoom" toggle (7 columns down to 1), not a true month/week switcher. This is a real UI rework, not a tweak.
+- [x] ✅ Smart warning on very short slots (warns, doesn't hard-block — confirmed acceptable as-is).
+- [x] ✅ Clicking a booked cube shows where you're cleaning, inline.
+- [x] ✅ **Link to that customer's profile from the booked-cube view.** Done — links to `/cleaner/customers/[id]`.
+- [ ] 🔴 **Visual redesign: day-of-week banner instead of resizing cubes; month/week toggle like Google Calendar.** Not started — real UI rework, not a tweak.
 - [ ] 🔴 **"Add to Google Calendar" button.** Not implemented.
-- [ ] 🔴 **Legend/key at the top (Available / Booked / Not available).**
-  Colors already exist in code (dark blue = accepted, light blue = pending, pale blue = available, gray = none) but there's no legend shown to the user.
-- [ ] 🟡 **Mark a specific day/time as recurring ("make this available every week").**
-  Backend support exists — `cleaner_weekly_availability` table + matching logic still works as a fallback — but the dedicated weekly UI was **deliberately removed** (per `CLAUDE.md`). Re-adding a UI for this is a bigger decision than a quick toggle; Chen flagged it as low-priority/premium-feature anyway.
+- [x] ✅ **Legend/key (Available / Booked / Pending / Not available).** Done.
+- [ ] 🟡 **Mark a specific day/time as recurring.** Backend exists, UI deliberately removed — low priority per Chen.
 
 ---
 
@@ -69,32 +64,27 @@ Status legend: ✅ already works · 🟡 partial · 🔴 missing · ❓ question
 
 `app/(cleaner)/cleaner/profile/`
 
-- [x] ✅ Gallery exists — `GalleryManager.tsx`, upload/delete, backed by `cleaner_gallery` table.
-- [x] ✅ Simple, clear layout.
-- [x] ❓ **"What is 'Request for cleaning' for?"** Same answer as above — non-functional placeholder button on the public preview page.
-- [x] ✅ **"There's no place to see where the cleaner is from."**
-  Actually already there — `ProfileForm.tsx` lines 138–147 shows the address as an editable, pre-filled field. Worth double-checking with Chen whether she means something different (e.g. a *display-only* location shown elsewhere, like on the public preview page, rather than the edit form).
-- [x] ✅ **"After editing, profile doesn't refresh automatically."**
-  Already calls `router.refresh()` on save (`ProfileForm.tsx` line 33) — should be auto-refreshing. Worth re-testing live; might have been fixed since Chen's pass, or there's a specific repro case (e.g. the *customer-facing* preview page, which is a separate route and might not revalidate).
-- [ ] 🟡 **More service options** (see her spec doc).
-  Currently only two checkboxes: residential / commercial (`ProfileForm.tsx`). Expanding this is just adding more checkbox options once the desired list is confirmed.
-- [ ] 🔴 **"Houses cleaned" count and rating, even if admin-entered manually.**
-  No such columns exist in the `cleaners` table at all — needs a schema change before any UI.
+- [x] ✅ Gallery, simple layout.
+- [x] ❓ **"What is 'Request for cleaning' for?"** Non-functional placeholder, unimplemented.
+- [x] ✅ Address already shown/editable on the profile form — re-confirm with Chen if she meant a different screen.
+- [x] ✅ Profile auto-refreshes on save (`router.refresh()`) — re-confirm with Chen if still reproducible somewhere specific.
+- [ ] 🟡 **More service options.** Still just residential/commercial — needs the desired list confirmed.
+- [ ] 🔴 **"Houses cleaned" count and rating.** No schema columns exist yet.
 
 ---
 
-## Admin
+## Admin Panel Rebuild
 
-⚠️ Note: the file Chen referenced (`CleanMatch — Admin Panel Spec.html`) turned out, when pasted, to be a general product PRD from 2026-06-11 — it doesn't mention "Hosts" or "Matching Queue" anywhere and uses "customer" terminology throughout. It does **not** match Chen's own 6-sheet breakdown below, so it isn't used as a source of truth here — only Chen's own written description is.
+Chen supplied the real spec (6 screens: Dashboard, Applications, Cleaners, Hosts, Requests, Matching Queue) — the file originally referenced turned out to be an unrelated PRD and was discarded as a source. Full phased plan lives outside the repo (the planning doc from that work); status here is the live summary.
 
-Current nav: `admin/Nav.tsx` — Applications, Bookings, Cleaners, Customers (Availability hidden). All four list pages use the same flat 3-column card grid, which is almost certainly the direct cause of Chen's "boxes next to one another causes confusion" — there's no visual hierarchy distinguishing people from requests, and no drill-in detail pages.
-
-1. [ ] 🔴 **Dashboard** (aggregate counts + "needs attention" list). Does not exist at all — admins currently land on `/admin/applications` with no overview.
-2. [ ] 🟡 **Applications** (review, Approve/Reject/Request More Info). Approve/Reject exist (`admin/applications/`); "Request More Info" action and a visible ID-document viewer are missing.
-3. [ ] 🟡 **Cleaners** (full list + per-cleaner profile: info, availability, rates, status, performance stats). List exists (`admin/cleaners/`) but it's flat cards, no per-cleaner detail page, no performance stats (no `jobs_done`/`rating`/`cancellation_rate` columns exist), and the cleaner status enum in the DB (`pending/approved/rejected/suspended`) doesn't match Chen's wishlist (`New/Active/In training/Inactive/Blocked`) — reconciling that is a data-model decision, not just a UI change.
-4. [ ] 🟡 **Hosts** (full list + per-host profile: contact, home details, booking history, most-used cleaner, internal notes). List exists (`admin/customers/`) but no home-details fields exist in the schema (rooms/pets/size — same gap as the host profile item below), no booking history or "most-used cleaner" view, and admin notes are currently client-side only (not persisted to the DB).
-5. [ ] 🟡 **Requests** (log of every booking + outcome, for support lookups). List exists (`admin/bookings/`) but with no search/filter by date, customer, or cleaner, and no detail view.
-6. [ ] 🔴 **Matching Queue** (unassigned bookings, sorted by urgency, manual notify/intervene). Does not exist — `/admin/bookings` mixes all statuses together with no concept of "still needs a cleaner."
+1. [x] ✅ **Phase 0 — foundation migration** (`admin_notes` columns, `needs_info` status, `admin_action_log` table). Done.
+2. [x] ✅ **Phase 1 — Dashboard** (`/admin/dashboard`, schema-backed KPIs, needs-attention panel, recent activity, top areas). Done, verified live.
+3. [x] ✅ **Phase 1b — cleaner status enum migration** (`new/active/in_training/inactive/blocked`, all ~9 call sites updated). Done.
+4. [ ] 🟡 **Phase 2 — Applications** (status tabs, "Needs info" action, persisted admin notes, ID-doc link). **In progress.**
+5. [ ] 🔴 **Phase 3 — Cleaners** (per-cleaner detail page, performance stats, status management). Next up — mine.
+6. [ ] 🔴 **Phase 4 — Hosts** (per-host detail page, home details, favorite cleaner). **Assigned to a friend.**
+7. [ ] 🔴 **Phase 5 — Requests** (filter/search on the existing log, response time). **Assigned to a friend.**
+8. [ ] 🔴 **Phase 6 — Matching Queue** (unmatched-request triage, urgency, notify cleaners). **Not yet assigned to anyone.**
 
 ---
 
@@ -103,18 +93,26 @@ Current nav: `admin/Nav.tsx` — Applications, Bookings, Cleaners, Customers (Av
 `app/(customer)/`
 
 - [x] ✅ Easy, smooth login.
-- [ ] 🟡 **Rename "Browse" to "Schedule."** Nav currently says "Browse Cleaners" (`browse/page.tsx` / `BrowseTitle.tsx`) — straightforward copy change.
-- [ ] 🔴 **Remove filters for hosts — let them pick a day and just see who's available, no need for house-profile-based filtering.**
-  Currently `BrowseFilters.tsx` has service type, time, duration, location, and sort-by filters. This is a deliberate UX simplification Chen is requesting (limited cleaners → filtering hurts match rate), not a small tweak — worth confirming exactly which filters to drop vs keep (e.g. day/time probably stay; service-type/sort might go).
-- [ ] ⁉️ **Page bounces/jumps when pressing a date on the schedule.**
-  No explicit scroll-into-view code found, but the filter panel (`BrowseFilters.tsx`) collapses after a location is set, which shifts page height — likely culprit. Needs a live repro to confirm before fixing.
-- [x] 🟡 **"Fewer/many/limited cleaners" scarcity indicator (flight-pricing style) — "does it work already?"**
-  Partially: `CalendarPicker.tsx` shows a static Many/Fewer/Limited legend based on a hardcoded day-of-week pattern (not live cleaner counts), while the results section separately shows a real "{count} cleaners available" per date. Not currently dynamic/data-driven the way she's picturing — and not visible right now simply because no cleaners have open availability yet.
-- [ ] 🔴 **Book directly from the schedule page (pick cleaner + day, book) instead of routing through the cleaner's profile page and re-entering details.**
-  Confirmed: clicking a cleaner card always routes to `/cleaners/[id]` first (`CleanerCard.tsx` "View Profile" link), where `BookingRequestForm` lives. Date/location are pre-filled via URL params, but it's still profile-page-first, not inline-from-schedule.
-- [ ] 🔴 **See a cleaner's available time slots for a specific day inline on the schedule page.** Only visible after navigating to the cleaner's profile page.
-- [ ] 🟡 **Keep the duration/time-limit picker, but add a "+/- N hours" flexibility option.**
-  Currently a fixed 1–8 hour dropdown (`BookingRequestForm.tsx`, also `BrowseFilters.tsx`) — no flexible range option exists yet.
-- [ ] 🔴 **"In N more days" on the bookings page.** `BookingCard.tsx` shows an absolute date only, no relative countdown.
-- [ ] 🔴 **Host profile: rooms, pets, house size, floor, special requests, profile picture.**
-  Profile picture, name, phone, bio, address, and service-type preference already exist (`app/(customer)/profile/`); rooms/pets/size/floor/special-requests have **no schema columns at all** — needs a `customers` table migration before any UI work.
+- [x] ✅ **Rename "Browse" to "Schedule."** Done across nav, page title, back-links, empty-state CTA. = GitHub issue #15 (should be closed, not yet).
+- [ ] 🔴 **Remove filters for hosts.** Not started — needs Chen to confirm exactly which filters to drop vs keep. Related: GitHub issue #13 ("all the BROWSE fixes that are needed") tracks this broader cleanup.
+- [x] ✅ **Page bounce/jump on date click — fixed independently on `main`.** GitHub issue #14, fixed via PR #26 (adds an explicit "Search" button instead of auto-reloading on date tap) — not part of this branch, will arrive on next merge from `main`.
+- [x] 🟡 **"Fewer/many/limited cleaners" scarcity indicator.** Partially real (static weekly pattern + a real per-date count) — not fully dynamic. Acceptable for now.
+- [ ] 🔴 **Book directly from the schedule page instead of routing through the cleaner's profile page.** Not started. Related: GitHub issue #17 wants a "Schedule a clean" button added *next to* (not replacing) "View Profile" — narrower, possibly-quicker version of this same item; do that first.
+- [ ] 🔴 **See a cleaner's available time slots for a specific day inline on the schedule page.** Not started. Related: GitHub issue #17 also wants available times shown directly on the browse card.
+- [ ] 🟡 **Keep the duration/time-limit picker, but add a "+/- N hours" flexibility option.** Not started. Related but distinct: GitHub issue #25 raises a deeper problem — first-time customers don't know how long a clean takes at all, and leaving duration open conflicts with cleaners needing a fixed schedule slot. Issue is tagged "question" — talk to Chen about the actual mechanism before building anything here.
+- [x] ✅ **"In N more days" on the bookings page.** Done. = GitHub issue #19 (closed via PR #27 on `main` — independently re-implemented there too; same reconciliation note as the cleaner-dashboard countdown applies).
+- [ ] 🔴 **Host profile: rooms, pets, house size, floor, special requests, profile picture.** No schema yet — this is exactly **Admin Phase 4**, assigned to a friend, plus GitHub issue #18 (same ask, customer-facing side — the admin detail view will read these columns once a friend adds them in Phase 4, but the *customer-facing form* to fill them in is separate and still unassigned).
+
+---
+
+## GitHub Issues not otherwise covered above
+
+Genuinely new items, not represented anywhere in this doc until now:
+
+- [ ] **#8 — Email verification + password reset.** Confirmed in code: **no password-reset flow exists at all** (`app/(auth)/` has no forgot-password route). Significant gap, unassigned.
+- [ ] **#10 — Cap simultaneous pending requests at 20 per customer.** 2 of 3 sub-items already work (multi-cleaner/day requests, auto-cancel siblings on accept); only the hard cap is missing.
+- [ ] **#11 — Site-wide translation completeness audit.** QA sweep, not urgent.
+- [ ] **#12 — Legal/regulatory compliance check for Israeli web standards.** Not an engineering task by itself — needs a legal/compliance answer before any code follows from it.
+- [ ] **#20 — "CLEANER - HOME, changes to the home page."** No body detail on the issue — get specifics from whoever filed it before scoping.
+
+Issues that map directly onto items already tracked above (no separate action needed beyond what's listed): #7 (search engine, mostly done), #9 (calendar, done), #21 (countdown, done — see branch divergence note).
