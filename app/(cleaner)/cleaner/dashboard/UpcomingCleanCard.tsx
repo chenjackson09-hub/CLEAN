@@ -15,11 +15,23 @@ const MONTH_KEYS: TranslationKey[] = [
 export default function UpcomingCleanCard({ booking }: { booking: BookingWithCustomer }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
-  const [, mm, dd] = booking.scheduled_date.split("-");
+  const [yyyy, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
   const start = new Date(`1970-01-01T${booking.scheduled_start}`);
   const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
   const formatted = end.toTimeString().slice(0, 5);
+
+  // Whole-day countdown to the clean (compared by calendar day, ignoring time).
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+  const daysUntil = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  const countdown =
+    daysUntil <= 0
+      ? t("dash_in_today")
+      : daysUntil === 1
+        ? t("dash_in_tomorrow")
+        : t("dash_in_days").replace("{n}", String(daysUntil));
 
   return (
     <>
@@ -38,6 +50,9 @@ export default function UpcomingCleanCard({ booking }: { booking: BookingWithCus
             {booking.scheduled_start?.slice(0, 5)} - {formatted} · {booking.duration_hours}{t("req_h")}
           </div>
         </div>
+        <span className="ms-auto self-start shrink-0 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1">
+          {countdown}
+        </span>
       </button>
 
       {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} />}
