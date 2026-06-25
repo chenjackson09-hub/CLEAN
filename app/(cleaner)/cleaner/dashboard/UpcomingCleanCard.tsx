@@ -46,12 +46,9 @@ export default function UpcomingCleanCard({
           </div>
           <div className="text-base text-gray-500 mt-1">{booking.address}</div>
           <div className="text-sm text-gray-500 mt-1">
-            {booking.scheduled_start?.slice(0, 5)} · {booking.duration_hours}{t("req_h")}
+            {booking.address} · {booking.scheduled_start?.slice(0, 5)} · {whenLabel}
           </div>
         </div>
-        <span className="ms-auto self-start shrink-0 rounded-full bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 whitespace-nowrap">
-          {whenLabel}
-        </span>
       </button>
 
       {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} />}

@@ -24,6 +24,13 @@ export function BookingDetailModal({
   const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000)
   const endStr = end.toTimeString().slice(0, 5)
 
+  // Display name as "First L." — first name plus the last name's initial (same
+  // as BookingCard).
+  const nameParts = booking.cleaner_name.trim().split(/\s+/)
+  const displayName = nameParts.length > 1
+    ? `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}.`
+    : booking.cleaner_name
+
   // Only active bookings can be cancelled — a pending request or a confirmed
   // (accepted) clean. Declined / completed / already-cancelled are terminal.
   const cancellable = booking.status === 'pending' || booking.status === 'accepted'
@@ -55,7 +62,7 @@ export function BookingDetailModal({
       >
         {/* Header */}
         <div className="flex items-start justify-between px-8 pt-8 pb-5 border-b border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900">{booking.cleaner_name}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
           <button
             onClick={onClose}
             className="text-3xl text-gray-400 hover:text-gray-700 font-bold leading-none ms-4"
