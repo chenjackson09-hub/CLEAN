@@ -63,11 +63,13 @@ function CollapsibleSection({
 export function BookingsSections({
   confirmed,
   pending,
+  refused,
   cancelled,
   past,
 }: {
   confirmed: BookingResult[]
   pending: BookingResult[]
+  refused: BookingResult[]
   cancelled: BookingResult[]
   past: BookingResult[]
 }) {
@@ -95,7 +97,18 @@ export function BookingsSections({
         <Grid bookings={pending} empty={t('bookings.nonePending')} />
       </CollapsibleSection>
 
-      {/* Cancelled (most recent 20) — collapsed by default */}
+      {/* Refused requests (most recent 20) — expired/never-answered requests and
+          siblings auto-cancelled when another cleaner was booked. Collapsed. */}
+      <CollapsibleSection
+        title={t('bookings.refused')}
+        count={refused.length}
+        badgeColor="bg-gray-400"
+        defaultOpen={false}
+      >
+        <Grid bookings={refused} empty={t('bookings.noneRefused')} muted />
+      </CollapsibleSection>
+
+      {/* Cancelled (most recent 20) — the customer pressed Cancel. Collapsed. */}
       <CollapsibleSection
         title={t('bookings.cancelled')}
         count={cancelled.length}

@@ -96,15 +96,6 @@ export default function CleanDetailModal({
             </div>
           )}
         </div>
-
-        <div className="px-8 pb-8">
-          <button
-            onClick={onClose}
-            className="w-full bg-blue-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            {t("req_done")}
-          </button>
-        </div>
       </div>
     </div>,
     document.body,

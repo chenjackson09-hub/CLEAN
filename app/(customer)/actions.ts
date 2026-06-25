@@ -166,6 +166,43 @@ export async function createBooking(data: {
   return { success: true }
 }
 
+// Lets a customer cancel their own booking from the Bookings page. Only pending
+// requests and accepted (confirmed) bookings can be cancelled — past/declined/
+// already-cancelled bookings are terminal. The booking is scoped to the calling
+// customer both when reading and writing, and the "customer manages own bookings"
+// RLS policy (auth.uid() = customer_id) enforces ownership at the DB level too.
+//
+// Note: this does NOT restore the carved-out time to the cleaner's availability;
+// respondToBooking trims availability on accept, so a follow-up could re-open it.
+export async function cancelBooking(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  const { data: booking, error: fetchErr } = await supabase
+    .from("bookings")
+    .select("status")
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+    .single()
+
+  if (fetchErr || !booking) return { error: "Booking not found." }
+  if (booking.status !== "pending" && booking.status !== "accepted") {
+    return { error: "This booking can no longer be cancelled." }
+  }
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/bookings")
+  return { success: true }
+}
+
 async function notifyCleanerOfBooking(
   adminClient: ReturnType<typeof createAdminClient>,
   supabase: Awaited<ReturnType<typeof createClient>>,

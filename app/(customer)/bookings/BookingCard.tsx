@@ -1,5 +1,7 @@
 'use client'
+import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { BookingDetailModal } from './BookingDetailModal'
 import type { BookingResult, BookingStatus } from '@/lib/types/booking'
 
 const STATUS_BADGE: Record<BookingStatus, string> = {
@@ -22,17 +24,25 @@ const DATE_BLOCK_COLOR: Record<BookingStatus, string> = {
 
 export function BookingCard({ booking, muted = false }: { booking: BookingResult; muted?: boolean }) {
   const { t, lang } = useLanguage()
+  const [open, setOpen] = useState(false)
 
   const [y, m, d] = booking.scheduled_date.split('-').map(Number)
   const month = new Date(y, m - 1, d).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US', { month: 'short' })
 
-  // End time = start + duration, for a "09:00 - 12:00" range.
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`)
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000)
-  const endStr = end.toTimeString().slice(0, 5)
-
   return (
-    <div className={`rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4 ${muted ? 'bg-gray-50 opacity-75' : 'bg-white'}`}>
+    <>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setOpen(true)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setOpen(true)
+        }
+      }}
+      className={`text-start cursor-pointer rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4 ${muted ? 'bg-gray-50 opacity-75' : 'bg-white'}`}
+    >
       {/* Calendar-style date cube, coloured by status */}
       <div className={`${DATE_BLOCK_COLOR[booking.status]} rounded-xl px-3 py-2 text-center leading-tight min-w-[3.5rem] shrink-0`}>
         <div className="text-2xl font-bold text-white">{d}</div>
@@ -48,7 +58,7 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
         </div>
 
         <p className="text-sm text-gray-500">
-          {booking.scheduled_start.slice(0, 5)} - {endStr} · {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
+          {booking.scheduled_start.slice(0, 5)} · {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
         </p>
 
         <p className="text-sm text-gray-600 mt-1">{booking.address}</p>
@@ -66,5 +76,8 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
         )}
       </div>
     </div>
+
+    {open && <BookingDetailModal booking={booking} onClose={() => setOpen(false)} />}
+    </>
   )
 }

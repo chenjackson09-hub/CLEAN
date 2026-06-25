@@ -33,8 +33,10 @@ export default async function BookingsPage() {
 
   const bookings = (rawBookings ?? []).map(b => {
     const cleaner = profileMap[b.cleaner_id]
-    // A pending request past its 24h response deadline is effectively cancelled —
+    // A pending request past its 24h response deadline is effectively declined —
     // surface that to the customer instead of leaving it "pending" forever.
+    // (The DB row is still 'pending' until a cleaner page load runs
+    // lib/expireRequests.ts and writes 'declined'; this just mirrors that early.)
     const expired = b.status === 'pending' && new Date(b.response_deadline).getTime() < now
     return {
       id: b.id,
@@ -47,18 +49,21 @@ export default async function BookingsPage() {
       duration_hours: b.duration_hours,
       address: b.address,
       notes: b.notes ?? undefined,
-      status: (expired ? 'cancelled' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
+      status: (expired ? 'declined' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
     }
   })
 
-  // Four buckets: confirmed (accepted) up top, pending requests (collapsible),
-  // cancelled (collapsible, capped at the 20 most recent — bookings are already
-  // ordered newest-first), and past cleans (completed + declined). Cancelled
-  // includes expired-pending requests, which are mapped to 'cancelled' above.
+  // Five buckets, split purely by status: confirmed (accepted) up top, pending
+  // requests, "Refused requests" (declined — the cleaner said no, or a request
+  // expired with no response), "Cancelled" (the request was called off: the
+  // customer pressed Cancel, or a sibling was auto-cancelled when another cleaner
+  // was booked), and past cleans (completed only). The refused/cancelled lists are
+  // capped at the 20 most recent (bookings are already ordered newest-first).
   const confirmed = bookings.filter(b => b.status === 'accepted')
   const pending = bookings.filter(b => b.status === 'pending')
+  const refused = bookings.filter(b => b.status === 'declined').slice(0, 20)
   const cancelled = bookings.filter(b => b.status === 'cancelled').slice(0, 20)
-  const past = bookings.filter(b => b.status === 'completed' || b.status === 'declined')
+  const past = bookings.filter(b => b.status === 'completed')
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -74,7 +79,7 @@ export default async function BookingsPage() {
           to make your first booking.
         </p>
       ) : (
-        <BookingsSections confirmed={confirmed} pending={pending} cancelled={cancelled} past={past} />
+        <BookingsSections confirmed={confirmed} pending={pending} refused={refused} cancelled={cancelled} past={past} />
       )}
     </div>
   )
