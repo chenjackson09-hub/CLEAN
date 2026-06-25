@@ -61,8 +61,9 @@ export default async function BookingsPage() {
   // capped at the 20 most recent (bookings are already ordered newest-first).
   const confirmed = bookings.filter(b => b.status === 'accepted')
   const pending = bookings.filter(b => b.status === 'pending')
-  const refused = bookings.filter(b => b.status === 'declined').slice(0, 20)
-  const cancelled = bookings.filter(b => b.status === 'cancelled').slice(0, 20)
+  // Refused (declined/expired) and cancelled requests share one collapsed
+  // section; combined and capped at the 20 most recent (already newest-first).
+  const inactive = bookings.filter(b => b.status === 'declined' || b.status === 'cancelled').slice(0, 20)
   const past = bookings.filter(b => b.status === 'completed')
 
   return (
@@ -79,7 +80,7 @@ export default async function BookingsPage() {
           to make your first booking.
         </p>
       ) : (
-        <BookingsSections confirmed={confirmed} pending={pending} refused={refused} cancelled={cancelled} past={past} />
+        <BookingsSections confirmed={confirmed} pending={pending} inactive={inactive} past={past} />
       )}
     </div>
   )

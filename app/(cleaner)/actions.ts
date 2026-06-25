@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { geocodeAddress } from "@/lib/geocode";
+import { restoreAvailability } from "@/lib/availability";
 import {
   sendBookingAccepted,
   sendBookingDeclined,
@@ -506,9 +507,9 @@ export async function completeBooking(bookingId: string) {
 // scoped to the calling cleaner, and the "cleaner updates assigned bookings"
 // RLS policy (auth.uid() = cleaner_id) enforces ownership at the DB level too.
 //
-// Note: like the customer-side cancel, this does NOT restore the carved-out time
-// to the cleaner's availability (respondToBooking trims it on accept) and does
-// NOT notify the customer — both are open follow-ups.
+// The booked time that respondToBooking carved out of the cleaner's
+// availability on accept is restored here, so the slot reopens for new requests.
+// Does NOT notify the customer — still an open follow-up.
 export async function cancelClean(bookingId: string) {
   const supabase = await createClient();
   const {
@@ -518,7 +519,7 @@ export async function cancelClean(bookingId: string) {
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
-    .select("status")
+    .select("status, scheduled_date, scheduled_start, duration_hours")
     .eq("id", bookingId)
     .eq("cleaner_id", user.id)
     .single();
@@ -528,9 +529,39 @@ export async function cancelClean(bookingId: string) {
 
   const { error } = await supabase
     .from("bookings")
-    .update({ status: "cancelled" })
+    .update({ status: "cancelled", cleaner_ack_cancelled: true })
     .eq("id", bookingId)
     .eq("cleaner_id", user.id);
+
+  if (error) return { error: error.message };
+
+  // Reopen the slot the booking occupied (it was carved out on accept).
+  const bookedStart = timeToMinutes(booking.scheduled_start);
+  const bookedEnd = bookedStart + booking.duration_hours * 60;
+  await restoreAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
+
+  revalidatePath("/cleaner/availability");
+  revalidatePath("/cleaner/dashboard");
+  return { success: true };
+}
+
+// Dismisses a cancelled booking from the dashboard's "Updates" section once the
+// cleaner has read it ("I have seen this"). Sets cleaner_ack_cancelled = true so
+// the booking no longer surfaces as an update. Scoped to the calling cleaner;
+// the "cleaner updates assigned bookings" RLS policy enforces ownership too.
+export async function acknowledgeCancellation(bookingId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ cleaner_ack_cancelled: true })
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id)
+    .eq("status", "cancelled");
 
   if (error) return { error: error.message };
 

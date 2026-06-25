@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
+import { restoreAvailability } from "@/lib/availability"
 import { sendNewBookingRequest } from "@/lib/resend"
 
 // Records that the customer has now seen their bookings, clearing the "newly
@@ -199,7 +200,7 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
-    .select("status")
+    .select("status, cleaner_id, scheduled_date, scheduled_start, duration_hours")
     .eq("id", bookingId)
     .eq("customer_id", user.id)
     .single()
@@ -216,6 +217,22 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
     .eq("customer_id", user.id)
 
   if (error) return { error: error.message }
+
+  // Only accepted bookings had their time carved out of the cleaner's
+  // availability on accept; reopen that slot. Pending requests never reserved
+  // time, so there's nothing to restore. Uses the service-role client because
+  // RLS only lets the cleaner write their own cleaner_availability.
+  if (booking.status === "accepted") {
+    const bookedStart = timeToMinutes(booking.scheduled_start)
+    const bookedEnd = bookedStart + booking.duration_hours * 60
+    await restoreAvailability(
+      createAdminClient(),
+      booking.cleaner_id,
+      booking.scheduled_date,
+      bookedStart,
+      bookedEnd,
+    )
+  }
 
   revalidatePath("/bookings")
   return { success: true }

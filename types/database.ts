@@ -88,6 +88,9 @@ export interface Booking {
   response_deadline: string;
   responded_at: string | null;
   created_at: string;
+  // True once the cleaner has dismissed this booking's cancellation from the
+  // dashboard "Updates" section (or cancelled it herself). See migration 0003.
+  cleaner_ack_cancelled: boolean;
 }
 
 export interface BookingWithCustomer extends Booking {

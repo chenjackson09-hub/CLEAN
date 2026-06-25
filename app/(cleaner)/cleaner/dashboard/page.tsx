@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import RealtimeBookings from "./RealtimeBookings";
 import PastCleanCard from "./PastCleanCard";
 import UpcomingCleanCard from "./UpcomingCleanCard";
+import UpdatesSection from "./UpdatesSection";
 import Tr from "./Tr";
 import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
@@ -28,7 +29,7 @@ export default async function CleanerDashboardPage() {
   const startDateTime = (b: BookingWithCustomer) =>
     new Date(`${b.scheduled_date}T${b.scheduled_start}`);
 
-  const [cleanerStatus, { data: profile }, { data: upcomingRaw }, { data: pastRaw }] =
+  const [cleanerStatus, { data: profile }, { data: upcomingRaw }, { data: pastRaw }, { data: cancelledRaw }] =
     await Promise.all([
       getCleanerStatus(user.id),
       supabase
@@ -60,11 +61,34 @@ export default async function CleanerDashboardPage() {
         .order("scheduled_start", { ascending: false })
         .limit(40)
         .returns<BookingWithCustomer[]>(),
+      // Cancellations the cleaner hasn't dismissed yet — surfaced as "Updates".
+      // cancelClean sets cleaner_ack_cancelled on the cleaner's own cancels, so
+      // only cancellations she didn't initiate (customer cancel / sibling
+      // auto-cancel) land here.
+      admin
+        .from("bookings")
+        .select("*, profiles!customer_id(full_name, phone, avatar_url)")
+        .eq("cleaner_id", user.id)
+        .eq("status", "cancelled")
+        .eq("cleaner_ack_cancelled", false)
+        .order("scheduled_date", { ascending: false })
+        .order("scheduled_start", { ascending: false })
+        .limit(20)
+        .returns<BookingWithCustomer[]>(),
     ]);
 
   const upcomingBookings = (upcomingRaw ?? [])
     .filter((b) => startDateTime(b) >= now)
     .slice(0, 6);
+
+  // Whole calendar days from today to the clean's date (0 = today, 1 = tomorrow).
+  // Computed server-side so the card's "in N days" label can't hydrate-mismatch.
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysUntilClean = (b: BookingWithCustomer) => {
+    const [yy, mm, dd] = b.scheduled_date.split("-").map(Number);
+    const cleanDay = new Date(yy, mm - 1, dd);
+    return Math.round((cleanDay.getTime() - startOfToday.getTime()) / 86_400_000);
+  };
   const pastBookings = (pastRaw ?? [])
     .filter((b) => startDateTime(b) < now)
     .slice(0, 20);
@@ -113,6 +137,8 @@ export default async function CleanerDashboardPage() {
         <h1 className="text-3xl font-bold text-black mt-0.5">{profile?.full_name ?? user.email}</h1>
       </div>
 
+      <UpdatesSection bookings={cancelledRaw ?? []} />
+
       <section className="mb-8">
         <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-3">
           <Tr k="dash_upcoming" />
@@ -121,7 +147,7 @@ export default async function CleanerDashboardPage() {
         {upcomingBookings && upcomingBookings.length > 0 ? (
           <div className="space-y-4">
             {upcomingBookings.map((b) => (
-              <UpcomingCleanCard key={b.id} booking={b} />
+              <UpcomingCleanCard key={b.id} booking={b} daysUntil={daysUntilClean(b)} />
             ))}
           </div>
         ) : (

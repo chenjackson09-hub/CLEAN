@@ -12,21 +12,32 @@ const MONTH_KEYS: TranslationKey[] = [
   "month_jul", "month_aug", "month_sep", "month_oct", "month_nov", "month_dec",
 ];
 
-export default function UpcomingCleanCard({ booking }: { booking: BookingWithCustomer }) {
+export default function UpcomingCleanCard({
+  booking,
+  daysUntil,
+}: {
+  booking: BookingWithCustomer;
+  daysUntil: number;
+}) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`);
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
-  const formatted = end.toTimeString().slice(0, 5);
+
+  // "Today" / "Tomorrow" / "In N days" until the clean.
+  const whenLabel =
+    daysUntil <= 0
+      ? t("dash_when_today")
+      : daysUntil === 1
+        ? t("dash_when_tomorrow")
+        : `${t("dash_when_in")} ${daysUntil} ${t("dash_when_days")}`;
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full text-start bg-white rounded-2xl shadow-md p-6 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer"
+        className="w-full text-start bg-white rounded-3xl shadow-md p-6 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer"
       >
         <DateBlock day={parseInt(dd)} month={monthName} />
         <div className="min-w-0">
@@ -35,9 +46,12 @@ export default function UpcomingCleanCard({ booking }: { booking: BookingWithCus
           </div>
           <div className="text-base text-gray-500 mt-1">{booking.address}</div>
           <div className="text-sm text-gray-500 mt-1">
-            {booking.scheduled_start?.slice(0, 5)} - {formatted} · {booking.duration_hours}{t("req_h")}
+            {booking.scheduled_start?.slice(0, 5)} · {booking.duration_hours}{t("req_h")}
           </div>
         </div>
+        <span className="ms-auto self-start shrink-0 rounded-full bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 whitespace-nowrap">
+          {whenLabel}
+        </span>
       </button>
 
       {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} />}

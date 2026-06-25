@@ -47,7 +47,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
     }
   }, [state, router])
 
-  const fieldClass = 'border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full'
+  const fieldClass = 'border border-gray-300 rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full'
   const labelClass = 'text-xs font-semibold text-gray-600 uppercase tracking-wide'
 
   const initial = defaultValues.full_name?.charAt(0)?.toUpperCase() || '?'
