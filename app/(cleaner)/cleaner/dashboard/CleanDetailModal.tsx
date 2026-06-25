@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { useLang } from "@/context/LangContext";
+import { cancelClean } from "../../actions";
 import type { TranslationKey } from "@/lib/lang";
 import type { BookingWithCustomer } from "@/types/database";
 
@@ -18,12 +21,33 @@ export default function CleanDetailModal({
   onClose: () => void;
 }) {
   const { t } = useLang();
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
   const start = new Date(`1970-01-01T${booking.scheduled_start}`);
   const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
   const endFormatted = end.toTimeString().slice(0, 5);
+
+  // Only an accepted clean can be cancelled by the cleaner. Pending requests are
+  // answered from /cleaner/requests; completed/cancelled cleans are terminal.
+  const cancellable = booking.status === "accepted";
+
+  function handleCancel() {
+    setError(null);
+    startTransition(async () => {
+      const res = await cancelClean(booking.id);
+      if (res?.error) {
+        setError(t("req_cancel_error"));
+        return;
+      }
+      onClose();
+      router.refresh();
+    });
+  }
 
   // Render at document.body via a portal so an ancestor's CSS transform (e.g.
   // the card's hover `-translate-y`) can't become the containing block for this
@@ -96,6 +120,41 @@ export default function CleanDetailModal({
             </div>
           )}
         </div>
+
+        {cancellable && (
+          <div className="px-8 pb-8 space-y-3">
+            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
+            {confirming ? (
+              <>
+                <p className="text-sm text-gray-600 text-center">{t("req_cancel_confirm")}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirming(false)}
+                    disabled={pending}
+                    className="flex-1 bg-gray-100 text-gray-700 rounded-xl py-4 text-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
+                  >
+                    {t("req_cancel_no")}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={pending}
+                    className="flex-1 bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
+                  >
+                    {pending ? t("req_cancelling") : t("req_cancel_yes")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                onClick={() => setConfirming(true)}
+                className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
+              >
+                {t("req_cancel")}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

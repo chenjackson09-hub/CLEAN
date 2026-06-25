@@ -77,13 +77,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
       {/* Content */}
       <div className="px-4 lg:px-10 pb-10 space-y-4">
-                {/* Booking form */}
-        <div className="bg-white shadow-sm rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
-          </h2>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} />
-        </div>
+
         {/* Stats */}
         <div className="bg-white shadow-sm rounded-2xl p-6">
           <div className="flex items-center justify-around text-center">
@@ -106,6 +100,13 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
             </div>
           </div>
+        </div>
+                        {/* Booking form */}
+        <div className="bg-white shadow-sm rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+          </h2>
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} />
         </div>
 
         {/* About */}

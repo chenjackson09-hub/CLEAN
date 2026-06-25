@@ -500,3 +500,40 @@ export async function completeBooking(bookingId: string) {
   revalidatePath("/cleaner/dashboard");
   return { success: true };
 }
+
+// Lets a cleaner cancel a clean they already accepted (from the dashboard's
+// CleanDetailModal). Only `accepted` bookings can be cancelled; the booking is
+// scoped to the calling cleaner, and the "cleaner updates assigned bookings"
+// RLS policy (auth.uid() = cleaner_id) enforces ownership at the DB level too.
+//
+// Note: like the customer-side cancel, this does NOT restore the carved-out time
+// to the cleaner's availability (respondToBooking trims it on accept) and does
+// NOT notify the customer — both are open follow-ups.
+export async function cancelClean(bookingId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const { data: booking, error: fetchErr } = await supabase
+    .from("bookings")
+    .select("status")
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id)
+    .single();
+
+  if (fetchErr || !booking) return { error: "Booking not found." };
+  if (booking.status !== "accepted") return { error: "Only accepted cleans can be cancelled." };
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/cleaner/dashboard");
+  return { success: true };
+}
