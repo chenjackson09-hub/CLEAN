@@ -107,6 +107,24 @@ export async function createBooking(data: {
     return { error: 'This cleaner is not available for booking.' }
   }
 
+  // Block duplicate requests: one live pending request per cleaner per date.
+  // The customer can read their own bookings under RLS ("customer manages own
+  // bookings"), so the session client is fine here. Only a still-live pending
+  // request counts — an expired one (deadline passed) is effectively declined,
+  // so the customer is free to re-request that cleaner for the same date.
+  const { data: existingPending } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('customer_id', user.id)
+    .eq('cleaner_id', data.cleaner_id)
+    .eq('scheduled_date', data.scheduled_date)
+    .eq('status', 'pending')
+    .gt('response_deadline', new Date().toISOString())
+    .limit(1)
+  if (existingPending && existingPending.length > 0) {
+    return { error: 'You already have a pending request with this cleaner for that date.' }
+  }
+
   // Validate that the requested time falls within the cleaner's availability.
   // A time is bookable if it falls within either a recurring weekly slot for
   // that weekday OR a specific-date slot the cleaner set for that exact date.
