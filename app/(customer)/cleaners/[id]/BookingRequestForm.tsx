@@ -30,6 +30,7 @@ export function BookingRequestForm({
   presetAddress,
   defaultOpen = false,
   onCancel,
+  disabled = false,
 }: {
   cleaner: CleanerResult
   weeklyAvailability?: WeeklySlot[]
@@ -41,6 +42,9 @@ export function BookingRequestForm({
   // collapsing back to the inline price + button state.
   defaultOpen?: boolean
   onCancel?: () => void
+  // Non-interactive mode for the cleaner's own profile preview: shows the same
+  // collapsed price + button, but the button can't expand the form.
+  disabled?: boolean
 }) {
   const { t, lang } = useLanguage()
   const [open, setOpen] = useState(defaultOpen)
@@ -116,7 +120,8 @@ export function BookingRequestForm({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
+          disabled={disabled}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
         >
           {t('bookingRequestForm.requestBooking')}
         </button>

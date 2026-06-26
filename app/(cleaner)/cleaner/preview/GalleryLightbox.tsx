@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import type { CleanerGalleryPhoto } from "@/types/database";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Props {
-  photos: CleanerGalleryPhoto[];
+  photos: string[];
+  name: string;
 }
 
-export default function GalleryLightbox({ photos }: Props) {
+// Renders the same gallery card the customer profile uses (heading + grid), but
+// each thumbnail opens a zoom overlay with prev/next (preview-only enhancement).
+export default function GalleryLightbox({ photos, name }: Props) {
+  const { t } = useLanguage();
   const [index, setIndex] = useState<number | null>(null);
 
   if (photos.length === 0) return null;
@@ -25,16 +28,21 @@ export default function GalleryLightbox({ photos }: Props) {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-md p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Gallery</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {photos.map((photo, i) => (
+      <div className="bg-white shadow-md rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-3">{t("cleanerProfile.gallery")}</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {photos.map((url, i) => (
             <button
-              key={photo.id}
+              key={i}
+              type="button"
               onClick={() => setIndex(i)}
-              className="relative rounded-xl overflow-hidden aspect-square bg-gray-100 hover:opacity-90 transition-opacity cursor-zoom-in"
+              className="cursor-zoom-in hover:opacity-90 transition-opacity"
             >
-              <Image src={photo.photo_url} alt="Gallery photo" fill className="object-cover" />
+              <img
+                src={url}
+                alt={`${name} ${i + 1}`}
+                className="w-full aspect-square object-cover rounded-xl"
+              />
             </button>
           ))}
         </div>
@@ -61,18 +69,12 @@ export default function GalleryLightbox({ photos }: Props) {
             </button>
           )}
 
-          <div
-            className="relative max-w-3xl max-h-[80vh] w-full mx-20"
+          <img
+            src={photos[index]}
+            alt={`${name} ${index + 1}`}
             onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={photos[index].photo_url}
-              alt="Gallery photo"
-              width={1200}
-              height={900}
-              className="object-contain w-full max-h-[80vh]"
-            />
-          </div>
+            className="max-w-3xl max-h-[80vh] w-auto object-contain mx-20"
+          />
 
           {photos.length > 1 && (
             <button

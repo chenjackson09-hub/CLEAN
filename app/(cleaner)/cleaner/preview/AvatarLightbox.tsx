@@ -1,23 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 interface Props {
   src: string;
   name: string;
 }
 
+// Renders the same avatar markup the customer profile uses, but tapping it opens
+// a full-size zoom overlay (preview-only enhancement).
 export default function AvatarLightbox({ src, name }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="w-48 h-48 rounded-full bg-gray-200 overflow-hidden shrink-0 shadow hover:opacity-90 transition-opacity cursor-zoom-in"
+        aria-label={name}
+        className="rounded-full shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity"
       >
-        <Image src={src} alt={name} width={192} height={192} className="object-cover w-full h-full" />
+        <img
+          src={src}
+          alt={name}
+          className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover shadow"
+        />
       </button>
 
       {open && (
@@ -31,12 +38,12 @@ export default function AvatarLightbox({ src, name }: Props) {
           >
             ✕
           </button>
-          <div
-            className="relative w-72 h-72 sm:w-96 sm:h-96 rounded-full overflow-hidden shadow-2xl"
+          <img
+            src={src}
+            alt={name}
             onClick={(e) => e.stopPropagation()}
-          >
-            <Image src={src} alt={name} fill className="object-cover" />
-          </div>
+            className="w-72 h-72 sm:w-96 sm:h-96 rounded-full object-cover shadow-2xl"
+          />
         </div>
       )}
     </>

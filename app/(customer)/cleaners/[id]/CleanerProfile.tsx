@@ -3,17 +3,26 @@ import { useRouter } from 'next/navigation'
 import { BookingRequestForm } from './BookingRequestForm'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
+import type { ReactNode } from 'react'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, banner, avatarSlot, gallerySlot, bookingDisabled = false }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
   dateAvailability?: DateSlot[]
   presetDate?: string
   presetAddress?: string
+  // Preview overrides — the cleaner's own preview reuses this exact shell, but
+  // swaps a few pieces: an edit banner instead of the back button, zoomable
+  // avatar/gallery, and a non-interactive booking form. The customer page passes
+  // none of these, so its behavior is unchanged.
+  banner?: ReactNode
+  avatarSlot?: ReactNode
+  gallerySlot?: ReactNode
+  bookingDisabled?: boolean
 }) {
   const { t } = useLanguage()
   const router = useRouter()
@@ -21,23 +30,26 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
   return (
     <div className="-mx-8 -mt-2 min-h-screen">
-      {/* Back button — uses browser history so filters are preserved */}
-      <div className="px-6 lg:px-10 pt-5">
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          {t('cleanerProfile.backToSearch')}
-        </button>
-      </div>
+      {/* Back button — uses browser history so filters are preserved. The
+          preview passes a `banner` instead (its own edit bar). */}
+      {banner ?? (
+        <div className="px-6 lg:px-10 pt-5">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            {t('cleanerProfile.backToSearch')}
+          </button>
+        </div>
+      )}
 
       {/* Avatar + name row */}
       <div className="px-6 lg:px-10 py-6">
         <div className="flex flex-col items-center text-center gap-4 lg:flex-row lg:items-center lg:text-start lg:gap-6">
-          {cleaner.avatar_url ? (
+          {avatarSlot ?? (cleaner.avatar_url ? (
             <img
               src={cleaner.avatar_url}
               alt={cleaner.full_name}
@@ -47,7 +59,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-blue-100 border-4 border-white shadow flex items-center justify-center text-blue-600 font-bold text-5xl shrink-0">
               {initial}
             </div>
-          )}
+          ))}
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{cleaner.full_name}</h1>
             {cleaner.area && (
@@ -106,7 +118,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
           </h2>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} />
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} disabled={bookingDisabled} />
         </div>
 
         {/* About */}
@@ -131,8 +143,8 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           </div>
         )}
 
-        {/* Gallery */}
-        {gallery.length > 0 && (
+        {/* Gallery — the preview passes a zoomable `gallerySlot` instead. */}
+        {gallerySlot ?? (gallery.length > 0 && (
           <div className="bg-white shadow-md rounded-2xl p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.gallery')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -146,7 +158,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               ))}
             </div>
           </div>
-        )}
+        ))}
 
 
       </div>
