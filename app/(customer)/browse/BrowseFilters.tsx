@@ -50,7 +50,7 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
       </button>
 
       {open && (
-        <form method="get" action="/browse" className="border-t border-gray-100 px-4 py-4 flex flex-wrap gap-3 justify-start items-end">
+        <form id="browse-search-form" method="get" action="/browse" className="border-t border-gray-100 px-4 py-4 flex flex-wrap gap-3 justify-start items-end">
           <input type="hidden" name="dates" value={dates ?? ''} />
           <div className="flex flex-col gap-1">
             <label htmlFor="start" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
@@ -130,12 +130,6 @@ export function BrowseFilters({ dates, type, sort, start, duration, location }: 
               <option value="experience_asc">{t('browse.leastExp')}</option>
             </select>
           </div>
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-          >
-            {t('filterBar.search')}
-          </button>
           <Link
             href="/browse"
             className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"

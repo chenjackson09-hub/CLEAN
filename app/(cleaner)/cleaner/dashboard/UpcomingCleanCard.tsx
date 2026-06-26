@@ -21,22 +21,15 @@ export default function UpcomingCleanCard({
 }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
-  const [yyyy, mm, dd] = booking.scheduled_date.split("-");
+  const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
+  const start = new Date(`1970-01-01T${booking.scheduled_start}`);
+  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
+  const formatted = end.toTimeString().slice(0, 5);
 
-  // "Today" / "Tomorrow" / "In N days" until the clean.
-  const whenLabel =
-    daysUntil <= 0
-      ? t("dash_when_today")
-      : daysUntil === 1
-        ? t("dash_when_tomorrow")
-        : `${t("dash_when_in")} ${daysUntil} ${t("dash_when_days")}`;
-
-  // Whole-day countdown to the clean (compared by calendar day, ignoring time).
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
-  const daysUntil = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  // "Today" / "Tomorrow" / "in N days" until the clean. daysUntil is computed
+  // server-side in page.tsx (whole calendar days from today) and passed in as a
+  // prop so the relative label can't hydrate-mismatch.
   const countdown =
     daysUntil <= 0
       ? t("dash_in_today")
@@ -58,7 +51,7 @@ export default function UpcomingCleanCard({
           </div>
           <div className="text-base text-gray-500 mt-1">{booking.address}</div>
           <div className="text-sm text-gray-500 mt-1">
-            {booking.address} · {booking.scheduled_start?.slice(0, 5)} · {whenLabel}
+            {booking.scheduled_start?.slice(0, 5)} - {formatted} · {booking.duration_hours}{t("req_h")}
           </div>
         </div>
         <span className="ms-auto self-start shrink-0 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1">

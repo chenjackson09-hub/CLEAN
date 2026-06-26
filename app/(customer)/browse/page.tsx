@@ -157,11 +157,19 @@ export default async function BrowsePage({ searchParams }: Props) {
     <div className="max-w-3xl mx-auto">
       <BrowseTitle />
 
-      <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 h-72 animate-pulse mb-4" />}>
-        <CalendarPicker />
-      </Suspense>
+      {/* On desktop the filters/sorting sit to the left of a compact calendar;
+          on mobile they stack (calendar first, then filters) as before. */}
+      <div className="mb-4 lg:flex lg:items-start lg:gap-4">
+        <div className="lg:order-1 lg:w-96 lg:shrink-0">
+          <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 h-72 animate-pulse mb-4" />}>
+            <CalendarPicker />
+          </Suspense>
+        </div>
 
-      <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
+        <div className="lg:order-2 lg:flex-1 lg:min-w-0">
+          <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
+        </div>
+      </div>
 
       <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} groups={groups} />
     </div>

@@ -63,24 +63,39 @@ export function CalendarPicker() {
     setSelectedSet(new Set()) // instant visual feedback
   }
 
-  // Commit the locally selected dates to the URL, which drives the server-side
-  // search. This is the only thing that triggers a page reload.
+  // The single Search button: it commits the selected dates AND the filter
+  // fields (start/duration/location/type/sort) to the URL, which drives the
+  // server-side search. The filter no longer has its own submit button, so this
+  // also runs the filter form's native validation — surfacing the "missing
+  // info" prompt on the required location field.
   function runSearch() {
-    const params = new URLSearchParams(searchParams.toString())
-    if (selectedSet.size === 0) {
-      params.delete('dates')
+    const form = document.getElementById('browse-search-form') as HTMLFormElement | null
+
+    // When the filter is open, validate it (required location → "missing info")
+    // and pull its current field values. reportValidity() shows the native
+    // prompt and aborts the search if location is empty.
+    if (form && !form.reportValidity()) return
+
+    const params = new URLSearchParams()
+    if (form) {
+      new FormData(form).forEach((value, key) => {
+        // dates are owned by the calendar selection below, not the hidden field
+        if (key !== 'dates' && typeof value === 'string' && value !== '') {
+          params.set(key, value)
+        }
+      })
     } else {
+      // Filter collapsed (location already set): keep the committed filter params.
+      new URLSearchParams(searchParams.toString()).forEach((value, key) => {
+        if (key !== 'dates') params.set(key, value)
+      })
+    }
+
+    if (selectedSet.size > 0) {
       params.set('dates', Array.from(selectedSet).sort().join(','))
     }
     startTransition(() => router.push(`/browse?${params}`))
   }
-
-  // The selection differs from what's currently searched (in the URL) — until
-  // the customer presses Search, the results below are stale.
-  const committedDates = datesParam.split(',').filter(Boolean)
-  const isDirty =
-    selectedSet.size !== committedDates.length ||
-    committedDates.some(d => !selectedSet.has(d))
 
   function formatLabel(dateStr: string) {
     return new Date(dateStr + 'T00:00:00').toLocaleDateString(
@@ -173,7 +188,7 @@ export function CalendarPicker() {
       <button
         type="button"
         onClick={runSearch}
-        disabled={!isDirty || isPending}
+        disabled={isPending}
         className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
       >
         {t('filterBar.search')}
