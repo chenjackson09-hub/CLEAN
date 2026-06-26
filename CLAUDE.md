@@ -84,6 +84,13 @@ Three distinct clients — use the right one per context:
 
 Role is stored in the `profiles.role` column and read from Supabase (not the JWT) inside middleware.
 
+### Registration & the signup trigger
+
+Registration is a **two-step client-side flow** (not the legacy `signUp` server action in `app/(auth)/actions.ts`, which is dead code): `register/page.tsx` stashes `{email, password}` in `localStorage` (`pending_signup`), then `register/customer/page.tsx` / `register/cleaner/page.tsx` call `supabase.auth.signUp(...)` and write the role-specific rows. This requires a session to exist **immediately after `signUp`**, which only holds when **email confirmation is disabled** in Supabase — the profile/customer/cleaner writes are RLS-scoped to `auth.uid()`. (See the empty `app/(auth)/auth/confirm/` dir — a leftover from an older confirm-email flow.)
+
+- **A DB trigger creates the role rows too — the client cooperates with it, it doesn't own creation.** `on_auth_user_created` (AFTER INSERT on `auth.users`) runs `handle_new_user()`, which reads `raw_user_meta_data` and inserts the **skeleton** rows: always `profiles`, then `customers` (role `customer`) or `cleaners` + `cleaner_applications` (role `cleaner`). It defaults to `customer` when no role metadata is passed, and every insert is idempotent (`on conflict (id) do nothing` / `not exists`). This trigger lives in `supabase/migrations/0004_handle_new_user.sql` (it predated migrations and was untracked until then — query the live DB with `select pg_get_functiondef('public.handle_new_user'::regproc);` to inspect it).
+- **The client must therefore pass `options: { data: { role } }` to `signUp` and `upsert` (not `insert`) its detail rows.** Both register pages pass the role so the trigger branches correctly (without it, cleaner signups also got a stray `customers` row), and they `upsert` `profiles`/`customers`/`cleaners` so they *fill in* the trigger's skeleton rows instead of colliding on the PK (`customers_pkey` etc.). The cleaner page does **not** insert `cleaner_applications` — the trigger already creates it, and that table isn't keyed on `cleaner_id`, so a client insert would duplicate it.
+
 ### Server Actions pattern
 
 All mutations are Next.js Server Actions (`"use server"`) in `actions.ts` files co-located with their route group. They always:
