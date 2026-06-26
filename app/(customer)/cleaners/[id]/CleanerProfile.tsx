@@ -1,6 +1,8 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { BookingRequestForm } from './BookingRequestForm'
+import { AvatarLightbox } from './AvatarLightbox'
+import { GalleryLightbox } from './GalleryLightbox'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import type { ReactNode } from 'react'
@@ -8,7 +10,7 @@ import type { ReactNode } from 'react'
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, banner, avatarSlot, gallerySlot, bookingDisabled = false }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, banner, bookingDisabled = false }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
@@ -16,12 +18,10 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   presetDate?: string
   presetAddress?: string
   // Preview overrides — the cleaner's own preview reuses this exact shell, but
-  // swaps a few pieces: an edit banner instead of the back button, zoomable
-  // avatar/gallery, and a non-interactive booking form. The customer page passes
-  // none of these, so its behavior is unchanged.
+  // swaps a couple pieces: an edit banner instead of the back button and a
+  // non-interactive booking form. The customer page passes neither, so its
+  // behavior is unchanged. (Avatar + gallery zoom is now the default for both.)
   banner?: ReactNode
-  avatarSlot?: ReactNode
-  gallerySlot?: ReactNode
   bookingDisabled?: boolean
 }) {
   const { t } = useLanguage()
@@ -49,17 +49,13 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
       {/* Avatar + name row */}
       <div className="px-6 lg:px-10 py-6">
         <div className="flex flex-col items-center text-center gap-4 lg:flex-row lg:items-center lg:text-start lg:gap-6">
-          {avatarSlot ?? (cleaner.avatar_url ? (
-            <img
-              src={cleaner.avatar_url}
-              alt={cleaner.full_name}
-              className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover shadow"
-            />
+          {cleaner.avatar_url ? (
+            <AvatarLightbox src={cleaner.avatar_url} name={cleaner.full_name} />
           ) : (
             <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-full bg-blue-100 border-4 border-white shadow flex items-center justify-center text-blue-600 font-bold text-5xl shrink-0">
               {initial}
             </div>
-          ))}
+          )}
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{cleaner.full_name}</h1>
             {cleaner.area && (
@@ -143,22 +139,8 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           </div>
         )}
 
-        {/* Gallery — the preview passes a zoomable `gallerySlot` instead. */}
-        {gallerySlot ?? (gallery.length > 0 && (
-          <div className="bg-white shadow-md rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.gallery')}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {gallery.map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`${cleaner.full_name} ${i + 1}`}
-                  className="w-full aspect-square object-cover rounded-xl"
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        {/* Gallery — tap a thumbnail to zoom. Renders nothing when empty. */}
+        <GalleryLightbox photos={gallery} name={cleaner.full_name} />
 
 
       </div>

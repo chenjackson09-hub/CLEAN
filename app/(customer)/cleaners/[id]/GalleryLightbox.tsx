@@ -1,35 +1,31 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useState } from 'react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
-interface Props {
-  photos: string[];
-  name: string;
-}
+// The gallery card shown on the profile: same heading + grid as before, but each
+// thumbnail opens a zoom overlay with prev/next. Used by both the customer-facing
+// profile and the cleaner's own preview.
+export function GalleryLightbox({ photos, name }: { photos: string[]; name: string }) {
+  const { t } = useLanguage()
+  const [index, setIndex] = useState<number | null>(null)
 
-// Renders the same gallery card the customer profile uses (heading + grid), but
-// each thumbnail opens a zoom overlay with prev/next (preview-only enhancement).
-export default function GalleryLightbox({ photos, name }: Props) {
-  const { t } = useLanguage();
-  const [index, setIndex] = useState<number | null>(null);
-
-  if (photos.length === 0) return null;
+  if (photos.length === 0) return null
 
   function prev(e: React.MouseEvent) {
-    e.stopPropagation();
-    setIndex((i) => (i! - 1 + photos.length) % photos.length);
+    e.stopPropagation()
+    setIndex((i) => (i! - 1 + photos.length) % photos.length)
   }
 
   function next(e: React.MouseEvent) {
-    e.stopPropagation();
-    setIndex((i) => (i! + 1) % photos.length);
+    e.stopPropagation()
+    setIndex((i) => (i! + 1) % photos.length)
   }
 
   return (
     <>
       <div className="bg-white shadow-md rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-3">{t("cleanerProfile.gallery")}</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-3">{t('cleanerProfile.gallery')}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {photos.map((url, i) => (
             <button
@@ -91,5 +87,5 @@ export default function GalleryLightbox({ photos, name }: Props) {
         </div>
       )}
     </>
-  );
+  )
 }

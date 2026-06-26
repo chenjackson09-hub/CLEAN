@@ -1,16 +1,12 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState } from 'react'
 
-interface Props {
-  src: string;
-  name: string;
-}
-
-// Renders the same avatar markup the customer profile uses, but tapping it opens
-// a full-size zoom overlay (preview-only enhancement).
-export default function AvatarLightbox({ src, name }: Props) {
-  const [open, setOpen] = useState(false);
+// The cleaner avatar shown on the profile: same markup as before, but tapping it
+// opens a full-size zoom overlay. Used by both the customer-facing profile and
+// the cleaner's own preview.
+export function AvatarLightbox({ src, name }: { src: string; name: string }) {
+  const [open, setOpen] = useState(false)
 
   return (
     <>
@@ -47,5 +43,5 @@ export default function AvatarLightbox({ src, name }: Props) {
         </div>
       )}
     </>
-  );
+  )
 }

@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { CleanerProfile } from "@/app/(customer)/cleaners/[id]/CleanerProfile";
-import GalleryLightbox from "./GalleryLightbox";
-import AvatarLightbox from "./AvatarLightbox";
 import type { Profile, Cleaner } from "@/types/database";
 import type { CleanerResult } from "@/lib/types/cleaner";
 import type { Lang } from "@/lib/lang";
@@ -12,8 +10,8 @@ import { t } from "@/lib/lang";
 
 // The cleaner's preview is the customer-facing profile, one-to-one. It reuses the
 // same <CleanerProfile> shell and only overrides what's preview-specific: an edit
-// banner instead of the back button, a non-interactive booking form, and a
-// zoomable avatar + gallery.
+// banner instead of the back button and a non-interactive booking form. The
+// zoomable avatar + gallery are now the default in CleanerProfile, shared by both.
 export default async function PreviewPage() {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()]);
   if (!user) redirect("/login");
@@ -79,10 +77,6 @@ export default async function PreviewPage() {
         dateAvailability={dateAvailability ?? []}
         banner={banner}
         bookingDisabled
-        avatarSlot={
-          profile?.avatar_url ? <AvatarLightbox src={profile.avatar_url} name={fullName} /> : undefined
-        }
-        gallerySlot={gallery.length > 0 ? <GalleryLightbox photos={gallery} name={fullName} /> : undefined}
       />
     </div>
   );
