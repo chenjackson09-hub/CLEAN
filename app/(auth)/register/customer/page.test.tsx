@@ -78,7 +78,13 @@ describe('CustomerOnboardingPage', () => {
     await user.click(screen.getByRole('button', { name: /finish/i }))
 
     await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pass123' })
+      // signUp passes the role in metadata so the handle_new_user trigger
+      // branches correctly (creates customer rows, not cleaner).
+      expect(mockSignUp).toHaveBeenCalledWith({
+        email: 'a@b.com',
+        password: 'pass123',
+        options: { data: { role: 'customer' } },
+      })
     })
 
     expect(mockedGeocode).toHaveBeenCalledWith('1 Rothschild Blvd, Tel Aviv')
@@ -93,7 +99,9 @@ describe('CustomerOnboardingPage', () => {
     )
 
     expect(mockFrom).toHaveBeenCalledWith('customers')
-    expect(mockInsert).toHaveBeenCalledWith(
+    // The customer row is upserted (filling the handle_new_user skeleton row),
+    // not inserted — an insert would collide on customers_pkey.
+    expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'user-1',
         address: '1 Rothschild Blvd, Tel Aviv',

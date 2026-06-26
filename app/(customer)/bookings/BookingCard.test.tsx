@@ -47,14 +47,24 @@ describe('BookingCard', () => {
     expect(screen.getByText(label)).toBeInTheDocument()
   })
 
-  it('renders notes when present', () => {
-    render(<BookingCard booking={{ ...baseBooking, notes: 'Please bring eco-friendly products.' }} />)
-    expect(screen.getByText(/Please bring eco-friendly products/)).toBeInTheDocument()
+  it('shows the "updated by cleaner" indicator for a modified pending booking', () => {
+    render(<BookingCard booking={{ ...baseBooking, cleaner_modified: true }} />)
+    expect(screen.getByText('Updated by cleaner')).toBeInTheDocument()
   })
 
-  it('does not render a notes section when notes are absent', () => {
+  it('shows the indicator for a modified accepted booking', () => {
+    render(<BookingCard booking={{ ...baseBooking, status: 'accepted', cleaner_modified: true }} />)
+    expect(screen.getByText('Updated by cleaner')).toBeInTheDocument()
+  })
+
+  it('does not show the indicator when the booking was not modified', () => {
     render(<BookingCard booking={baseBooking} />)
-    expect(screen.queryByText(/"/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Updated by cleaner')).not.toBeInTheDocument()
+  })
+
+  it('does not show the indicator for terminal statuses even if flagged modified', () => {
+    render(<BookingCard booking={{ ...baseBooking, status: 'cancelled', cleaner_modified: true }} />)
+    expect(screen.queryByText('Updated by cleaner')).not.toBeInTheDocument()
   })
 
   it('shows cleaner contact info for accepted bookings', () => {

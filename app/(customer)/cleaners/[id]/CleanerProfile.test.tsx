@@ -64,4 +64,25 @@ describe('CleanerProfile', () => {
     render(<CleanerProfile cleaner={cleaner} />)
     expect(screen.getByText('S')).toBeInTheDocument()
   })
+
+  it('shows availability slot badges next to the Book header for the preset date', () => {
+    render(
+      <CleanerProfile
+        cleaner={cleaner}
+        presetDate="2026-06-15"
+        dateAvailability={[{ date: '2026-06-15', start_time: '08:00:00', end_time: '12:00:00' }]}
+      />
+    )
+    expect(screen.getByText('08:00 – 12:00')).toBeInTheDocument()
+  })
+
+  it('shows no availability badges without a preset date', () => {
+    render(
+      <CleanerProfile
+        cleaner={cleaner}
+        dateAvailability={[{ date: '2026-06-15', start_time: '08:00:00', end_time: '12:00:00' }]}
+      />
+    )
+    expect(screen.queryByText('08:00 – 12:00')).not.toBeInTheDocument()
+  })
 })

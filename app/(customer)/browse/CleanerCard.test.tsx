@@ -28,20 +28,34 @@ describe('CleanerCard', () => {
     expect(screen.getByText('Tel Aviv')).toBeInTheDocument()
   })
 
-  it('renders languages', () => {
+  it('does not render languages (those are profile-page only)', () => {
     render(<CleanerCard cleaner={baseCleaner} />)
-    expect(screen.getByText(/EN, HE/i)).toBeInTheDocument()
+    expect(screen.queryByText(/EN, HE/i)).not.toBeInTheDocument()
   })
 
   it('renders hourly rate', () => {
     render(<CleanerCard cleaner={baseCleaner} />)
-    expect(screen.getByText('₪80/hr')).toBeInTheDocument()
+    // Price appears in both the desktop and mobile layout branches.
+    expect(screen.getAllByText('₪80/hr').length).toBeGreaterThan(0)
   })
 
   it('renders View Profile link pointing to /cleaners/{id}', () => {
     render(<CleanerCard cleaner={baseCleaner} />)
-    const link = screen.getByRole('link', { name: /view profile/i })
-    expect(link).toHaveAttribute('href', '/cleaners/abc-123')
+    // Desktop + mobile branches each render a link; both point to the same place.
+    const links = screen.getAllByRole('link', { name: /view profile/i })
+    expect(links.length).toBeGreaterThan(0)
+    links.forEach(link => expect(link).toHaveAttribute('href', '/cleaners/abc-123'))
+  })
+
+  it('carries date, location and duration into the View Profile link', () => {
+    render(<CleanerCard cleaner={baseCleaner} date="2026-06-15" location="Tel Aviv" duration={3} />)
+    const links = screen.getAllByRole('link', { name: /view profile/i })
+    links.forEach(link => {
+      const href = link.getAttribute('href') ?? ''
+      expect(href).toContain('/cleaners/abc-123?')
+      expect(href).toContain('date=2026-06-15')
+      expect(href).toContain('duration=3')
+    })
   })
 
   it('renders initial avatar when avatar_url is null', () => {
