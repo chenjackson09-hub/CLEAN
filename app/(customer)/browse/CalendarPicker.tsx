@@ -14,7 +14,7 @@ function formatDate(y: number, m: number, d: number) {
 export function CalendarPicker() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
   const { lang, messages, t } = useLanguage()
 
   const MONTH_NAMES = messages.calendar.monthNames
@@ -49,27 +49,38 @@ export function CalendarPicker() {
     else setViewMonth(m => m + 1)
   }
 
+  // Date taps only update local selection — results refresh when the customer
+  // explicitly presses "Search" (runSearch), so the page no longer reloads on
+  // every tap.
   function handleSelect(dateStr: string) {
     const next = new Set(selectedSet)
     if (next.has(dateStr)) next.delete(dateStr)
     else next.add(dateStr)
     setSelectedSet(next) // instant visual feedback
-
-    const params = new URLSearchParams(searchParams.toString())
-    if (next.size === 0) {
-      params.delete('dates')
-    } else {
-      params.set('dates', Array.from(next).sort().join(','))
-    }
-    startTransition(() => router.push(`/browse?${params}`))
   }
 
   function clearAll() {
     setSelectedSet(new Set()) // instant visual feedback
+  }
+
+  // Commit the locally selected dates to the URL, which drives the server-side
+  // search. This is the only thing that triggers a page reload.
+  function runSearch() {
     const params = new URLSearchParams(searchParams.toString())
-    params.delete('dates')
+    if (selectedSet.size === 0) {
+      params.delete('dates')
+    } else {
+      params.set('dates', Array.from(selectedSet).sort().join(','))
+    }
     startTransition(() => router.push(`/browse?${params}`))
   }
+
+  // The selection differs from what's currently searched (in the URL) — until
+  // the customer presses Search, the results below are stale.
+  const committedDates = datesParam.split(',').filter(Boolean)
+  const isDirty =
+    selectedSet.size !== committedDates.length ||
+    committedDates.some(d => !selectedSet.has(d))
 
   function formatLabel(dateStr: string) {
     return new Date(dateStr + 'T00:00:00').toLocaleDateString(
@@ -157,6 +168,16 @@ export function CalendarPicker() {
           )
         })}
       </div>
+
+      {/* Search button — committing the selected dates is what reloads results. */}
+      <button
+        type="button"
+        onClick={runSearch}
+        disabled={!isDirty || isPending}
+        className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
+      >
+        {t('filterBar.search')}
+      </button>
 
       {/* Color legend */}
       <div className="bg-white p-3 shadow-sm flex items-center gap-4 mt-3 pt-3 rounded-xl flex-wrap">
