@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 // The gallery card shown on the profile: same heading + grid as before, but each
@@ -32,12 +33,14 @@ export function GalleryLightbox({ photos, name }: { photos: string[]; name: stri
               key={i}
               type="button"
               onClick={() => setIndex(i)}
-              className="cursor-zoom-in hover:opacity-90 transition-opacity"
+              className="relative w-full aspect-square cursor-zoom-in hover:opacity-90 transition-opacity"
             >
-              <img
+              <Image
                 src={url}
                 alt={`${name} ${i + 1}`}
-                className="w-full aspect-square object-cover rounded-xl"
+                fill
+                sizes="(min-width: 640px) 33vw, 50vw"
+                className="object-cover rounded-xl"
               />
             </button>
           ))}
@@ -65,6 +68,11 @@ export function GalleryLightbox({ photos, name }: { photos: string[]; name: stri
             </button>
           )}
 
+          {/* Full-size zoom view: kept as a plain <img> because its intrinsic
+              aspect ratio is unknown and it renders object-contain within
+              max-w/max-h bounds — next/image fill can't preserve that. Loads
+              only when the overlay is opened. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photos[index]}
             alt={`${name} ${index + 1}`}

@@ -3,6 +3,8 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
+// Fallback coloring used only when we don't have a real per-date heat map (e.g.
+// the customer hasn't saved an address yet). A coarse weekday guess.
 const AVAILABILITY: Record<number, 'high' | 'medium' | 'low'> = {
   0: 'low', 1: 'high', 2: 'high', 3: 'high', 4: 'high', 5: 'medium', 6: 'medium',
 }
@@ -11,7 +13,13 @@ function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-export function CalendarPicker() {
+type CalendarPickerProps = {
+  // date (YYYY-MM-DD) → coverage bucket, computed server-side from the count of
+  // in-range cleaners with availability that day. Empty when no saved location.
+  dateHeat?: Record<string, 'high' | 'medium' | 'low'>
+}
+
+export function CalendarPicker({ dateHeat = {} }: CalendarPickerProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
@@ -157,7 +165,9 @@ export function CalendarPicker() {
           const isPast = dateStr < todayStr
           const isToday = dateStr === todayStr
           const isSelected = selectedSet.has(dateStr)
-          const avail = AVAILABILITY[date.getDay()]
+          // Prefer the real in-range heat map; fall back to the weekday guess
+          // for dates outside the computed window or when no location is saved.
+          const avail = dateHeat[dateStr] ?? AVAILABILITY[date.getDay()]
 
           let cls ='flex items-center justify-center w-full aspect-square rounded-xl text-sm sm:text-base font-medium transition-colors select-none '
           if (isPast) cls += 'text-gray-300 cursor-not-allowed'

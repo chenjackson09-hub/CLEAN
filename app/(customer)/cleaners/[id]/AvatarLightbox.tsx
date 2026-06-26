@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 // The cleaner avatar shown on the profile: same markup as before, but tapping it
 // opens a full-size zoom overlay. Used by both the customer-facing profile and
@@ -14,12 +15,14 @@ export function AvatarLightbox({ src, name }: { src: string; name: string }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={name}
-        className="rounded-full shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity"
+        className="relative w-32 h-32 lg:w-48 lg:h-48 rounded-full shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity"
       >
-        <img
+        <Image
           src={src}
           alt={name}
-          className="w-32 h-32 lg:w-48 lg:h-48 rounded-full object-cover shadow"
+          fill
+          sizes="(min-width: 1024px) 12rem, 8rem"
+          className="rounded-full object-cover shadow"
         />
       </button>
 
@@ -34,12 +37,18 @@ export function AvatarLightbox({ src, name }: { src: string; name: string }) {
           >
             ✕
           </button>
-          <img
-            src={src}
-            alt={name}
+          <div
             onClick={(e) => e.stopPropagation()}
-            className="w-72 h-72 sm:w-96 sm:h-96 rounded-full object-cover shadow-2xl"
-          />
+            className="relative w-72 h-72 sm:w-96 sm:h-96"
+          >
+            <Image
+              src={src}
+              alt={name}
+              fill
+              sizes="(min-width: 640px) 24rem, 18rem"
+              className="rounded-full object-cover shadow-2xl"
+            />
+          </div>
         </div>
       )}
     </>

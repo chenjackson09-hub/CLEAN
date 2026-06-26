@@ -124,20 +124,24 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.email")}</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.email")}</label>
             <input
+              id="email"
               type="email"
               name="email"
+              autoComplete="email"
               required
               disabled={loading}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.password")}</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.password")}</label>
             <input
+              id="password"
               type="password"
               name="password"
+              autoComplete="new-password"
               required
               minLength={6}
               disabled={loading}

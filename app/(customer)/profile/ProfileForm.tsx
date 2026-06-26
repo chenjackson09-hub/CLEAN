@@ -109,6 +109,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
             id="full_name"
             name="full_name"
             type="text"
+            autoComplete="name"
             defaultValue={defaultValues.full_name}
             required
             className={fieldClass}
@@ -121,6 +122,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
             id="phone"
             name="phone"
             type="tel"
+            autoComplete="tel"
             defaultValue={defaultValues.phone}
             className={fieldClass}
           />
@@ -156,6 +158,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
             id="address"
             name="address"
             type="text"
+            autoComplete="street-address"
             defaultValue={defaultValues.address}
             required
             className={fieldClass}

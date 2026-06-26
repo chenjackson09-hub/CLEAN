@@ -67,6 +67,7 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
           ref={inputRef}
           type="file"
           accept="image/*"
+          aria-label={t("gallery_add")}
           className="hidden"
           onChange={handleUpload}
         />
@@ -89,6 +90,7 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
                 src={photo.photo_url}
                 alt="Gallery photo"
                 fill
+                sizes="(min-width: 640px) 33vw, 50vw"
                 className="object-cover"
               />
               <button

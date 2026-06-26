@@ -170,6 +170,7 @@ export default function CleanerOnboardingPage() {
                 type="text"
                 id="full_name"
                 name="full_name"
+                autoComplete="name"
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -180,6 +181,7 @@ export default function CleanerOnboardingPage() {
                 type="tel"
                 id="phone"
                 name="phone"
+                autoComplete="tel"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -260,6 +262,7 @@ export default function CleanerOnboardingPage() {
               type="text"
               id="address"
               name="address"
+              autoComplete="street-address"
               required
               placeholder={t("auth.registerCleaner.addressPlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

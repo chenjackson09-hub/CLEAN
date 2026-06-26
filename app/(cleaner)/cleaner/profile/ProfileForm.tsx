@@ -47,8 +47,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           )}
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_photo")}</label>
+          <label htmlFor="avatar" className="block text-base font-medium text-gray-700 mb-1">{t("prof_photo")}</label>
           <input
+            id="avatar"
             type="file"
             name="avatar"
             accept="image/*"
@@ -63,19 +64,23 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_full_name")}</label>
+          <label htmlFor="full_name" className="block text-base font-medium text-gray-700 mb-1">{t("prof_full_name")}</label>
           <input
+            id="full_name"
             type="text"
             name="full_name"
+            autoComplete="name"
             defaultValue={profile?.full_name ?? ""}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_phone")}</label>
+          <label htmlFor="phone" className="block text-base font-medium text-gray-700 mb-1">{t("prof_phone")}</label>
           <input
+            id="phone"
             type="tel"
             name="phone"
+            autoComplete="tel"
             defaultValue={profile?.phone ?? ""}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -83,8 +88,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_bio")}</label>
+        <label htmlFor="bio" className="block text-base font-medium text-gray-700 mb-1">{t("prof_bio")}</label>
         <textarea
+          id="bio"
           name="bio"
           rows={3}
           defaultValue={cleaner?.bio ?? ""}
@@ -94,8 +100,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
+          <label htmlFor="hourly_rate" className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
           <input
+            id="hourly_rate"
             type="number"
             name="hourly_rate"
             min="0"
@@ -105,8 +112,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_service_radius")}</label>
+          <label htmlFor="service_radius_km" className="block text-base font-medium text-gray-700 mb-1">{t("prof_service_radius")}</label>
           <input
+            id="service_radius_km"
             type="number"
             name="service_radius_km"
             min="1"
@@ -118,7 +126,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</label>
+        <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</span>
         <div className="flex gap-4">
           {(["residential", "commercial"] as const).map((type) => (
             <label key={type} className="flex items-center gap-2 text-base text-gray-700">
@@ -136,10 +144,12 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       </div>
 
       <div>
-        <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
+        <label htmlFor="address" className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
         <input
+          id="address"
           type="text"
           name="address"
+          autoComplete="street-address"
           defaultValue={cleaner?.address ?? ""}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -148,8 +158,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
+          <label htmlFor="years_experience" className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
           <input
+            id="years_experience"
             type="number"
             name="years_experience"
             min="0"
@@ -159,8 +170,9 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
+          <label htmlFor="languages" className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
           <input
+            id="languages"
             type="text"
             name="languages"
             defaultValue={cleaner?.languages?.join(", ") ?? ""}
