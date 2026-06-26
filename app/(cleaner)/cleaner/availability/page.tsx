@@ -67,10 +67,10 @@ export default async function AvailabilityPage() {
   ]);
 
   return (
-    <div className="-mt-2 -mx-4 md:mx-0 flex flex-col min-h-screen">
+    <div className="-mt-2 -mx-4 px-0 md:mx-0 flex flex-col min-h-screen">
       <AvailabilityHeader />
 
-      <div className="flex flex-col flex-1 w-full md:w-[45vw] md:mx-auto">
+      <div className="flex flex-col flex-1 w-full md:w-[45vw] md:mx-auto px-0 md:px-0">
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />
       </div>
     </div>

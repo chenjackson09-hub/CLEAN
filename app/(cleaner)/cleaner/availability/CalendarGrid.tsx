@@ -249,7 +249,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
       {columns === 7 && (
         <div className="px-3 pt-2">
           <div
-            className="grid gap-2"
+            className="grid gap-1"
             style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           >
             {WEEK_DAY_KEYS.map((key) => (
