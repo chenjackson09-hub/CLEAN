@@ -1,7 +1,9 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { ScheduleCleanModal } from './ScheduleCleanModal'
 
 // "Sarah Cohen" → "Sarah C." — shorten the surname to its first initial for privacy.
 function shortenName(fullName: string): string {
@@ -13,6 +15,7 @@ function shortenName(fullName: string): string {
 
 export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResult; date?: string; location?: string }) {
   const { t } = useLanguage()
+  const [scheduling, setScheduling] = useState(false)
   const initial = cleaner.full_name.charAt(0).toUpperCase()
   const displayName = shortenName(cleaner.full_name)
   // Available time slots for the date this card is shown under; each renders as
@@ -88,13 +91,14 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
       <div className="flex flex-col items-center justify-center gap-2 shrink-0">
         <span className="font-bold text-xl text-gray-900 whitespace-nowrap">₪{cleaner.hourly_rate}{t('common.perHour')}</span>
         <div className="flex items-center gap-2">
-          {/* Primary CTA — jumps straight to the booking form on the profile page. */}
-          <Link
-            href={`${href}#book`}
+          {/* Primary CTA — opens the scheduling modal right here on the results page. */}
+          <button
+            type="button"
+            onClick={() => setScheduling(true)}
             className="block text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-2xl text-sm font-semibold transition-colors whitespace-nowrap"
           >
             {t('cleanerCard.schedule')}
-          </Link>
+          </button>
           <Link
             href={href}
             className="block text-center bg-[#3D8B5E] text-white hover:bg-[#31704C] px-4 py-1.5 rounded-2xl text-sm font-semibold transition-colors whitespace-nowrap"
@@ -103,6 +107,15 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
           </Link>
         </div>
       </div>
+
+      {scheduling && (
+        <ScheduleCleanModal
+          cleaner={cleaner}
+          date={date}
+          location={location}
+          onClose={() => setScheduling(false)}
+        />
+      )}
     </div>
   )
 }

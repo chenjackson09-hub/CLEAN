@@ -28,15 +28,22 @@ export function BookingRequestForm({
   dateAvailability = [],
   presetDate,
   presetAddress,
+  defaultOpen = false,
+  onCancel,
 }: {
   cleaner: CleanerResult
   weeklyAvailability?: WeeklySlot[]
   dateAvailability?: DateSlot[]
   presetDate?: string
   presetAddress?: string
+  // When embedded (e.g. in the browse "Schedule a clean" modal) the form starts
+  // expanded and Cancel is delegated to the host (closes the modal) instead of
+  // collapsing back to the inline price + button state.
+  defaultOpen?: boolean
+  onCancel?: () => void
 }) {
   const { t, lang } = useLanguage()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -236,7 +243,7 @@ export function BookingRequestForm({
         <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
       )}
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={() => setOpen(false)} disabled={loading}
+        <button type="button" onClick={() => (onCancel ? onCancel() : setOpen(false))} disabled={loading}
           className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-5 py-2 rounded-md font-semibold text-sm transition-colors disabled:opacity-50">
           {t('bookingRequestForm.cancel')}
         </button>
