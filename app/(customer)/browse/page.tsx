@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getCurrentUser } from '@/lib/supabase/server'
 import { CalendarPicker } from './CalendarPicker'
 import { BrowseResults } from './BrowseResults'
 import { BrowseFilters } from './BrowseFilters'
@@ -10,7 +11,7 @@ import { parsePoint, distanceKm } from '@/lib/geo'
 import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
-  searchParams: { dates?: string; type?: string; sort?: string; start?: string; duration?: string; location?: string }
+  searchParams: { dates?: string; type?: string; sort?: string; start?: string; duration?: string }
 }
 
 function toMin(t: string): number {
@@ -19,21 +20,33 @@ function toMin(t: string): number {
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, type, sort, start, duration, location } = searchParams
+  const { dates, type, sort, start, duration } = searchParams
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
-  const locationQuery = location?.trim() ?? ''
   const hasDates = selectedDates.length > 0
-  // Location is required: we only search once the customer tells us where they
-  // are, so every result is guaranteed to be a cleaner whose radius covers them.
+
+  const admin = createAdminClient()
+
+  // The customer's location comes from their profile, not a search field — we
+  // read the address they saved (and its geocoded coords) on /profile.
+  const user = await getCurrentUser()
+  const { data: customer } = user
+    ? await admin
+        .from('customers')
+        .select('address, lat, lng')
+        .eq('id', user.id)
+        .single<{ address: string | null; lat: number | null; lng: number | null }>()
+    : { data: null }
+
+  const locationQuery = customer?.address?.trim() ?? ''
+  // The customer has a usable location when they've saved an address.
   const hasLocation = !!locationQuery
 
   let groups: DateGroup[] | null = null
-  // True when the customer entered a location we couldn't resolve to coordinates
-  // — distinct from "resolved fine but no cleaner covers it".
+  // True when the saved address can't be resolved to coordinates — distinct from
+  // "resolved fine but no cleaner covers it".
   let locationError = false
 
   if (hasLocation && hasDates) {
-    const admin = createAdminClient()
 
     // Use admin client so RLS doesn't block reading availability or cleaners
     const [{ data: weeklyRows }, { data: dateRows }, { data: cleanerRows }] = await Promise.all([
@@ -71,7 +84,12 @@ export default async function BrowsePage({ searchParams }: Props) {
     // cover it, so they're excluded once a location is being searched. Distance
     // is the same regardless of date, so we compute it once here.
     const distanceById = new Map<string, number>()
-    const customerLoc = await geocodeAddress(locationQuery)
+    // Prefer the coords saved with the profile address; geocode only as a
+    // fallback (e.g. an older row saved before geocoding ran).
+    const customerLoc =
+      customer?.lat != null && customer?.lng != null
+        ? { lat: customer.lat, lng: customer.lng }
+        : await geocodeAddress(locationQuery)
     if (!customerLoc) {
       // Address couldn't be resolved — we can't guarantee any match.
       base = []
@@ -183,7 +201,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         </div>
 
         <div className="lg:order-2 lg:flex-1 lg:min-w-0">
-          <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} location={location} />
+          <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} />
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { CleanerCard } from './CleanerCard'
 import type { DateGroup } from '@/lib/types/cleaner'
@@ -44,16 +45,24 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
     <div>
       {locationError && (
         <p className="text-amber-700 bg-amber-50 rounded-xl px-3 py-2 text-sm">
-          {t('browse.locationNotFound')}
+          {t('browse.locationNotFound')}{' '}
+          <Link href="/profile" className="font-semibold text-blue-600 hover:underline">
+            {t('browse.goToProfile')}
+          </Link>
         </p>
       )}
 
-      {!hasDates && !locationError && (
-        <p className="text-gray-600 text-sm">{t('browse.selectDate')}</p>
+      {!hasLocation && !locationError && (
+        <p className="text-gray-600 text-sm">
+          {t('browse.enterLocation')}{' '}
+          <Link href="/profile" className="font-semibold text-blue-600 hover:underline">
+            {t('browse.goToProfile')}
+          </Link>
+        </p>
       )}
 
-      {hasDates && !hasLocation && !locationError && (
-        <p className="text-gray-600 text-sm">{t('browse.enterLocation')}</p>
+      {hasLocation && !hasDates && !locationError && (
+        <p className="text-gray-600 text-sm">{t('browse.selectDate')}</p>
       )}
 
       {hasLocation && !locationError && groups && total === 0 && (

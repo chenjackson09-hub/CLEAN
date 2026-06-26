@@ -64,16 +64,12 @@ export function CalendarPicker() {
   }
 
   // The single Search button: it commits the selected dates AND the filter
-  // fields (start/duration/location/type/sort) to the URL, which drives the
-  // server-side search. The filter no longer has its own submit button, so this
-  // also runs the filter form's native validation — surfacing the "missing
-  // info" prompt on the required location field.
+  // fields (start/duration/type/sort) to the URL, which drives the server-side
+  // search. The customer's location comes from their profile, not a field here.
   function runSearch() {
     const form = document.getElementById('browse-search-form') as HTMLFormElement | null
 
-    // When the filter is open, validate it (required location → "missing info")
-    // and pull its current field values. reportValidity() shows the native
-    // prompt and aborts the search if location is empty.
+    // When the filter is open, validate it and pull its current field values.
     if (form && !form.reportValidity()) return
 
     const params = new URLSearchParams()

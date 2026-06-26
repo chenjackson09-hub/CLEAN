@@ -115,8 +115,7 @@ export function BookingRequestForm({
 
   if (!open) {
     return (
-      <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-        <span className="text-lg font-bold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</span>
+      <div className="flex justify-end items-center pt-4 border-t border-gray-100">
         <button
           type="button"
           onClick={() => setOpen(true)}

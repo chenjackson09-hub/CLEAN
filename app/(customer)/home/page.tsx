@@ -11,7 +11,7 @@ export default async function CustomerHomePage() {
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
 
   return (
-    <div className="max-w-xl mx-auto pt-4">
+    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Hi, {firstName} </h1>
       <p className="text-gray-500 mb-8">What would you like to do today?</p>
 

@@ -53,6 +53,9 @@ export default function RequestCard({ booking, showActions }: Props) {
   const [loading, setLoading] = useState<"accepted" | "declined" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState(booking.status);
+  // Accept and decline both ask for confirmation first.
+  const [confirmingDecline, setConfirmingDecline] = useState(false);
+  const [confirmingAccept, setConfirmingAccept] = useState(false);
 
   const svcLabel: Record<string, string> = {
     residential: t("svc_residential"),
@@ -82,6 +85,8 @@ export default function RequestCard({ booking, showActions }: Props) {
   // don't auto-refresh on accept, so the phone number stays put until dismissal.
   function handleClose() {
     setOpen(false);
+    setConfirmingDecline(false);
+    setConfirmingAccept(false);
     if (currentStatus !== "pending") router.refresh();
   }
 
@@ -116,9 +121,6 @@ export default function RequestCard({ booking, showActions }: Props) {
             )}
             <div className="text-base text-gray-500 mt-1 truncate">{booking.address}</div>
             <div className="flex items-center gap-3 mt-3">
-              <span className={`text-sm font-medium px-3 py-1 rounded-full ${STATUS_STYLES[currentStatus]}`}>
-                {currentStatus}
-              </span>
               {currentStatus === "pending" && (
                 <Countdown deadline={booking.response_deadline} />
               )}
@@ -127,7 +129,7 @@ export default function RequestCard({ booking, showActions }: Props) {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="shrink-0 bg-blue-600 text-white text-base font-semibold px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
+          className="shrink-0 bg-blue-600 text-white text-base font-semibold px-4 py-2 rounded-full hover:bg-blue-700 transition-colors"
         >
           {t("req_watch")}
         </button>
@@ -144,29 +146,34 @@ export default function RequestCard({ booking, showActions }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-start justify-between px-8 pt-8 pb-5 border-b border-gray-100">
-              <div>
-                {booking.customer_id ? (
-                  <Link
-                    href={`/cleaner/customers/${booking.customer_id}`}
-                    className="text-2xl font-bold text-gray-900 hover:text-blue-600 hover:underline transition-colors"
-                  >
-                    {booking.profiles?.full_name ?? t("req_customer")}
-                  </Link>
-                ) : (
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {booking.profiles?.full_name ?? t("req_customer")}
-                  </h2>
-                )}
-                <div className="flex items-center gap-3 mt-2">
-                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${STATUS_STYLES[currentStatus]}`}>
-                    {currentStatus}
-                  </span>
-                  {currentStatus === "pending" && (
-                    <Countdown deadline={booking.response_deadline} />
-                  )}
-                </div>
-              </div>
+            <div className="flex items-start justify-between px-8 pt-8 pb-5">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="shrink-0 w-14 h-14 rounded-full bg-gray-100 overflow-hidden">
+              {booking.profiles?.avatar_url ? (
+                <Image
+                  src={booking.profiles.avatar_url}
+                  alt={booking.profiles.full_name ?? t("req_customer")}
+                  width={56}
+                  height={56}
+                  className="object-cover w-full h-full"
+                />
+              ) : null}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {booking.profiles?.full_name ?? t("req_customer")}
+              </h2>
+              {booking.customer_id && (
+                <Link
+                  href={`/cleaner/customers/${booking.customer_id}`}
+                  className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 mt-1"
+                >
+                  {t("req_view_profile")}
+                  <span aria-hidden></span>
+                </Link>
+              )}
+            </div>
+          </div>
               <button
                 onClick={handleClose}
                 className="text-3xl text-gray-400 hover:text-gray-700 font-bold leading-none ml-4"
@@ -222,21 +229,65 @@ export default function RequestCard({ booking, showActions }: Props) {
 
             {/* Actions */}
             {showActions && currentStatus === "pending" && (
-              <div className="px-8 pb-8 flex gap-3">
-                <button
-                  onClick={() => handleRespond("accepted")}
-                  disabled={!!loading}
-                  className="flex-1 bg-green-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
-                >
-                  {loading === "accepted" ? t("req_accepting") : t("req_accept")}
-                </button>
-                <button
-                  onClick={() => handleRespond("declined")}
-                  disabled={!!loading}
-                  className="flex-1 border border-gray-300 text-gray-700 rounded-xl py-4 text-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                >
-                  {loading === "declined" ? t("req_declining") : t("req_decline")}
-                </button>
+              <div className="px-8 pb-8">
+                {confirmingDecline ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600 text-center">{t("req_decline_confirm")}</p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setConfirmingDecline(false)}
+                        disabled={!!loading}
+                        className="flex-1 bg-gray-100 text-gray-700 rounded-full py-3 text-lg font-semibold hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                      >
+                        {t("req_decline_no")}
+                      </button>
+                      <button
+                        onClick={() => handleRespond("declined")}
+                        disabled={!!loading}
+                        className="flex-1 bg-red-500 text-white rounded-full py-3 text-lg font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors"
+                      >
+                        {loading === "declined" ? t("req_declining") : t("req_decline_yes")}
+                      </button>
+                    </div>
+                  </div>
+                ) : confirmingAccept ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600 text-center">{t("req_accept_confirm")}</p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setConfirmingAccept(false)}
+                        disabled={!!loading}
+                        className="flex-1 bg-gray-100 text-gray-700 rounded-full py-3 text-lg font-semibold hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                      >
+                        {t("req_accept_no")}
+                      </button>
+                      <button
+                        onClick={() => handleRespond("accepted")}
+                        disabled={!!loading}
+                        className="flex-1 bg-green-600 text-white rounded-full py-3 text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      >
+                        {loading === "accepted" ? t("req_accepting") : t("req_accept_yes")}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setConfirmingAccept(true)}
+                      disabled={!!loading}
+                      className="flex-1 bg-green-600 text-white rounded-full py-3 text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    >
+                      {t("req_accept")}
+                    </button>
+                    <button
+                      onClick={() => setConfirmingDecline(true)}
+                      disabled={!!loading}
+                      className="flex-1 bg-red-500 text-white rounded-full py-2 text-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
+                    >
+                      {t("req_decline")}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

@@ -43,14 +43,15 @@ export default async function CustomerProfilePage({
       .select("*")
       .eq("cleaner_id", user.id)
       .eq("customer_id", id)
-      .order("scheduled_date", { ascending: false })
+      .order("scheduled_date", { ascending: true })
+      .order("scheduled_start", { ascending: true })
       .returns<Booking[]>(),
   ]);
 
   if (!profile || !bookings || bookings.length === 0) notFound();
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl -mx-4 sm:mx-0">
       <Link
         href="/cleaner/requests"
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-6"

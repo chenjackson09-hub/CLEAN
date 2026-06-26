@@ -62,7 +62,7 @@ export default async function RequestsPage() {
   const pendingDates = Array.from(pendingByDate.keys()).sort();
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl -mx-4 sm:mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "req_title")}</h1>
       <p className="text-base text-gray-500 mb-6">{t(lang, "req_subtitle")}</p>
 

@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { useLang } from "@/context/LangContext";
 import { cancelClean } from "../../actions";
 import type { TranslationKey } from "@/lib/lang";
@@ -62,10 +64,34 @@ export default function CleanDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-8 pt-8 pb-5 border-b border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {booking.profiles?.full_name ?? t("req_customer")}
-          </h2>
+        <div className="flex items-start justify-between px-8 pt-8 pb-5">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="shrink-0 w-14 h-14 rounded-full bg-gray-100 overflow-hidden">
+              {booking.profiles?.avatar_url ? (
+                <Image
+                  src={booking.profiles.avatar_url}
+                  alt={booking.profiles.full_name ?? t("req_customer")}
+                  width={56}
+                  height={56}
+                  className="object-cover w-full h-full"
+                />
+              ) : null}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {booking.profiles?.full_name ?? t("req_customer")}
+              </h2>
+              {booking.customer_id && (
+                <Link
+                  href={`/cleaner/customers/${booking.customer_id}`}
+                  className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 mt-1"
+                >
+                  {t("req_view_profile")}
+                  <span aria-hidden></span>
+                </Link>
+              )}
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="text-3xl text-gray-400 hover:text-gray-700 font-bold leading-none ml-4"
@@ -109,7 +135,7 @@ export default function CleanDetailModal({
           )}
 
           {booking.profiles?.phone && (
-            <div className="bg-green-50 border border-green-100 rounded-xl px-5 py-4">
+            <div className="bg-green-100 rounded-xl px-5 py-4">
               <p className="text-sm text-green-600 uppercase tracking-wide mb-1">{t("req_customer_phone")}</p>
               <a
                 href={`tel:${booking.profiles.phone}`}
