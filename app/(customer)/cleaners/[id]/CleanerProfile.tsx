@@ -102,7 +102,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           </div>
         </div>
                         {/* Booking form */}
-        <div className="bg-white shadow-sm rounded-2xl p-6">
+        <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
           </h2>

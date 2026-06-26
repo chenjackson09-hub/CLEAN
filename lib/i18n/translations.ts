@@ -91,6 +91,7 @@ const translations = {
     },
     cleanerCard: {
       viewProfile: 'View Profile',
+      schedule: 'Schedule a clean',
     },
     cleanerProfile: {
       backToBrowse: '← Back to Browse',
@@ -388,6 +389,7 @@ const translations = {
     },
     cleanerCard: {
       viewProfile: 'צפייה בפרופיל',
+      schedule: 'קביעת ניקיון',
     },
     cleanerProfile: {
       backToBrowse: '→ חזרה לחיפוש',

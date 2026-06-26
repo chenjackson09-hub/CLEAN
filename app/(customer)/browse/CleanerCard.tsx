@@ -49,7 +49,7 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
                 {availability.map((s, i) => (
                   <span
                     key={i}
-                    className="rounded-md bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
+                    className="rounded-xl bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
                   >
                     {s.start} – {s.end}
                   </span>
@@ -87,13 +87,21 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
       {/* Right column — price on top of the button */}
       <div className="flex flex-col items-center justify-center gap-2 shrink-0">
         <span className="font-bold text-xl text-gray-900 whitespace-nowrap">₪{cleaner.hourly_rate}{t('common.perHour')}</span>
-        <Link
-          href={href}
-          className="block text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap"
-        >
-          {t('cleanerCard.viewProfile')}
-        </Link>
-        
+        <div className="flex items-center gap-2">
+          {/* Primary CTA — jumps straight to the booking form on the profile page. */}
+          <Link
+            href={`${href}#book`}
+            className="block text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-2xl text-sm font-semibold transition-colors whitespace-nowrap"
+          >
+            {t('cleanerCard.schedule')}
+          </Link>
+          <Link
+            href={href}
+            className="block text-center bg-[#3D8B5E] text-white hover:bg-[#31704C] px-4 py-1.5 rounded-2xl text-sm font-semibold transition-colors whitespace-nowrap"
+          >
+            {t('cleanerCard.viewProfile')}
+          </Link>
+        </div>
       </div>
     </div>
   )
