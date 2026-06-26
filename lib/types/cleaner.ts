@@ -18,6 +18,10 @@ export type CleanerResult = {
   area?: string
   email?: string
   phone?: string
+  // The cleaner's available time slots for the date group this result is shown
+  // under (union of weekly + specific-date slots). Per-date, so it's attached
+  // when building each day's group rather than on the shared base result.
+  availability?: Array<{ start: string; end: string }>
 }
 
 // Browse results grouped by a selected date (one accordion section per day).

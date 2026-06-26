@@ -15,6 +15,9 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
   const { t } = useLanguage()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
   const displayName = shortenName(cleaner.full_name)
+  // Available time slots for the date this card is shown under; each renders as
+  // its own badge, e.g. "08:00–12:00".
+  const availability = cleaner.availability ?? []
   // Carry the date this cleaner was matched under and the searched location into
   // the profile/booking flow so the customer doesn't re-enter either.
   const params = new URLSearchParams()
@@ -39,7 +42,21 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
       {/* Middle column — cleaner info */}
       <div className="flex-1 min-w-0">
         <div className="mb-3 min-w-0">
-          <p className="font-bold text-gray-900 truncate">{displayName}</p>
+          <div className="flex items-baseline justify-between gap-2 min-w-0">
+            <p className="font-bold text-gray-900 truncate">{displayName}</p>
+            {availability.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-1 flex-1">
+                {availability.map((s, i) => (
+                  <span
+                    key={i}
+                    className="rounded-md bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
+                  >
+                    {s.start} – {s.end}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <p className="text-sm text-gray-500">
             {cleaner.distance_km > 0 && <>{t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · </>}
             {t('common.yearsExp', { years: cleaner.years_experience })}

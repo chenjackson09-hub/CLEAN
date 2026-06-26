@@ -23,9 +23,8 @@ export default function UpcomingCleanCard({
   const [open, setOpen] = useState(false);
   const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`);
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
-  const formatted = end.toTimeString().slice(0, 5);
+
+
 
   // "Today" / "Tomorrow" / "in N days" until the clean. daysUntil is computed
   // server-side in page.tsx (whole calendar days from today) and passed in as a
@@ -51,7 +50,7 @@ export default function UpcomingCleanCard({
           </div>
           <div className="text-base text-gray-500 mt-1">{booking.address}</div>
           <div className="text-sm text-gray-500 mt-1">
-            {booking.scheduled_start?.slice(0, 5)} - {formatted} · {booking.duration_hours}{t("req_h")}
+            {booking.scheduled_start?.slice(0, 5)} · {booking.duration_hours}{t("req_h")}
           </div>
         </div>
         <span className="ms-auto self-start shrink-0 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1">

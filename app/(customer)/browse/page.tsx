@@ -138,17 +138,33 @@ export default async function BrowsePage({ searchParams }: Props) {
     groups = [...selectedDates].sort().map(dateStr => {
       const dow = new Date(dateStr + 'T00:00:00').getDay()
       const dayCleaners = base
-        .filter(c => {
+        .map(c => {
           const slots = [
             ...(weeklyMap.get(c.id)?.get(dow) ?? []),
             ...(dateMap.get(c.id)?.get(dateStr) ?? []),
           ]
+          return { c, slots }
+        })
+        .filter(({ slots }) => {
           if (slots.length === 0) return false
           if (reqStart === null || reqEnd === null) return true
           // The slot must fully contain the requested start→end window.
           return slots.some(s => toMin(s.start) <= reqStart && toMin(s.end) >= reqEnd)
         })
-        .map(c => resultById.get(c.id)!)
+        .map(({ c, slots }) => {
+          // De-dup (weekly + specific-date can overlap) and sort for a stable
+          // availability label on the card, shown for this specific date.
+          const seen = new Set<string>()
+          const availability = slots
+            .filter(s => {
+              const k = `${s.start}-${s.end}`
+              if (seen.has(k)) return false
+              seen.add(k)
+              return true
+            })
+            .sort((a, b) => a.start.localeCompare(b.start))
+          return { ...resultById.get(c.id)!, availability }
+        })
       return { date: dateStr, cleaners: sortCleaners(dayCleaners, sortKey) }
     })
   }
