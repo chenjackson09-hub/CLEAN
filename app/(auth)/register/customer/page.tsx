@@ -41,9 +41,13 @@ export default function CustomerOnboardingPage() {
     const formData = new FormData(e.currentTarget);
     const supabase = createClient();
 
+    // Pass the role so the `handle_new_user` DB trigger creates the correct
+    // role-specific rows (profiles + customers). The upserts below then fill in
+    // the detailed fields on top of the trigger-created skeleton rows.
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: creds.email,
       password: creds.password,
+      options: { data: { role: "customer" } },
     });
     if (signUpErr) {
       setError(signUpErr.message);
@@ -78,7 +82,7 @@ export default function CustomerOnboardingPage() {
 
     const location = await geocodeAddress(address);
 
-    const { error: customerErr } = await supabase.from("customers").insert({
+    const { error: customerErr } = await supabase.from("customers").upsert({
       id: user.id,
       bio,
       address,

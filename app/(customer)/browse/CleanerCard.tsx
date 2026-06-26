@@ -93,6 +93,7 @@ export function CleanerCard({ cleaner, date, location }: { cleaner: CleanerResul
         >
           {t('cleanerCard.viewProfile')}
         </Link>
+        
       </div>
     </div>
   )

@@ -49,9 +49,13 @@ export default function CleanerOnboardingPage() {
     const formData = new FormData(e.currentTarget);
     const supabase = createClient();
 
+    // Pass the role so the `handle_new_user` DB trigger creates the correct
+    // role-specific rows (profiles + cleaners + cleaner_applications) instead of
+    // defaulting to a customer. The upserts below fill in the cleaner details.
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: creds.email,
       password: creds.password,
+      options: { data: { role: "cleaner" } },
     });
     if (signUpErr) {
       setError(signUpErr.message);
@@ -88,7 +92,7 @@ export default function CleanerOnboardingPage() {
 
     const serviceTypes = serviceType === "both" ? ["residential", "commercial"] : [serviceType];
 
-    const { error: cleanerErr } = await supabase.from("cleaners").insert({
+    const { error: cleanerErr } = await supabase.from("cleaners").upsert({
       id: user.id,
       bio,
       service_types: serviceTypes,
@@ -103,16 +107,10 @@ export default function CleanerOnboardingPage() {
       return;
     }
 
-    const { error: appErr } = await supabase.from("cleaner_applications").insert({
-      cleaner_id: user.id,
-      status: "pending",
-      submitted_at: new Date().toISOString(),
-    });
-    if (appErr) {
-      setError(appErr.message);
-      setLoading(false);
-      return;
-    }
+    // The cleaner_applications row is created by the `handle_new_user` trigger
+    // (role = 'cleaner', guarded by NOT EXISTS), so we no longer insert it here —
+    // doing so would create a duplicate application (the table isn't keyed on
+    // cleaner_id).
 
     localStorage.removeItem("pending_signup");
     setLoading(false);
