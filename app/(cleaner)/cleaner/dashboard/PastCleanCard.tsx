@@ -70,7 +70,7 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
           <button
             onClick={complete}
             disabled={loading}
-            className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {loading ? t("dash_completing") : t("dash_complete")}
           </button>
