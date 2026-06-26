@@ -84,6 +84,8 @@ export const translations = {
     req_m_left: "m left",
     req_customer: "Customer",
     req_view_profile: "View profile",
+    req_back_requests: "← Back to requests",
+    req_back_dashboard: "← Back to dashboard",
     svc_residential: "Residential",
     svc_commercial: "Commercial",
     // Availability
@@ -289,6 +291,8 @@ export const translations = {
     req_m_left: "ד׳ נותרו",
     req_customer: "לקוח",
     req_view_profile: "צפייה בפרופיל",
+    req_back_requests: "→ חזרה לבקשות",
+    req_back_dashboard: "→ חזרה ללוח הבקרה",
     svc_residential: "מגורים",
     svc_commercial: "מסחרי",
     // Availability

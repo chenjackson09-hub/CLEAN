@@ -2,8 +2,8 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import type { Profile, Booking } from "@/types/database";
+import BackLink from "./BackLink";
 
 function formatDate(d: string) {
   const [y, m, day] = d.split("-");
@@ -20,10 +20,14 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default async function CustomerProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
+  const fromDashboard = from === "dashboard";
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -52,12 +56,7 @@ export default async function CustomerProfilePage({
 
   return (
     <div className="max-w-2xl -mx-4 sm:mx-0">
-      <Link
-        href="/cleaner/requests"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-6"
-      >
-        ← Back to requests
-      </Link>
+      <BackLink fromDashboard={fromDashboard} />
 
       {/* Profile header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 flex items-center gap-5 mb-6">

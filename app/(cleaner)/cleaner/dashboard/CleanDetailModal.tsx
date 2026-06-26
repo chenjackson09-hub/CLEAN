@@ -83,7 +83,7 @@ export default function CleanDetailModal({
               </h2>
               {booking.customer_id && (
                 <Link
-                  href={`/cleaner/customers/${booking.customer_id}`}
+                  href={`/cleaner/customers/${booking.customer_id}?from=dashboard`}
                   className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 mt-1"
                 >
                   {t("req_view_profile")}
