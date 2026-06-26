@@ -31,6 +31,12 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
 
   const initial = booking.cleaner_name.trim().charAt(0).toUpperCase() || '?'
 
+  // The cleaner can edit a still-live booking (time / duration / note); flag it
+  // so the customer notices their request changed. Only meaningful while the
+  // booking is still active — terminal states (declined/cancelled/completed)
+  // don't need to call out a stale edit.
+  const modified = !!booking.cleaner_modified && (booking.status === 'pending' || booking.status === 'accepted')
+
   // Display name as "First L." — first name plus the last name's initial.
   const nameParts = booking.cleaner_name.trim().split(/\s+/)
   const displayName = nameParts.length > 1
@@ -49,7 +55,7 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
           setOpen(true)
         }
       }}
-      className={`relative text-start cursor-pointer rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4 ${muted ? 'bg-gray-50 opacity-75' : 'bg-white'}`}
+      className={`relative text-start cursor-pointer rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow flex items-start gap-4 ${muted ? 'bg-gray-50 opacity-75' : 'bg-white'} ${modified ? 'ring-2 ring-amber-400' : ''}`}
     >
       {/* Calendar-style date cube, coloured by status */}
       <div className={`${DATE_BLOCK_COLOR[booking.status]} rounded-xl px-3 py-2 text-center leading-tight min-w-[3.5rem] shrink-0`}>
@@ -75,6 +81,11 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
         <span className={`text-xs px-2 py-0.5 rounded-xl font-semibold whitespace-nowrap ${STATUS_BADGE[booking.status]}`}>
           {t(`bookingCard.status.${booking.status}`)}
         </span>
+        {modified && (
+          <span className="text-xs px-2 py-0.5 rounded-xl font-semibold whitespace-nowrap bg-amber-100 text-amber-800">
+            {t('bookingCard.modified')}
+          </span>
+        )}
       </div>
 
       <div className="min-w-0 flex-1 pe-16">

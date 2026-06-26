@@ -6,7 +6,7 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
   params: { id: string }
-  searchParams: { date?: string; location?: string }
+  searchParams: { date?: string; location?: string; duration?: string }
 }
 
 export default async function CleanerProfilePage({ params, searchParams }: Props) {
@@ -51,6 +51,13 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
 
   if (error || !cleaner) notFound()
 
+  // A concrete duration carried over from the browse search locks the booking
+  // form's duration field. "Not sure" (duration=any) or unset leaves it editable.
+  const parsedDuration = searchParams.duration && searchParams.duration !== 'any'
+    ? parseInt(searchParams.duration)
+    : NaN
+  const presetDuration = Number.isFinite(parsedDuration) ? parsedDuration : undefined
+
   const cleanerResult: CleanerResult = {
     id: cleaner.id,
     full_name: profile?.full_name ?? 'Cleaner',
@@ -72,6 +79,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
         dateAvailability={dateAvailability ?? []}
         presetDate={searchParams.date}
         presetAddress={searchParams.location}
+        presetDuration={presetDuration}
       />
     </div>
   )

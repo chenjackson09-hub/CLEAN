@@ -28,6 +28,7 @@ export function BookingRequestForm({
   dateAvailability = [],
   presetDate,
   presetAddress,
+  presetDuration,
   defaultOpen = false,
   onCancel,
   disabled = false,
@@ -37,6 +38,9 @@ export function BookingRequestForm({
   dateAvailability?: DateSlot[]
   presetDate?: string
   presetAddress?: string
+  // When the customer arrived from a browse search that specified a duration,
+  // the booking uses that duration and the field is shown read-only.
+  presetDuration?: number
   // When embedded (e.g. in the browse "Schedule a clean" modal) the form starts
   // expanded and Cancel is delegated to the host (closes the modal) instead of
   // collapsing back to the inline price + button state.
@@ -56,7 +60,7 @@ export function BookingRequestForm({
   // fixed to the day the cleaner was matched under — they don't pick it again.
   const [date, setDate] = useState(presetDate ?? '')
   const [startTime, setStartTime] = useState('')
-  const [duration, setDuration] = useState(2)
+  const [duration, setDuration] = useState(presetDuration ?? 2)
   // When the customer came from a location search, the area is fixed (read-only)
   // and they add their street + house number alongside it. Otherwise they type
   // the full address themselves.
@@ -199,10 +203,20 @@ export function BookingRequestForm({
 
         <div className="flex flex-col gap-1">
           <label htmlFor="duration" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.duration')}</label>
-          <select id="duration" value={duration} onChange={e => setDuration(Number(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+          {presetDuration ? (
+            // Locked to the duration the customer chose in the search filter.
+            <div
+              id="duration"
+              className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium"
+            >
+              {presetDuration}
+            </div>
+          ) : (
+            <select id="duration" value={duration} onChange={e => setDuration(Number(e.target.value))}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          )}
         </div>
       </div>
 

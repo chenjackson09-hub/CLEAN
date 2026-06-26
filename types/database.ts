@@ -91,6 +91,10 @@ export interface Booking {
   // True once the cleaner has dismissed this booking's cancellation from the
   // dashboard "Updates" section (or cancelled it herself). See migration 0003.
   cleaner_ack_cancelled: boolean;
+  // True once the cleaner has edited this booking (start time / duration / note)
+  // after it was created. Drives the customer's "modified by the cleaner"
+  // indicator on /bookings. See migration 0005.
+  cleaner_modified: boolean;
 }
 
 export interface BookingWithCustomer extends Booking {

@@ -1,8 +1,9 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { cancelBooking } from '../actions'
+import { cancelBooking, acknowledgeBookingModified } from '../actions'
 import type { BookingResult } from '@/lib/types/booking'
 
 export function BookingDetailModal({
@@ -13,9 +14,14 @@ export function BookingDetailModal({
   onClose: () => void
 }) {
   const { t, lang } = useLanguage()
+  const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  // Locally hide the "modified" banner the moment the customer acknowledges it,
+  // before the server refresh removes the card's ring.
+  const [seen, setSeen] = useState(false)
+  const [seeing, startSeeing] = useTransition()
 
   const [y, m, d] = booking.scheduled_date.split('-').map(Number)
   const month = new Date(y, m - 1, d).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US', { month: 'short' })
@@ -34,6 +40,17 @@ export function BookingDetailModal({
   // Only active bookings can be cancelled — a pending request or a confirmed
   // (accepted) clean. Declined / completed / already-cancelled are terminal.
   const cancellable = booking.status === 'pending' || booking.status === 'accepted'
+
+  // Surface that the cleaner edited this booking after the customer requested it.
+  const modified = !!booking.cleaner_modified && cancellable && !seen
+
+  function handleSeen() {
+    startSeeing(async () => {
+      await acknowledgeBookingModified(booking.id)
+      setSeen(true)
+      router.refresh()
+    })
+  }
 
   function handleCancel() {
     setError(null)
@@ -74,6 +91,20 @@ export function BookingDetailModal({
 
         {/* Details */}
         <div className="px-8 py-6 space-y-5">
+          {modified && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
+              <p className="text-sm font-semibold text-amber-800">{t('bookingCard.modified')}</p>
+              <p className="text-sm text-amber-700 mt-0.5">{t('bookingCard.detail.modifiedNote')}</p>
+              <button
+                onClick={handleSeen}
+                disabled={seeing}
+                className="mt-3 bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-amber-700 transition-colors disabled:opacity-60"
+              >
+                {seeing ? t('bookingCard.detail.modifiedSeeing') : t('bookingCard.detail.modifiedSeen')}
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-5">
             <div>
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.date')}</p>

@@ -11,6 +11,9 @@ export type BookingResult = {
   address: string
   notes?: string
   status: BookingStatus
+  // True when the cleaner edited this booking (time / duration / note) after it
+  // was created — drives the "updated by the cleaner" indicator on the card.
+  cleaner_modified?: boolean
   customer_name?: string
   cleaner_email?: string
   cleaner_phone?: string

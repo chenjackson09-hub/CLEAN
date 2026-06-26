@@ -10,13 +10,14 @@ import type { ReactNode } from 'react'
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, banner, bookingDisabled = false }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, banner, bookingDisabled = false }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
   dateAvailability?: DateSlot[]
   presetDate?: string
   presetAddress?: string
+  presetDuration?: number
   // Preview overrides — the cleaner's own preview reuses this exact shell, but
   // swaps a couple pieces: an edit banner instead of the back button and a
   // non-interactive booking form. The customer page passes neither, so its
@@ -27,6 +28,25 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   const { t } = useLanguage()
   const router = useRouter()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
+
+  // Availability badges shown next to the "Book {name}" header — the cleaner's
+  // slots for the date the customer came from (presetDate), mirroring the slot
+  // badges on the browse CleanerCard. Union of the recurring weekly slots for
+  // that weekday and any specific-date slots, de-duped and sorted by start.
+  const bookingDaySlots = presetDate
+    ? [
+        ...weeklyAvailability.filter(s => s.day_of_week === new Date(presetDate + 'T12:00:00').getDay()),
+        ...dateAvailability.filter(s => s.date === presetDate),
+      ]
+    : []
+  const availabilityBadges = Array.from(
+    new Map(
+      bookingDaySlots.map(s => [
+        `${s.start_time}-${s.end_time}`,
+        { start: s.start_time.slice(0, 5), end: s.end_time.slice(0, 5) },
+      ])
+    ).values()
+  ).sort((a, b) => a.start.localeCompare(b.start))
 
   return (
     <div className="-mx-8 -mt-2 min-h-screen">
@@ -111,10 +131,20 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
         </div>
                         {/* Booking form */}
         <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
-          </h2>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} disabled={bookingDisabled} />
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <h2 className="text-lg font-bold text-gray-900">
+              {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+            </h2>
+            {availabilityBadges.map((s, i) => (
+              <span
+                key={i}
+                className="rounded-xl bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
+              >
+                {s.start} – {s.end}
+              </span>
+            ))}
+          </div>
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} disabled={bookingDisabled} />
         </div>
 
         {/* About */}

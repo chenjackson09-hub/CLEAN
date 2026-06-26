@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLang } from "@/context/LangContext";
 import { cancelClean } from "../../actions";
+import EditBookingForm from "../EditBookingForm";
 import type { TranslationKey } from "@/lib/lang";
 import type { BookingWithCustomer } from "@/types/database";
 
@@ -25,6 +26,7 @@ export default function CleanDetailModal({
   const { t } = useLang();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -147,7 +149,15 @@ export default function CleanDetailModal({
           )}
         </div>
 
-        {cancellable && (
+        {cancellable && editing && (
+          <EditBookingForm
+            booking={booking}
+            onDone={onClose}
+            onCancel={() => setEditing(false)}
+          />
+        )}
+
+        {cancellable && !editing && (
           <div className="px-8 pb-8 space-y-3">
             {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
@@ -172,12 +182,20 @@ export default function CleanDetailModal({
                 </div>
               </>
             ) : (
-              <button
-                onClick={() => setConfirming(true)}
-                className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
-              >
-                {t("req_cancel")}
-              </button>
+              <>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="w-full border border-gray-300 text-gray-700 rounded-xl py-4 text-lg font-semibold hover:bg-gray-50 transition-colors"
+                >
+                  {t("req_edit")}
+                </button>
+                <button
+                  onClick={() => setConfirming(true)}
+                  className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
+                >
+                  {t("req_cancel")}
+                </button>
+              </>
             )}
           </div>
         )}

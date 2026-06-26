@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { respondToBooking } from "../../actions";
+import EditBookingForm from "../EditBookingForm";
 import { useLang } from "@/context/LangContext";
 import type { BookingWithCustomer, BookingStatus } from "@/types/database";
 
@@ -56,6 +57,7 @@ export default function RequestCard({ booking, showActions }: Props) {
   // Accept and decline both ask for confirmation first.
   const [confirmingDecline, setConfirmingDecline] = useState(false);
   const [confirmingAccept, setConfirmingAccept] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const svcLabel: Record<string, string> = {
     residential: t("svc_residential"),
@@ -87,6 +89,7 @@ export default function RequestCard({ booking, showActions }: Props) {
     setOpen(false);
     setConfirmingDecline(false);
     setConfirmingAccept(false);
+    setEditing(false);
     if (currentStatus !== "pending") router.refresh();
   }
 
@@ -227,8 +230,17 @@ export default function RequestCard({ booking, showActions }: Props) {
               )}
             </div>
 
+            {/* Edit (start time / duration / note) — pending requests only */}
+            {showActions && currentStatus === "pending" && editing && (
+              <EditBookingForm
+                booking={booking}
+                onDone={handleClose}
+                onCancel={() => setEditing(false)}
+              />
+            )}
+
             {/* Actions */}
-            {showActions && currentStatus === "pending" && (
+            {showActions && currentStatus === "pending" && !editing && (
               <div className="px-8 pb-8">
                 {confirmingDecline ? (
                   <div className="space-y-3">
@@ -271,20 +283,29 @@ export default function RequestCard({ booking, showActions }: Props) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-3">
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setConfirmingAccept(true)}
+                        disabled={!!loading}
+                        className="flex-1 bg-green-600 text-white rounded-full py-3 text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      >
+                        {t("req_accept")}
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDecline(true)}
+                        disabled={!!loading}
+                        className="flex-1 bg-red-500 text-white rounded-full py-2 text-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
+                      >
+                        {t("req_decline")}
+                      </button>
+                    </div>
                     <button
-                      onClick={() => setConfirmingAccept(true)}
+                      onClick={() => setEditing(true)}
                       disabled={!!loading}
-                      className="flex-1 bg-green-600 text-white rounded-full py-3 text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      className="w-full border border-gray-300 text-gray-700 rounded-full py-2 text-base font-semibold hover:bg-gray-50 disabled:opacity-50 transition-colors"
                     >
-                      {t("req_accept")}
-                    </button>
-                    <button
-                      onClick={() => setConfirmingDecline(true)}
-                      disabled={!!loading}
-                      className="flex-1 bg-red-500 text-white rounded-full py-2 text-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
-                    >
-                      {t("req_decline")}
+                      {t("req_edit")}
                     </button>
                   </div>
                 )}

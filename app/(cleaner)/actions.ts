@@ -470,6 +470,135 @@ export async function respondToBooking(
   return { success: true };
 }
 
+// Lets a cleaner edit a booking she owns — change the start time / duration and
+// append a note — while it's still actionable (a pending request or an accepted
+// clean). The customer can't change these; the edit only flips the
+// `cleaner_modified` flag so the customer sees their booking was updated.
+//
+// For an accepted clean the original time was carved out of availability on
+// accept, so we restore that range first, re-validate the new range against the
+// (now reopened) availability and other accepted bookings, then carve the new
+// range — rolling the restore back if the new time doesn't fit. Pending requests
+// never carved time, so they're only validated, not re-carved.
+export async function editBooking(
+  bookingId: string,
+  input: { scheduled_start: string; duration_hours: number; appendNote?: string }
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const duration = Number(input.duration_hours);
+  if (!Number.isFinite(duration) || duration < 1 || duration > 8) {
+    return { error: "Invalid duration." };
+  }
+  if (!/^\d{2}:\d{2}/.test(input.scheduled_start)) {
+    return { error: "Invalid start time." };
+  }
+
+  const { data: booking, error: fetchErr } = await supabase
+    .from("bookings")
+    .select("status, scheduled_date, scheduled_start, duration_hours, notes")
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id)
+    .single();
+
+  if (fetchErr || !booking) return { error: "Booking not found." };
+  if (booking.status !== "pending" && booking.status !== "accepted") {
+    return { error: "This booking can no longer be edited." };
+  }
+
+  const newStart = timeToMinutes(input.scheduled_start);
+  const newEnd = newStart + duration * 60;
+  const oldStart = timeToMinutes(booking.scheduled_start);
+  const oldEnd = oldStart + booking.duration_hours * 60;
+  const isAccepted = booking.status === "accepted";
+
+  // An accepted clean's original slot was carved out on accept — reopen it so
+  // the new time can reuse the same hours when validating below.
+  if (isAccepted) {
+    await restoreAvailability(supabase, user.id, booking.scheduled_date, oldStart, oldEnd);
+  }
+
+  // The new time must still fall inside the cleaner's availability (weekly or
+  // specific-date) and must not collide with another accepted booking that day.
+  const dayOfWeek = new Date(booking.scheduled_date + "T12:00:00").getDay();
+  const [{ data: dateSlots }, { data: weeklySlots }, { data: acceptedBookings }] =
+    await Promise.all([
+      supabase
+        .from("cleaner_availability")
+        .select("start_time, end_time")
+        .eq("cleaner_id", user.id)
+        .eq("date", booking.scheduled_date),
+      supabase
+        .from("cleaner_weekly_availability")
+        .select("start_time, end_time")
+        .eq("cleaner_id", user.id)
+        .eq("day_of_week", dayOfWeek),
+      supabase
+        .from("bookings")
+        .select("scheduled_start, duration_hours")
+        .eq("cleaner_id", user.id)
+        .eq("scheduled_date", booking.scheduled_date)
+        .eq("status", "accepted")
+        .neq("id", bookingId),
+    ]);
+
+  const slots = [...(dateSlots ?? []), ...(weeklySlots ?? [])];
+  const fitsAvailability = slots.some(
+    (s) => timeToMinutes(s.start_time) <= newStart && timeToMinutes(s.end_time) >= newEnd
+  );
+  const overlapsAccepted = (acceptedBookings ?? []).some((b) => {
+    const s = timeToMinutes(b.scheduled_start);
+    const e = s + b.duration_hours * 60;
+    return newStart < e && newEnd > s;
+  });
+
+  if (!fitsAvailability || overlapsAccepted) {
+    // Roll the availability restore back so the accepted clean keeps its slot.
+    if (isAccepted) {
+      await carveAvailability(supabase, user.id, booking.scheduled_date, oldStart, oldEnd);
+    }
+    return {
+      error: overlapsAccepted
+        ? "That time overlaps another clean you've accepted."
+        : "That time is outside your availability for this day.",
+    };
+  }
+
+  if (isAccepted) {
+    await carveAvailability(supabase, user.id, booking.scheduled_date, newStart, newEnd);
+  }
+
+  const addition = input.appendNote?.trim();
+  const notes = addition
+    ? booking.notes
+      ? `${booking.notes}\n${addition}`
+      : addition
+    : booking.notes;
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      scheduled_start: input.scheduled_start,
+      duration_hours: duration,
+      notes,
+      cleaner_modified: true,
+    })
+    .eq("id", bookingId)
+    .eq("cleaner_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/cleaner/dashboard");
+  revalidatePath("/cleaner/requests");
+  revalidatePath("/cleaner/availability");
+  revalidatePath("/bookings");
+  return { success: true };
+}
+
 export async function completeBooking(bookingId: string) {
   const supabase = await createClient();
   const {

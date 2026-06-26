@@ -238,6 +238,29 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
   return { success: true }
 }
 
+// Clears the "updated by the cleaner" indicator once the customer has seen the
+// change (the "seen" button in the booking detail's modified banner). Sets
+// cleaner_modified back to false; if the cleaner edits the booking again,
+// editBooking re-sets it to true, so the indicator reappears. Scoped to the
+// calling customer, and the "customer manages own bookings" RLS policy
+// (auth.uid() = customer_id) enforces ownership at the DB level too.
+export async function acknowledgeBookingModified(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ cleaner_modified: false })
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/bookings")
+  return { success: true }
+}
+
 async function notifyCleanerOfBooking(
   adminClient: ReturnType<typeof createAdminClient>,
   supabase: Awaited<ReturnType<typeof createClient>>,

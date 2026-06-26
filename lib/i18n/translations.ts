@@ -150,6 +150,7 @@ const translations = {
     bookingCard: {
       hour: 'hr',
       hours: 'hrs',
+      modified: 'Updated by cleaner',
       status: {
         pending: 'Pending',
         accepted: 'Accepted',
@@ -175,6 +176,9 @@ const translations = {
         cancelNo: 'Keep booking',
         cancelling: 'Cancelling…',
         cancelError: 'Could not cancel the booking. Please try again.',
+        modifiedNote: 'The cleaner changed the time, duration, or notes for this booking. Please review the details below.',
+        modifiedSeen: 'Got it, mark as seen',
+        modifiedSeeing: 'Saving…',
       },
     },
     admin: {
@@ -450,6 +454,7 @@ const translations = {
     bookingCard: {
       hour: 'שעה',
       hours: 'שעות',
+      modified: 'עודכן ע״י המנקה',
       status: {
         pending: 'בהמתנה',
         accepted: 'התקבל',
@@ -475,6 +480,9 @@ const translations = {
         cancelNo: 'השאירו את ההזמנה',
         cancelling: 'מבטל…',
         cancelError: 'לא ניתן היה לבטל את ההזמנה. נסו שוב.',
+        modifiedNote: 'המנקה שינתה את השעה, משך הזמן או ההערות להזמנה זו. אנא בדקו את הפרטים למטה.',
+        modifiedSeen: 'הבנתי, סמן כנראה',
+        modifiedSeeing: 'שומר…',
       },
     },
     admin: {

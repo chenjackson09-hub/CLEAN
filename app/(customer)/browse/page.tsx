@@ -28,6 +28,12 @@ export default async function BrowsePage({ searchParams }: Props) {
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
   const hasDates = selectedDates.length > 0
 
+  // A concrete duration from the search filter locks the booking form's duration
+  // field. The "Not sure" option (duration === 'any') or no filter leaves it
+  // editable, so presetDuration stays undefined.
+  const parsedDuration = duration && duration !== 'any' ? parseInt(duration) : NaN
+  const presetDuration = Number.isFinite(parsedDuration) ? parsedDuration : undefined
+
   const admin = createAdminClient()
 
   // The customer's location comes from their profile, not a search field — we
@@ -279,7 +285,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         </div>
       </div>
 
-      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} groups={groups} />
+      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} groups={groups} />
     </div>
   )
 }
