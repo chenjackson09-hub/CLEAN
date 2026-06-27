@@ -2,15 +2,40 @@
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingCard } from './BookingCard'
+import { acknowledgeAllBookingsSeen } from '@/app/(customer)/actions'
 import type { BookingResult } from '@/lib/types/booking'
 
-function Grid({ bookings, empty, muted = false }: { bookings: BookingResult[]; empty: string; muted?: boolean }) {
+// "Mark all as seen" for the Refused & cancelled list: dismisses every visible
+// card at once. On success the page revalidates and the section drops out.
+function MarkAllSeenButton({ ids }: { ids: string[] }) {
+  const { t } = useLanguage()
+  const [busy, setBusy] = useState(false)
+  async function dismissAll() {
+    setBusy(true)
+    const res = await acknowledgeAllBookingsSeen(ids)
+    if (res?.error) setBusy(false)
+  }
+  return (
+    <div className="flex justify-end mb-4">
+      <button
+        type="button"
+        onClick={dismissAll}
+        disabled={busy}
+        className="rounded-full bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 hover:bg-gray-700 transition disabled:opacity-50"
+      >
+        {busy ? t('bookingCard.markingSeen') : t('bookingCard.markAllSeen')}
+      </button>
+    </div>
+  )
+}
+
+function Grid({ bookings, empty, muted = false, dismissible = false }: { bookings: BookingResult[]; empty: string; muted?: boolean; dismissible?: boolean }) {
   if (bookings.length === 0) {
     return <p className="text-gray-400 text-sm">{empty}</p>
   }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {bookings.map(b => <BookingCard key={b.id} booking={b} muted={muted} />)}
+      {bookings.map(b => <BookingCard key={b.id} booking={b} muted={muted} dismissible={dismissible} />)}
     </div>
   )
 }
@@ -73,49 +98,37 @@ export function BookingsSections({
 }) {
   const { t } = useLanguage()
 
+  // Only render sections that actually have bookings, so a customer with (say)
+  // only past or only declined requests still sees their content instead of a
+  // wall of "None" placeholders. Confirmed/Pending stay open by default; the
+  // first non-empty section is always opened so something is visible even when
+  // there's no confirmed booking. Refused/cancelled and past stay collapsed
+  // otherwise (they can be long).
+  const sections = [
+    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, openByDefault: true },
+    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, openByDefault: true },
+    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, openByDefault: false },
+    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, openByDefault: false },
+  ].filter(s => s.data.length > 0)
+
+  const firstKey = sections[0]?.key
+
   return (
     <div className="flex flex-col gap-8">
-      {/* Upcoming (accepted) — open by default */}
-      <CollapsibleSection
-        title={t('bookings.confirmed')}
-        count={confirmed.length}
-        badgeColor="bg-green-600"
-        defaultOpen
-      >
-        <Grid bookings={confirmed} empty={t('bookings.noneConfirmed')} />
-      </CollapsibleSection>
-
-      {/* Pending — open by default when there's something to see */}
-      <CollapsibleSection
-        title={t('bookings.pendingRequests')}
-        count={pending.length}
-        badgeColor="bg-yellow-500"
-        defaultOpen={pending.length > 0}
-      >
-        <Grid bookings={pending} empty={t('bookings.nonePending')} />
-      </CollapsibleSection>
-
-      {/* Refused & cancelled (most recent 20 combined) — declined/expired
-          requests, siblings auto-cancelled when another cleaner was booked, and
-          bookings the customer cancelled. Collapsed. */}
-      <CollapsibleSection
-        title={t('bookings.refusedCancelled')}
-        count={inactive.length}
-        badgeColor="bg-gray-400"
-        defaultOpen={false}
-      >
-        <Grid bookings={inactive} empty={t('bookings.noneRefusedCancelled')} muted />
-      </CollapsibleSection>
-
-      {/* Past cleans — collapsed by default, dimmed cards */}
-      <CollapsibleSection
-        title={t('bookings.pastCleans')}
-        count={past.length}
-        badgeColor="bg-gray-500"
-        defaultOpen={false}
-      >
-        <Grid bookings={past} empty={t('bookings.nonePast')} muted />
-      </CollapsibleSection>
+      {sections.map(s => (
+        <CollapsibleSection
+          key={s.key}
+          title={s.title}
+          count={s.data.length}
+          badgeColor={s.badgeColor}
+          defaultOpen={s.openByDefault || s.key === firstKey}
+        >
+          {s.key === 'inactive' && s.data.length > 1 && (
+            <MarkAllSeenButton ids={s.data.map(b => b.id)} />
+          )}
+          <Grid bookings={s.data} empty="" muted={s.muted} dismissible={s.dismissible} />
+        </CollapsibleSection>
+      ))}
     </div>
   )
 }

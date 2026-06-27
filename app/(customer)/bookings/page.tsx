@@ -12,7 +12,7 @@ export default async function BookingsPage() {
 
   const { data: rawBookings } = await supabase
     .from("bookings")
-    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, address, notes, status, response_deadline, cleaner_id, cleaner_modified")
+    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive")
     .eq("customer_id", user.id)
     .order("created_at", { ascending: false })
 
@@ -51,6 +51,7 @@ export default async function BookingsPage() {
       notes: b.notes ?? undefined,
       status: (expired ? 'declined' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
       cleaner_modified: b.cleaner_modified ?? false,
+      customer_ack_inactive: b.customer_ack_inactive ?? false,
     }
   })
 
@@ -64,7 +65,10 @@ export default async function BookingsPage() {
   const pending = bookings.filter(b => b.status === 'pending')
   // Refused (declined/expired) and cancelled requests share one collapsed
   // section; combined and capped at the 20 most recent (already newest-first).
-  const inactive = bookings.filter(b => b.status === 'declined' || b.status === 'cancelled').slice(0, 20)
+  // Once the customer marks one as seen it drops off the list.
+  const inactive = bookings
+    .filter(b => (b.status === 'declined' || b.status === 'cancelled') && !b.customer_ack_inactive)
+    .slice(0, 20)
   const past = bookings.filter(b => b.status === 'completed')
 
   return (
@@ -72,7 +76,7 @@ export default async function BookingsPage() {
       <MarkBookingsSeen />
       <h1 className="text-xl font-bold text-gray-900 mb-6">My Bookings</h1>
 
-      {bookings.length === 0 ? (
+      {confirmed.length + pending.length + inactive.length + past.length === 0 ? (
         <p className="text-gray-500 text-sm">
           No bookings yet.{' '}
           <Link href="/browse" className="text-blue-600 font-semibold hover:underline">

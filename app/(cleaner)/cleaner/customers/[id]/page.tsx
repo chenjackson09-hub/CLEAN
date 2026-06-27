@@ -48,8 +48,8 @@ export default async function CustomerProfilePage({
       .select("*")
       .eq("cleaner_id", user.id)
       .eq("customer_id", id)
-      .order("scheduled_date", { ascending: true })
-      .order("scheduled_start", { ascending: true })
+      .order("scheduled_date", { ascending: false })
+      .order("scheduled_start", { ascending: false })
       .returns<Booking[]>(),
   ]);
 

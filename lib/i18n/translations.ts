@@ -192,6 +192,9 @@ const translations = {
       hour: 'hr',
       hours: 'hrs',
       modified: 'Updated by cleaner',
+      markSeen: 'Mark as seen',
+      markAllSeen: 'Mark all as seen',
+      markingSeen: 'Dismissing…',
       status: {
         pending: 'Pending',
         accepted: 'Accepted',
@@ -521,6 +524,9 @@ const translations = {
       hour: 'שעה',
       hours: 'שעות',
       modified: 'עודכן ע״י המנקה',
+      markSeen: 'סימון כנצפה',
+      markAllSeen: 'סימון הכל כנצפה',
+      markingSeen: 'מסיר…',
       status: {
         pending: 'בהמתנה',
         accepted: 'התקבל',

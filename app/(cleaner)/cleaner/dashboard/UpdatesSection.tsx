@@ -5,7 +5,7 @@ import { useLang } from "@/context/LangContext";
 import type { TranslationKey } from "@/lib/lang";
 import type { BookingWithCustomer } from "@/types/database";
 import DateBlock from "./DateBlock";
-import { acknowledgeCancellation } from "../../actions";
+import { acknowledgeCancellation, acknowledgeAllCancellations } from "../../actions";
 
 const MONTH_KEYS: TranslationKey[] = [
   "month_jan", "month_feb", "month_mar", "month_apr", "month_may", "month_jun",
@@ -59,8 +59,17 @@ function UpdateCard({ booking }: { booking: BookingWithCustomer }) {
 export default function UpdatesSection({ bookings }: { bookings: BookingWithCustomer[] }) {
   const { t } = useLang();
   const [open, setOpen] = useState(true);
+  const [clearingAll, setClearingAll] = useState(false);
 
   if (bookings.length === 0) return null;
+
+  async function dismissAll() {
+    setClearingAll(true);
+    // On success the page revalidates and the whole section drops out; only
+    // re-enable on failure so it can be retried.
+    const res = await acknowledgeAllCancellations(bookings.map((b) => b.id));
+    if (res?.error) setClearingAll(false);
+  }
 
   return (
     <section className="mb-8">
@@ -89,6 +98,18 @@ export default function UpdatesSection({ bookings }: { bookings: BookingWithCust
 
       {open && (
         <div className="mt-4 space-y-4">
+          {bookings.length > 1 && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={dismissAll}
+                disabled={clearingAll}
+                className="rounded-full bg-gray-900 text-white text-sm font-semibold px-4 py-2 hover:bg-gray-700 transition disabled:opacity-50"
+              >
+                {clearingAll ? t("dash_updates_dismissing") : t("dash_updates_seen_all")}
+              </button>
+            </div>
+          )}
           {bookings.map((b) => (
             <UpdateCard key={b.id} booking={b} />
           ))}

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingDetailModal } from './BookingDetailModal'
+import { acknowledgeBookingSeen } from '@/app/(customer)/actions'
 import type { BookingResult, BookingStatus } from '@/lib/types/booking'
 
 const STATUS_BADGE: Record<BookingStatus, string> = {
@@ -22,9 +23,20 @@ const DATE_BLOCK_COLOR: Record<BookingStatus, string> = {
   cancelled: 'bg-black',
 }
 
-export function BookingCard({ booking, muted = false }: { booking: BookingResult; muted?: boolean }) {
+export function BookingCard({ booking, muted = false, dismissible = false }: { booking: BookingResult; muted?: boolean; dismissible?: boolean }) {
   const { t, lang } = useLanguage()
   const [open, setOpen] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
+
+  async function markSeen(e: React.MouseEvent) {
+    // Don't let the click bubble up and open the detail modal.
+    e.stopPropagation()
+    setDismissing(true)
+    // On success the page revalidates and this card drops out of the list; only
+    // re-enable on failure so it can be retried.
+    const res = await acknowledgeBookingSeen(booking.id)
+    if (res?.error) setDismissing(false)
+  }
 
   const [y, m, d] = booking.scheduled_date.split('-').map(Number)
   const month = new Date(y, m - 1, d).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US', { month: 'short' })
@@ -104,6 +116,18 @@ export function BookingCard({ booking, muted = false }: { booking: BookingResult
             <p>{t('bookingCard.contact.phone')}: {booking.cleaner_phone}</p>
             <p>{t('bookingCard.contact.email')}: {booking.cleaner_email}</p>
           </div>
+        )}
+
+        {dismissible && (
+          <button
+            type="button"
+            onClick={markSeen}
+            onKeyDown={(e) => e.stopPropagation()}
+            disabled={dismissing}
+            className="mt-3 rounded-full bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 hover:bg-gray-700 transition disabled:opacity-50"
+          >
+            {dismissing ? t('bookingCard.markingSeen') : t('bookingCard.markSeen')}
+          </button>
         )}
       </div>
     </div>

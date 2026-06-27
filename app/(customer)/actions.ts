@@ -312,6 +312,50 @@ export async function acknowledgeBookingModified(bookingId: string): Promise<Act
   return { success: true }
 }
 
+// Dismisses a declined/cancelled booking from the customer's "Refused &
+// cancelled" list once they've seen it ("Mark as seen"). Sets
+// customer_ack_inactive = true so the booking page filters it out. Scoped to the
+// calling customer; the "customer manages own bookings" RLS policy enforces it too.
+export async function acknowledgeBookingSeen(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ customer_ack_inactive: true })
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/bookings")
+  return { success: true }
+}
+
+// Bulk version of acknowledgeBookingSeen: dismisses every declined/cancelled
+// booking the customer currently sees ("Mark all as seen"). The caller passes the
+// visible booking ids, so we filter by `id` (not `status`) — a bulk PostgREST
+// update filtering on `status` can hang against this DB. Ownership is enforced by
+// the customer_id filter + RLS.
+export async function acknowledgeAllBookingsSeen(bookingIds: string[]): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+  if (bookingIds.length === 0) return { success: true }
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ customer_ack_inactive: true })
+    .in("id", bookingIds)
+    .eq("customer_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/bookings")
+  return { success: true }
+}
+
 async function notifyCleanerOfBooking(
   adminClient: ReturnType<typeof createAdminClient>,
   supabase: Awaited<ReturnType<typeof createClient>>,

@@ -699,3 +699,28 @@ export async function acknowledgeCancellation(bookingId: string) {
   revalidatePath("/cleaner/dashboard");
   return { success: true };
 }
+
+// Bulk version of acknowledgeCancellation: dismisses every cancellation the
+// cleaner currently sees in "Updates" at once ("I've seen all"). The caller
+// passes the visible booking ids, so we filter by `id` (not `status`) — a bulk
+// PostgREST update filtering on `status` can hang against this DB. Ownership is
+// still enforced by the cleaner_id filter + RLS.
+export async function acknowledgeAllCancellations(bookingIds: string[]) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+  if (bookingIds.length === 0) return { success: true };
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ cleaner_ack_cancelled: true })
+    .in("id", bookingIds)
+    .eq("cleaner_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/cleaner/dashboard");
+  return { success: true };
+}

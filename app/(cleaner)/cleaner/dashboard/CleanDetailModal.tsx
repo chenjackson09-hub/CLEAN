@@ -45,7 +45,9 @@ export default function CleanDetailModal({
     startTransition(async () => {
       const res = await cancelClean(booking.id);
       if (res?.error) {
-        setError(t("req_cancel_error"));
+        // Surface the real reason (DB/RLS message or guard) instead of a generic
+        // string, so failures are diagnosable rather than silently opaque.
+        setError(res.error || t("req_cancel_error"));
         return;
       }
       onClose();
