@@ -442,7 +442,6 @@ export async function respondToBooking(
   // remaining hours stay open (e.g. 08:00–12:00 booked 08:00–10:00 → 10:00–12:00).
   if (response === "accepted") {
     await carveAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
-    revalidatePath("/cleaner/availability");
 
     // The customer typically fans the same job out to several cleaners (and may
     // have requested other days too). Now that one cleaner has accepted, cancel
@@ -462,11 +461,14 @@ export async function respondToBooking(
   // Fire and forget — email failure must not delay the booking response
   sendBookingEmail(booking, response, user.id).catch(() => {});
 
-  // Note: intentionally NOT revalidating "/cleaner/requests" here. Doing so would
-  // refresh the page immediately and unmount the just-answered card — closing the
-  // confirmation modal (which shows the customer's phone) before the cleaner can
-  // read it. RequestCard refreshes the list itself once the cleaner dismisses it.
-  revalidatePath("/cleaner/dashboard");
+  // Note: intentionally NOT calling revalidatePath here at all. Any revalidatePath
+  // inside a Server Action forces the *current* route (/cleaner/requests) to refetch
+  // and re-render — which unmounts the just-answered card and slams the confirmation
+  // modal shut (it shows the customer's phone on accept) before the cleaner can read
+  // it. Instead RequestCard.handleClose() calls router.refresh() once the cleaner
+  // dismisses the modal, which both drops the answered card and invalidates the
+  // client Router Cache so /cleaner/availability re-fetches fresh on next navigation.
+  // The dashboard self-updates via its RealtimeBookings subscription.
   return { success: true };
 }
 
