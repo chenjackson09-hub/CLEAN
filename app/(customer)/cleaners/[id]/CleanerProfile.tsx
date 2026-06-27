@@ -49,7 +49,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   ).sort((a, b) => a.start.localeCompare(b.start))
 
   return (
-    <div className="-mx-8 -mt-2 min-h-screen">
+    <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen">
       {/* Back button — uses browser history so filters are preserved. The
           preview passes a `banner` instead (its own edit bar). */}
       {banner ?? (

@@ -81,7 +81,7 @@ export default async function CustomerProfilePage({
     : [];
 
   return (
-    <div className="max-w-2xl -mx-4 sm:mx-auto">
+    <div className="max-w-2xl mx-auto">
       <BackLink fromDashboard={fromDashboard} />
 
       {/* Profile header */}
