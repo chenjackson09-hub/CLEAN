@@ -74,7 +74,7 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
             <select
               id="duration"
               name="duration"
-              defaultValue={duration ?? '2'}
+              defaultValue={duration ?? 'any'}
               className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="any">{t('filterBar.durationNotSure')}</option>

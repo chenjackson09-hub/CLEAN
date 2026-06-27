@@ -15,7 +15,7 @@ const cleaner: CleanerResult = {
 }
 
 describe('BookingRequestForm duration field', () => {
-  it('locks the duration when presetDuration is supplied (read-only, no select)', () => {
+  it('pre-selects the duration when presetDuration is supplied, but keeps it editable', () => {
     render(
       <BookingRequestForm
         cleaner={cleaner}
@@ -25,12 +25,12 @@ describe('BookingRequestForm duration field', () => {
         presetDuration={3}
       />
     )
-    const duration = document.getElementById('duration')
-    expect(duration?.tagName).toBe('DIV')
-    expect(duration).toHaveTextContent('3')
+    const duration = document.getElementById('duration') as HTMLSelectElement | null
+    expect(duration?.tagName).toBe('SELECT')
+    expect(duration?.value).toBe('3')
   })
 
-  it('keeps the duration editable (a select) when no presetDuration is given', () => {
+  it('defaults the duration to "Not sure" (a select) when no presetDuration is given', () => {
     render(
       <BookingRequestForm
         cleaner={cleaner}
@@ -39,7 +39,8 @@ describe('BookingRequestForm duration field', () => {
         presetAddress="Tel Aviv"
       />
     )
-    const duration = document.getElementById('duration')
+    const duration = document.getElementById('duration') as HTMLSelectElement | null
     expect(duration?.tagName).toBe('SELECT')
+    expect(duration?.value).toBe('any')
   })
 })

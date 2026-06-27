@@ -38,8 +38,10 @@ export function BookingRequestForm({
   dateAvailability?: DateSlot[]
   presetDate?: string
   presetAddress?: string
-  // When the customer arrived from a browse search that specified a duration,
-  // the booking uses that duration and the field is shown read-only.
+  // When the customer arrived from a browse search that specified a duration, the
+  // booking form's (still editable) duration field is pre-selected to it. A search
+  // with no/"Not sure" duration leaves this undefined and the field defaults to
+  // "Not sure".
   presetDuration?: number
   // When embedded (e.g. in the browse "Schedule a clean" modal) the form starts
   // expanded and Cancel is delegated to the host (closes the modal) instead of
@@ -60,7 +62,10 @@ export function BookingRequestForm({
   // fixed to the day the cleaner was matched under — they don't pick it again.
   const [date, setDate] = useState(presetDate ?? '')
   const [startTime, setStartTime] = useState('')
-  const [duration, setDuration] = useState(presetDuration ?? 2)
+  // 'any' = "Not sure": the customer is flexible. On submit it's sent as a 2-hour
+  // default (with a note) so the request still has a concrete window the cleaner
+  // can adjust when responding.
+  const [duration, setDuration] = useState<number | 'any'>(presetDuration ?? 'any')
   // When the customer came from a location search, the area is fixed (read-only)
   // and they add their street + house number alongside it. Otherwise they type
   // the full address themselves.
@@ -91,14 +96,21 @@ export function BookingRequestForm({
     e.preventDefault()
     setLoading(true)
     setError(null)
+    // "Not sure" carries no concrete duration, so request a 2-hour default and
+    // flag the customer's flexibility in the notes for the cleaner to adjust.
+    const isFlexible = duration === 'any'
+    const durationHours = isFlexible ? 2 : duration
+    const finalNotes = [notes.trim(), isFlexible ? t('bookingRequestForm.durationFlexibleNote') : '']
+      .filter(Boolean)
+      .join('\n')
     const result = await createBooking({
       cleaner_id: cleaner.id,
       service_type: serviceType,
       scheduled_date: date,
       scheduled_start: startTime,
-      duration_hours: duration,
+      duration_hours: durationHours,
       address: fullAddress,
-      notes: notes || undefined,
+      notes: finalNotes || undefined,
     })
     setLoading(false)
     if (result?.error) {
@@ -203,20 +215,14 @@ export function BookingRequestForm({
 
         <div className="flex flex-col gap-1">
           <label htmlFor="duration" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.duration')}</label>
-          {presetDuration ? (
-            // Locked to the duration the customer chose in the search filter.
-            <div
-              id="duration"
-              className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium"
-            >
-              {presetDuration}
-            </div>
-          ) : (
-            <select id="duration" value={duration} onChange={e => setDuration(Number(e.target.value))}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          )}
+          {/* Pre-selected to the searched duration ("Not sure" when none), but
+              always editable — the customer can change it before sending. */}
+          <select id="duration" value={duration}
+            onChange={e => setDuration(e.target.value === 'any' ? 'any' : Number(e.target.value))}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="any">{t('bookingRequestForm.durationNotSure')}</option>
+            {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
         </div>
       </div>
 
