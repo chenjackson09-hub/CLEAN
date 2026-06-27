@@ -120,6 +120,9 @@ export function BookingDetailModal({
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.duration')}</p>
               <p className="text-lg font-semibold text-gray-900">
                 {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
+                {booking.duration_flexible && (
+                  <span className="ms-2 text-sm font-semibold text-red-600">{t('bookingRequestForm.durationNotSure')}</span>
+                )}
               </p>
             </div>
             <div>

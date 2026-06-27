@@ -59,6 +59,7 @@ export const translations = {
     req_date: "Date",
     req_time: "Time",
     req_duration: "Duration",
+    req_duration_not_sure: "Not sure",
     req_service: "Service",
     req_address: "Address",
     req_notes: "Notes",
@@ -94,6 +95,9 @@ export const translations = {
     req_edit_save: "Save changes",
     req_edit_saving: "Saving…",
     req_edit_cancel: "Cancel",
+    req_edit_outside_warning:
+      "This time is outside your marked availability for that day. Are you sure you want to save it?",
+    req_edit_save_anyway: "Save anyway",
     svc_residential: "Residential",
     svc_commercial: "Commercial",
     // Availability
@@ -274,6 +278,7 @@ export const translations = {
     req_date: "תאריך",
     req_time: "שעה",
     req_duration: "משך",
+    req_duration_not_sure: "לא בטוח/ה",
     req_service: "שירות",
     req_address: "כתובת",
     req_notes: "הערות",
@@ -309,6 +314,9 @@ export const translations = {
     req_edit_save: "שמירת שינויים",
     req_edit_saving: "שומר…",
     req_edit_cancel: "ביטול",
+    req_edit_outside_warning:
+      "השעה הזו נמצאת מחוץ לזמינות שסימנת לאותו יום. בטוחה שברצונך לשמור אותה?",
+    req_edit_save_anyway: "שמירה בכל זאת",
     svc_residential: "מגורים",
     svc_commercial: "מסחרי",
     // Availability

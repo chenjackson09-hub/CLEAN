@@ -14,6 +14,9 @@ export type BookingResult = {
   // True when the cleaner edited this booking (time / duration / note) after it
   // was created — drives the "updated by the cleaner" indicator on the card.
   cleaner_modified?: boolean
+  // True when the customer booked with a flexible ("Not sure") duration — shows
+  // a "Not sure" marker next to the duration. See migration 0009.
+  duration_flexible?: boolean
   // True once the customer has dismissed this declined/cancelled booking from
   // their "Refused & cancelled" list ("Mark as seen") — such rows are filtered out.
   customer_ack_inactive?: boolean

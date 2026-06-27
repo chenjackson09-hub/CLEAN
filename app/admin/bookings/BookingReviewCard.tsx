@@ -69,7 +69,7 @@ export function BookingReviewCard({ booking }: Props) {
         </span>
       </div>
 
-      <p className="text-sm text-gray-600 mb-3">📍 {booking.address}</p>
+      <p className="text-sm text-gray-600 mb-3"> {booking.address}</p>
 
       <div className="flex gap-2 flex-wrap mb-3">
         <span className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[booking.service_type]}`}>

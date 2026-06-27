@@ -484,7 +484,21 @@ export async function respondToBooking(
 // never carved time, so they're only validated, not re-carved.
 export async function editBooking(
   bookingId: string,
-  input: { scheduled_start: string; duration_hours: number; appendNote?: string }
+  input: {
+    scheduled_start: string;
+    duration_hours: number;
+    scheduled_date?: string;
+    appendNote?: string;
+    // Whether to keep the customer's "Not sure" duration marker. The cleaner can
+    // tick a box in the edit form to leave it flagged; otherwise saving a
+    // concrete duration resolves it.
+    duration_flexible?: boolean;
+    // When the new time falls outside the cleaner's marked availability we don't
+    // hard-block — we warn and let her confirm. `force` is the confirmed retry
+    // that skips that availability check (overlapping an already-accepted clean
+    // stays a hard block regardless).
+    force?: boolean;
+  }
 ) {
   const supabase = await createClient();
   const {
@@ -499,6 +513,9 @@ export async function editBooking(
   if (!/^\d{2}:\d{2}/.test(input.scheduled_start)) {
     return { error: "Invalid start time." };
   }
+  if (input.scheduled_date && !/^\d{4}-\d{2}-\d{2}$/.test(input.scheduled_date)) {
+    return { error: "Invalid date." };
+  }
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
@@ -512,28 +529,33 @@ export async function editBooking(
     return { error: "This booking can no longer be edited." };
   }
 
+  // The booking can be moved to a different day; fall back to its current date.
+  const oldDate = booking.scheduled_date;
+  const newDate = input.scheduled_date ?? oldDate;
+
   const newStart = timeToMinutes(input.scheduled_start);
   const newEnd = newStart + duration * 60;
   const oldStart = timeToMinutes(booking.scheduled_start);
   const oldEnd = oldStart + booking.duration_hours * 60;
   const isAccepted = booking.status === "accepted";
 
-  // An accepted clean's original slot was carved out on accept — reopen it so
-  // the new time can reuse the same hours when validating below.
+  // An accepted clean's original slot was carved out on accept — reopen it (on
+  // the original date) so the new time can reuse those hours when validating.
   if (isAccepted) {
-    await restoreAvailability(supabase, user.id, booking.scheduled_date, oldStart, oldEnd);
+    await restoreAvailability(supabase, user.id, oldDate, oldStart, oldEnd);
   }
 
   // The new time must still fall inside the cleaner's availability (weekly or
-  // specific-date) and must not collide with another accepted booking that day.
-  const dayOfWeek = new Date(booking.scheduled_date + "T12:00:00").getDay();
+  // specific-date) and must not collide with another accepted booking — all
+  // checked against the *new* date.
+  const dayOfWeek = new Date(newDate + "T12:00:00").getDay();
   const [{ data: dateSlots }, { data: weeklySlots }, { data: acceptedBookings }] =
     await Promise.all([
       supabase
         .from("cleaner_availability")
         .select("start_time, end_time")
         .eq("cleaner_id", user.id)
-        .eq("date", booking.scheduled_date),
+        .eq("date", newDate),
       supabase
         .from("cleaner_weekly_availability")
         .select("start_time, end_time")
@@ -543,7 +565,7 @@ export async function editBooking(
         .from("bookings")
         .select("scheduled_start, duration_hours")
         .eq("cleaner_id", user.id)
-        .eq("scheduled_date", booking.scheduled_date)
+        .eq("scheduled_date", newDate)
         .eq("status", "accepted")
         .neq("id", bookingId),
     ]);
@@ -558,20 +580,31 @@ export async function editBooking(
     return newStart < e && newEnd > s;
   });
 
-  if (!fitsAvailability || overlapsAccepted) {
-    // Roll the availability restore back so the accepted clean keeps its slot.
+  // Re-carve the originally restored slot (on the old date) — used to roll the
+  // accepted clean's availability back to its pre-edit state on a rejected edit.
+  const rollback = async () => {
     if (isAccepted) {
-      await carveAvailability(supabase, user.id, booking.scheduled_date, oldStart, oldEnd);
+      await carveAvailability(supabase, user.id, oldDate, oldStart, oldEnd);
     }
-    return {
-      error: overlapsAccepted
-        ? "That time overlaps another clean you've accepted."
-        : "That time is outside your availability for this day.",
-    };
+  };
+
+  // Overlapping another accepted clean is a genuine double-booking — always hard-block.
+  if (overlapsAccepted) {
+    await rollback();
+    return { error: "That time overlaps another clean you've accepted." };
+  }
+
+  // Outside marked availability is a soft warning: ask the cleaner to confirm
+  // rather than blocking. We leave state unchanged (re-carve the restored slot)
+  // and let the client retry with `force`.
+  if (!fitsAvailability && !input.force) {
+    await rollback();
+    return { needsConfirm: true as const };
   }
 
   if (isAccepted) {
-    await carveAvailability(supabase, user.id, booking.scheduled_date, newStart, newEnd);
+    // Carve the new time out of the new date's availability.
+    await carveAvailability(supabase, user.id, newDate, newStart, newEnd);
   }
 
   const addition = input.appendNote?.trim();
@@ -584,8 +617,12 @@ export async function editBooking(
   const { error } = await supabase
     .from("bookings")
     .update({
+      scheduled_date: newDate,
       scheduled_start: input.scheduled_start,
       duration_hours: duration,
+      // Keep the "Not sure" marker only if the cleaner left the box ticked;
+      // otherwise the concrete duration she picked resolves it.
+      duration_flexible: input.duration_flexible ?? false,
       notes,
       cleaner_modified: true,
     })

@@ -105,6 +105,9 @@ export function BookingCard({ booking, muted = false, dismissible = false }: { b
 
         <p className="text-sm text-gray-500">
           {booking.scheduled_start.slice(0, 5)} · {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
+          {booking.duration_flexible && (
+            <span className="ms-2 font-semibold text-red-600">{t('bookingRequestForm.durationNotSure')}</span>
+          )}
         </p>
 
         <p className="text-sm text-gray-600 mt-1">{booking.address}</p>

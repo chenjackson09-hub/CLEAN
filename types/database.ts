@@ -107,6 +107,11 @@ export interface Booking {
   // after it was created. Drives the customer's "modified by the cleaner"
   // indicator on /bookings. See migration 0005.
   cleaner_modified: boolean;
+  // True when the customer booked with a flexible ("Not sure") duration. The
+  // stored duration_hours is a 2-hour default; this flag tells the cleaner the
+  // length is unconfirmed. Cleared when the cleaner edits to a concrete
+  // duration. See migration 0009.
+  duration_flexible: boolean;
 }
 
 export interface BookingWithCustomer extends Booking {

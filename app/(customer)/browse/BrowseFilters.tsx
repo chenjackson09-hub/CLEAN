@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 type Props = {
@@ -20,9 +20,25 @@ const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 
 export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
   const { t } = useLanguage()
+  const router = useRouter()
   // Optional refinements (start time, duration, type, sort) — collapsed by
   // default. Location now comes from the customer's profile, not a field here.
   const [open, setOpen] = useState(false)
+  // Controlled so the Clear button can visually reset the dropdowns. Uncontrolled
+  // (defaultValue) selects keep their DOM value across a /browse navigation, so
+  // clearing the URL alone wouldn't move them back to "Any time" / "Not sure".
+  const [startVal, setStartVal] = useState(start ?? '')
+  const [durationVal, setDurationVal] = useState(duration ?? 'any')
+  const [typeVal, setTypeVal] = useState(type ?? '')
+  const [sortVal, setSortVal] = useState(sort ?? '')
+
+  function handleClear() {
+    setStartVal('')
+    setDurationVal('any')
+    setTypeVal('')
+    setSortVal('')
+    router.push('/browse')
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm mb-4">
@@ -58,7 +74,8 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
             <select
               id="start"
               name="start"
-              defaultValue={start ?? ''}
+              value={startVal}
+              onChange={e => setStartVal(e.target.value)}
               className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">{t('filterBar.anyStartTime')}</option>
@@ -74,7 +91,8 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
             <select
               id="duration"
               name="duration"
-              defaultValue={duration ?? 'any'}
+              value={durationVal}
+              onChange={e => setDurationVal(e.target.value)}
               className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="any">{t('filterBar.durationNotSure')}</option>
@@ -90,7 +108,8 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
             <select
               id="type"
               name="type"
-              defaultValue={type ?? ''}
+              value={typeVal}
+              onChange={e => setTypeVal(e.target.value)}
               className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">{t('browse.allTypes')}</option>
@@ -105,7 +124,8 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
             <select
               id="sort"
               name="sort"
-              defaultValue={sort ?? ''}
+              value={sortVal}
+              onChange={e => setSortVal(e.target.value)}
               className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">{t('browse.sortDefault')}</option>
@@ -116,12 +136,13 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
               <option value="experience_asc">{t('browse.leastExp')}</option>
             </select>
           </div>
-          <Link
-            href="/browse"
+          <button
+            type="button"
+            onClick={handleClear}
             className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
           >
             {t('browse.clear')}
-          </Link>
+          </button>
         </form>
       )}
     </div>

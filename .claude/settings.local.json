@@ -8,7 +8,10 @@
       "Bash(npx tsc *)",
       "Bash(npx jest *)",
       "Bash(ls -a supabase/)",
-      "Bash(which supabase *)"
+      "Bash(which supabase *)",
+      "Bash(grep -n \"respondToBooking\\\\` only clears on next navigation\\\\|cancels \\\\*\\\\*all\\\\*\\\\*\\\\|sibling-cancel relies\\\\|RealtimeBookings.\\\\` \\\\|only clears on next navigation\" CLAUDE.md)",
+      "Bash(grep -n \"two independent i18n\\\\|lib/i18n/translations.ts\\\\` |\\\\|Customer + auth + admin\" CLAUDE.md)",
+      "Bash(echo \"exit:$?\")"
     ]
   }
 }

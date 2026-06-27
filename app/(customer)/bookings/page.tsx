@@ -12,7 +12,7 @@ export default async function BookingsPage() {
 
   const { data: rawBookings } = await supabase
     .from("bookings")
-    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive")
+    .select("id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive")
     .eq("customer_id", user.id)
     .order("created_at", { ascending: false })
 
@@ -47,6 +47,7 @@ export default async function BookingsPage() {
       scheduled_date: b.scheduled_date,
       scheduled_start: b.scheduled_start,
       duration_hours: b.duration_hours,
+      duration_flexible: b.duration_flexible ?? false,
       address: b.address,
       notes: b.notes ?? undefined,
       status: (expired ? 'declined' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',

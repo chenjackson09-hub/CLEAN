@@ -198,7 +198,12 @@ export default function RequestCard({ booking, showActions }: Props) {
                 </div>
                 <div>
                   <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_duration")}</p>
-                  <p className="text-lg font-semibold text-gray-900">{booking.duration_hours}{t("req_h")}</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {booking.duration_hours}{t("req_h")}
+                    {booking.duration_flexible && (
+                      <span className="ms-2 text-sm font-semibold text-red-600">{t("req_duration_not_sure")}</span>
+                    )}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_service")}</p>

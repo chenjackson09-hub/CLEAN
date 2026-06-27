@@ -97,20 +97,19 @@ export function BookingRequestForm({
     setLoading(true)
     setError(null)
     // "Not sure" carries no concrete duration, so request a 2-hour default and
-    // flag the customer's flexibility in the notes for the cleaner to adjust.
+    // flag the customer's flexibility on the booking (duration_flexible) — the
+    // cleaner sees a "Not sure" marker next to the duration, not a note.
     const isFlexible = duration === 'any'
     const durationHours = isFlexible ? 2 : duration
-    const finalNotes = [notes.trim(), isFlexible ? t('bookingRequestForm.durationFlexibleNote') : '']
-      .filter(Boolean)
-      .join('\n')
     const result = await createBooking({
       cleaner_id: cleaner.id,
       service_type: serviceType,
       scheduled_date: date,
       scheduled_start: startTime,
       duration_hours: durationHours,
+      duration_flexible: isFlexible,
       address: fullAddress,
-      notes: finalNotes || undefined,
+      notes: notes.trim() || undefined,
     })
     setLoading(false)
     if (result?.error) {

@@ -51,6 +51,9 @@ export default function UpcomingCleanCard({
           <div className="text-base text-gray-500 mt-1">{booking.address}</div>
           <div className="text-sm text-gray-500 mt-1">
             {booking.scheduled_start?.slice(0, 5)} · {booking.duration_hours}{t("req_h")}
+            {booking.duration_flexible && (
+              <span className="ms-2 font-semibold text-red-600">{t("req_duration_not_sure")}</span>
+            )}
           </div>
         </div>
         <span className="ms-auto self-start shrink-0 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1">

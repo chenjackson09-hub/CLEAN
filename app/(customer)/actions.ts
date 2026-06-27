@@ -139,6 +139,7 @@ export async function createBooking(data: {
   scheduled_date: string
   scheduled_start: string
   duration_hours: number
+  duration_flexible?: boolean
   address: string
   notes?: string
 }): Promise<ActionResult> {
@@ -220,6 +221,7 @@ export async function createBooking(data: {
     scheduled_date: data.scheduled_date,
     scheduled_start: data.scheduled_start,
     duration_hours: data.duration_hours,
+    duration_flexible: data.duration_flexible ?? false,
     address: data.address,
     notes: data.notes ?? null,
     status: "pending",
