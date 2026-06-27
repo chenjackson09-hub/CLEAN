@@ -18,6 +18,9 @@ export interface Profile {
   created_at: string;
 }
 
+export type DwellingType = "apartment" | "house";
+export type PetType = "dog" | "cat" | "other";
+
 export interface Customer {
   id: string;
   bio: string | null;
@@ -25,6 +28,15 @@ export interface Customer {
   lat: number | null;
   lng: number | null;
   preferred_service_type: ServiceType | null;
+  // Household details (help cleaners size up a job). All optional.
+  num_rooms: number | null;
+  pet_types: PetType[];
+  num_pets: number | null;
+  num_kids_under_15: number | null;
+  num_people: number | null;
+  house_size_sqm: number | null;
+  dwelling_type: DwellingType | null;
+  floor: number | null;
 }
 
 export interface Cleaner {

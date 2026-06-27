@@ -2,6 +2,7 @@
 import { useFormState, useFormStatus } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { useLanguage } from '@/lib/i18n/LanguageContext'
 
 type ActionResult = { error?: string; success?: boolean; avatarUrl?: string } | null
 
@@ -12,6 +13,14 @@ type DefaultValues = {
   preferred_service_type: 'residential' | 'commercial'
   address: string
   avatar_url: string | null
+  num_rooms: string
+  pet_types: ('dog' | 'cat' | 'other')[]
+  num_pets: string
+  num_kids_under_15: string
+  num_people: string
+  house_size_sqm: string
+  dwelling_type: 'apartment' | 'house' | null
+  floor: string
 }
 
 type Props = {
@@ -21,22 +30,41 @@ type Props = {
 
 function SubmitButton() {
   const { pending } = useFormStatus()
+  const { t } = useLanguage()
   return (
     <button
       type="submit"
       disabled={pending}
       className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold text-sm transition-colors self-start shadow-sm disabled:opacity-60"
     >
-      {pending ? 'Saving…' : 'Save'}
+      {pending ? t('profile.saving') : t('profile.save')}
     </button>
   )
 }
 
 export function ProfileForm({ defaultValues, action }: Props) {
+  const { t } = useLanguage()
   const [state, formAction] = useFormState(action, null)
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(defaultValues.avatar_url)
+  // Pets toggle drives whether the dog/cat + count fields show; dwelling type
+  // drives whether the floor field shows (only meaningful for apartments).
+  const [hasPets, setHasPets] = useState(defaultValues.pet_types.length > 0)
+  const [pets, setPets] = useState({
+    dog: defaultValues.pet_types.includes('dog'),
+    cat: defaultValues.pet_types.includes('cat'),
+    other: defaultValues.pet_types.includes('other'),
+  })
+  const [dwellingType, setDwellingType] = useState<'apartment' | 'house' | ''>(
+    defaultValues.dwelling_type ?? ''
+  )
+  // Total people is controlled so it can cap the "kids under 15" field (kids are
+  // part of the total). num_pets has a dynamic minimum: at least the number of
+  // selected pet kinds (each kind implies one), and never below 1 when there are
+  // pets.
+  const [numPeople, setNumPeople] = useState(defaultValues.num_people)
+  const minPets = Math.max(1, Object.values(pets).filter(Boolean).length)
 
   // On a successful save, adopt the freshly-saved (cache-busted) avatar URL and
   // re-fetch server data so the photo no longer shows the previous one.
@@ -59,6 +87,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
 
   return (
     <div className="flex flex-col gap-6 max-w-lg">
+      <h1 className="text-xl font-bold text-gray-900">{t('profile.title')}</h1>
       {/* Profile header card */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex items-center gap-5">
         {/* Clickable avatar */}
@@ -66,7 +95,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="relative w-16 h-16 rounded-full shrink-0 group focus:outline-none"
-          title="Change photo"
+          title={t('profile.changePhoto')}
         >
           <div className="w-16 h-16 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center font-bold text-2xl text-blue-700 overflow-hidden">
             {preview ? (
@@ -84,10 +113,10 @@ export function ProfileForm({ defaultValues, action }: Props) {
         </button>
 
         <div>
-          <p className="text-lg font-bold text-gray-900">{defaultValues.full_name || 'Your name'}</p>
-          <p className="text-sm text-gray-500">{defaultValues.address || 'Add your address'}</p>
+          <p className="text-lg font-bold text-gray-900">{defaultValues.full_name || t('profile.yourName')}</p>
+          <p className="text-sm text-gray-500">{defaultValues.address || t('profile.addAddress')}</p>
           <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-100">
-            {defaultValues.preferred_service_type === 'commercial' ? 'Commercial' : 'Residential'}
+            {defaultValues.preferred_service_type === 'commercial' ? t('profile.commercial') : t('profile.residential')}
           </span>
         </div>
       </div>
@@ -104,7 +133,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
         />
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="full_name" className={labelClass}>Full Name</label>
+          <label htmlFor="full_name" className={labelClass}>{t('profile.fullName')}</label>
           <input
             id="full_name"
             name="full_name"
@@ -117,7 +146,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="phone" className={labelClass}>Phone</label>
+          <label htmlFor="phone" className={labelClass}>{t('profile.phone')}</label>
           <input
             id="phone"
             name="phone"
@@ -129,7 +158,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="bio" className={labelClass}>About me</label>
+          <label htmlFor="bio" className={labelClass}>{t('profile.aboutMe')}</label>
           <textarea
             id="bio"
             name="bio"
@@ -140,20 +169,20 @@ export function ProfileForm({ defaultValues, action }: Props) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="preferred_service_type" className={labelClass}>Preferred Service Type</label>
+          <label htmlFor="preferred_service_type" className={labelClass}>{t('profile.preferredServiceType')}</label>
           <select
             id="preferred_service_type"
             name="preferred_service_type"
             defaultValue={defaultValues.preferred_service_type}
             className={fieldClass}
           >
-            <option value="residential">Residential</option>
-            <option value="commercial">Commercial</option>
+            <option value="residential">{t('profile.residential')}</option>
+            <option value="commercial">{t('profile.commercial')}</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="address" className={labelClass}>Address</label>
+          <label htmlFor="address" className={labelClass}>{t('profile.address')}</label>
           <input
             id="address"
             name="address"
@@ -163,14 +192,112 @@ export function ProfileForm({ defaultValues, action }: Props) {
             required
             className={fieldClass}
           />
-          <p className="text-xs text-gray-500">Used to find cleaners near you</p>
+          <p className="text-xs text-gray-500">{t('profile.addressHelp')}</p>
+        </div>
+
+        {/* ── Household details ── help cleaners size up the job ── */}
+        <div className="border-t border-gray-100 pt-4 mt-1">
+          <h2 className="text-sm font-bold text-gray-900">{t('profile.householdTitle')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{t('profile.householdSub')}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="dwelling_type" className={labelClass}>{t('profile.propertyType')}</label>
+            <select
+              id="dwelling_type"
+              name="dwelling_type"
+              value={dwellingType}
+              onChange={(e) => setDwellingType(e.target.value as 'apartment' | 'house' | '')}
+              className={fieldClass}
+            >
+              <option value="">{t('profile.selectPlaceholder')}</option>
+              <option value="apartment">{t('profile.apartment')}</option>
+              <option value="house">{t('profile.house')}</option>
+            </select>
+          </div>
+
+          {dwellingType === 'apartment' && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="floor" className={labelClass}>{t('profile.floor')}</label>
+              <input id="floor" name="floor" type="number" step={1}
+                defaultValue={defaultValues.floor} className={fieldClass} />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="num_rooms" className={labelClass}>{t('profile.rooms')}</label>
+            <input id="num_rooms" name="num_rooms" type="number" inputMode="numeric" min={0}
+              defaultValue={defaultValues.num_rooms} className={fieldClass} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="house_size_sqm" className={labelClass}>{t('profile.houseSize')}</label>
+            <input id="house_size_sqm" name="house_size_sqm" type="number" inputMode="numeric" min={0}
+              defaultValue={defaultValues.house_size_sqm} className={fieldClass} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="num_people" className={labelClass}>{t('profile.peopleLivingHere')}</label>
+            <input id="num_people" name="num_people" type="number" inputMode="numeric" min={0}
+              value={numPeople} onChange={(e) => setNumPeople(e.target.value)} className={fieldClass} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="num_kids_under_15" className={labelClass}>{t('profile.kidsUnder15')}</label>
+            <input id="num_kids_under_15" name="num_kids_under_15" type="number" inputMode="numeric" min={0}
+              max={numPeople !== '' ? numPeople : undefined}
+              defaultValue={defaultValues.num_kids_under_15} className={fieldClass} />
+            <p className="text-xs text-gray-500">{t('profile.kidsHelp')}</p>
+          </div>
+        </div>
+
+        {/* Pets */}
+        <div className="flex flex-col gap-2">
+          <span className={labelClass}>{t('profile.anyPets')}</span>
+          <div className="flex gap-4 text-sm text-gray-700">
+            <label className="flex items-center gap-1.5">
+              <input type="radio" name="has_pets" value="yes" checked={hasPets}
+                onChange={() => setHasPets(true)} /> {t('profile.yes')}
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input type="radio" name="has_pets" value="no" checked={!hasPets}
+                onChange={() => setHasPets(false)} /> {t('profile.no')}
+            </label>
+          </div>
+
+          {hasPets && (
+            <div className="flex flex-col gap-3 pl-1">
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-1.5 text-sm text-gray-700">
+                  <input type="checkbox" name="pet_dog" checked={pets.dog}
+                    onChange={(e) => setPets((p) => ({ ...p, dog: e.target.checked }))} /> {t('profile.dog')}
+                </label>
+                <label className="flex items-center gap-1.5 text-sm text-gray-700">
+                  <input type="checkbox" name="pet_cat" checked={pets.cat}
+                    onChange={(e) => setPets((p) => ({ ...p, cat: e.target.checked }))} /> {t('profile.cat')}
+                </label>
+                <label className="flex items-center gap-1.5 text-sm text-gray-700">
+                  <input type="checkbox" name="pet_other" checked={pets.other}
+                    onChange={(e) => setPets((p) => ({ ...p, other: e.target.checked }))} /> {t('profile.other')}
+                </label>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="num_pets" className={labelClass}>{t('profile.totalPets')}</label>
+                <input id="num_pets" name="num_pets" type="number" inputMode="numeric"
+                  min={minPets} required defaultValue={defaultValues.num_pets} className={`${fieldClass} w-28`} />
+              </div>
+            </div>
+          )}
         </div>
 
         {state?.error && (
-          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{state.error}</p>
+          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {state.error.startsWith('profile.') ? t(state.error) : state.error}
+          </p>
         )}
         {state?.success && (
-          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Profile saved!</p>
+          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{t('profile.saved')}</p>
         )}
 
         <SubmitButton />

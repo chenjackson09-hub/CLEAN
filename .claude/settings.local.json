@@ -6,7 +6,9 @@
       "Bash(grep -q \"Ready\\\\|started server\\\\|Local:\" /tmp/claude-1000/-mnt-c-Users-yasmi-OneDrive-Desktop-clean-CLEAN/d2bc6b54-3516-4149-865b-cf60e6fa4fdc/tasks/boapsnxdw.output)",
       "Bash(break)",
       "Bash(npx tsc *)",
-      "Bash(npx jest *)"
+      "Bash(npx jest *)",
+      "Bash(ls -a supabase/)",
+      "Bash(which supabase *)"
     ]
   }
 }

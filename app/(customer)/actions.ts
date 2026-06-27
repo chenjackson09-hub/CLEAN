@@ -40,6 +40,49 @@ export async function updateCustomerProfile(
   const preferredServiceType = formData.get("preferred_service_type") as string
   const address = formData.get("address") as string
 
+  // Household details — all optional. Numbers come from keyboard inputs, so parse
+  // leniently and store null when blank/invalid. toInt rejects negatives (counts
+  // can't be negative); toIntSigned keeps them (a floor can be below ground).
+  const toInt = (v: FormDataEntryValue | null): number | null => {
+    const s = (v as string | null)?.trim()
+    if (!s) return null
+    const n = parseInt(s, 10)
+    return Number.isFinite(n) && n >= 0 ? n : null
+  }
+  const toIntSigned = (v: FormDataEntryValue | null): number | null => {
+    const s = (v as string | null)?.trim()
+    if (!s) return null
+    const n = parseInt(s, 10)
+    return Number.isFinite(n) ? n : null
+  }
+  const hasPets = formData.get("has_pets") === "yes"
+  const petTypes = hasPets
+    ? (["dog", "cat", "other"] as const).filter((p) => formData.get(`pet_${p}`) === "on")
+    : []
+  const dwellingTypeRaw = formData.get("dwelling_type") as string
+  const dwellingType =
+    dwellingTypeRaw === "apartment" || dwellingTypeRaw === "house" ? dwellingTypeRaw : null
+
+  const numPets = hasPets ? toInt(formData.get("num_pets")) : null
+  const numPeople = toInt(formData.get("num_people"))
+  const numKids = toInt(formData.get("num_kids_under_15"))
+
+  // Cross-field validation (authoritative — the client mirrors these for UX).
+  // These return i18n keys (the form translates them) since the action can't
+  // read the user's language.
+  if (hasPets) {
+    if (numPets == null || numPets < 1) {
+      return { error: "profile.errPetsMin" }
+    }
+    // Each selected pet type implies at least one of that animal.
+    if (petTypes.length > 1 && numPets < petTypes.length) {
+      return { error: "profile.errPetsKinds" }
+    }
+  }
+  if (numPeople != null && numKids != null && numKids > numPeople) {
+    return { error: "profile.errKids" }
+  }
+
   // Handle avatar upload
   const avatarFile = formData.get("avatar") as File
   let avatarUrl: string | undefined
@@ -75,6 +118,14 @@ export async function updateCustomerProfile(
       preferred_service_type: preferredServiceType || null,
       lat: location?.lat ?? null,
       lng: location?.lng ?? null,
+      num_rooms: toInt(formData.get("num_rooms")),
+      pet_types: petTypes,
+      num_pets: numPets,
+      num_kids_under_15: numKids,
+      num_people: numPeople,
+      house_size_sqm: toInt(formData.get("house_size_sqm")),
+      dwelling_type: dwellingType,
+      floor: dwellingType === "apartment" ? toIntSigned(formData.get("floor")) : null,
     })
   if (customerErr) return { error: customerErr.message }
 

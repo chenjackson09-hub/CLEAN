@@ -9,6 +9,14 @@ const baseProfile = {
   preferred_service_type: 'residential' as const,
   address: '12 Rothschild Blvd, Tel Aviv',
   avatar_url: null as string | null,
+  num_rooms: '',
+  pet_types: [] as ('dog' | 'cat')[],
+  num_pets: '',
+  num_kids_under_15: '',
+  num_people: '',
+  house_size_sqm: '',
+  dwelling_type: null as 'apartment' | 'house' | null,
+  floor: '',
 }
 
 // The form submits via a server action; a no-op stub is enough to render it.
