@@ -43,7 +43,15 @@
       "Bash(find app *)",
       "Bash(head -20 app/globals.css)",
       "Bash(HH:MM)",
-      "Bash(grep -nE \"durationFlexibleNote|appends a flexible|p-8 pt-16|-mx-4|cleaner layout's .p-8|-mx-8.|24-hour `HH:MM`\" CLAUDE.md)"
+      "Bash(grep -nE \"durationFlexibleNote|appends a flexible|p-8 pt-16|-mx-4|cleaner layout's .p-8|-mx-8.|24-hour `HH:MM`\" CLAUDE.md)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(echo \"build exit: $?\")",
+      "Bash(npm test *)",
+      "Bash(grep -nE *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(echo \"=== exit: $? ===\")"
     ]
   }
 }
