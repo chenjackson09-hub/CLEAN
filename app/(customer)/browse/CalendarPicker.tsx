@@ -72,7 +72,7 @@ export function CalendarPicker({ dateHeat = {} }: CalendarPickerProps) {
   }
 
   // The single Search button: it commits the selected dates AND the filter
-  // fields (start/duration/type/sort) to the URL, which drives the server-side
+  // fields (from/to range, duration, type, sort) to the URL, which drives the server-side
   // search. The customer's location comes from their profile, not a field here.
   function runSearch() {
     const form = document.getElementById('browse-search-form') as HTMLFormElement | null

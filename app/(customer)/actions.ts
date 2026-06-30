@@ -137,6 +137,10 @@ export async function createBooking(data: {
   scheduled_start: string
   duration_hours: number
   duration_flexible?: boolean
+  // The broader window the customer is free in ('HH:MM'), shown to the cleaner so
+  // they can offer to extend. Optional. See migration 0014.
+  avail_window_start?: string
+  avail_window_end?: string
   address: string
   notes?: string
 }): Promise<ActionResult> {
@@ -232,6 +236,8 @@ export async function createBooking(data: {
     scheduled_start: data.scheduled_start,
     duration_hours: data.duration_hours,
     duration_flexible: data.duration_flexible ?? false,
+    avail_window_start: data.avail_window_start ?? null,
+    avail_window_end: data.avail_window_end ?? null,
     address: data.address,
     notes: data.notes ?? null,
     status: "pending",

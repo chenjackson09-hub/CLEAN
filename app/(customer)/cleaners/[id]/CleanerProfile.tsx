@@ -11,7 +11,7 @@ import type { ReactNode } from 'react'
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, banner, bookingDisabled = false }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, banner, bookingDisabled = false }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
@@ -19,6 +19,8 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   presetDate?: string
   presetAddress?: string
   presetDuration?: number
+  presetAvailFrom?: string
+  presetAvailTo?: string
   // Preview overrides — the cleaner's own preview reuses this exact shell, but
   // swaps a couple pieces: an edit banner instead of the back button and a
   // non-interactive booking form. The customer page passes neither, so its
@@ -153,7 +155,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               </span>
             ))}
           </div>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} disabled={bookingDisabled} />
+          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} presetAvailFrom={presetAvailFrom} presetAvailTo={presetAvailTo} disabled={bookingDisabled} />
         </div>
 
         {/* About */}

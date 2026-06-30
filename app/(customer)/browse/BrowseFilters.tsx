@@ -2,38 +2,40 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { AvailabilityRange } from './AvailabilityRange'
 
 type Props = {
   dates: string | undefined
   type: string | undefined
   sort: string | undefined
-  start: string | undefined
+  from: string | undefined
+  to: string | undefined
   duration: string | undefined
 }
 
-// Start-time options every 30 minutes from 06:00 to 22:00.
-const START_OPTIONS = Array.from({ length: 33 }, (_, i) => {
-  const mins = 6 * 60 + i * 30
-  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
-})
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
+// Default availability window — the full working day (no effective constraint).
+const DEFAULT_FROM = '06:00'
+const DEFAULT_TO = '22:00'
 
-export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
+export function BrowseFilters({ dates, type, sort, from, to, duration }: Props) {
   const { t } = useLanguage()
   const router = useRouter()
-  // Optional refinements (start time, duration, type, sort) — collapsed by
-  // default. Location now comes from the customer's profile, not a field here.
+  // Optional refinements (availability range, duration, type, sort) — collapsed
+  // by default. Location now comes from the customer's profile, not a field here.
   const [open, setOpen] = useState(false)
-  // Controlled so the Clear button can visually reset the dropdowns. Uncontrolled
-  // (defaultValue) selects keep their DOM value across a /browse navigation, so
-  // clearing the URL alone wouldn't move them back to "Any time" / "Not sure".
-  const [startVal, setStartVal] = useState(start ?? '')
+  // Controlled so the Clear button can visually reset the inputs. Uncontrolled
+  // ones keep their DOM value across a /browse navigation, so clearing the URL
+  // alone wouldn't move them back to their defaults.
+  const [fromVal, setFromVal] = useState(from ?? DEFAULT_FROM)
+  const [toVal, setToVal] = useState(to ?? DEFAULT_TO)
   const [durationVal, setDurationVal] = useState(duration ?? 'any')
   const [typeVal, setTypeVal] = useState(type ?? '')
   const [sortVal, setSortVal] = useState(sort ?? '')
 
   function handleClear() {
-    setStartVal('')
+    setFromVal(DEFAULT_FROM)
+    setToVal(DEFAULT_TO)
     setDurationVal('any')
     setTypeVal('')
     setSortVal('')
@@ -68,21 +70,14 @@ export function BrowseFilters({ dates, type, sort, start, duration }: Props) {
         <form id="browse-search-form" method="get" action="/browse" className="border-t border-gray-100 px-4 py-4 flex flex-wrap gap-3 justify-start items-end">
           <input type="hidden" name="dates" value={dates ?? ''} />
           <div className="flex flex-col gap-1">
-            <label htmlFor="start" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-              {t('filterBar.startTime')}
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              {t('filterBar.availability')}
             </label>
-            <select
-              id="start"
-              name="start"
-              value={startVal}
-              onChange={e => setStartVal(e.target.value)}
-              className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">{t('filterBar.anyStartTime')}</option>
-              {START_OPTIONS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+            <AvailabilityRange
+              from={fromVal}
+              to={toVal}
+              onChange={(f, to2) => { setFromVal(f); setToVal(to2) }}
+            />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="duration" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">

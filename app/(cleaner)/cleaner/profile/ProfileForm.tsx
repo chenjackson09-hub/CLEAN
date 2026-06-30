@@ -36,7 +36,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-5 bg-white rounded-2xl border border-gray-200 p-6">
+    <form action={handleSubmit} className="space-y-5 bg-white rounded-3xl shadow-md p-6">
       {/* Avatar */}
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden shrink-0">
@@ -71,7 +71,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             name="full_name"
             autoComplete="name"
             defaultValue={profile?.full_name ?? ""}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -82,7 +82,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             name="phone"
             autoComplete="tel"
             defaultValue={profile?.phone ?? ""}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -94,7 +94,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           name="bio"
           rows={3}
           defaultValue={cleaner?.bio ?? ""}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
       </div>
 
@@ -108,7 +108,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             min="0"
             step="0.50"
             defaultValue={cleaner?.hourly_rate ?? ""}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -120,7 +120,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             min="1"
             max="100"
             defaultValue={cleaner?.service_radius_km ?? 10}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -133,7 +133,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             min="1"
             max="24"
             defaultValue={cleaner?.min_hours ?? ""}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -146,7 +146,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             min="1"
             max="24"
             defaultValue={cleaner?.max_hours ?? ""}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -177,7 +177,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           name="address"
           autoComplete="street-address"
           defaultValue={cleaner?.address ?? ""}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <p className="text-sm text-gray-400 mt-1">{t("prof_address_hint")}</p>
       </div>
@@ -192,7 +192,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             min="0"
             max="50"
             defaultValue={cleaner?.years_experience ?? 0}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -203,14 +203,14 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             name="languages"
             defaultValue={cleaner?.languages?.join(", ") ?? ""}
             placeholder="English, French"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
 
       {message && (
         <p
-          className={`text-base rounded-lg px-3 py-2 ${
+          className={`text-base rounded-xl px-3 py-2 ${
             message.type === "success"
               ? "bg-green-50 text-green-700"
               : "bg-red-50 text-red-600"
@@ -223,7 +223,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="bg-blue-600 text-white rounded-lg px-5 py-2.5 text-base font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        className="bg-blue-600 text-white rounded-3xl px-5 py-2.5 text-base font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
         {loading ? t("prof_saving") : t("prof_save")}
       </button>

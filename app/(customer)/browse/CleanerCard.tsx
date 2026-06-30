@@ -14,7 +14,7 @@ function shortenName(fullName: string): string {
   return `${parts.slice(0, -1).join(' ')} ${last.charAt(0).toUpperCase()}.`
 }
 
-export function CleanerCard({ cleaner, date, location, duration }: { cleaner: CleanerResult; date?: string; location?: string; duration?: number }) {
+export function CleanerCard({ cleaner, date, location, duration, availFrom, availTo }: { cleaner: CleanerResult; date?: string; location?: string; duration?: number; availFrom?: string; availTo?: string }) {
   const { t } = useLanguage()
   const [scheduling, setScheduling] = useState(false)
   const initial = cleaner.full_name.charAt(0).toUpperCase()
@@ -28,6 +28,8 @@ export function CleanerCard({ cleaner, date, location, duration }: { cleaner: Cl
   if (date) params.set('date', date)
   if (location) params.set('location', location)
   if (duration) params.set('duration', String(duration))
+  if (availFrom) params.set('from', availFrom)
+  if (availTo) params.set('to', availTo)
   const qs = params.toString()
   const href = qs ? `/cleaners/${cleaner.id}?${qs}` : `/cleaners/${cleaner.id}`
 
@@ -142,6 +144,8 @@ export function CleanerCard({ cleaner, date, location, duration }: { cleaner: Cl
           date={date}
           location={location}
           duration={duration}
+          availFrom={availFrom}
+          availTo={availTo}
           onClose={() => setScheduling(false)}
         />
       )}

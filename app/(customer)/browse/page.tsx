@@ -11,7 +11,7 @@ import { parsePoint, distanceKm } from '@/lib/geo'
 import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
-  searchParams: { dates?: string; type?: string; sort?: string; start?: string; duration?: string }
+  searchParams: { dates?: string; type?: string; sort?: string; from?: string; to?: string; duration?: string }
 }
 
 function toMin(t: string): number {
@@ -24,7 +24,7 @@ function ymd(d: Date): string {
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, type, sort, start, duration } = searchParams
+  const { dates, type, sort, from, to, duration } = searchParams
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
   const hasDates = selectedDates.length > 0
 
@@ -92,19 +92,31 @@ export default async function BrowsePage({ searchParams }: Props) {
     const weekly = weeklyRows ?? []
     let base = cleanerRows ?? []
 
-    // Requested window from the start time + duration filters (if a start is set).
-    // duration === 'any' is the "Not sure" option: keep the start filter but
-    // leave the window open-ended (reqEnd stays null), so a slot only has to be
-    // open at the start time rather than span a specific length.
-    const reqStart = start ? toMin(start) : null
-    const reqEnd =
-      reqStart !== null && duration !== 'any'
-        ? reqStart + (duration ? parseInt(duration) : 2) * 60
-        : null
+    // Availability range the customer is free in (the dual-thumb slider). When
+    // set, a cleaner matches a day if their availability overlaps this range by a
+    // long enough *continuous* block — see the day-group filter below.
+    const rangeFrom = from ? toMin(from) : null
+    const rangeTo = to ? toMin(to) : null
+    const hasRange = rangeFrom !== null && rangeTo !== null && rangeTo > rangeFrom
 
     // Apply service type filter (date-independent).
     if (type) {
       base = base.filter(c => (c.service_types as string[]).includes(type))
+    }
+
+    // Duration filter (date-independent): when the customer picked a specific
+    // duration, hide cleaners whose accepted hour window (min_hours/max_hours)
+    // can't take it — below their minimum or above their maximum. "Not sure"
+    // (duration === 'any') applies no such filter. See migration 0013.
+    const reqDuration = duration && duration !== 'any' ? parseInt(duration) : null
+    if (reqDuration != null && Number.isFinite(reqDuration)) {
+      base = base.filter(c => {
+        const min = (c as { min_hours?: number | null }).min_hours
+        const max = (c as { max_hours?: number | null }).max_hours
+        if (min != null && reqDuration < min) return false
+        if (max != null && reqDuration > max) return false
+        return true
+      })
     }
 
     // Location filter: keep only cleaners whose service radius covers the
@@ -242,15 +254,22 @@ export default async function BrowsePage({ searchParams }: Props) {
             ]
             return { c, slots }
           })
-          .filter(({ slots }) => {
+          .filter(({ c, slots }) => {
             if (slots.length === 0) return false
-            if (reqStart === null) return true
-            if (reqEnd === null) {
-              // "Not sure" duration: slot just needs to be open at the start time.
-              return slots.some(s => toMin(s.start) <= reqStart && toMin(s.end) > reqStart)
-            }
-            // The slot must fully contain the requested start→end window.
-            return slots.some(s => toMin(s.start) <= reqStart && toMin(s.end) >= reqEnd)
+            if (!hasRange || rangeFrom === null || rangeTo === null) return true
+            // Longest *continuous* overlap (minutes) between the customer's range
+            // and any single availability slot — a clean can't span a gap, so we
+            // take the best single block, not the summed total.
+            const bestOverlap = Math.max(
+              0,
+              ...slots.map(s => Math.min(toMin(s.end), rangeTo) - Math.max(toMin(s.start), rangeFrom)),
+            )
+            if (bestOverlap <= 0) return false
+            // The overlap must cover the cleaner's minimum hours (their rule) and,
+            // when the customer picked a concrete duration, fit that clean too.
+            const cleanerMin = (c as { min_hours?: number | null }).min_hours ?? 0
+            const requiredMin = Math.max(cleanerMin, reqDuration ?? 0) * 60
+            return bestOverlap >= requiredMin
           })
           .map(({ c, slots }) => {
             // De-dup (weekly + specific-date can overlap) and sort for a stable
@@ -285,11 +304,11 @@ export default async function BrowsePage({ searchParams }: Props) {
         </div>
 
         <div className="lg:order-2 lg:flex-1 lg:min-w-0">
-          <BrowseFilters dates={dates} type={type} sort={sort} start={start} duration={duration} />
+          <BrowseFilters dates={dates} type={type} sort={sort} from={from} to={to} duration={duration} />
         </div>
       </div>
 
-      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} groups={groups} />
+      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} availFrom={from} availTo={to} groups={groups} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createBooking } from '@/app/(customer)/actions'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { AvailabilityRange } from '@/app/(customer)/browse/AvailabilityRange'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
@@ -27,6 +28,8 @@ export function BookingRequestForm({
   presetDate,
   presetAddress,
   presetDuration,
+  presetAvailFrom,
+  presetAvailTo,
   defaultOpen = false,
   onCancel,
   disabled = false,
@@ -36,6 +39,10 @@ export function BookingRequestForm({
   dateAvailability?: DateSlot[]
   presetDate?: string
   presetAddress?: string
+  // The availability window the customer chose in browse search — pre-fills the
+  // "When are you available?" slider so the cleaner learns the wider window.
+  presetAvailFrom?: string
+  presetAvailTo?: string
   // When the customer arrived from a browse search that specified a duration, the
   // booking form's (still editable) duration field is pre-selected to it. A search
   // with no/"Not sure" duration leaves this undefined and the field defaults to
@@ -85,6 +92,11 @@ export function BookingRequestForm({
   const [address, setAddress] = useState('')
   const [street, setStreet] = useState('')
   const [notes, setNotes] = useState('')
+  // The window the customer is free in (broader than the clean itself). Defaults
+  // to the range they searched with, else the full working day. Sent to the
+  // cleaner so they can offer to extend the clean.
+  const [availFrom, setAvailFrom] = useState(presetAvailFrom ?? '06:00')
+  const [availTo, setAvailTo] = useState(presetAvailTo ?? '22:00')
 
   // Final address sent to the booking: street + searched area, or the manually
   // typed address when there was no search.
@@ -121,6 +133,8 @@ export function BookingRequestForm({
       scheduled_start: startTime,
       duration_hours: durationHours,
       duration_flexible: isFlexible,
+      avail_window_start: availFrom,
+      avail_window_end: availTo,
       address: fullAddress,
       notes: notes.trim() || undefined,
     })
@@ -249,6 +263,12 @@ export function BookingRequestForm({
           This cleaner is not available on the selected day. Please choose a different date.
         </p>
       )}
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.availability')}</label>
+        <AvailabilityRange from={availFrom} to={availTo} onChange={(f, to2) => { setAvailFrom(f); setAvailTo(to2) }} />
+        <span className="text-xs text-gray-500">{t('bookingRequestForm.availabilityHelp')}</span>
+      </div>
 
       {presetAddress ? (
         <div className="flex gap-3">

@@ -211,6 +211,15 @@ export default function RequestCard({ booking, showActions }: Props) {
                 </div>
               </div>
 
+              {booking.avail_window_start && booking.avail_window_end && (
+                <div className="bg-blue-50 rounded-xl px-4 py-3">
+                  <p className="text-sm text-blue-600 uppercase tracking-wide mb-1">{t("req_avail_window")}</p>
+                  <p className="text-lg font-semibold text-blue-900">
+                    {booking.avail_window_start.slice(0, 5)} – {booking.avail_window_end.slice(0, 5)}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_address")}</p>
                 <p className="text-lg font-semibold text-gray-900">{booking.address}</p>

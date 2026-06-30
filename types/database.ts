@@ -127,6 +127,11 @@ export interface Booking {
   // length is unconfirmed. Cleared when the cleaner edits to a concrete
   // duration. See migration 0009.
   duration_flexible: boolean;
+  // The broader window the customer is free in (separate from scheduled_start +
+  // duration), so the cleaner can offer to extend. 'HH:MM:SS' or null. See
+  // migration 0014.
+  avail_window_start: string | null;
+  avail_window_end: string | null;
 }
 
 export interface BookingWithCustomer extends Booking {

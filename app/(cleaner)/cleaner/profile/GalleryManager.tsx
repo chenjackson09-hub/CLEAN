@@ -59,7 +59,7 @@ export default function GalleryManager({ photos: initialPhotos }: Props) {
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {uploading ? t("gallery_uploading") : t("gallery_add")}
         </button>
