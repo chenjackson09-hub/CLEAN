@@ -15,7 +15,7 @@ const cleaner: CleanerResult = {
 }
 
 describe('BookingRequestForm duration field', () => {
-  it('pre-selects the duration when presetDuration is supplied, but keeps it editable', () => {
+  it('shows the searched duration read-only (carried over from the filter, not editable)', () => {
     render(
       <BookingRequestForm
         cleaner={cleaner}
@@ -25,12 +25,12 @@ describe('BookingRequestForm duration field', () => {
         presetDuration={3}
       />
     )
-    const duration = document.getElementById('duration') as HTMLSelectElement | null
-    expect(duration?.tagName).toBe('SELECT')
-    expect(duration?.value).toBe('3')
+    const duration = document.getElementById('duration')
+    expect(duration?.tagName).not.toBe('SELECT')
+    expect(duration?.textContent).toContain('3')
   })
 
-  it('defaults the duration to "Not sure" (a select) when no presetDuration is given', () => {
+  it('shows "Not sure" read-only when no presetDuration is given', () => {
     render(
       <BookingRequestForm
         cleaner={cleaner}
@@ -39,8 +39,20 @@ describe('BookingRequestForm duration field', () => {
         presetAddress="Tel Aviv"
       />
     )
-    const duration = document.getElementById('duration') as HTMLSelectElement | null
-    expect(duration?.tagName).toBe('SELECT')
-    expect(duration?.value).toBe('any')
+    const duration = document.getElementById('duration')
+    expect(duration?.tagName).not.toBe('SELECT')
+    expect(duration?.textContent).toBe('Not sure')
+  })
+
+  it('does not render a start-time field', () => {
+    render(
+      <BookingRequestForm
+        cleaner={cleaner}
+        defaultOpen
+        presetDate="2026-06-15"
+        presetAddress="Tel Aviv"
+      />
+    )
+    expect(document.getElementById('startTime')).toBeNull()
   })
 })

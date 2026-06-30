@@ -2,24 +2,17 @@
 import { useState } from 'react'
 import { createBooking } from '@/app/(customer)/actions'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { AvailabilityRange } from '@/app/(customer)/browse/AvailabilityRange'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
 
-function generateTimeSlots(start: string, end: string): string[] {
-  const slots: string[] = []
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
-  let cur = sh * 60 + sm
-  const endMin = eh * 60 + em - 60 // need at least 1 hour
-  while (cur <= endMin) {
-    slots.push(`${Math.floor(cur / 60).toString().padStart(2, '0')}:${(cur % 60).toString().padStart(2, '0')}`)
-    cur += 30
-  }
-  return slots
+const timeToMin = (t: string) => {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
 }
+const minToTime = (n: number) =>
+  `${Math.floor(n / 60).toString().padStart(2, '0')}:${(n % 60).toString().padStart(2, '0')}`
 
 export function BookingRequestForm({
   cleaner,
@@ -63,11 +56,8 @@ export function BookingRequestForm({
   // request fewer or more hours than the cleaner will take. See migration 0013.
   const minHours = Math.max(1, cleaner.min_hours ?? 1)
   const maxHours = Math.min(8, cleaner.max_hours ?? 8)
-  const durationOptions: number[] = []
-  for (let h = minHours; h <= maxHours; h++) durationOptions.push(h)
   // The flexible ("Not sure") default, kept inside the cleaner's window.
   const flexibleHours = Math.min(Math.max(2, minHours), maxHours)
-  const hasHourLimit = cleaner.min_hours != null || cleaner.max_hours != null
   const [open, setOpen] = useState(defaultOpen)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -76,27 +66,26 @@ export function BookingRequestForm({
   // When the customer arrived from a date-grouped search result, the date is
   // fixed to the day the cleaner was matched under — they don't pick it again.
   const [date, setDate] = useState(presetDate ?? '')
-  const [startTime, setStartTime] = useState('')
-  // 'any' = "Not sure": the customer is flexible. On submit it's sent as the
-  // flexible default (kept inside the cleaner's hour window) so the request still
-  // has a concrete duration the cleaner can adjust when responding. A preset
+  // Duration and the availability window are carried over read-only from the
+  // browse filter — the customer doesn't re-pick them here. 'any' = "Not sure":
+  // sent as the flexible default (kept inside the cleaner's window) so the
+  // request still has a concrete duration the cleaner can adjust. A preset
   // duration outside the cleaner's window falls back to "Not sure".
-  const [duration, setDuration] = useState<number | 'any'>(
+  const duration: number | 'any' =
     presetDuration != null && presetDuration >= minHours && presetDuration <= maxHours
       ? presetDuration
       : 'any'
-  )
   // When the customer came from a location search, the area is fixed (read-only)
   // and they add their street + house number alongside it. Otherwise they type
   // the full address themselves.
   const [address, setAddress] = useState('')
   const [street, setStreet] = useState('')
   const [notes, setNotes] = useState('')
-  // The window the customer is free in (broader than the clean itself). Defaults
-  // to the range they searched with, else the full working day. Sent to the
-  // cleaner so they can offer to extend the clean.
-  const [availFrom, setAvailFrom] = useState(presetAvailFrom ?? '06:00')
-  const [availTo, setAvailTo] = useState(presetAvailTo ?? '22:00')
+  // The window the customer is free in (broader than the clean itself), carried
+  // over from the browse filter and shown read-only. Defaults to the full
+  // working day when there was no search.
+  const availFrom = presetAvailFrom ?? '06:00'
+  const availTo = presetAvailTo ?? '22:00'
 
   // Final address sent to the booking: street + searched area, or the manually
   // typed address when there was no search.
@@ -114,8 +103,26 @@ export function BookingRequestForm({
         ...dateAvailability.filter(s => s.date === date),
       ]
     : []
-  const availableTimes = Array.from(new Set(daySlots.flatMap(s => generateTimeSlots(s.start_time, s.end_time)))).sort()
   const noAvailabilityOnDay = date && hasAvailability && daySlots.length === 0
+
+  // The customer no longer picks a start time — they give the day, a duration,
+  // and the window they're free in. Derive a concrete start that fits within
+  // their window and one of the cleaner's slots (earliest such), so the booking
+  // still carries a valid scheduled_start; the cleaner can adjust on response.
+  function computeStart(durationHours: number): string {
+    const winStart = timeToMin(availFrom)
+    const winEnd = timeToMin(availTo)
+    const durationMin = durationHours * 60
+    let best: number | null = null
+    for (const s of daySlots) {
+      const overlapStart = Math.max(timeToMin(s.start_time), winStart)
+      const overlapEnd = Math.min(timeToMin(s.end_time), winEnd)
+      if (overlapEnd - overlapStart >= durationMin && (best === null || overlapStart < best)) {
+        best = overlapStart
+      }
+    }
+    return minToTime(best ?? winStart)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -130,7 +137,7 @@ export function BookingRequestForm({
       cleaner_id: cleaner.id,
       service_type: serviceType,
       scheduled_date: date,
-      scheduled_start: startTime,
+      scheduled_start: computeStart(durationHours),
       duration_hours: durationHours,
       duration_flexible: isFlexible,
       avail_window_start: availFrom,
@@ -202,7 +209,7 @@ export function BookingRequestForm({
               id="date"
               type="date"
               value={date}
-              onChange={e => { setDate(e.target.value); setStartTime('') }}
+              onChange={e => setDate(e.target.value)}
               required
               className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -210,51 +217,14 @@ export function BookingRequestForm({
         </div>
 
         <div className="flex flex-col gap-1 flex-1">
-          <label htmlFor="startTime" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.startTime')}</label>
-          {hasAvailability ? (
-            <select
-              id="startTime"
-              value={startTime}
-              onChange={e => setStartTime(e.target.value)}
-              required
-              disabled={!date || noAvailabilityOnDay === true}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            >
-              <option value="" disabled>
-                {noAvailabilityOnDay ? 'Not available' : 'Select time'}
-              </option>
-              {availableTimes.map(time => (
-                <option key={time} value={time}>{time}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              id="startTime"
-              type="time"
-              value={startTime}
-              onChange={e => setStartTime(e.target.value)}
-              required
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1">
           <label htmlFor="duration" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.duration')}</label>
-          {/* Pre-selected to the searched duration ("Not sure" when none), but
-              always editable. Options are limited to the cleaner's accepted
-              min–max hour window. */}
-          <select id="duration" value={duration}
-            onChange={e => setDuration(e.target.value === 'any' ? 'any' : Number(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="any">{t('bookingRequestForm.durationNotSure')}</option>
-            {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          {hasHourLimit && (
-            <span className="text-xs text-gray-500">
-              {t('bookingRequestForm.hourRange', { min: String(minHours), max: String(maxHours) })}
-            </span>
-          )}
+          {/* Carried over read-only from the browse filter — the customer doesn't
+              re-pick the duration here. */}
+          <div id="duration" className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium">
+            {duration === 'any'
+              ? t('bookingRequestForm.durationNotSure')
+              : t('bookingRequestForm.durationValue', { n: String(duration) })}
+          </div>
         </div>
       </div>
 
@@ -266,7 +236,11 @@ export function BookingRequestForm({
 
       <div className="flex flex-col gap-1">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.availability')}</label>
-        <AvailabilityRange from={availFrom} to={availTo} onChange={(f, to2) => { setAvailFrom(f); setAvailTo(to2) }} />
+        {/* Carried over read-only from the browse filter — the customer doesn't
+            re-pick when they're free here. */}
+        <div className="border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-900 font-medium">
+          {availFrom} – {availTo}
+        </div>
         <span className="text-xs text-gray-500">{t('bookingRequestForm.availabilityHelp')}</span>
       </div>
 

@@ -41,6 +41,9 @@ export interface Customer {
   // migration 0011.
   rating_avg: number | null;
   rating_count: number;
+  // Lifetime count of completed cleans this customer has had done. Bumped by the
+  // bookings status trigger when a clean is marked completed. See migration 0015.
+  cleans_completed: number;
   // Most hours the customer is willing to pay for (null = no preference). See
   // migration 0013.
   max_hours: number | null;
@@ -61,6 +64,9 @@ export interface Cleaner {
   // by the ratings trigger; null avg when never rated. See migration 0011.
   rating_avg: number | null;
   rating_count: number;
+  // Lifetime count of completed cleans this cleaner has finished. Bumped by the
+  // bookings status trigger when a clean is marked completed. See migration 0015.
+  cleans_completed: number;
   // Fewest / most hours the cleaner will accept a clean for (null = no
   // preference). See migration 0013.
   min_hours: number | null;

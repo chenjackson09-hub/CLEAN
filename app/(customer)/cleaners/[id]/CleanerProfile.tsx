@@ -123,6 +123,12 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               <p className="text-sm text-gray-500">{t('cleanerProfile.rate')}</p>
               <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
             </div>
+            {(cleaner.cleans_completed ?? 0) > 0 && (
+              <div>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.cleansDone')}</p>
+                <p className="text-base font-semibold text-gray-900">{cleaner.cleans_completed}</p>
+              </div>
+            )}
             {cleaner.languages.length > 0 && (
               <div>
                 <p className="text-sm text-gray-500">{t('cleanerProfile.languages')}</p>

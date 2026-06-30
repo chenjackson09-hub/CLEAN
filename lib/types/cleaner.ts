@@ -22,6 +22,8 @@ export type CleanerResult = {
   // based on. See migration 0011.
   rating_avg?: number | null
   rating_count?: number
+  // Lifetime count of completed cleans this cleaner has finished. See migration 0015.
+  cleans_completed?: number
   // Hours the cleaner will accept a clean for (null = no limit). Constrains the
   // booking form's duration options. See migration 0013.
   min_hours?: number | null

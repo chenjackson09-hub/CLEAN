@@ -108,6 +108,11 @@ export default async function CustomerProfilePage({
               emptyLabel="No ratings yet"
               className="mt-1"
             />
+            {(customer?.cleans_completed ?? 0) > 0 && (
+              <p className="text-sm text-gray-500 mt-1">
+                {customer?.cleans_completed} {customer?.cleans_completed === 1 ? "clean" : "cleans"} completed
+              </p>
+            )}
           </div>
         </div>
         {customer?.bio && (
