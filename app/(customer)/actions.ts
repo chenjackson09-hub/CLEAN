@@ -111,6 +111,7 @@ export async function updateCustomerProfile(
       bio,
       address,
       preferred_service_type: preferredServiceType || null,
+      max_hours: toInt(formData.get("max_hours")),
       lat: location?.lat ?? null,
       lng: location?.lng ?? null,
       num_rooms: toInt(formData.get("num_rooms")),
@@ -149,11 +150,24 @@ export async function createBooking(data: {
   // pending, rejected, or suspended cleaner by passing a cleaner_id directly.
   const { data: cleaner } = await adminClient
     .from('cleaners')
-    .select('status')
+    .select('status, min_hours, max_hours')
     .eq('id', data.cleaner_id)
     .single()
   if (!cleaner || cleaner.status !== 'approved') {
     return { error: 'This cleaner is not available for booking.' }
+  }
+
+  // Enforce the cleaner's accepted hour window (authoritative — the form also
+  // limits the options). A flexible ("Not sure") request carries no chosen
+  // number, so it isn't range-checked; the client already seeds its default
+  // inside the window. See migration 0013.
+  if (!data.duration_flexible) {
+    if (cleaner.min_hours != null && data.duration_hours < cleaner.min_hours) {
+      return { error: `This cleaner only accepts cleans of at least ${cleaner.min_hours} hours.` }
+    }
+    if (cleaner.max_hours != null && data.duration_hours > cleaner.max_hours) {
+      return { error: `This cleaner only accepts cleans of at most ${cleaner.max_hours} hours.` }
+    }
   }
 
   // Block duplicate requests: one live pending request per cleaner per date.

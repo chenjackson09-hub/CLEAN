@@ -4,8 +4,6 @@ import { createBooking } from '@/app/(customer)/actions'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
-const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8]
-
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
 
@@ -53,6 +51,16 @@ export function BookingRequestForm({
   disabled?: boolean
 }) {
   const { t, lang } = useLanguage()
+  // The cleaner's accepted duration window. min/max default to 1/8 when unset,
+  // and the duration options are limited to this range so the customer can't
+  // request fewer or more hours than the cleaner will take. See migration 0013.
+  const minHours = Math.max(1, cleaner.min_hours ?? 1)
+  const maxHours = Math.min(8, cleaner.max_hours ?? 8)
+  const durationOptions: number[] = []
+  for (let h = minHours; h <= maxHours; h++) durationOptions.push(h)
+  // The flexible ("Not sure") default, kept inside the cleaner's window.
+  const flexibleHours = Math.min(Math.max(2, minHours), maxHours)
+  const hasHourLimit = cleaner.min_hours != null || cleaner.max_hours != null
   const [open, setOpen] = useState(defaultOpen)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -62,10 +70,15 @@ export function BookingRequestForm({
   // fixed to the day the cleaner was matched under — they don't pick it again.
   const [date, setDate] = useState(presetDate ?? '')
   const [startTime, setStartTime] = useState('')
-  // 'any' = "Not sure": the customer is flexible. On submit it's sent as a 2-hour
-  // default (with a note) so the request still has a concrete window the cleaner
-  // can adjust when responding.
-  const [duration, setDuration] = useState<number | 'any'>(presetDuration ?? 'any')
+  // 'any' = "Not sure": the customer is flexible. On submit it's sent as the
+  // flexible default (kept inside the cleaner's hour window) so the request still
+  // has a concrete duration the cleaner can adjust when responding. A preset
+  // duration outside the cleaner's window falls back to "Not sure".
+  const [duration, setDuration] = useState<number | 'any'>(
+    presetDuration != null && presetDuration >= minHours && presetDuration <= maxHours
+      ? presetDuration
+      : 'any'
+  )
   // When the customer came from a location search, the area is fixed (read-only)
   // and they add their street + house number alongside it. Otherwise they type
   // the full address themselves.
@@ -100,7 +113,7 @@ export function BookingRequestForm({
     // flag the customer's flexibility on the booking (duration_flexible) — the
     // cleaner sees a "Not sure" marker next to the duration, not a note.
     const isFlexible = duration === 'any'
-    const durationHours = isFlexible ? 2 : duration
+    const durationHours = isFlexible ? flexibleHours : duration
     const result = await createBooking({
       cleaner_id: cleaner.id,
       service_type: serviceType,
@@ -215,13 +228,19 @@ export function BookingRequestForm({
         <div className="flex flex-col gap-1">
           <label htmlFor="duration" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.duration')}</label>
           {/* Pre-selected to the searched duration ("Not sure" when none), but
-              always editable — the customer can change it before sending. */}
+              always editable. Options are limited to the cleaner's accepted
+              min–max hour window. */}
           <select id="duration" value={duration}
             onChange={e => setDuration(e.target.value === 'any' ? 'any' : Number(e.target.value))}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="any">{t('bookingRequestForm.durationNotSure')}</option>
-            {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+            {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
+          {hasHourLimit && (
+            <span className="text-xs text-gray-500">
+              {t('bookingRequestForm.hourRange', { min: String(minHours), max: String(maxHours) })}
+            </span>
+          )}
         </div>
       </div>
 

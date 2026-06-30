@@ -11,6 +11,7 @@ type DefaultValues = {
   phone: string
   bio: string
   preferred_service_type: 'residential' | 'commercial'
+  max_hours: string
   address: string
   avatar_url: string | null
   num_rooms: string
@@ -176,6 +177,21 @@ export function ProfileForm({ defaultValues, action }: Props) {
             <option value="residential">{t('profile.residential')}</option>
             <option value="commercial">{t('profile.commercial')}</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="max_hours" className={labelClass}>{t('profile.maxHours')}</label>
+          <input
+            id="max_hours"
+            name="max_hours"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={24}
+            defaultValue={defaultValues.max_hours}
+            className={fieldClass}
+          />
+          <p className="text-xs text-gray-500">{t('profile.maxHoursHelp')}</p>
         </div>
 
         <div className="flex flex-col gap-1">

@@ -59,6 +59,8 @@ export default async function PreviewPage() {
     distance_km: 0,
     rating_avg: cleaner?.rating_avg ?? null,
     rating_count: cleaner?.rating_count ?? 0,
+    min_hours: cleaner?.min_hours ?? null,
+    max_hours: cleaner?.max_hours ?? null,
   };
 
   const banner = (

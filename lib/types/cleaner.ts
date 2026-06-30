@@ -22,6 +22,10 @@ export type CleanerResult = {
   // based on. See migration 0011.
   rating_avg?: number | null
   rating_count?: number
+  // Hours the cleaner will accept a clean for (null = no limit). Constrains the
+  // booking form's duration options. See migration 0013.
+  min_hours?: number | null
+  max_hours?: number | null
   // The cleaner's available time slots for the date group this result is shown
   // under (union of weekly + specific-date slots). Per-date, so it's attached
   // when building each day's group rather than on the shared base result.

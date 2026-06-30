@@ -41,6 +41,9 @@ export interface Customer {
   // migration 0011.
   rating_avg: number | null;
   rating_count: number;
+  // Most hours the customer is willing to pay for (null = no preference). See
+  // migration 0013.
+  max_hours: number | null;
 }
 
 export interface Cleaner {
@@ -58,6 +61,10 @@ export interface Cleaner {
   // by the ratings trigger; null avg when never rated. See migration 0011.
   rating_avg: number | null;
   rating_count: number;
+  // Fewest / most hours the cleaner will accept a clean for (null = no
+  // preference). See migration 0013.
+  min_hours: number | null;
+  max_hours: number | null;
 }
 
 export interface CleanerApplication {

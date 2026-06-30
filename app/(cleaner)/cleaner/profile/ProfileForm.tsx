@@ -123,6 +123,32 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+        <div>
+          <label htmlFor="min_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_min_hours")}</label>
+          <input
+            id="min_hours"
+            type="number"
+            name="min_hours"
+            inputMode="numeric"
+            min="1"
+            max="24"
+            defaultValue={cleaner?.min_hours ?? ""}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="max_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_max_hours")}</label>
+          <input
+            id="max_hours"
+            type="number"
+            name="max_hours"
+            inputMode="numeric"
+            min="1"
+            max="24"
+            defaultValue={cleaner?.max_hours ?? ""}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
       </div>
 
       <div>

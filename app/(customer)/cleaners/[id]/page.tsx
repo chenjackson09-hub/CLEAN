@@ -24,7 +24,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
   ] = await Promise.all([
     supabase
       .from('cleaners')
-      .select('id, bio, service_types, hourly_rate, years_experience, languages, rating_avg, rating_count')
+      .select('id, bio, service_types, hourly_rate, years_experience, languages, rating_avg, rating_count, min_hours, max_hours')
       .eq('id', params.id)
       .neq('status', 'rejected')
       .single(),
@@ -70,6 +70,8 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
     distance_km: 0,
     rating_avg: (cleaner as { rating_avg?: number | null }).rating_avg ?? null,
     rating_count: (cleaner as { rating_count?: number }).rating_count ?? 0,
+    min_hours: (cleaner as { min_hours?: number | null }).min_hours ?? null,
+    max_hours: (cleaner as { max_hours?: number | null }).max_hours ?? null,
   }
 
   return (

@@ -74,6 +74,11 @@ export async function updateCleanerProfile(formData: FormData) {
   const hourlyRate = parseFloat(formData.get("hourly_rate") as string) || null;
   const serviceRadius = parseInt(formData.get("service_radius_km") as string) || 10;
   const yearsExp = parseInt(formData.get("years_experience") as string) || 0;
+  const minHours = parseInt(formData.get("min_hours") as string) || null;
+  const maxHours = parseInt(formData.get("max_hours") as string) || null;
+  if (minHours != null && maxHours != null && minHours > maxHours) {
+    return { error: "Minimum hours can't be greater than maximum hours." };
+  }
   const languagesRaw = formData.get("languages") as string;
   const languages = languagesRaw.split(",").map((l) => l.trim()).filter(Boolean);
   const serviceTypes = formData.getAll("service_types") as string[];
@@ -110,6 +115,8 @@ export async function updateCleanerProfile(formData: FormData) {
     hourly_rate: hourlyRate,
     service_radius_km: serviceRadius,
     years_experience: yearsExp,
+    min_hours: minHours,
+    max_hours: maxHours,
     languages,
     service_types: serviceTypes,
     address,
@@ -519,7 +526,7 @@ export async function editBooking(
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
-    .select("status, scheduled_date, scheduled_start, duration_hours, notes")
+    .select("status, scheduled_date, scheduled_start, duration_hours, notes, customer_id")
     .eq("id", bookingId)
     .eq("cleaner_id", user.id)
     .single();
@@ -527,6 +534,21 @@ export async function editBooking(
   if (fetchErr || !booking) return { error: "Booking not found." };
   if (booking.status !== "pending" && booking.status !== "accepted") {
     return { error: "This booking can no longer be edited." };
+  }
+
+  // Respect the customer's max-hours preference: the cleaner can't edit a request
+  // to a longer duration than the customer is willing to pay for. Read with the
+  // admin client — RLS hides another user's `customers` row from the cleaner's
+  // session (so a session read would return null and silently skip the check).
+  const { data: customerPref } = await createAdminClient()
+    .from("customers")
+    .select("max_hours")
+    .eq("id", booking.customer_id)
+    .single();
+  if (customerPref?.max_hours != null && duration > customerPref.max_hours) {
+    return {
+      error: `This customer will pay for at most ${customerPref.max_hours} hours per clean.`,
+    };
   }
 
   // The booking can be moved to a different day; fall back to its current date.
