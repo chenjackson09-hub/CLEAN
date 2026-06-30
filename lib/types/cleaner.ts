@@ -18,6 +18,10 @@ export type CleanerResult = {
   area?: string
   email?: string
   phone?: string
+  // Average rating out of 5 (null when never rated) and how many ratings it's
+  // based on. See migration 0011.
+  rating_avg?: number | null
+  rating_count?: number
   // The cleaner's available time slots for the date group this result is shown
   // under (union of weekly + specific-date slots). Per-date, so it's attached
   // when building each day's group rather than on the shared base result.

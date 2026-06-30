@@ -37,6 +37,10 @@ export interface Customer {
   house_size_sqm: number | null;
   dwelling_type: DwellingType | null;
   floor: number | null;
+  // Average rating (1-5) received from cleaners and number of ratings. See
+  // migration 0011.
+  rating_avg: number | null;
+  rating_count: number;
 }
 
 export interface Cleaner {
@@ -50,6 +54,10 @@ export interface Cleaner {
   status: CleanerStatus;
   years_experience: number | null;
   languages: string[] | null;
+  // Average rating (1-5, 2 decimals) and number of ratings received. Maintained
+  // by the ratings trigger; null avg when never rated. See migration 0011.
+  rating_avg: number | null;
+  rating_count: number;
 }
 
 export interface CleanerApplication {
@@ -116,4 +124,19 @@ export interface Booking {
 
 export interface BookingWithCustomer extends Booking {
   profiles: Pick<Profile, "full_name" | "phone" | "avatar_url"> | null;
+  // The score the *current* cleaner already gave the customer for this booking
+  // (null = not yet rated). Attached by the dashboard page so the detail modal
+  // can show/seed the rating control. See migration 0011.
+  my_rating?: number | null;
+}
+
+export interface Rating {
+  id: string;
+  booking_id: string;
+  rater_id: string;
+  ratee_id: string;
+  ratee_role: UserRole;
+  score: number;
+  created_at: string;
+  updated_at: string;
 }

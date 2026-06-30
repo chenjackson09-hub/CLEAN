@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useLang } from "@/context/LangContext";
-import { cancelClean } from "../../actions";
+import { cancelClean, rateCustomer } from "../../actions";
+import { StarRatingInput } from "@/components/StarRating";
 import EditBookingForm from "../EditBookingForm";
 import type { TranslationKey } from "@/lib/lang";
 import type { BookingWithCustomer } from "@/types/database";
@@ -39,6 +40,27 @@ export default function CleanDetailModal({
   // Only an accepted clean can be cancelled by the cleaner. Pending requests are
   // answered from /cleaner/requests; completed/cancelled cleans are terminal.
   const cancellable = booking.status === "accepted";
+
+  // Rating — only for completed cleans (cleaner rates the customer). Seeds from
+  // any score already given; persists on each star click.
+  const [rating, setRating] = useState<number | null>(booking.my_rating ?? null);
+  const [ratingErr, setRatingErr] = useState(false);
+  const [ratingPending, startRating] = useTransition();
+
+  function handleRate(score: number) {
+    setRatingErr(false);
+    const prev = rating;
+    setRating(score);
+    startRating(async () => {
+      const res = await rateCustomer(booking.id, score);
+      if (res?.error) {
+        setRating(prev);
+        setRatingErr(true);
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   function handleCancel() {
     setError(null);
@@ -150,6 +172,20 @@ export default function CleanDetailModal({
               >
                 {booking.profiles.phone}
               </a>
+            </div>
+          )}
+
+          {booking.status === "completed" && (
+            <div className="border-t border-gray-100 pt-5">
+              <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">{t("rate_title")}</p>
+              <div className="flex items-center gap-3">
+                <StarRatingInput value={rating} onChange={handleRate} disabled={ratingPending} />
+                {ratingPending && <span className="text-sm text-gray-400">{t("rate_saving")}</span>}
+                {!ratingPending && rating != null && !ratingErr && (
+                  <span className="text-sm text-gray-500">{t("rate_saved")}: {rating}/5</span>
+                )}
+              </div>
+              {ratingErr && <p className="text-sm text-red-600 mt-1">{t("rate_error")}</p>}
             </div>
           )}
         </div>

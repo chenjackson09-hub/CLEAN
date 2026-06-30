@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { StarRatingDisplay } from '@/components/StarRating'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 const SERVICE_BADGE: Record<string, string> = {
@@ -47,6 +48,7 @@ export function CleanerListCard({ cleaner, onSaveNotes, onDelete }: Props) {
           <div>
             <p className="font-bold text-gray-900">{cleaner.full_name}</p>
             <p className="text-sm text-gray-500">{t('common.yearsExp', { years: cleaner.years_experience })}</p>
+            <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="sm" emptyLabel={t('admin.shared.noRating')} className="mt-0.5" />
           </div>
         </div>
         <button

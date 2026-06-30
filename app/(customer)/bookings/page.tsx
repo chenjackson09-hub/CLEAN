@@ -18,6 +18,15 @@ export default async function BookingsPage() {
 
   const now = Date.now()
 
+  // The customer's own ratings (rater_id = user.id), keyed by the cleaner they
+  // rated — there's one editable rating per cleaner, so every completed booking
+  // with that cleaner seeds the same score. RLS lets a rater read their own rows.
+  const { data: myRatings } = await supabase
+    .from("ratings")
+    .select("ratee_id, score")
+    .eq("rater_id", user.id)
+  const ratingMap = Object.fromEntries((myRatings ?? []).map(r => [r.ratee_id, r.score]))
+
   const cleanerIds = Array.from(new Set((rawBookings ?? []).map(b => b.cleaner_id)))
 
   // Read cleaner profiles with the service-role client: RLS prevents a customer's
@@ -53,6 +62,7 @@ export default async function BookingsPage() {
       status: (expired ? 'declined' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
       cleaner_modified: b.cleaner_modified ?? false,
       customer_ack_inactive: b.customer_ack_inactive ?? false,
+      my_rating: ratingMap[b.cleaner_id] ?? null,
     }
   })
 

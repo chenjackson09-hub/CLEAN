@@ -3,7 +3,8 @@ import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { cancelBooking, acknowledgeBookingModified } from '../actions'
+import { cancelBooking, acknowledgeBookingModified, rateCleaner } from '../actions'
+import { StarRatingInput } from '@/components/StarRating'
 import type { BookingResult } from '@/lib/types/booking'
 
 export function BookingDetailModal({
@@ -43,6 +44,27 @@ export function BookingDetailModal({
 
   // Surface that the cleaner edited this booking after the customer requested it.
   const modified = !!booking.cleaner_modified && cancellable && !seen
+
+  // Rating — only for completed cleans. Seed from any score the customer already
+  // gave; persist on each star click via the rateCleaner action.
+  const [rating, setRating] = useState<number | null>(booking.my_rating ?? null)
+  const [ratingErr, setRatingErr] = useState(false)
+  const [ratingPending, startRating] = useTransition()
+
+  function handleRate(score: number) {
+    setRatingErr(false)
+    const prev = rating
+    setRating(score)
+    startRating(async () => {
+      const res = await rateCleaner(booking.id, score)
+      if (res?.error) {
+        setRating(prev)
+        setRatingErr(true)
+        return
+      }
+      router.refresh()
+    })
+  }
 
   function handleSeen() {
     startSeeing(async () => {
@@ -147,6 +169,20 @@ export function BookingDetailModal({
               >
                 {booking.cleaner_phone}
               </a>
+            </div>
+          )}
+
+          {booking.status === 'completed' && (
+            <div className="border-t border-gray-100 pt-5">
+              <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">{t('bookingCard.rating.title')}</p>
+              <div className="flex items-center gap-3">
+                <StarRatingInput value={rating} onChange={handleRate} disabled={ratingPending} />
+                {ratingPending && <span className="text-sm text-gray-400">{t('bookingCard.rating.saving')}</span>}
+                {!ratingPending && rating != null && !ratingErr && (
+                  <span className="text-sm text-gray-500">{t('bookingCard.rating.saved')}: {rating}/5</span>
+                )}
+              </div>
+              {ratingErr && <p className="text-sm text-red-600 mt-1">{t('bookingCard.rating.error')}</p>}
             </div>
           )}
         </div>

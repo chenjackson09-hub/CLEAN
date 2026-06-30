@@ -20,6 +20,10 @@ export type BookingResult = {
   // True once the customer has dismissed this declined/cancelled booking from
   // their "Refused & cancelled" list ("Mark as seen") — such rows are filtered out.
   customer_ack_inactive?: boolean
+  // The score the customer already gave the cleaner for this (completed) booking
+  // (null/undefined = not yet rated). Seeds the rating control in the detail
+  // modal. See migration 0011.
+  my_rating?: number | null
   customer_name?: string
   cleaner_email?: string
   cleaner_phone?: string

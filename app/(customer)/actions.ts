@@ -385,3 +385,44 @@ async function notifyCleanerOfBooking(
     serviceType: data.service_type,
   })
 }
+
+// Customer rates the cleaner of a completed booking (1-5, numbers only for now).
+// Upserts one rating per customer per booking; re-submitting updates the score.
+// The DB trigger recomputes the cleaner's rating_avg/rating_count. RLS allows the
+// insert only when rater_id = auth.uid(); we additionally verify the booking is
+// the customer's own and `completed`.
+export async function rateCleaner(bookingId: string, score: number): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+  if (!Number.isInteger(score) || score < 1 || score > 5) return { error: "Rating must be 1-5." }
+
+  const { data: booking, error: fetchErr } = await supabase
+    .from("bookings")
+    .select("status, cleaner_id")
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+    .single()
+
+  if (fetchErr || !booking) return { error: "Booking not found." }
+  if (booking.status !== "completed") return { error: "You can only rate a completed clean." }
+
+  const { error } = await supabase
+    .from("ratings")
+    .upsert(
+      {
+        booking_id: bookingId,
+        rater_id: user.id,
+        ratee_id: booking.cleaner_id,
+        ratee_role: "cleaner",
+        score,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "rater_id,ratee_id" },
+    )
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/bookings")
+  return { success: true }
+}

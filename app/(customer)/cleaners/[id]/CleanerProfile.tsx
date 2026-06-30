@@ -4,6 +4,7 @@ import { BookingRequestForm } from './BookingRequestForm'
 import { AvatarLightbox } from './AvatarLightbox'
 import { GalleryLightbox } from './GalleryLightbox'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { StarRatingDisplay } from '@/components/StarRating'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import type { ReactNode } from 'react'
 
@@ -127,6 +128,12 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               <p className="text-sm text-gray-500">{t('cleanerProfile.rate')}</p>
               <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
             </div>
+            {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
+              <div>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.rating')}</p>
+                <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="sm" className="justify-center mt-0.5" />
+              </div>
+            )}
           </div>
         </div>
                         {/* Booking form */}

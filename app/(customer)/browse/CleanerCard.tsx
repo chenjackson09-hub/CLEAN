@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { StarRatingDisplay } from '@/components/StarRating'
 import { ScheduleCleanModal } from './ScheduleCleanModal'
 
 // "Sarah Cohen" → "Sarah C." — shorten the surname to its first initial for privacy.
@@ -89,6 +90,9 @@ export function CleanerCard({ cleaner, date, location, duration }: { cleaner: Cl
             {cleaner.distance_km > 0 && <>{t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · </>}
             {t('common.yearsExp', { years: cleaner.years_experience })}
           </p>
+          {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
+            <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="sm" className="mt-1" />
+          )}
         </div>
 
         <div className="flex gap-2 flex-wrap">

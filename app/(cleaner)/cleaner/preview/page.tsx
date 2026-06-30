@@ -57,6 +57,8 @@ export default async function PreviewPage() {
     years_experience: cleaner?.years_experience ?? 0,
     languages: (cleaner?.languages ?? []) as string[],
     distance_km: 0,
+    rating_avg: cleaner?.rating_avg ?? null,
+    rating_count: cleaner?.rating_count ?? 0,
   };
 
   const banner = (

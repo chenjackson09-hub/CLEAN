@@ -101,6 +101,7 @@ const translations = {
       experience: 'Experience',
       distance: 'Distance',
       rate: 'Rate',
+      rating: 'Rating',
       year: 'year',
       years: 'years',
       km: 'km',
@@ -223,6 +224,12 @@ const translations = {
         modifiedSeen: 'Got it, mark as seen',
         modifiedSeeing: 'Saving…',
       },
+      rating: {
+        title: 'Rate this cleaner',
+        saved: 'Your rating',
+        saving: 'Saving…',
+        error: 'Could not save your rating. Please try again.',
+      },
     },
     admin: {
       applications: {
@@ -257,6 +264,7 @@ const translations = {
         saved: '✅ Saved',
         delete: 'Delete',
         confirmDelete: 'Remove this person from the list?',
+        noRating: 'No ratings yet',
       },
     },
     dashboard: {
@@ -432,6 +440,7 @@ const translations = {
       experience: 'ניסיון',
       distance: 'מרחק',
       rate: 'תעריף',
+      rating: 'דירוג',
       year: 'שנה',
       years: 'שנים',
       km: 'ק"מ',
@@ -554,6 +563,12 @@ const translations = {
         modifiedSeen: 'הבנתי, סמן כנראה',
         modifiedSeeing: 'שומר…',
       },
+      rating: {
+        title: 'דרגו את המנקה',
+        saved: 'הדירוג שלכם',
+        saving: 'שומר…',
+        error: 'לא ניתן היה לשמור את הדירוג. נסו שוב.',
+      },
     },
     admin: {
       applications: {
@@ -588,6 +603,7 @@ const translations = {
         saved: '✅ נשמר',
         delete: 'הסרה',
         confirmDelete: 'להסיר את האדם הזה מהרשימה?',
+        noRating: 'אין דירוגים עדיין',
       },
     },
     dashboard: {

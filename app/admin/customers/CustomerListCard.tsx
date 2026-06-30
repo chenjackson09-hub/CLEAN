@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { StarRatingDisplay } from '@/components/StarRating'
 import type { CustomerResult } from '@/lib/types/customer'
 
 type Props = {
@@ -33,7 +34,10 @@ export function CustomerListCard({ customer, onSaveNotes, onDelete }: Props) {
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white">
             {initial}
           </div>
-          <p className="font-bold text-gray-900">{customer.full_name}</p>
+          <div>
+            <p className="font-bold text-gray-900">{customer.full_name}</p>
+            <StarRatingDisplay value={customer.rating_avg} count={customer.rating_count} size="sm" emptyLabel={t('admin.shared.noRating')} className="mt-0.5" />
+          </div>
         </div>
         <button
           type="button"

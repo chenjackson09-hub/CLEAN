@@ -89,9 +89,19 @@ export default async function CleanerDashboardPage() {
     const cleanDay = new Date(yy, mm - 1, dd);
     return Math.round((cleanDay.getTime() - startOfToday.getTime()) / 86_400_000);
   };
+  // The cleaner's own ratings, keyed by the customer they rated — one editable
+  // rating per customer, so every completed clean with that customer seeds the
+  // same score in the detail modal.
+  const { data: myRatings } = await admin
+    .from("ratings")
+    .select("ratee_id, score")
+    .eq("rater_id", user.id);
+  const ratingMap = Object.fromEntries((myRatings ?? []).map((r) => [r.ratee_id, r.score]));
+
   const pastBookings = (pastRaw ?? [])
     .filter((b) => startDateTime(b) < now)
-    .slice(0, 20);
+    .slice(0, 20)
+    .map((b) => ({ ...b, my_rating: ratingMap[b.customer_id] ?? null }));
 
   if (!cleanerStatus || cleanerStatus === "pending") {
     return (

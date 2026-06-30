@@ -84,7 +84,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         .limit(500),
       admin
         .from('cleaners')
-        .select('id, bio, service_types, hourly_rate, years_experience, languages, location, service_radius_km')
+        .select('id, bio, service_types, hourly_rate, years_experience, languages, location, service_radius_km, rating_avg, rating_count')
         .eq('status', 'approved')
         .limit(500),
     ])
@@ -219,6 +219,8 @@ export default async function BrowsePage({ searchParams }: Props) {
           years_experience: c.years_experience ?? 0,
           languages: (c.languages ?? []) as string[],
           distance_km: distanceById.get(c.id) ?? 0,
+          rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
+          rating_count: (c as { rating_count?: number }).rating_count ?? 0,
         } satisfies CleanerResult)
       }
 

@@ -11,7 +11,7 @@ export default async function AdminCustomersPage() {
   const admin = createAdminClient()
 
   const [{ data: customerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('customers').select('id, address').limit(500),
+    admin.from('customers').select('id, address, rating_avg, rating_count').limit(500),
     admin.from('profiles').select('id, full_name, phone').eq('role', 'customer').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
@@ -27,6 +27,8 @@ export default async function AdminCustomersPage() {
       email: emailMap.get(c.id) ?? '',
       phone: profile?.phone ?? '',
       address: c.address ?? '',
+      rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
+      rating_count: (c as { rating_count?: number }).rating_count ?? 0,
       adminNotes: '',
     } satisfies CustomerResult & { adminNotes: string }
   })
