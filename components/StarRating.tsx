@@ -33,10 +33,14 @@ export function StarRatingDisplay({
   emptyLabel?: string
   className?: string
 }) {
-  if (value == null || (count != null && count === 0)) {
+  // Postgres `numeric` (rating_avg) can arrive as a string via PostgREST, so
+  // coerce before any math/toFixed — a string here would throw during render and
+  // surface as a hydration error.
+  const num = value == null ? null : Number(value)
+  if (num == null || Number.isNaN(num) || (count != null && count === 0)) {
     return emptyLabel ? <span className={`text-sm text-gray-400 ${className}`}>{emptyLabel}</span> : null
   }
-  const pct = Math.max(0, Math.min(100, (value / 5) * 100))
+  const pct = Math.max(0, Math.min(100, (num / 5) * 100))
   return (
     <span className={`inline-flex items-center gap-1 ${className}`}>
       <span className="relative inline-flex">
@@ -53,7 +57,7 @@ export function StarRatingDisplay({
           ))}
         </span>
       </span>
-      {showNumber && <span className="text-sm font-semibold text-gray-700">{value.toFixed(1)}</span>}
+      {showNumber && <span className="text-sm font-semibold text-gray-700">{num.toFixed(1)}</span>}
       {count != null && count > 0 && <span className="text-xs text-gray-400">({count})</span>}
     </span>
   )

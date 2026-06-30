@@ -1,6 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { cancelBooking, acknowledgeBookingModified, rateCleaner } from '../actions'
@@ -101,7 +102,17 @@ export function BookingDetailModal({
       >
         {/* Header */}
         <div className="flex items-start justify-between px-8 pt-8 pb-5 border-b border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
+            {booking.cleaner_id && (
+              <Link
+                href={`/cleaners/${booking.cleaner_id}`}
+                className="inline-flex items-center gap-1 p-1 px-2 mt-1 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+              >
+                {t('cleanerCard.viewProfile')}
+              </Link>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-3xl text-gray-400 hover:text-gray-700 font-bold leading-none ms-4"

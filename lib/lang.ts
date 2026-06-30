@@ -59,7 +59,7 @@ export const translations = {
     req_subtitle: "Respond to pending requests within 24 hours.",
     req_awaiting: "Awaiting response",
     req_past: "Past requests",
-    req_watch: "Watch",
+    req_watch: "View",
     req_date: "Date",
     req_time: "Time",
     req_duration: "Duration",

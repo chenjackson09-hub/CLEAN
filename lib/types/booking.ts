@@ -2,6 +2,9 @@ export type BookingStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 
 
 export type BookingResult = {
   id: string
+  // The booked cleaner's user id, used to link to their profile from /bookings.
+  // Optional because the admin/mock views build results without it.
+  cleaner_id?: string
   cleaner_name: string
   cleaner_avatar_url: string | null
   service_type: 'residential' | 'commercial'

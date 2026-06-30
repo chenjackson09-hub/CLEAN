@@ -59,11 +59,8 @@ export function ProfileForm({ defaultValues, action }: Props) {
   const [dwellingType, setDwellingType] = useState<'apartment' | 'house' | ''>(
     defaultValues.dwelling_type ?? ''
   )
-  // Total people is controlled so it can cap the "kids under 15" field (kids are
-  // part of the total). num_pets has a dynamic minimum: at least the number of
-  // selected pet kinds (each kind implies one), and never below 1 when there are
-  // pets.
-  const [numPeople, setNumPeople] = useState(defaultValues.num_people)
+  // num_pets has a dynamic minimum: at least the number of selected pet kinds
+  // (each kind implies one), and never below 1 when there are pets.
   const minPets = Math.max(1, Object.values(pets).filter(Boolean).length)
 
   // On a successful save, adopt the freshly-saved (cache-busted) avatar URL and
@@ -237,19 +234,6 @@ export function ProfileForm({ defaultValues, action }: Props) {
               defaultValue={defaultValues.house_size_sqm} className={fieldClass} />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="num_people" className={labelClass}>{t('profile.peopleLivingHere')}</label>
-            <input id="num_people" name="num_people" type="number" inputMode="numeric" min={0}
-              value={numPeople} onChange={(e) => setNumPeople(e.target.value)} className={fieldClass} />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="num_kids_under_15" className={labelClass}>{t('profile.kidsUnder15')}</label>
-            <input id="num_kids_under_15" name="num_kids_under_15" type="number" inputMode="numeric" min={0}
-              max={numPeople !== '' ? numPeople : undefined}
-              defaultValue={defaultValues.num_kids_under_15} className={fieldClass} />
-            <p className="text-xs text-gray-500">{t('profile.kidsHelp')}</p>
-          </div>
         </div>
 
         {/* Pets */}

@@ -49,6 +49,7 @@ export default async function BookingsPage() {
     const expired = b.status === 'pending' && new Date(b.response_deadline).getTime() < now
     return {
       id: b.id,
+      cleaner_id: b.cleaner_id,
       cleaner_name: cleaner?.full_name ?? 'Cleaner',
       cleaner_avatar_url: cleaner?.avatar_url ?? null,
       cleaner_phone: cleaner?.phone ?? undefined,

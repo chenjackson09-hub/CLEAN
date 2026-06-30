@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { Profile, Booking, Customer } from "@/types/database";
 import BackLink from "./BackLink";
 import DateCube from "./DateCube";
+import { StarRatingDisplay } from "@/components/StarRating";
 
 const STATUS_STYLES: Record<string, string> = {
   pending:   "bg-yellow-100 text-yellow-700",
@@ -100,7 +101,13 @@ export default async function CustomerProfilePage({
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{profile.full_name ?? "Customer"}</h1>
-
+            <StarRatingDisplay
+              value={customer?.rating_avg}
+              count={customer?.rating_count}
+              size="sm"
+              emptyLabel="No ratings yet"
+              className="mt-1"
+            />
           </div>
         </div>
         {customer?.bio && (

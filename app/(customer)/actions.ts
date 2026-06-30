@@ -64,8 +64,6 @@ export async function updateCustomerProfile(
     dwellingTypeRaw === "apartment" || dwellingTypeRaw === "house" ? dwellingTypeRaw : null
 
   const numPets = hasPets ? toInt(formData.get("num_pets")) : null
-  const numPeople = toInt(formData.get("num_people"))
-  const numKids = toInt(formData.get("num_kids_under_15"))
 
   // Cross-field validation (authoritative — the client mirrors these for UX).
   // These return i18n keys (the form translates them) since the action can't
@@ -78,9 +76,6 @@ export async function updateCustomerProfile(
     if (petTypes.length > 1 && numPets < petTypes.length) {
       return { error: "profile.errPetsKinds" }
     }
-  }
-  if (numPeople != null && numKids != null && numKids > numPeople) {
-    return { error: "profile.errKids" }
   }
 
   // Handle avatar upload
@@ -121,8 +116,9 @@ export async function updateCustomerProfile(
       num_rooms: toInt(formData.get("num_rooms")),
       pet_types: petTypes,
       num_pets: numPets,
-      num_kids_under_15: numKids,
-      num_people: numPeople,
+      // num_kids_under_15 / num_people are intentionally omitted: the customer can
+      // no longer edit them, and omitting them from the upsert preserves any value
+      // already stored (the columns remain in the DB and on the cleaner's view).
       house_size_sqm: toInt(formData.get("house_size_sqm")),
       dwelling_type: dwellingType,
       floor: dwellingType === "apartment" ? toIntSigned(formData.get("floor")) : null,

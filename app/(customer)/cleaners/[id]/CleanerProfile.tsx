@@ -88,16 +88,9 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 {cleaner.area}
               </p>
             )}
-            {cleaner.languages.length > 0 && (
-              <div className="flex flex-wrap justify-center lg:justify-start gap-2 mt-2">
-                {cleaner.languages.map(lang => (
-                  <span key={lang} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
-                    </svg>
-                    {lang}
-                  </span>
-                ))}
+            {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
+              <div className="flex justify-center lg:justify-start mt-2">
+                <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="md" />
               </div>
             )}
           </div>
@@ -128,10 +121,19 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               <p className="text-sm text-gray-500">{t('cleanerProfile.rate')}</p>
               <p className="text-base font-semibold text-gray-900">₪{cleaner.hourly_rate}{t('common.perHour')}</p>
             </div>
-            {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
+            {cleaner.languages.length > 0 && (
               <div>
-                <p className="text-sm text-gray-500">{t('cleanerProfile.rating')}</p>
-                <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="sm" className="justify-center mt-0.5" />
+                <p className="text-sm text-gray-500">{t('cleanerProfile.languages')}</p>
+                <div className="flex flex-wrap justify-center gap-1 mt-1">
+                  {cleaner.languages.map(lang => (
+                    <span key={lang} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-sm px-2.5 py-0.5 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+                      </svg>
+                      {lang}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
