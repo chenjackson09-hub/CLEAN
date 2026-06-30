@@ -112,6 +112,8 @@ const translations = {
       serviceTypes: 'Service Types',
       gallery: 'Gallery',
       book: 'Book {name}',
+      bookPrompt: 'To request a booking, find this cleaner through search.',
+      bookCta: 'Find cleaners',
     },
     bookingRequestForm: {
       requestBooking: 'Request Booking',
@@ -460,6 +462,8 @@ const translations = {
       serviceTypes: 'סוגי שירות',
       gallery: 'גלריה',
       book: 'הזמנת {name}',
+      bookPrompt: 'כדי לשלוח בקשת הזמנה, מצאו את המנקה דרך החיפוש.',
+      bookCta: 'חיפוש מנקים',
     },
     bookingRequestForm: {
       requestBooking: 'בקשת הזמנה',

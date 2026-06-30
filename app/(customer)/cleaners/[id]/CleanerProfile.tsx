@@ -51,6 +51,14 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
     ).values()
   ).sort((a, b) => a.start.localeCompare(b.start))
 
+  // A booking can only be requested when the customer arrived from a dated
+  // browse search — the "View profile" link carries the searched `date` (and the
+  // duration/availability window the booking form needs). Landing on the profile
+  // without that context (a direct/shared link) shows a prompt to search rather
+  // than the form. The cleaner's own preview (`bookingDisabled`) still renders
+  // the form so they see exactly what a browsing customer would.
+  const showBooking = bookingDisabled || presetDate != null
+
   return (
     <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen">
       {/* Back button — uses browser history so filters are preserved. The
@@ -146,23 +154,38 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             )}
           </div>
         </div>
-                        {/* Booking form */}
-        <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold text-gray-900">
-              {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
-            </h2>
-            {availabilityBadges.map((s, i) => (
-              <span
-                key={i}
-                className="rounded-xl bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
-              >
-                {s.start} – {s.end}
-              </span>
-            ))}
+                        {/* Booking form — only when the customer arrived from a
+            dated browse search (or the cleaner's own preview). Otherwise a
+            prompt to search, since booking needs that context. */}
+        {showBooking ? (
+          <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
+                {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+              </h2>
+              {availabilityBadges.map((s, i) => (
+                <span
+                  key={i}
+                  className="rounded-xl bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
+                >
+                  {s.start} – {s.end}
+                </span>
+              ))}
+            </div>
+            <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} presetAvailFrom={presetAvailFrom} presetAvailTo={presetAvailTo} disabled={bookingDisabled} />
           </div>
-          <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} presetAvailFrom={presetAvailFrom} presetAvailTo={presetAvailTo} disabled={bookingDisabled} />
-        </div>
+        ) : (
+          <div className="bg-white shadow-sm rounded-2xl p-6 text-center">
+            <p className="text-base text-gray-700 mb-3">{t('cleanerProfile.bookPrompt')}</p>
+            <button
+              type="button"
+              onClick={() => router.push('/browse')}
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-2xl text-sm font-semibold transition-colors"
+            >
+              {t('cleanerProfile.bookCta')}
+            </button>
+          </div>
+        )}
 
         {/* About */}
         {cleaner.bio && (
