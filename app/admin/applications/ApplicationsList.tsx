@@ -41,7 +41,7 @@ export function ApplicationsList({ applications: initial }: { applications: App[
               type="button"
               onClick={() => setTab(tabKey)}
               className={`text-sm px-3 py-1.5 rounded-full font-semibold transition-colors ${
-                tab === tabKey ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                tab === tabKey ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 shadow-md'
               }`}
             >
               {t(`admin.applications.tabs.${tabKey}`)} ({count})
@@ -54,8 +54,9 @@ export function ApplicationsList({ applications: initial }: { applications: App[
         <p className="text-gray-500 text-sm">{t('admin.applications.empty')}</p>
       )}
       {filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 rounded-3xl bg-white">
           {filtered.map(app => (
+            
             <ApplicationCard key={app.id} application={app} onUpdateStatus={handleUpdateStatus} onSaveNotes={handleSaveNotes} />
           ))}
         </div>
