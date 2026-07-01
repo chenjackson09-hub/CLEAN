@@ -48,8 +48,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthPath = pathname === '/login' || pathname === '/register'
   const isOnboardingPath = pathname.startsWith('/register/')
+  // Public post-logout screen — reachable without a session.
+  const isSignedOutPath = pathname === '/signed-out'
 
-  if (!user && !isAuthPath && !isOnboardingPath) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

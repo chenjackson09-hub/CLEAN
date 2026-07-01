@@ -8,6 +8,11 @@ const translations = {
       bookings: 'My Bookings',
       profile: 'Profile',
     },
+    signedOut: {
+      title: "You've been signed out",
+      subtitle: 'Thanks for using Clean. See you next time!',
+      loginAgain: 'Log in again',
+    },
     adminNav: {
       dashboard: 'Dashboard',
       applications: 'Applications',
@@ -457,6 +462,11 @@ const translations = {
       browse: 'לוח זמנים',
       bookings: 'ההזמנות שלי',
       profile: 'פרופיל',
+    },
+    signedOut: {
+      title: 'התנתקת',
+      subtitle: 'תודה שהשתמשת ב-Clean. להתראות!',
+      loginAgain: 'התחברות מחדש',
     },
     adminNav: {
       dashboard: 'דשבורד',

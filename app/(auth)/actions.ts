@@ -45,7 +45,9 @@ export async function signUp(
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  // Land on the shared "signed out" screen (public route) instead of jumping
+  // straight to /login — used by the cleaner/customer/admin nav sign-out.
+  redirect("/signed-out");
 }
 
 export async function signOutToRegister() {
