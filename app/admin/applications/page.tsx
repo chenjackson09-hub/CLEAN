@@ -3,6 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ApplicationsList } from './ApplicationsList'
 import type { CleanerApplicationResult } from '@/lib/types/application'
 
+// Reads live admin data (listUsers); render on demand like the other admin pages.
+export const dynamic = 'force-dynamic'
+
 export default async function ApplicationsPage() {
   const admin = createAdminClient()
 

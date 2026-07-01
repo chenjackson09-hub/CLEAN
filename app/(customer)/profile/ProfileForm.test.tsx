@@ -2,6 +2,12 @@ import { fireEvent, screen } from '@testing-library/react'
 import { renderWithLanguage as render } from '@/lib/i18n/testUtils'
 import { ProfileForm } from './ProfileForm'
 
+// The picked file is normalized to a JPEG (async) before preview — mock the
+// converter to pass the file through so the preview path stays deterministic.
+jest.mock('@/lib/image/normalizeImage', () => ({
+  normalizeImageToJpeg: (f: File) => Promise.resolve(f),
+}))
+
 const baseProfile = {
   full_name: 'Maya Cohen',
   phone: '050-1234567',
@@ -52,13 +58,14 @@ describe('ProfileForm', () => {
     expect(screen.getByRole('img', { name: /profile/i })).toHaveAttribute('src', 'https://example.com/me.jpg')
   })
 
-  it('previews a newly picked photo', () => {
+  it('previews a newly picked photo', async () => {
     render(<ProfileForm defaultValues={baseProfile} action={noopAction} />)
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     const file = new File(['avatar-bytes'], 'avatar.png', { type: 'image/png' })
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    expect(screen.getByRole('img', { name: /profile/i })).toHaveAttribute('src', 'blob:preview')
+    // Preview is set after the async normalize step resolves.
+    expect(await screen.findByRole('img', { name: /profile/i })).toHaveAttribute('src', 'blob:preview')
   })
 })
