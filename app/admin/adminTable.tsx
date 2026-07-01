@@ -86,10 +86,16 @@ export function ServiceBadge({ types }: { types: string[] }) {
 }
 
 const STATUS_PILL: Record<string, string> = {
-  pending: 'bg-[#DED9E2] text-gray-700 ring-[#C0B9DD]',
+  // Application statuses
+  pending: 'bg-[#DED9E2] text-gray-700 ring-[#DED9E2]',
   needs_info: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15',
   approved: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/20',
   rejected: 'bg-red-50 text-red-600 ring-red-50',
+  // Booking statuses
+  accepted: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/20',
+  completed: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15',
+  declined: 'bg-red-100 text-red-600 ring-red-100',
+  cancelled: 'bg-gray-200 text-gray-500 ring-gray-200',
 }
 
 export function StatusPill({ status, label }: { status: string; label: string }) {

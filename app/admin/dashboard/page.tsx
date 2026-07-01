@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
     .map((b) => b.address)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#D3F0F0] via-[#DFF0ED] to-[#FFFFFF]">
+    <div className="min-h-screen bg-[#EFEFEF]">
       <Nav />
       <div className="px-6 py-6 max-w-6xl mx-auto">
         <DashboardContent

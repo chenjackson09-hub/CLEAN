@@ -1,6 +1,6 @@
 import { Nav } from '../Nav'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { BookingReviewCard } from './BookingReviewCard'
+import { BookingsList } from './BookingsList'
 import type { BookingResult } from '@/lib/types/booking'
 import { unstable_noStore as noStore } from 'next/cache'
 
@@ -42,19 +42,10 @@ export default async function AdminBookingsPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-[#EFEFEF]">
       <Nav />
       <div className="px-6 py-6">
-        <h1 className="text-xl font-bold text-gray-900 mb-4">All Bookings</h1>
-        {bookings.length === 0 ? (
-          <p className="text-gray-500 text-sm">No bookings yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 rounded-3xl bg-white">
-            {bookings.map(booking => (
-              <BookingReviewCard key={booking.id} booking={booking} />
-            ))}
-          </div>
-        )}
+        <BookingsList bookings={bookings} />
       </div>
     </div>
   )

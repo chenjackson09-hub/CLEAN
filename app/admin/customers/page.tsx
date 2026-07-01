@@ -34,7 +34,7 @@ export default async function AdminCustomersPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F7F4EA] to-[#DED9E2]/40">
+    <div className="min-h-screen bg-[#EFEFEF]">
       <Nav />
       <div className="px-6 py-6">
         <CustomersList customers={customers} />

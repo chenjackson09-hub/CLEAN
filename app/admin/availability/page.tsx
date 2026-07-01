@@ -30,7 +30,7 @@ export default async function AdminAvailabilityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-[#EFEFEF]">
       <Nav />
       <div className="px-6 py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Cleaner Availability</h1>

@@ -42,7 +42,7 @@ export default async function ApplicationsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#EFEFEF]">
       <Nav />
       <div className="px-6 py-6">
         <ApplicationsList applications={applications} />

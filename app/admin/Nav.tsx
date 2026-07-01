@@ -69,6 +69,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: '/admin/inactive',
+    labelKey: 'adminNav.inactive',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2 2m6-2a8 8 0 11-16 0 8 8 0 0116 0z" />
+      </svg>
+    ),
+  },
   // TEMPORARY: Availability is hidden from the admin nav for now — unsure if admins
   // need it. The /admin/availability page still exists and is reachable by URL.
   // Re-add this entry to restore the nav button. See CLAUDE.md "Route groups".
@@ -88,6 +97,7 @@ export function Nav() {
   const { t, lang, toggleLanguage } = useLanguage()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const LangButtons = (
     <div className="flex gap-1">
@@ -112,15 +122,16 @@ export function Nav() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 shadow-sm">
+      <header className="sticky top-0 z-40 shadow-sm [#EFEFEF]">
         <div className="flex items-center justify-between px-4 h-14 gap-2">
           {/* Logo */}
           <div className="flex items-center shrink-0">
             <span className="text-lg font-bold text-blue-600">ADMIN</span>
           </div>
 
-          {/* Nav items — Link-based for instant prefetched navigation */}
-          <nav className="flex items-center gap-3 lg:gap-6">
+          {/* Nav items — Link-based for instant prefetched navigation.
+              Hidden below md, where they'd overflow — replaced by the menu button. */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-6">
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
@@ -129,7 +140,7 @@ export function Nav() {
                   href={item.href}
                   className={`flex flex-col lg:flex-row items-center lg:gap-2 px-1.5 lg:px-3 py-1.5 rounded-lg transition-colors ${
                     active
-                      ? 'text-blue-700 font-semibold'
+                      ? 'text-[#6EB5B4] font-semibold'
                       : 'text-gray-600 hover:text-[#80A1D4]'
                   }`}
                 >
@@ -140,8 +151,54 @@ export function Nav() {
             })}
           </nav>
 
-          {/* Settings dropdown — holds language + sign out */}
-          <div className="relative shrink-0">
+          {/* Right cluster: mobile menu button + settings */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Below md the nav buttons collapse into this dropdown */}
+            <div className="relative md:hidden">
+              <button
+                type="button"
+                onClick={() => { setMenuOpen((o) => !o); setSettingsOpen(false) }}
+                aria-label={lang === 'he' ? 'תפריט' : 'Menu'}
+                aria-expanded={menuOpen}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                  menuOpen ? 'bg-[#F7F4EA] text-[#6EB5B4]' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              {menuOpen && (
+                <>
+                  {/* Click-away backdrop */}
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute end-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-2 flex flex-col">
+                    {NAV_ITEMS.map((item) => {
+                      const active = pathname === item.href || pathname.startsWith(item.href + '/')
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMenuOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            active
+                              ? 'bg-[#F7F4EA] text-[#6EB5B4] font-semibold'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className="w-5 h-5 shrink-0">{item.icon}</span>
+                          <span className="text-sm">{t(item.labelKey)}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Settings dropdown — holds language + sign out */}
+            <div className="relative shrink-0">
             <button
               onClick={() => setSettingsOpen((o) => !o)}
               className={`flex flex-col lg:flex-row items-center lg:gap-2 px-1.5 lg:px-3 py-1.5 rounded-lg transition-colors ${
@@ -175,6 +232,7 @@ export function Nav() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
       </header>

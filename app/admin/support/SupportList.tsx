@@ -50,9 +50,9 @@ export function SupportList({ messages }: { messages: SupportMessage[] }) {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors shadow-md ${
               tab === key
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#75C9C8] text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
           >
@@ -105,7 +105,7 @@ export function SupportList({ messages }: { messages: SupportMessage[] }) {
                 <button
                   onClick={() => handleResolve(m.id)}
                   disabled={pendingId === m.id}
-                  className="mt-3 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-60"
+                  className="mt-3 rounded-full bg-[#DED9E2] px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-[#C0B9DD] disabled:opacity-60"
                 >
                   {t('support.resolve')}
                 </button>

@@ -17,6 +17,7 @@ const translations = {
       availability: 'Availability',
       support: 'Support',
       blocked: 'Blocked',
+      inactive: 'Inactive',
     },
     support: {
       title: 'Support messages',
@@ -283,6 +284,9 @@ const translations = {
         title: 'Booking Requests',
         empty: 'No booking requests yet.',
         requestedBy: '{customer} requested {cleaner}',
+        cleaner: 'Cleaner',
+        customer: 'Customer',
+        dateTime: 'Date & time',
       },
       cleaners: {
         title: 'Cleaners',
@@ -308,6 +312,18 @@ const translations = {
           deleted: 'Deleted',
           rejected: 'Rejected',
         },
+      },
+      inactive: {
+        title: 'Inactive Users',
+        tabAll: 'All',
+        tabNoLogin: 'No login (30+ days)',
+        tabNoRequests: 'No requests (30+ days)',
+        emptyAll: 'No inactive users.',
+        emptyNoLogin: 'No users have gone a month without logging in.',
+        emptyNoRequests: 'No customers have gone a month without a request.',
+        lastLogin: 'Last login',
+        lastRequest: 'Last request',
+        never: 'Never',
       },
       shared: {
         notes: 'Admin Notes',
@@ -441,6 +457,7 @@ const translations = {
       availability: 'זמינות',
       support: 'תמיכה',
       blocked: 'חסומים',
+      inactive: 'לא פעילים',
     },
     support: {
       title: 'הודעות תמיכה',
@@ -707,6 +724,9 @@ const translations = {
         title: 'בקשות הזמנה',
         empty: 'אין בקשות הזמנה עדיין.',
         requestedBy: '{customer} ביקש/ה את {cleaner}',
+        cleaner: 'מנקה',
+        customer: 'לקוח',
+        dateTime: 'תאריך ושעה',
       },
       cleaners: {
         title: 'מנקים',
@@ -732,6 +752,18 @@ const translations = {
           deleted: 'נמחק',
           rejected: 'נדחה',
         },
+      },
+      inactive: {
+        title: 'משתמשים לא פעילים',
+        tabAll: 'הכל',
+        tabNoLogin: 'ללא כניסה (30+ ימים)',
+        tabNoRequests: 'ללא בקשות (30+ ימים)',
+        emptyAll: 'אין משתמשים לא פעילים.',
+        emptyNoLogin: 'אין משתמשים שלא נכנסו במשך חודש.',
+        emptyNoRequests: 'אין לקוחות שלא שלחו בקשה במשך חודש.',
+        lastLogin: 'כניסה אחרונה',
+        lastRequest: 'בקשה אחרונה',
+        never: 'מעולם לא',
       },
       shared: {
         notes: 'הערות מנהל',
