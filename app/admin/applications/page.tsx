@@ -42,7 +42,7 @@ export default async function ApplicationsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#CCE8E3] via-[#FFFFFF] to-[#CCE8E3]">
+    <div className="min-h-screen bg-gradient-to-b from-[#F7F4EA] to-[#DED9E2]/40">
       <Nav />
       <div className="px-6 py-6">
         <ApplicationsList applications={applications} />

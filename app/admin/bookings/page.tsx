@@ -49,7 +49,7 @@ export default async function AdminBookingsPage() {
         {bookings.length === 0 ? (
           <p className="text-gray-500 text-sm">No bookings yet.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 rounded-3xl bg-white">
             {bookings.map(booking => (
               <BookingReviewCard key={booking.id} booking={booking} />
             ))}

@@ -26,10 +26,12 @@ export function AvailabilityRange({
   from,
   to,
   onChange,
+  labelledBy,
 }: {
   from: string
   to: string
   onChange: (from: string, to: string) => void
+  labelledBy?: string
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const dragging = useRef<'from' | 'to' | null>(null)
@@ -66,7 +68,7 @@ export function AvailabilityRange({
     'absolute top-1/2 -translate-y-1/2 -ml-2.5 w-5 h-5 rounded-full bg-white border-2 border-blue-500 shadow cursor-grab active:cursor-grabbing touch-none'
 
   return (
-    <div className="flex flex-col gap-1.5 w-56 max-w-full">
+    <div role="group" aria-labelledby={labelledBy} className="flex flex-col gap-1.5 w-56 max-w-full">
       <input type="hidden" name="from" value={fmt(fromMin)} />
       <input type="hidden" name="to" value={fmt(toMin)} />
       <div className="flex justify-between text-sm font-semibold text-gray-700 tabular-nums">

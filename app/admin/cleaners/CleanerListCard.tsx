@@ -1,13 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { StarRatingDisplay } from '@/components/StarRating'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 const SERVICE_BADGE: Record<string, string> = {
-  residential: 'bg-indigo-100 text-indigo-700',
-  commercial: 'bg-green-100 text-green-700',
-  both: 'bg-yellow-100 text-yellow-800',
+  residential: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  commercial: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  both: 'bg-amber-50 text-amber-800 ring-amber-200',
 }
 
 type Props = {
@@ -18,7 +18,7 @@ type Props = {
 
 export function CleanerListCard({ cleaner, onSaveNotes, onDelete }: Props) {
   const { t } = useLanguage()
-  const initial = cleaner.full_name.charAt(0).toUpperCase()
+  const initial = cleaner.full_name.charAt(0).toUpperCase() || '?'
   const [notes, setNotesValue] = useState(cleaner.adminNotes)
   const [saved, setSaved] = useState(false)
 
@@ -38,120 +38,107 @@ export function CleanerListCard({ cleaner, onSaveNotes, onDelete }: Props) {
     }
   }
 
-  return (
-    <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center font-bold text-white">
-            {initial}
-          </div>
-          <div>
-            <p className="font-bold text-gray-900">{cleaner.full_name}</p>
-            <p className="text-sm text-gray-500">{t('common.yearsExp', { years: cleaner.years_experience })}</p>
-            <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="sm" emptyLabel={t('admin.shared.noRating')} className="mt-0.5" />
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={handleDelete}
-          className="text-xs px-2 py-1 rounded-2xl bg-red-100 text-red-700 hover:bg-red-200 font-semibold"
-        >
-          {t('admin.shared.delete')}
-        </button>
-      </div>
+  const dash = t('admin.shared.none')
 
-      <div className="flex gap-2 flex-wrap mb-3">
-        <span className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[serviceLabel]}`}>
+  // The "variables" rendered as aligned label/value rows so they read like a table.
+  const rows: { label: string; value: ReactNode }[] = [
+    {
+      label: t('admin.shared.service'),
+      value: (
+        <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-semibold ring-1 ${SERVICE_BADGE[serviceLabel]}`}>
           {t(`common.${serviceLabel}`)}
         </span>
-        <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700 inline-flex items-center gap-1">
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-3.5 h-3.5 flex-shrink-0"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-    />
-  </svg>
+      ),
+    },
+    {
+      label: t('admin.shared.rate'),
+      value: cleaner.hourly_rate > 0 ? <span className="tabular-nums">₪{cleaner.hourly_rate}</span> : dash,
+    },
+    { label: t('admin.shared.experience'), value: t('common.yearsExp', { years: cleaner.years_experience }) },
+    { label: t('admin.shared.location'), value: cleaner.area ? <span className="break-words">{cleaner.area}</span> : dash },
+    { label: t('admin.shared.email'), value: cleaner.email ? <span className="break-all">{cleaner.email}</span> : dash },
+    { label: t('admin.shared.phone'), value: cleaner.phone ? <span dir="ltr" className="text-start">{cleaner.phone}</span> : dash },
+  ]
 
-  <span>{cleaner.area}</span>
-</span>
-      </div>
-{/**envelope emoji */}
-      <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-4 h-4 flex-shrink-0"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-    />
-  </svg>
+  return (
+    <div className="group relative flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden">
+      {/* Gradient header banner */}
+      <div className="h-16 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
-  <span>{cleaner.email}</span>
-</p>
-{/*phone emoji*/}
-      <p className="text-sm text-gray-600 mb-3 flex items-center gap-1">
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-4 h-4 flex-shrink-0"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
-    />
-  </svg>
+      {/* Delete floats on the banner */}
+      <button
+        type="button"
+        onClick={handleDelete}
+        className="absolute top-3 end-3 text-xs px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-red-600 hover:bg-white hover:text-red-700 font-semibold shadow-sm transition-colors"
+      >
+        {t('admin.shared.delete')}
+      </button>
 
-  <span>{cleaner.phone}</span>
-</p>
+      <div className="px-5 pb-5 -mt-8">
+        {/* Avatar overlapping the banner */}
+        <div className="w-16 h-16 rounded-2xl ring-4 ring-white bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden shadow-md">
+          {cleaner.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cleaner.avatar_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="font-bold text-white text-2xl">{initial}</span>
+          )}
+        </div>
 
+        {/* Name + rating */}
+        <div className="mt-3">
+          <p className="font-bold text-gray-900 text-lg leading-tight">{cleaner.full_name}</p>
+          <StarRatingDisplay
+            value={cleaner.rating_avg}
+            count={cleaner.rating_count}
+            size="sm"
+            emptyLabel={t('admin.shared.noRating')}
+            className="mt-1"
+          />
+        </div>
 
-      <div className="border-t border-gray-100 pt-3">
-        <label htmlFor={`cleaner-notes-${cleaner.id}`} className="block text-xs font-semibold text-gray-500 mb-1">
-          {t('admin.shared.notes')}
-        </label>
-        <textarea
-          id={`cleaner-notes-${cleaner.id}`}
-          value={notes}
-          onChange={e => {
-            setNotesValue(e.target.value)
-            setSaved(false)
-          }}
-          placeholder={t('admin.shared.notesPlaceholder')}
-          rows={2}
-          className="w-full text-sm border border-gray-200 rounded-lg p-2 text-start"
-        />
-        <div className="flex items-center gap-2 mt-2">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
-          >
-            {t('admin.shared.save')}
-          </button>
-          {saved && <span className="text-sm text-green-600">{t('admin.shared.saved')}</span>}
+        {/* Table-like variable rows: label column + value column, aligned */}
+        <dl className="mt-4 grid grid-cols-[6rem_1fr] rounded-xl ring-1 ring-gray-100 overflow-hidden text-sm">
+          {rows.map((row, i) => (
+            <Fragment key={row.label}>
+              <dt className={`px-3 py-2 font-medium text-gray-500 text-start border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50/70' : 'bg-white'}`}>
+                {row.label}
+              </dt>
+              <dd className={`px-3 py-2 text-gray-800 text-start border-b border-gray-100 ${i % 2 === 0 ? 'bg-gray-50/70' : 'bg-white'}`}>
+                {row.value}
+              </dd>
+            </Fragment>
+          ))}
+        </dl>
+
+        {/* Admin notes */}
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <label htmlFor={`cleaner-notes-${cleaner.id}`} className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            {t('admin.shared.notes')}
+          </label>
+          <textarea
+            id={`cleaner-notes-${cleaner.id}`}
+            value={notes}
+            onChange={e => {
+              setNotesValue(e.target.value)
+              setSaved(false)
+            }}
+            placeholder={t('admin.shared.notesPlaceholder')}
+            rows={2}
+            className="w-full text-sm border border-gray-200 rounded-lg p-2.5 text-start resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+          />
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition-colors"
+            >
+              {t('admin.shared.save')}
+            </button>
+            {saved && (
+              <span className="text-sm text-green-600 font-medium">{t('admin.shared.saved')}</span>
+            )}
+          </div>
         </div>
       </div>
     </div>

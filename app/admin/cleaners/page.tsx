@@ -11,7 +11,7 @@ export default async function AdminCleanersPage() {
   const admin = createAdminClient()
 
   const [{ data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count').neq('status', 'suspended').limit(500),
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address').neq('status', 'suspended').limit(500),
     admin.from('profiles').select('id, full_name, phone, avatar_url').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
@@ -31,6 +31,7 @@ export default async function AdminCleanersPage() {
       years_experience: c.years_experience ?? 0,
       languages: (c.languages ?? []) as string[],
       distance_km: 0,
+      area: (c as { address?: string | null }).address ?? '',
       rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
       rating_count: (c as { rating_count?: number }).rating_count ?? 0,
       email: emailMap.get(c.id) ?? '',
@@ -40,7 +41,7 @@ export default async function AdminCleanersPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-b from-[#F7F4EA] to-[#DED9E2]/40">
       <Nav />
       <div className="px-6 py-6">
         <CleanersList cleaners={cleaners} />

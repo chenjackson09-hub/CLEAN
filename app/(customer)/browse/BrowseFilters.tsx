@@ -70,12 +70,15 @@ export function BrowseFilters({ dates, type, sort, from, to, duration }: Props) 
         <form id="browse-search-form" method="get" action="/browse" className="border-t border-gray-100 px-4 py-4 flex flex-wrap gap-3 justify-start items-end">
           <input type="hidden" name="dates" value={dates ?? ''} />
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            {/* Not a <label>: the range is a composite widget (two thumbs), not a
+                single form field, so it's labelled as a group via aria-labelledby. */}
+            <span id="availability-label" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
               {t('filterBar.availability')}
-            </label>
+            </span>
             <AvailabilityRange
               from={fromVal}
               to={toVal}
+              labelledBy="availability-label"
               onChange={(f, to2) => { setFromVal(f); setToVal(to2) }}
             />
           </div>

@@ -63,8 +63,6 @@ export function ApplicationCard({ application, onUpdateStatus, onSaveNotes }: Pr
         </span>
       </div>
 
-      <p className="text-sm text-gray-500 mb-3 leading-relaxed">&quot;{application.bio}&quot;</p>
-
       <div className="flex gap-2 flex-wrap mb-3">
         <span className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[serviceLabel]}`}>
           {t(`common.${serviceLabel}`)}

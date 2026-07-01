@@ -66,13 +66,13 @@ export function SupportList({ messages }: { messages: SupportMessage[] }) {
           {t('support.empty')}
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-3 ">
           {visible.map((m) => (
             <li
               key={m.id}
-              className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100"
+              className="rounded-2xl bg-white p-4 shadow-xl ring-1 ring-gray-100"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 ">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900">
                     {m.name || t('support.from')}
