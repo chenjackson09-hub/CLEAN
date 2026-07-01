@@ -13,6 +13,12 @@ export async function markBookingsSeen(): Promise<void> {
   cookies().set("bookings_seen_at", new Date().toISOString(), {
     path: "/",
     httpOnly: true,
+    // Secure in production (HTTPS) to satisfy cookie-security best practice.
+    // Left off in dev because this project's HTTP dev server isn't a secure
+    // context, and browsers reject `Secure` cookies there — which would break
+    // the "seen" tracking. The dev-only "missing secure directive" hint is
+    // expected and harmless; production sets it correctly.
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365,
   })

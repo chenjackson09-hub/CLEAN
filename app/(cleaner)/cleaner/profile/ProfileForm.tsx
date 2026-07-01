@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
+import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
 import type { Profile, Cleaner } from "@/types/database";
 
@@ -53,9 +54,19 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             type="file"
             name="avatar"
             accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) setAvatarPreview(URL.createObjectURL(file));
+            onChange={async (e) => {
+              const input = e.target;
+              const file = input.files?.[0];
+              if (!file) return;
+              // Convert HEIC/large phone photos to a small JPEG and write it
+              // back so the form submits the converted file, not the raw HEIC.
+              const normalized = await normalizeImageToJpeg(file);
+              if (normalized !== file) {
+                const dt = new DataTransfer();
+                dt.items.add(normalized);
+                input.files = dt.files;
+              }
+              setAvatarPreview(URL.createObjectURL(normalized));
             }}
             className="text-base text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-base file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
           />
