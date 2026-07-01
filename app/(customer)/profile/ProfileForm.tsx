@@ -3,6 +3,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { normalizeImageToJpeg } from '@/lib/image/normalizeImage'
 
 type ActionResult = { error?: string; success?: boolean; avatarUrl?: string } | null
 
@@ -78,9 +79,19 @@ export function ProfileForm({ defaultValues, action }: Props) {
 
   const initial = defaultValues.full_name?.charAt(0)?.toUpperCase() || '?'
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) setPreview(URL.createObjectURL(file))
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const input = e.target
+    const file = input.files?.[0]
+    if (!file) return
+    // Convert HEIC/large phone photos to a small JPEG, then write it back into
+    // the input so the form submits the converted file (not the raw HEIC).
+    const normalized = await normalizeImageToJpeg(file)
+    if (normalized !== file) {
+      const dt = new DataTransfer()
+      dt.items.add(normalized)
+      input.files = dt.files
+    }
+    setPreview(URL.createObjectURL(normalized))
   }
 
   return (

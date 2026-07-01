@@ -50,8 +50,10 @@ export async function middleware(request: NextRequest) {
   const isOnboardingPath = pathname.startsWith('/register/')
   // Public post-logout screen — reachable without a session.
   const isSignedOutPath = pathname === '/signed-out'
+  // OAuth callback must run while still unauthenticated (it sets the session).
+  const isCallbackPath = pathname.startsWith('/auth/')
 
-  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isCallbackPath) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

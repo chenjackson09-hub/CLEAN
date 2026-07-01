@@ -19,6 +19,14 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    // Profile/gallery photos POST to a Server Action as multipart form data, and
+    // Server Actions default to a 1MB body limit — a typical phone photo (2-8MB)
+    // silently exceeds it, so the upload "saves" nothing. Raise it.
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
