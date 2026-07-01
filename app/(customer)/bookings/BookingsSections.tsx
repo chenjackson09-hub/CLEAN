@@ -40,51 +40,6 @@ function Grid({ bookings, empty, muted = false, dismissible = false }: { booking
   )
 }
 
-function CollapsibleSection({
-  title,
-  count,
-  badgeColor,
-  defaultOpen,
-  children,
-}: {
-  title: string
-  count: number
-  badgeColor: string
-  defaultOpen: boolean
-  children: React.ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <section>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-3 bg-white rounded-3xl px-4 py-3 shadow-sm border border-gray-100"
-      >
-        <span className="flex items-center gap-2 text-lg font-bold text-gray-900">
-          {count > 0 && (
-            <span className={`min-w-[22px] h-[22px] px-1.5 flex items-center justify-center text-xs font-bold text-white rounded-full ${badgeColor}`}>
-              {count}
-            </span>
-          )}
-          {title}
-        </span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && <div className="mt-4">{children}</div>}
-    </section>
-  )
-}
-
 export function BookingsSections({
   confirmed,
   pending,
@@ -98,37 +53,76 @@ export function BookingsSections({
 }) {
   const { t } = useLanguage()
 
-  // Only render sections that actually have bookings, so a customer with (say)
-  // only past or only declined requests still sees their content instead of a
-  // wall of "None" placeholders. Confirmed/Pending stay open by default; the
-  // first non-empty section is always opened so something is visible even when
-  // there's no confirmed booking. Refused/cancelled and past stay collapsed
-  // otherwise (they can be long).
+  // Only render tabs that actually have bookings, so a customer with (say) only
+  // past or only declined requests still sees their content instead of empty
+  // tabs. Order prioritises confirmed → pending → refused/cancelled → past; the
+  // first non-empty tab is selected on load so something is always visible.
   const sections = [
-    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, openByDefault: true },
-    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, openByDefault: true },
-    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, openByDefault: false },
-    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, openByDefault: false },
+    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false },
+    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false },
+    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true },
+    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false },
   ].filter(s => s.data.length > 0)
 
-  const firstKey = sections[0]?.key
+  // Which tab is selected. Seeded with the first non-empty category (see the
+  // ordering above) so something is always shown on first render.
+  const [active, setActive] = useState(sections[0]?.key)
+
+  // Resolve the selected tab against the *current* section list. `active` can
+  // point at a tab that just emptied out — e.g. the customer dismissed the last
+  // refused booking, so 'inactive' is no longer in `sections` after the page
+  // revalidates — in which case we fall back to the first available tab rather
+  // than render nothing.
+  const current = sections.find(s => s.key === active) ?? sections[0]
+
+  // No bookings in any category at all → render nothing (the page shows its own
+  // empty state around this component).
+  if (!current) return null
 
   return (
-    <div className="flex flex-col gap-8">
-      {sections.map(s => (
-        <CollapsibleSection
-          key={s.key}
-          title={s.title}
-          count={s.data.length}
-          badgeColor={s.badgeColor}
-          defaultOpen={s.openByDefault || s.key === firstKey}
-        >
-          {s.key === 'inactive' && s.data.length > 1 && (
-            <MarkAllSeenButton ids={s.data.map(b => b.id)} />
-          )}
-          <Grid bookings={s.data} empty="" muted={s.muted} dismissible={s.dismissible} />
-        </CollapsibleSection>
-      ))}
+    <div className="flex flex-col gap-6">
+      {/* Top tab bar: one pill button per non-empty category, replacing the old
+          collapsible accordion sections. Scrolls sideways on narrow screens so
+          all tabs stay reachable without wrapping. */}
+      <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 bg-gray-100">
+        {sections.map(s => {
+          const selected = s.key === current.key
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setActive(s.key)}
+              // Selected tab = solid dark pill; others = outlined white pills.
+              className={`flex items-center gap-2 whitespace-nowrap rounded-md px-2 py-2 text-sm font-semibold transition ${
+                selected
+                  ? 'bg-gray-900 text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {s.title}
+              {/* Count badge: keeps the per-category color when unselected, but
+                  goes translucent-white on the dark selected pill for contrast. */}
+              <span
+                className={`min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold rounded-full ${
+                  selected ? 'bg-white/20 text-white' : `${s.badgeColor} text-white`
+                }`}
+              >
+                {s.data.length}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Body: only the selected category's cards. The "mark all as seen" bulk
+          action is specific to the refused/cancelled ('inactive') tab and only
+          worth showing when there's more than one card to clear. */}
+      <div>
+        {current.key === 'inactive' && current.data.length > 1 && (
+          <MarkAllSeenButton ids={current.data.map(b => b.id)} />
+        )}
+        <Grid bookings={current.data} empty="" muted={current.muted} dismissible={current.dismissible} />
+      </div>
     </div>
   )
 }
