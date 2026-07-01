@@ -17,9 +17,9 @@ export const btnPrimary =
 export const btnBlue =
   'bg-[#80A1D4] hover:brightness-95 text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition'
 export const btnGhost =
-  'bg-white hover:bg-[#F7F4EA] text-gray-700 ring-1 ring-[#DED9E2] px-3.5 py-1.5 rounded-lg text-sm font-semibold transition'
+  'bg-white hover:bg-[#F7F4EA] text-gray-700 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition'
 export const btnDanger =
-  'bg-white hover:bg-red-50 text-red-600 ring-1 ring-red-200 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition'
+  'bg-red-50 hover:bg-red-100 text-red-600 px-3.5 py-1.5 rounded-full text-sm font-semibold transition'
 
 /* --------------------------------------------------------------- cells */
 
@@ -64,9 +64,9 @@ export function TextCell({ children }: { children: ReactNode }) {
 }
 
 const SERVICE_BADGE: Record<string, string> = {
-  residential: 'bg-[#75C9C8]/15 text-[#2f7d7c] ring-[#75C9C8]/40',
-  commercial: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/40',
-  both: 'bg-[#C0B9DD]/30 text-[#655a8a] ring-[#C0B9DD]/70',
+  residential: 'bg-[#75C9C8]/15 text-[#2f7d7c] ring-[#75C9C8]/15 shadow-sm',
+  commercial: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15 shadow-sm',
+  both: 'bg-[#C0B9DD]/30 text-[#655a8a] ring-[#C0B9DD]/30 shadow-sm',
 }
 
 export function serviceLabelOf(types: string[]): 'residential' | 'commercial' | 'both' {
@@ -87,9 +87,9 @@ export function ServiceBadge({ types }: { types: string[] }) {
 
 const STATUS_PILL: Record<string, string> = {
   pending: 'bg-[#DED9E2] text-gray-700 ring-[#C0B9DD]',
-  needs_info: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/40',
-  approved: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/50',
-  rejected: 'bg-red-50 text-red-600 ring-red-200',
+  needs_info: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15',
+  approved: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/20',
+  rejected: 'bg-red-50 text-red-600 ring-red-50',
 }
 
 export function StatusPill({ status, label }: { status: string; label: string }) {
@@ -185,7 +185,7 @@ export function AdminTable({
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
         {count != null && count > 0 && (
-          <span className="text-sm font-semibold text-[#2f7d7c] bg-[#75C9C8]/20 rounded-full px-2.5 py-0.5 tabular-nums">
+          <span className="text-sm font-semibold text-[#2f7d7c] rounded-full px-2.5 py-0.5 tabular-nums">
             {count}
           </span>
         )}
@@ -193,16 +193,16 @@ export function AdminTable({
       </div>
 
       {isEmpty ? (
-        <div className="rounded-2xl border border-dashed border-[#C0B9DD] bg-white/70 p-12 text-center text-gray-500 text-sm">
+        <div className="rounded-2xl bg-white/70 p-12 text-center text-gray-500 text-lg">
           {empty}
         </div>
       ) : (
-        <div className="rounded-2xl bg-white ring-1 ring-[#DED9E2] shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-white overflow-hidden shadow-lg">
           <div className="overflow-x-auto">
             <div className={minWidth}>
               {/* Header row */}
               <div
-                className="grid items-center gap-3 bg-[#F7F4EA] border-b border-[#DED9E2] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500"
+                className="grid items-center gap-3 bg-[#F7F4EA] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500"
                 style={{ gridTemplateColumns: template }}
               >
                 {columns.map(c => (

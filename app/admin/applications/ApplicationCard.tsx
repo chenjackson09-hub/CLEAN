@@ -58,13 +58,13 @@ export function ApplicationCard({ application, onUpdateStatus, onSaveNotes }: Pr
             </p>
           </div>
         </div>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${STATUS_BADGE[application.status]}`}>
+        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap`}>
           {t(`admin.applications.status.${application.status}`)}
         </span>
       </div>
 
       <div className="flex gap-2 flex-wrap mb-3">
-        <span className={`text-xs px-2 py-0.5 rounded font-medium ${SERVICE_BADGE[serviceLabel]}`}>
+        <span className={`text-xs px-2 py-0.5 rounded font-medium `}>
           {t(`common.${serviceLabel}`)}
         </span>
         {application.languages.length > 0 && (
@@ -100,7 +100,7 @@ export function ApplicationCard({ application, onUpdateStatus, onSaveNotes }: Pr
             <button
               type="button"
               onClick={() => onUpdateStatus(application.id, 'rejected', notes)}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
             >
               {t('admin.applications.reject')}
             </button>
@@ -122,7 +122,7 @@ export function ApplicationCard({ application, onUpdateStatus, onSaveNotes }: Pr
         )}
       </div>
 
-      <div className="border-t border-gray-100 mt-3 pt-3">
+      <div className="mt-3 pt-3">
         <label htmlFor={`app-notes-${application.id}`} className="block text-xs font-semibold text-gray-500 mb-1">
           {t('admin.shared.notes')}
         </label>
@@ -138,7 +138,7 @@ export function ApplicationCard({ application, onUpdateStatus, onSaveNotes }: Pr
           <button
             type="button"
             onClick={handleSaveNotes}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-full text-sm font-semibold transition-colors"
           >
             {t('admin.shared.save')}
           </button>

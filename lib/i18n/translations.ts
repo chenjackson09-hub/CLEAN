@@ -16,6 +16,7 @@ const translations = {
       customers: 'Customers',
       availability: 'Availability',
       support: 'Support',
+      blocked: 'Blocked',
     },
     support: {
       title: 'Support messages',
@@ -291,6 +292,23 @@ const translations = {
         title: 'Customers',
         empty: 'No customers yet.',
       },
+      blocked: {
+        title: 'Blocked Users',
+        empty: 'No blocked users.',
+        unblock: 'Unblock',
+        confirmUnblock: 'Remove this user from the blocked list?',
+        roleCol: 'Type',
+        reasonCol: 'Reason',
+        when: 'Blocked',
+        role: {
+          cleaner: 'Cleaner',
+          customer: 'Customer',
+        },
+        reason: {
+          deleted: 'Deleted',
+          rejected: 'Rejected',
+        },
+      },
       shared: {
         notes: 'Admin Notes',
         notesPlaceholder: 'Write a note about this person...',
@@ -422,6 +440,7 @@ const translations = {
       customers: 'לקוחות',
       availability: 'זמינות',
       support: 'תמיכה',
+      blocked: 'חסומים',
     },
     support: {
       title: 'הודעות תמיכה',
@@ -696,6 +715,23 @@ const translations = {
       customers: {
         title: 'לקוחות',
         empty: 'אין לקוחות עדיין.',
+      },
+      blocked: {
+        title: 'משתמשים חסומים',
+        empty: 'אין משתמשים חסומים.',
+        unblock: 'ביטול חסימה',
+        confirmUnblock: 'להסיר את המשתמש מרשימת החסומים?',
+        roleCol: 'סוג',
+        reasonCol: 'סיבה',
+        when: 'נחסם',
+        role: {
+          cleaner: 'מנקה',
+          customer: 'לקוח',
+        },
+        reason: {
+          deleted: 'נמחק',
+          rejected: 'נדחה',
+        },
       },
       shared: {
         notes: 'הערות מנהל',
