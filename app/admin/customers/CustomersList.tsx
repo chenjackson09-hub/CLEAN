@@ -16,6 +16,8 @@ import type { CustomerResult } from '@/lib/types/customer'
 
 type CustomerWithNotes = CustomerResult & { adminNotes: string }
 
+// Customers rendered as the shared admin "table of rows" (see app/admin/adminTable.tsx).
+// TEMPLATE must have the same track count as the `columns` header; last track = actions.
 const TEMPLATE = 'minmax(180px,1.3fr) minmax(160px,1.2fr) minmax(150px,1.2fr) 140px minmax(150px,auto)'
 
 function CustomerRow({

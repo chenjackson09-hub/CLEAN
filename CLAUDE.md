@@ -34,7 +34,7 @@ app/
 ├── (auth)/       # /login  /register  /register/cleaner  /register/customer
 ├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /pending  /customers/[id]
 ├── (customer)/   # /browse  /cleaners/[id]  /bookings  /profile  /home
-├── admin/        # /admin/dashboard  /applications  /cleaners  /customers  /bookings  /support  /availability
+├── admin/        # /admin/dashboard  /applications  /cleaners  /customers  /bookings  /support  /blocked  /inactive  /availability
 └── api/auth/signout/
 ```
 
@@ -49,6 +49,21 @@ After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (cu
 ### Admin panel rebuild (in progress)
 
 The admin panel is being rebuilt screen-by-screen against a stakeholder spec describing 6 target screens (Dashboard, Applications, Cleaners, Hosts, Requests, Matching Queue). Only **Dashboard** (`/admin/dashboard`) is built so far — it's the new admin landing page, with schema-backed KPI cards (no fabricated metrics: avg rating/disputes are omitted entirely since there's no review or dispute table yet). The remaining screens, sequencing, and the open product decisions behind them (e.g. why `cleaners.status` uses the values below) are tracked outside the repo in the planning doc from that work; `docs/chen-notes.md` tracks the broader, non-admin backlog of stakeholder feedback this rebuild is part of.
+
+### Admin list pages — shared table + support-style layouts
+
+There are two visual patterns across the admin list screens; **keep new admin screens on one of them** rather than inventing a third.
+
+- **Shared "table of rows" (`app/admin/adminTable.tsx`)** backs **applications, bookings, cleaners, customers, and blocked**. It's the single source of that look — edit it to restyle all five at once. Exports: `AdminTable` (title + count pill + optional `toolbar` + a CSS-grid header row + horizontal-scroll shell), `AdminRow` (one grid row; renders `cells[]`, an always-visible `actions` cell, and — when `expanded` is passed — a chevron that toggles an inline panel below the row), plus shared cells/badges (`NameCell` with gradient avatar, `ContactCell`, `TextCell`, `ServiceBadge`, `StatusPill`, `NotesPanel`) and button class strings (`btnPrimary/btnBlue/btnGhost/btnDanger`). **Header columns and the row `template` must have the same number of grid tracks** (the trailing actions/chevron cell is the last track), so each list defines one `TEMPLATE` string and passes it to both `AdminTable` and every `AdminRow`. `StatusPill` maps both application statuses (pending/needs_info/approved/rejected) **and** booking statuses (accepted/completed/declined/cancelled) — extend that map for any new status. Each list is a thin `*List.tsx` client component that owns state + server-action handlers and maps rows to a per-entity `*Row` component holding that row's notes state; the older per-card components (`ApplicationCard`, `BookingReviewCard`, `CleanerListCard`, `CustomerListCard`) are now **unused** but kept so their colocated tests still pass.
+- **Support-style tabbed card list** backs **support** (`SupportList.tsx`) and **inactive** (`InactiveList.tsx`): a centered `max-w-3xl` column, a title, pill tabs (active = teal `#75C9C8`), and a vertical `<ul>` of `rounded-2xl` white cards. Use this for report-style screens that don't need aligned columns.
+
+- **Palette (stakeholder-provided):** teal `#75C9C8` (primary/active), blue `#80A1D4`, lilac `#C0B9DD`, pale `#DED9E2`, cream `#F7F4EA`, plus gray/black/white. Page backgrounds are a flat `bg-[#EFEFEF]`. Every admin list page is `bg` + `<Nav />` + a `px-6 py-6` wrapper around its `*List`.
+
+- **The admin `Nav` collapses below `md`.** `admin/Nav.tsx`'s `NAV_ITEMS` render inline at `md+`; below `md` (where 8 items overflow) the inline `<nav>` is hidden and a hamburger button opens a dropdown listing the same items. Both read from the one `NAV_ITEMS` array, so a new nav entry appears in both automatically. Adding a screen = add a `NAV_ITEMS` entry + an `adminNav.*` string (EN **and** HE).
+
+- **Blocked users** (`/admin/blocked`, table `blocked_users`, migration `0017_blocked_users.sql`): deleting a cleaner/customer or rejecting an application snapshots the person's name/email/phone onto this list via `recordBlockedUser()` in `app/admin/actions.ts` (best-effort — wrapped so a failure never blocks the delete/reject; upserts on `email` to de-dupe). For **customers** the snapshot must happen **before** the hard-delete wipes the profile + auth row; cleaner delete is a soft `status='suspended'`. `unblockUser()` removes an entry. RLS-on, no policies → only the service-role admin client reads/writes it; the page degrades to an empty list if the migration hasn't been run yet. **This is record-only — it does not yet block re-registration** (open follow-up).
+
+- **Inactive users** (`/admin/inactive`): computed on the fly (no table) from auth `last_sign_in_at`/`created_at` + `bookings.created_at`. Two buckets over a 30-day cutoff — **no login** (any non-admin user; falls back to account age so brand-new users aren't flagged) and **no requests** (customers only, since they're who send booking requests; falls back to account age). The **All** tab merges both, deduped by id, showing every reason's date line.
 
 ### Availability & booking
 

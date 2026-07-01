@@ -3,6 +3,9 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { AdminTable, AdminRow, NameCell, ServiceBadge, StatusPill, TextCell } from '@/app/admin/adminTable'
 import type { BookingResult } from '@/lib/types/booking'
 
+// Read-only bookings list on the shared admin "table of rows" (app/admin/adminTable.tsx).
+// No row actions — rows with notes get the expand chevron (last grid track) instead.
+// TEMPLATE track count must match the `columns` header.
 const TEMPLATE =
   'minmax(170px,1.2fr) minmax(120px,1fr) 104px minmax(150px,1.1fr) minmax(150px,1.2fr) 116px minmax(48px,auto)'
 

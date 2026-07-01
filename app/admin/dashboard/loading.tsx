@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-[#EFEFEF]">
       <div className="max-w-6xl mx-auto px-6 py-8 animate-pulse">
         <div className="h-8 bg-gray-200 rounded w-40 mb-6" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">

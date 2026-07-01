@@ -26,11 +26,13 @@ export default async function AdminDashboardPage() {
   const [
     { data: cleanerRows },
     { data: customerProfileRows },
+    { data: customerRatingRows },
     { data: appRows },
     { data: bookingRows },
   ] = await Promise.all([
-    admin.from('cleaners').select('status'),
+    admin.from('cleaners').select('status, rating_avg, rating_count'),
     admin.from('profiles').select('id, created_at').eq('role', 'customer'),
+    admin.from('customers').select('rating_avg, rating_count'),
     admin.from('cleaner_applications').select('status'),
     admin
       .from('bookings')
@@ -72,7 +74,35 @@ export default async function AdminDashboardPage() {
 
   const unmatchedCount = bookings.filter((b) => b.status === 'pending' && new Date(b.created_at) < twoHoursAgo).length
 
-  const recentSlice = bookings.slice(0, 8)
+  // Rating averages — weighted by each row's rating_count so it's a true mean of
+  // every individual rating (not an average of averages). rating_avg can arrive
+  // as a string from PostgREST numeric, so coerce. Overall = cleaners + customers.
+  function ratingAgg(rows: { rating_avg: number | string | null; rating_count: number | null }[] | null) {
+    let sum = 0
+    let count = 0
+    for (const r of rows ?? []) {
+      const avg = r.rating_avg == null ? null : Number(r.rating_avg)
+      const cnt = r.rating_count ?? 0
+      if (avg != null && !Number.isNaN(avg) && cnt > 0) {
+        sum += avg * cnt
+        count += cnt
+      }
+    }
+    return { sum, count }
+  }
+  const cleanerRating = ratingAgg(cleanerRows)
+  const customerRating = ratingAgg(customerRatingRows)
+  const overallRatingCount = cleanerRating.count + customerRating.count
+  const cleanersRatingAvg = cleanerRating.count ? cleanerRating.sum / cleanerRating.count : null
+  const customersRatingAvg = customerRating.count ? customerRating.sum / customerRating.count : null
+  const overallRatingAvg = overallRatingCount ? (cleanerRating.sum + customerRating.sum) / overallRatingCount : null
+
+  // Feed the activity card the last ~month so it can filter to day/week/month
+  // client-side; capped so the profile lookup stays small.
+  const activityCutoff = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000)
+  const recentSlice = bookings
+    .filter((b) => b.created_at && new Date(b.created_at) >= activityCutoff)
+    .slice(0, 200)
   const recentProfileIds = Array.from(new Set(recentSlice.flatMap((b) => [b.cleaner_id, b.customer_id])))
   const { data: recentProfileRows } = recentProfileIds.length
     ? await admin.from('profiles').select('id, full_name').in('id', recentProfileIds)
@@ -106,6 +136,12 @@ export default async function AdminDashboardPage() {
           matchesChangePct={matchesChangePct}
           cancellationRate={cancellationRate}
           unmatchedCount={unmatchedCount}
+          overallRatingAvg={overallRatingAvg}
+          overallRatingCount={overallRatingCount}
+          cleanersRatingAvg={cleanersRatingAvg}
+          cleanersRatingCount={cleanerRating.count}
+          customersRatingAvg={customersRatingAvg}
+          customersRatingCount={customerRating.count}
           recentBookings={recentBookings}
           areaAddresses={thisWeekAreas}
         />

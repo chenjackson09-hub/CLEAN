@@ -17,6 +17,9 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 
 type CleanerWithNotes = CleanerResult & { adminNotes: string }
 
+// Cleaners rendered as the shared admin "table of rows" (see app/admin/adminTable.tsx).
+// The same TEMPLATE (grid-template-columns) feeds AdminTable's header and every
+// AdminRow so columns stay aligned; the last track is the actions/expand cell.
 const TEMPLATE = 'minmax(180px,1.3fr) 96px minmax(150px,1fr) minmax(120px,1fr) 84px 132px minmax(150px,auto)'
 
 function CleanerRow({
