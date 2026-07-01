@@ -5,6 +5,7 @@ import { signOut } from "../(auth)/actions";
 import { declineExpiredRequests } from "@/lib/expireRequests";
 import NavLinks from "./NavLinks";
 import { StatusBadge } from "./StatusBadge";
+import HelpWidget from "@/components/HelpWidget";
 
 export default async function CleanerLayout({
   children,
@@ -51,6 +52,7 @@ export default async function CleanerLayout({
       <main className="relative p-3 pt-16">
         {children}
       </main>
+      <HelpWidget />
     </div>
   );
 }

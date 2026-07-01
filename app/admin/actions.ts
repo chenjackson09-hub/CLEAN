@@ -88,3 +88,13 @@ export async function deleteCustomerAdmin(id: string): Promise<ActionResult> {
   revalidatePath('/admin/customers')
   return {}
 }
+
+export async function resolveSupportMessage(id: string): Promise<ActionResult> {
+  const authError = await requireAdmin()
+  if (authError) return authError
+  const admin = createAdminClient()
+  const { error } = await admin.from('support_messages').update({ resolved: true }).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/admin/support')
+  return {}
+}

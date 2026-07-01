@@ -4,6 +4,7 @@ import { signOut } from "../(auth)/actions";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import CustomerNav from "./CustomerNav";
 import RealtimeCustomerBookings from "./RealtimeCustomerBookings";
+import HelpWidget from "@/components/HelpWidget";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()])
@@ -37,6 +38,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         acceptedCount={acceptedCount ?? 0}
       />
       <main className="px-3 pb-4 pt-16 sm:px-8 sm:pb-8">{children}</main>
+      <HelpWidget />
     </div>
   )
 }
