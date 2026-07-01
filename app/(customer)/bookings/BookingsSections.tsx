@@ -53,38 +53,30 @@ export function BookingsSections({
 }) {
   const { t } = useLanguage()
 
-  // Only render tabs that actually have bookings, so a customer with (say) only
-  // past or only declined requests still sees their content instead of empty
-  // tabs. Order prioritises confirmed → pending → refused/cancelled → past; the
-  // first non-empty tab is selected on load so something is always visible.
+  // Every category always gets a tab, even empty ones, so the customer can see
+  // the full set at a glance (an empty tab just shows its "none" message when
+  // selected). Order: confirmed → pending → refused/cancelled → past.
   const sections = [
-    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false },
-    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false },
-    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true },
-    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false },
-  ].filter(s => s.data.length > 0)
+    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, empty: t('bookings.noneConfirmed') },
+    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, empty: t('bookings.nonePending') },
+    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, empty: t('bookings.noneRefusedCancelled') },
+    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, empty: t('bookings.nonePast') },
+  ]
 
-  // Which tab is selected. Seeded with the first non-empty category (see the
-  // ordering above) so something is always shown on first render.
-  const [active, setActive] = useState(sections[0]?.key)
+  // Land the customer on the first tab that actually has bookings (falling back
+  // to the first tab if every category is empty), so a useful list is showing
+  // on first render rather than an empty one.
+  const [active, setActive] = useState((sections.find(s => s.data.length > 0) ?? sections[0]).key)
 
-  // Resolve the selected tab against the *current* section list. `active` can
-  // point at a tab that just emptied out — e.g. the customer dismissed the last
-  // refused booking, so 'inactive' is no longer in `sections` after the page
-  // revalidates — in which case we fall back to the first available tab rather
-  // than render nothing.
   const current = sections.find(s => s.key === active) ?? sections[0]
-
-  // No bookings in any category at all → render nothing (the page shows its own
-  // empty state around this component).
-  if (!current) return null
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Top tab bar: one pill button per non-empty category, replacing the old
-          collapsible accordion sections. Scrolls sideways on narrow screens so
-          all tabs stay reachable without wrapping. */}
-      <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 bg-gray-100">
+      {/* Top tab bar: one pill button per category, replacing the old
+          collapsible accordion sections. Centered, and wraps onto a second row
+          on narrow screens rather than scrolling (so nothing collapses to the
+          left edge when the pills don't quite fit). */}
+      <div className="mx-auto w-fit flex flex-wrap items-center justify-center gap-2 bg-gray-100 rounded-xl p-1.5">
         {sections.map(s => {
           const selected = s.key === current.key
           return (
@@ -93,10 +85,10 @@ export function BookingsSections({
               type="button"
               onClick={() => setActive(s.key)}
               // Selected tab = solid dark pill; others = outlined white pills.
-              className={`flex items-center gap-2 whitespace-nowrap rounded-md px-2 py-2 text-sm font-semibold transition ${
+              className={`flex items-center gap-1 whitespace-nowrap rounded-xl px-2 py-2 text-sm font-semibold transition ${
                 selected
-                  ? 'bg-gray-900 text-white shadow-sm'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               {s.title}
@@ -121,7 +113,7 @@ export function BookingsSections({
         {current.key === 'inactive' && current.data.length > 1 && (
           <MarkAllSeenButton ids={current.data.map(b => b.id)} />
         )}
-        <Grid bookings={current.data} empty="" muted={current.muted} dismissible={current.dismissible} />
+        <Grid bookings={current.data} empty={current.empty} muted={current.muted} dismissible={current.dismissible} />
       </div>
     </div>
   )
