@@ -245,6 +245,22 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
         </div>
       </div>
 
+      {/* Color legend */}
+      <div className="flex items-center justify-center gap-4 px-4 pb-2 flex-wrap text-xs text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-blue-500" /> {t("avail_legend_booked")}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-blue-200" /> {t("avail_legend_pending")}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-blue-100" /> {t("avail_legend_available")}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-gray-100 border border-gray-300" /> {t("avail_legend_none")}
+        </span>
+      </div>
+
       {/* Day headers — only when columns = 7 */}
       {columns === 7 && (
         <div className="px-3 pt-2">
@@ -389,7 +405,17 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                         className="bg-orange-100 rounded-xl px-4 py-3"
                       >
                         <p className="text-sm font-bold text-orange-800 mb-0.5">
-                          {t("avail_booked")} {b.profiles?.full_name ?? t("req_customer")}
+                          {t("avail_booked")}{" "}
+                          {b.customer_id ? (
+                            <Link
+                              href={`/cleaner/customers/${b.customer_id}`}
+                              className="underline hover:text-orange-600"
+                            >
+                              {b.profiles?.full_name ?? t("req_customer")}
+                            </Link>
+                          ) : (
+                            b.profiles?.full_name ?? t("req_customer")
+                          )}
                         </p>
                         <p className="text-lg font-semibold text-orange-600">
                           {b.scheduled_start.slice(0, 5)} - {endStr} · {b.duration_hours}{t("req_h")}

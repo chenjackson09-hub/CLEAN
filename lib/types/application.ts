@@ -1,4 +1,4 @@
-export type ApplicationStatus = 'pending' | 'approved' | 'rejected'
+export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'needs_info'
 
 export type CleanerApplicationResult = {
   id: string
@@ -13,4 +13,6 @@ export type CleanerApplicationResult = {
   address: string
   status: ApplicationStatus
   submitted_at: string
+  id_document_url: string | null
+  admin_notes: string | null
 }

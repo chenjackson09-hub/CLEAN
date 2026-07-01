@@ -150,14 +150,14 @@ export async function createBooking(data: {
 
   const adminClient = createAdminClient()
 
-  // Verify the cleaner exists and is approved — never let a customer book a
-  // pending, rejected, or suspended cleaner by passing a cleaner_id directly.
+  // Verify the cleaner exists and is active — never let a customer book a
+  // new, in-training, inactive, or blocked cleaner by passing a cleaner_id directly.
   const { data: cleaner } = await adminClient
     .from('cleaners')
     .select('status, min_hours, max_hours')
     .eq('id', data.cleaner_id)
     .single()
-  if (!cleaner || cleaner.status !== 'approved') {
+  if (!cleaner || cleaner.status !== 'active') {
     return { error: 'This cleaner is not available for booking.' }
   }
 

@@ -34,7 +34,7 @@ app/
 ├── (auth)/       # /login  /register  /register/cleaner  /register/customer
 ├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /pending  /customers/[id]
 ├── (customer)/   # /browse  /cleaners/[id]  /bookings  /profile  /home
-├── admin/        # /admin/applications  /cleaners  /customers  /bookings  /support  /availability
+├── admin/        # /admin/dashboard  /applications  /cleaners  /customers  /bookings  /support  /availability
 └── api/auth/signout/
 ```
 
@@ -44,7 +44,11 @@ Each route group has a co-located layout that renders its own nav: `(cleaner)/la
 
 - **Admin "Availability" nav button is temporarily hidden.** The `/admin/availability` page still exists and is reachable by URL, but its entry in `admin/Nav.tsx`'s `NAV_ITEMS` is commented out because we're not yet sure admins need it. Uncomment that entry to restore the button (the `adminNav.availability` translations are already in place).
 
-After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/applications`).
+After login, `signIn` redirects by role via `ROLE_HOME` in `lib/roleHome.ts` (customer → `/browse`, cleaner → `/cleaner/dashboard`, admin → `/admin/dashboard`).
+
+### Admin panel rebuild (in progress)
+
+The admin panel is being rebuilt screen-by-screen against a stakeholder spec describing 6 target screens (Dashboard, Applications, Cleaners, Hosts, Requests, Matching Queue). Only **Dashboard** (`/admin/dashboard`) is built so far — it's the new admin landing page, with schema-backed KPI cards (no fabricated metrics: avg rating/disputes are omitted entirely since there's no review or dispute table yet). The remaining screens, sequencing, and the open product decisions behind them (e.g. why `cleaners.status` uses the values below) are tracked outside the repo in the planning doc from that work; `docs/chen-notes.md` tracks the broader, non-admin backlog of stakeholder feedback this rebuild is part of.
 
 ### Availability & booking
 
@@ -118,6 +122,10 @@ Three distinct clients — use the right one per context:
 
 `createAdminClient()` uses `SUPABASE_SERVICE_ROLE_KEY` and must never be called from client-side code.
 
+### Database migrations
+
+`supabase/migrations/000N_*.sql`, applied via `supabase db push` (Supabase CLI, linked to the one shared project). **All git branches share the same Supabase project** — the remote's migration-history table is flat and doesn't know about branches, so two branches both starting their next migration at the same number will collide (`supabase migration repair --status reverted <N>` fixes the bookkeeping after the fact, but check `supabase migration list` for the real next-available number before naming a new file, don't just increment off what's in your local branch). Postgres enum columns (`cleaner_status`, `application_status`) can have values added (`ALTER TYPE ... ADD VALUE`) but not cleanly removed — old/retired values are left defined-but-unused rather than attempting a type recreation.
+
 ### Middleware & auth
 
 `middleware.ts` (project root) runs at the edge on every non-static request. It:
@@ -173,13 +181,16 @@ A floating "Need help? Contact us!" bubble (`components/HelpWidget.tsx`, a `"use
 
 All shared DB types live in `types/database.ts`. The key enums are `UserRole`, `BookingStatus`, `CleanerStatus`, `ApplicationStatus`, and `ServiceType`. Per-feature view models live under `lib/types/` (`booking.ts`, `cleaner.ts`, etc.).
 
-- **`cleaners.status` valid values are only `pending | approved | rejected | suspended`** (the `cleaner_status` enum). `/browse` only shows cleaners with `status = 'approved'`, so any other value silently hides the cleaner from customers. If approved cleaners stop appearing in browse, check their status values first — that exact symptom traces back to bad status values, not a browse bug.
+- **`cleaners.status` valid values are only `pending | approved | rejected | suspended`** (the `cleaner_status` enum). `/browse` only shows cleaners with `status = 'approved'`, so any other value silently hides the cleaner from customers. If approved cleaners stop appearing in browse, check their status values first — that exact symptom traces back to bad status values, not a browse bug. **(The `chen-notes` admin work proposed renaming this enum to `new/active/in_training/inactive/blocked`; that migration was deliberately NOT merged — the app keeps the four canonical values, and the admin screens were adapted to them.)**
 - **The `cleaner_status` enum was once polluted with stray values (resolved 2026-06-25).** An out-of-band DB change had `ALTER TYPE ... ADD VALUE`'d `active`/`new` onto the enum, and cleaner rows were relabeled to them — so genuinely-approved cleaners no longer matched the `'approved'` filter and vanished from browse. Fixed by: (1) normalizing the data (`active`→`approved`, `new`→`pending`), then (2) `supabase/migrations/0002_retighten_cleaner_status.sql`, which recreates the enum with only the four canonical values (Postgres can't drop enum values in place, so the type is renamed-aside/recreated/swapped inside a transaction). Writing an invalid status now errors at the DB. To audit the enum: `select enumlabel from pg_enum where enumtypid = 'cleaner_status'::regtype;`
 - **Bulk status updates via PostgREST that filter on `status` and chain `.select()` hang against this DB** (e.g. `.update({status}).eq('status', x).select()`). Update per row by `id` instead when scripting status changes.
 - **Migrations are applied by hand — there is no Supabase CLI linked** (no `supabase/config.toml`, no `db push` script). The files in `supabase/migrations/` are the tracked source of truth, but adding a file does **not** change the live DB; the user must run the SQL in the Supabase SQL Editor (or `psql`). When you add a migration, tell the user to run it, and remember the app will error on the new column until they do.
 - **After adding a column, reload the PostgREST schema cache** or writes fail with *"Could not find the 'X' column of 'bookings' in the schema cache"* even though the column exists. Append `NOTIFY pgrst, 'reload schema';` to the migration SQL (or use Dashboard → Settings → API → Reload schema). This bit us on `cleaner_ack_cancelled` (the column was present; the cache was stale). If a brand-new column errors as "not found" but `select` shows it exists, it's the cache, not a missing column.
 - **`0010_security_lints.sql` addresses the Supabase database-linter SECURITY warnings** — drops the broad public-read SELECT policies on the `avatars`/`gallery` storage buckets (public buckets still serve by URL via `getPublicUrl`, only the *list* API is removed) and revokes RPC `EXECUTE` from anon/authenticated/public on the SECURITY DEFINER functions `handle_new_user`, `rls_auto_enable`, and the `st_estimatedextent` overloads (they're triggers / unused, so this doesn't affect them). Two lints are intentionally left: **leaked-password protection** (Pro-plan-only, unavailable on free tier) and **`extension_in_public` for `postgis`** (moving an installed PostGIS extension is risky on managed Postgres and could break the `cleaners.location` geometry — not worth it; the `st_estimatedextent` revokes already remove its practical RPC exposure). New SECURITY DEFINER functions should likewise revoke `EXECUTE` to stay lint-clean.
 - **Guard direct DB access.** The enum pollution above came from a manual/out-of-band write (Supabase SQL Editor, dashboard table edit, or an external script) — it left no trace in git or app code, so it can't be diagnosed from the repo. The app itself only ever writes the four canonical statuses (`handle_new_user` inserts `pending`; admin approval writes `approved`). Treat any non-canonical status, or any schema/enum change not represented by a file in `supabase/migrations/`, as an out-of-band change to investigate. Make schema changes via tracked migrations, not ad-hoc SQL Editor edits, and limit who holds service-role / direct-Postgres credentials.
+- `ApplicationStatus` (`cleaner_applications.status`) is a **separate** enum from `CleanerStatus` — `pending | approved | rejected | needs_info` (the `needs_info` value comes from `0002_admin_panel_foundation.sql`). Approving an application sets `cleaner_applications.status = 'approved'` **and** `cleaners.status = 'approved'`; rejecting sets both to `rejected`; **"Needs info"** parks the application (`needs_info`) without touching the cleaner's status. See `app/admin/actions.ts` `updateApplicationStatus`.
+- `cleaners.admin_notes` and `customers.admin_notes` (both nullable `text`, from `0002_admin_panel_foundation.sql`) hold free-text admin-only notes, persisted by the admin Applications screen.
+- `admin_action_log` (admin_id, target_type, target_id, action, payload jsonb — also `0002_admin_panel_foundation.sql`) is a generic audit table for admin-triggered actions (reserved for later admin phases such as the Matching Queue's "notify cleaners").
 
 ### Internationalization (two separate systems)
 
@@ -193,6 +204,7 @@ The app has **two independent i18n setups** — don't mix them:
 Both drive RTL the same way: `document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr'`. With `dir` set, Tailwind logical utilities (`text-start`, `end-0`, `justify-start`) flip automatically — prefer them over `left`/`right` so layouts work in both directions.
 
 - The customer **profile page is fully translated** under the `profile` namespace in `translations.ts` (`ProfileForm.tsx` uses `useLanguage()`; the page title moved into the client form so it translates). A dead `profileForm` namespace + a stub `profile.title` were removed when this was wired — `profile` is now the single source. Server-action validation messages return **keys** (`profile.err*`) that the form translates, since a Server Action can't read the client-stored language.
+- The customer/admin `t(key, vars?)` accepts an optional `vars` record for `{placeholder}` interpolation (e.g. `t('admin.dashboard.attentionApplications', { count: 3 })`), matching `{name}` tokens via simple `.replace()` — the admin dashboard's needs-attention strings rely on this.
 
 ### Environment variables
 

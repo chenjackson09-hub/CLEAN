@@ -107,6 +107,10 @@ export const translations = {
     svc_commercial: "Commercial",
     // Availability
     avail_title: "Availability",
+    avail_legend_available: "Available",
+    avail_legend_booked: "Booked",
+    avail_legend_pending: "Pending",
+    avail_legend_none: "Not available",
     avail_subtitle: "Set a recurring weekly schedule, or mark specific dates you're available.",
     avail_weekly: "Weekly schedule",
     avail_weekly_body: "Hours that repeat every week. Customers can book you on these days automatically.",
@@ -333,6 +337,10 @@ export const translations = {
     svc_commercial: "מסחרי",
     // Availability
     avail_title: "זמינות",
+    avail_legend_available: "פנוי",
+    avail_legend_booked: "מוזמן",
+    avail_legend_pending: "ממתין",
+    avail_legend_none: "לא זמין",
     avail_subtitle: "קבע לוח זמנים שבועי קבוע, או סמן תאריכים ספציפיים שאתה זמין.",
     avail_weekly: "לוח שבועי",
     avail_weekly_body: "שעות שחוזרות כל שבוע. לקוחות יכולים להזמין אותך בימים אלה אוטומטית.",

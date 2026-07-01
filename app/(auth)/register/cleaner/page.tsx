@@ -99,7 +99,7 @@ export default function CleanerOnboardingPage() {
       hourly_rate: hourlyRate,
       years_experience: yearsExperience,
       languages,
-      status: "pending",
+      status: "new",
     });
     if (cleanerErr) {
       setError(cleanerErr.message);

@@ -14,6 +14,8 @@ export const MOCK_APPLICATIONS: CleanerApplicationResult[] = [
     address: '10 Ben Yehuda St, Tel Aviv',
     status: 'pending',
     submitted_at: '2026-06-10',
+    id_document_url: null,
+    admin_notes: null,
   },
   {
     id: '2',
@@ -28,6 +30,8 @@ export const MOCK_APPLICATIONS: CleanerApplicationResult[] = [
     address: '5 Hertzel St, Haifa',
     status: 'pending',
     submitted_at: '2026-06-11',
+    id_document_url: null,
+    admin_notes: null,
   },
   {
     id: '3',
@@ -42,5 +46,7 @@ export const MOCK_APPLICATIONS: CleanerApplicationResult[] = [
     address: '22 Allenby St, Tel Aviv',
     status: 'pending',
     submitted_at: '2026-06-12',
+    id_document_url: null,
+    admin_notes: null,
   },
 ]

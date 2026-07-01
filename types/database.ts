@@ -1,7 +1,7 @@
 export type UserRole = "customer" | "cleaner" | "admin";
 export type ServiceType = "residential" | "commercial";
 export type CleanerStatus = "pending" | "approved" | "rejected" | "suspended";
-export type ApplicationStatus = "pending" | "approved" | "rejected";
+export type ApplicationStatus = "pending" | "approved" | "rejected" | "needs_info";
 export type BookingStatus =
   | "pending"
   | "accepted"
@@ -47,6 +47,9 @@ export interface Customer {
   // Most hours the customer is willing to pay for (null = no preference). See
   // migration 0013.
   max_hours: number | null;
+  // Free-text notes the admin keeps on this customer. See migration
+  // 0002_admin_panel_foundation.
+  admin_notes: string | null;
 }
 
 export interface Cleaner {
@@ -71,6 +74,9 @@ export interface Cleaner {
   // preference). See migration 0013.
   min_hours: number | null;
   max_hours: number | null;
+  // Free-text notes the admin keeps on this cleaner. See migration
+  // 0002_admin_panel_foundation.
+  admin_notes: string | null;
 }
 
 export interface CleanerApplication {

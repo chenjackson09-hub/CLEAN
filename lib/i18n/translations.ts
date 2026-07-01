@@ -4,11 +4,12 @@ const translations = {
   en: {
     nav: {
       home: 'Home',
-      browse: 'Browse Cleaners',
+      browse: 'Schedule',
       bookings: 'My Bookings',
       profile: 'Profile',
     },
     adminNav: {
+      dashboard: 'Dashboard',
       applications: 'Applications',
       bookings: 'Booking Requests',
       cleaners: 'Cleaners',
@@ -65,7 +66,7 @@ const translations = {
       clear: 'Clear',
     },
     browse: {
-      title: 'Find a Cleaner',
+      title: 'Schedule a Clean',
       useFilters: 'Use the filters above to find cleaners near you.',
       selectDate: 'Select a day on the calendar above to see available cleaners.',
       enterLocation: 'Add your address in your profile to find cleaners who serve your area.',
@@ -109,7 +110,7 @@ const translations = {
       schedule: 'Schedule a clean',
     },
     cleanerProfile: {
-      backToBrowse: '← Back to Browse',
+      backToBrowse: '← Back to Schedule',
       backToSearch: '← Back to search',
       experience: 'Experience',
       distance: 'Distance',
@@ -257,12 +258,22 @@ const translations = {
     admin: {
       applications: {
         title: 'Cleaner Applications',
-        empty: 'No applications yet.',
+        empty: 'No applications match this filter.',
         approve: 'Approve',
         reject: 'Reject',
+        needsInfo: 'Needs Info',
+        idDocument: '📄 View ID document',
         submitted: 'Submitted',
         status: {
           pending: 'Pending',
+          approved: 'Approved',
+          rejected: 'Rejected',
+          needs_info: 'Needs Info',
+        },
+        tabs: {
+          all: 'All',
+          pending: 'Pending review',
+          needs_info: 'Needs info',
           approved: 'Approved',
           rejected: 'Rejected',
         },
@@ -289,6 +300,27 @@ const translations = {
         confirmDelete: 'Remove this person from the list?',
         noRating: 'No ratings yet',
       },
+      dashboard: {
+        title: 'Dashboard',
+        cleaners: 'Cleaners',
+        cleanersSub: '{active} active · {new} new',
+        hosts: 'Hosts',
+        hostsSub: '+{count} this month',
+        applications: 'Applications',
+        applicationsSub: 'awaiting review',
+        matches: 'Matches this week',
+        cancellationRate: 'Cancellation rate',
+        unmatched: 'Unmatched requests',
+        unmatchedSub: 'need attention',
+        needsAttention: 'Needs attention',
+        needsAttentionEmpty: "Nothing needs attention right now.",
+        attentionUnmatched: '{count} requests unmatched 24h+',
+        attentionApplications: '{count} applications pending review',
+        recentActivity: 'Recent activity',
+        recentActivityEmpty: 'No recent activity yet.',
+        topAreas: 'Top areas this week',
+        topAreasEmpty: 'Not enough bookings yet to show areas.',
+      },
     },
     dashboard: {
       title: 'My Booking Requests',
@@ -298,7 +330,7 @@ const translations = {
     },
     auth: {
       login: {
-        title: 'Welcome back',
+        title: 'Login',
         subtitle: 'Sign in to your account',
         email: 'Email',
         password: 'Password',
@@ -366,11 +398,12 @@ const translations = {
   he: {
     nav: {
       home: 'בית',
-      browse: 'חיפוש מנקים',
+      browse: 'לוח זמנים',
       bookings: 'ההזמנות שלי',
       profile: 'פרופיל',
     },
     adminNav: {
+      dashboard: 'דשבורד',
       applications: 'בקשות הצטרפות',
       bookings: 'בקשות הזמנה',
       cleaners: 'מנקים',
@@ -427,7 +460,7 @@ const translations = {
       clear: 'איפוס',
     },
     browse: {
-      title: 'מצאו מנקה',
+      title: 'תזמון ניקיון',
       useFilters: 'השתמשו במסננים מעל כדי למצוא מנקים בקרבתכם.',
       selectDate: 'בחרו יום בלוח השנה למעלה כדי לראות מנקים זמינים.',
       enterLocation: 'הוסיפו את הכתובת שלכם בפרופיל כדי למצוא מנקים שמשרתים את האזור שלכם.',
@@ -471,7 +504,7 @@ const translations = {
       schedule: 'קביעת ניקיון',
     },
     cleanerProfile: {
-      backToBrowse: '→ חזרה לחיפוש',
+      backToBrowse: '→ חזרה ללוח הזמנים',
       backToSearch: 'חזרה לחיפוש →',
       experience: 'ניסיון',
       distance: 'מרחק',
@@ -619,14 +652,24 @@ const translations = {
     admin: {
       applications: {
         title: 'בקשות הצטרפות מנקים',
-        empty: 'אין בקשות עדיין.',
+        empty: 'אין בקשות התואמות את הסינון.',
         approve: 'אישור',
         reject: 'דחייה',
+        needsInfo: 'דרוש מידע',
+        idDocument: '📄 צפייה במסמך זיהוי',
         submitted: 'הוגש',
         status: {
           pending: 'בהמתנה',
           approved: 'אושר',
           rejected: 'נדחה',
+          needs_info: 'דרוש מידע',
+        },
+        tabs: {
+          all: 'הכל',
+          pending: 'מחכות לבדיקה',
+          needs_info: 'דרוש מידע',
+          approved: 'אושרו',
+          rejected: 'נדחו',
         },
       },
       bookings: {
@@ -651,6 +694,27 @@ const translations = {
         confirmDelete: 'להסיר את האדם הזה מהרשימה?',
         noRating: 'אין דירוגים עדיין',
       },
+      dashboard: {
+        title: 'דשבורד',
+        cleaners: 'מנקים',
+        cleanersSub: '{active} פעילים · {new} חדשים',
+        hosts: 'לקוחות',
+        hostsSub: '+{count} החודש',
+        applications: 'בקשות הצטרפות',
+        applicationsSub: 'מחכות לבדיקה',
+        matches: 'התאמות השבוע',
+        cancellationRate: 'שיעור ביטולים',
+        unmatched: 'בקשות לא משובצות',
+        unmatchedSub: 'דורש תשומת לב',
+        needsAttention: 'דורש תשומת לב',
+        needsAttentionEmpty: 'אין כרגע דבר שדורש תשומת לב.',
+        attentionUnmatched: '{count} בקשות לא משובצות מעל 24 שעות',
+        attentionApplications: '{count} בקשות הצטרפות מחכות לבדיקה',
+        recentActivity: 'פעילות אחרונה',
+        recentActivityEmpty: 'אין פעילות אחרונה עדיין.',
+        topAreas: 'האזורים המובילים השבוע',
+        topAreasEmpty: 'אין עדיין מספיק הזמנות כדי להציג אזורים.',
+      },
     },
     dashboard: {
       title: 'בקשות ההזמנה שלי',
@@ -660,7 +724,7 @@ const translations = {
     },
     auth: {
       login: {
-        title: 'ברוכים השבים',
+        title: 'התחברות',
         subtitle: 'התחברו לחשבון שלכם',
         email: 'אימייל',
         password: 'סיסמה',

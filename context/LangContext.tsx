@@ -26,8 +26,14 @@ export function useLang() {
   );
 
   const t = useCallback(
-    (key: TranslationKey): string =>
-      (translations[lang as Lang] ?? translations.en)[key] ?? translations.en[key],
+    (key: TranslationKey, vars?: Record<string, string | number>): string => {
+      const value: string = (translations[lang as Lang] ?? translations.en)[key] ?? translations.en[key];
+      if (!vars) return value;
+      return Object.entries(vars).reduce(
+        (result: string, [name, replacement]) => result.replace(`{${name}}`, String(replacement)),
+        value
+      );
+    },
     [lang]
   );
 
