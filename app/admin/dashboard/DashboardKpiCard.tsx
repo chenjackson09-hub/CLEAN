@@ -12,7 +12,7 @@ export function DashboardKpiCard({ href, value, label, sub, highlight = false }:
   return (
     <Link
       href={href}
-      className={`block rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow bg-white border ${
+      className={`block rounded-2xl p-4 shadow-2xl hover:shadow-lg transition-shadow bg-white border ${
         highlight ? 'border-amber-300' : 'border-gray-100'
       }`}
     >

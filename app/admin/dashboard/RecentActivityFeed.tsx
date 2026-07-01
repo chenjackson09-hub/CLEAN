@@ -32,7 +32,7 @@ export function RecentActivityFeed({ bookings }: { bookings: Booking[] }) {
   const { t, lang } = useLanguage()
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-5">
+    <div className="bg-white rounded-2xl shadow-2xl p-5">
       <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">{t('admin.dashboard.recentActivity')}</h2>
       {bookings.length === 0 ? (
         <p className="text-sm text-gray-400">{t('admin.dashboard.recentActivityEmpty')}</p>
