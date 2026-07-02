@@ -6,8 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
-
-const LANGUAGE_OPTIONS = ["EN", "HE", "AR", "RU"]
+import { LanguageMultiSelect } from "@/components/LanguageMultiSelect";
 
 function Spinner() {
   return (
@@ -35,10 +34,6 @@ export default function CleanerOnboardingPage() {
     }
     setCreds(JSON.parse(raw));
   }, [router]);
-
-  function toggleLanguage(lang: string) {
-    setLanguages(prev => prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]);
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -240,20 +235,11 @@ export default function CleanerOnboardingPage() {
 
           <div>
             <span className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCleaner.languages")}</span>
-            <div className="flex gap-4">
-              {LANGUAGE_OPTIONS.map(lang => (
-                <label key={lang} htmlFor={`language-${lang}`} className="flex items-center gap-1.5 text-sm text-gray-700">
-                  <input
-                    type="checkbox"
-                    id={`language-${lang}`}
-                    checked={languages.includes(lang)}
-                    onChange={() => toggleLanguage(lang)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  {lang}
-                </label>
-              ))}
-            </div>
+            <LanguageMultiSelect
+              value={languages}
+              onChange={setLanguages}
+              placeholder={t("auth.registerCleaner.languagesSelect")}
+            />
           </div>
 
           <div>

@@ -13,6 +13,7 @@ const baseProfile = {
   phone: '050-1234567',
   bio: 'Looking for a reliable cleaner for my apartment.',
   preferred_service_type: 'residential' as const,
+  languages: [] as string[],
   max_hours: '',
   address: '12 Rothschild Blvd, Tel Aviv',
   avatar_url: null as string | null,

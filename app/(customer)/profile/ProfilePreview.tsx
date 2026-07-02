@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { StarRatingDisplay } from '@/components/StarRating'
+import { languageShort } from '@/lib/languages'
 
 // The subset of customer data a cleaner actually sees when they open this
 // person's profile (mirrors /cleaner/customers/[id]), minus the per-cleaner
@@ -10,6 +11,7 @@ type PreviewData = {
   full_name: string
   avatar_url: string | null
   bio: string
+  languages: string[]
   rating_avg: number | null
   rating_count: number
   cleans_completed: number
@@ -106,6 +108,19 @@ export function ProfilePreview({ data }: { data: PreviewData }) {
             <p className="text-base text-gray-700 whitespace-pre-line">{data.bio}</p>
           </div>
         )}
+        {/* Languages — short codes, normalizing any legacy value. */}
+        {data.languages.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-gray-400 uppercase tracking-wide text-xs mb-1">{t('profile.languages')}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {data.languages.map((l) => (
+                <span key={l} className="inline-flex items-center bg-gray-100 text-gray-700 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                  {languageShort(l)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Household details — same grid the cleaner-facing profile renders. */}
@@ -128,7 +143,7 @@ export function ProfilePreview({ data }: { data: PreviewData }) {
       )}
 
       {/* Nothing filled in yet — nudge the customer toward the edit form. */}
-      {!data.bio && household.length === 0 && (
+      {!data.bio && data.languages.length === 0 && household.length === 0 && (
         <div className="bg-white rounded-2xl shadow-xl p-6 text-center text-gray-400 text-sm">
           {t('profile.previewEmpty')}
         </div>

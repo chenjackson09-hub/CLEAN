@@ -5,6 +5,7 @@ import { AvatarLightbox } from './AvatarLightbox'
 import { GalleryLightbox } from './GalleryLightbox'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { StarRatingDisplay } from '@/components/StarRating'
+import { languageShort } from '@/lib/languages'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import type { ReactNode } from 'react'
 
@@ -150,7 +151,8 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
                       </svg>
-                      {lang}
+                      {/* Short code, normalizing any legacy full-name/latin value. */}
+                      {languageShort(lang)}
                     </span>
                   ))}
                 </div>

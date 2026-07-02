@@ -6,6 +6,7 @@ import type { Profile, Booking, Customer } from "@/types/database";
 import BackLink from "./BackLink";
 import DateCube from "./DateCube";
 import { StarRatingDisplay } from "@/components/StarRating";
+import { languageShort } from "@/lib/languages";
 
 const STATUS_STYLES: Record<string, string> = {
   pending:   "bg-yellow-100 text-yellow-700",
@@ -119,6 +120,19 @@ export default async function CustomerProfilePage({
           <div className="mt-4 pt-4">
             <p className="text-gray-400 uppercase tracking-wide text-xs mb-1">About</p>
             <p className="text-base text-gray-700 whitespace-pre-line">{customer.bio}</p>
+          </div>
+        )}
+        {/* Languages the customer speaks — short codes (see lib/languages.ts). */}
+        {(customer?.languages?.length ?? 0) > 0 && (
+          <div className="mt-4 pt-4">
+            <p className="text-gray-400 uppercase tracking-wide text-xs mb-1">Languages</p>
+            <div className="flex flex-wrap gap-1.5">
+              {customer!.languages.map((l) => (
+                <span key={l} className="inline-flex items-center bg-gray-100 text-gray-700 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                  {languageShort(l)}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>

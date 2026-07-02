@@ -17,6 +17,12 @@ export default async function ProfilePage() {
     supabase.from("customers").select("bio, rating_avg, rating_count, cleans_completed, num_rooms, pet_types, num_pets, num_kids_under_15, num_people, house_size_sqm, dwelling_type, floor").eq("id", user.id).single(),
   ])
 
+  // languages was added by migration 0018 (applied by hand). Fetch it separately
+  // so the preview still loads if the migration hasn't run yet (error → []).
+  const { data: langRow } = await supabase
+    .from("customers").select("languages").eq("id", user.id)
+    .single<{ languages: string[] | null }>()
+
   return (
     <div className="max-w-lg mx-auto">
       <ProfilePreview
@@ -24,6 +30,7 @@ export default async function ProfilePage() {
           full_name: profile?.full_name ?? "",
           avatar_url: profile?.avatar_url ?? null,
           bio: customer?.bio ?? "",
+          languages: langRow?.languages ?? [],
           rating_avg: customer?.rating_avg != null ? Number(customer.rating_avg) : null,
           rating_count: customer?.rating_count ?? 0,
           cleans_completed: customer?.cleans_completed ?? 0,

@@ -28,6 +28,8 @@ export interface Customer {
   lat: number | null;
   lng: number | null;
   preferred_service_type: ServiceType | null;
+  // Languages the customer speaks (short codes, see lib/languages.ts). Migration 0018.
+  languages: string[];
   // Household details (help cleaners size up a job). All optional.
   num_rooms: number | null;
   pet_types: PetType[];

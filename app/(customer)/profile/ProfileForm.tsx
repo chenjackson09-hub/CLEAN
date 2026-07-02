@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { normalizeImageToJpeg } from '@/lib/image/normalizeImage'
+import { LanguageMultiSelect } from '@/components/LanguageMultiSelect'
 
 type ActionResult = { error?: string; success?: boolean; avatarUrl?: string } | null
 
@@ -12,6 +13,7 @@ type DefaultValues = {
   phone: string
   bio: string
   preferred_service_type: 'residential' | 'commercial'
+  languages: string[]
   max_hours: string
   address: string
   avatar_url: string | null
@@ -193,6 +195,16 @@ export function ProfileForm({ defaultValues, action }: Props) {
             <option value="residential">{t('profile.residential')}</option>
             <option value="commercial">{t('profile.commercial')}</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          {/* Composite widget → labelled with a <span>, not <label htmlFor>. */}
+          <span className={labelClass}>{t('profile.languages')}</span>
+          <LanguageMultiSelect
+            name="languages"
+            defaultValue={defaultValues.languages}
+            placeholder={t('profile.languagesSelect')}
+          />
         </div>
 
         <div className="flex flex-col gap-1">

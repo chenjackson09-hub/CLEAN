@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { languageShort } from '@/lib/languages'
 import type { ApplicationStatus, CleanerApplicationResult } from '@/lib/types/application'
 
 const SERVICE_BADGE: Record<string, string> = {
@@ -71,7 +72,7 @@ export function ApplicationCard({ application, onUpdateStatus, onSaveNotes }: Pr
 <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700 flex items-center gap-1">
 
 
-  {application.languages.join(', ')}
+  {application.languages.map(languageShort).join(', ')}
 </span>
         )}
       </div>

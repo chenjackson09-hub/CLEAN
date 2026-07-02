@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
 import { restoreAvailability } from "@/lib/availability"
+import { normalizeLanguages } from "@/lib/languages"
 import { sendNewBookingRequest } from "@/lib/resend"
 
 // Records that the customer has now seen their bookings, clearing the "newly
@@ -39,6 +40,9 @@ export async function updateCustomerProfile(
   const bio = formData.get("bio") as string
   const preferredServiceType = formData.get("preferred_service_type") as string
   const address = formData.get("address") as string
+  // Languages come from the shared multi-select as a comma-joined hidden input;
+  // normalize to canonical short codes (see lib/languages.ts).
+  const languages = normalizeLanguages(((formData.get("languages") as string | null) ?? "").split(","))
 
   // Household details — all optional. Numbers come from keyboard inputs, so parse
   // leniently and store null when blank/invalid. toInt rejects negatives (counts
@@ -111,6 +115,7 @@ export async function updateCustomerProfile(
       bio,
       address,
       preferred_service_type: preferredServiceType || null,
+      languages,
       max_hours: toInt(formData.get("max_hours")),
       lat: location?.lat ?? null,
       lng: location?.lng ?? null,

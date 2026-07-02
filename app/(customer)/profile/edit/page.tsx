@@ -16,6 +16,12 @@ export default async function ProfileEditPage() {
     supabase.from("customers").select("bio, address, preferred_service_type, max_hours, num_rooms, pet_types, num_pets, num_kids_under_15, num_people, house_size_sqm, dwelling_type, floor").eq("id", user.id).single(),
   ])
 
+  // languages was added by migration 0018 (applied by hand). Fetch it separately
+  // so the form still loads if the migration hasn't run yet (error → []).
+  const { data: langRow } = await supabase
+    .from("customers").select("languages").eq("id", user.id)
+    .single<{ languages: string[] | null }>()
+
   const numOrEmpty = (n: number | null | undefined) => (n == null ? "" : String(n))
 
   return (
@@ -28,6 +34,7 @@ export default async function ProfileEditPage() {
           phone: profile?.phone ?? "",
           bio: customer?.bio ?? "",
           preferred_service_type: (customer?.preferred_service_type as 'residential' | 'commercial') ?? "residential",
+          languages: langRow?.languages ?? [],
           max_hours: numOrEmpty(customer?.max_hours),
           address: customer?.address ?? "",
           avatar_url: profile?.avatar_url ?? null,

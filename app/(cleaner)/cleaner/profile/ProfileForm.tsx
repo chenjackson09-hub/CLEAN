@@ -6,6 +6,7 @@ import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
+import { LanguageMultiSelect } from "@/components/LanguageMultiSelect";
 import type { Profile, Cleaner } from "@/types/database";
 
 interface Props {
@@ -207,14 +208,13 @@ export default function ProfileForm({ profile, cleaner }: Props) {
           />
         </div>
         <div>
-          <label htmlFor="languages" className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
-          <input
-            id="languages"
-            type="text"
+          {/* Composite widget → labelled with a <span>, not <label htmlFor>,
+              since there's no single labelable field (see a11y note in CLAUDE.md). */}
+          <span className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</span>
+          <LanguageMultiSelect
             name="languages"
-            defaultValue={cleaner?.languages?.join(", ") ?? ""}
-            placeholder="English, French"
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            defaultValue={cleaner?.languages ?? []}
+            placeholder={t("prof_languages_select")}
           />
         </div>
       </div>
