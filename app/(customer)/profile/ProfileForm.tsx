@@ -37,7 +37,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold text-sm transition-colors self-start shadow-sm disabled:opacity-60"
+      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold text-sm transition-colors shrink-0 shadow-sm disabled:opacity-60"
     >
       {pending ? t('profile.saving') : t('profile.save')}
     </button>
@@ -95,10 +95,25 @@ export function ProfileForm({ defaultValues, action }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-lg">
-      <h1 className="text-xl font-bold text-gray-900">{t('profile.title')}</h1>
+    <form action={formAction} className="flex flex-col gap-6 max-w-lg">
+      {/* Hidden file input wired to avatar button */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        name="avatar"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Title row — Save sits inline with the page title */}
+      <div className="flex items-center justify-between py-3 gap-4">
+        <h1 className="text-xl font-bold text-gray-900">{t('profile.title')}</h1>
+        <SubmitButton />
+      </div>
+
       {/* Profile header card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex items-center gap-5">
+      <div className="bg-white rounded-2xl shadow-xl p-6 shadow-sm flex items-center gap-5">
         {/* Clickable avatar */}
         <button
           type="button"
@@ -130,17 +145,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
         </div>
       </div>
 
-      <form action={formAction} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 border-t-4 border-t-blue-500 flex flex-col gap-4">
-        {/* Hidden file input wired to avatar button */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          name="avatar"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-
+      <div className="bg-white rounded-2xl p-6 shadow-xl flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="full_name" className={labelClass}>{t('profile.fullName')}</label>
           <input
@@ -310,9 +315,7 @@ export function ProfileForm({ defaultValues, action }: Props) {
         {state?.success && (
           <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{t('profile.saved')}</p>
         )}
-
-        <SubmitButton />
-      </form>
-    </div>
+      </div>
+    </form>
   )
 }

@@ -1,40 +1,40 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { ProfileForm } from './ProfileForm'
-import { updateCustomerProfile } from '../actions'
+import { ProfilePreview } from './ProfilePreview'
 
+// The Profile button now lands on a read-only preview of what a cleaner sees
+// when they open this customer's profile; the editable form lives at
+// /profile/edit (reached via the "Edit profile" button).
 export default async function ProfilePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  // Pull the same fields a cleaner reads on /cleaner/customers/[id]. rating_avg
+  // comes back as a string (PostgREST numeric), so coerce it for the stars.
   const [{ data: profile }, { data: customer }] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone, avatar_url").eq("id", user.id).single(),
-    supabase.from("customers").select("bio, address, preferred_service_type, max_hours, num_rooms, pet_types, num_pets, num_kids_under_15, num_people, house_size_sqm, dwelling_type, floor").eq("id", user.id).single(),
+    supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single(),
+    supabase.from("customers").select("bio, rating_avg, rating_count, cleans_completed, num_rooms, pet_types, num_pets, num_kids_under_15, num_people, house_size_sqm, dwelling_type, floor").eq("id", user.id).single(),
   ])
-
-  const numOrEmpty = (n: number | null | undefined) => (n == null ? "" : String(n))
 
   return (
     <div className="max-w-lg mx-auto">
-      <ProfileForm
-        action={updateCustomerProfile}
-        defaultValues={{
+      <ProfilePreview
+        data={{
           full_name: profile?.full_name ?? "",
-          phone: profile?.phone ?? "",
-          bio: customer?.bio ?? "",
-          preferred_service_type: (customer?.preferred_service_type as 'residential' | 'commercial') ?? "residential",
-          max_hours: numOrEmpty(customer?.max_hours),
-          address: customer?.address ?? "",
           avatar_url: profile?.avatar_url ?? null,
-          num_rooms: numOrEmpty(customer?.num_rooms),
+          bio: customer?.bio ?? "",
+          rating_avg: customer?.rating_avg != null ? Number(customer.rating_avg) : null,
+          rating_count: customer?.rating_count ?? 0,
+          cleans_completed: customer?.cleans_completed ?? 0,
+          num_rooms: customer?.num_rooms ?? null,
           pet_types: (customer?.pet_types as ('dog' | 'cat' | 'other')[]) ?? [],
-          num_pets: numOrEmpty(customer?.num_pets),
-          num_kids_under_15: numOrEmpty(customer?.num_kids_under_15),
-          num_people: numOrEmpty(customer?.num_people),
-          house_size_sqm: numOrEmpty(customer?.house_size_sqm),
+          num_pets: customer?.num_pets ?? null,
+          num_kids_under_15: customer?.num_kids_under_15 ?? null,
+          num_people: customer?.num_people ?? null,
+          house_size_sqm: customer?.house_size_sqm ?? null,
           dwelling_type: (customer?.dwelling_type as 'apartment' | 'house' | null) ?? null,
-          floor: numOrEmpty(customer?.floor),
+          floor: customer?.floor ?? null,
         }}
       />
     </div>

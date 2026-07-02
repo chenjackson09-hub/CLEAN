@@ -112,7 +112,11 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
         {/* Stats */}
         <div className="bg-white shadow-sm rounded-2xl p-6">
-          <div className="flex items-center justify-around text-center">
+          {/* Grid on mobile so each stat (label over value) sits in a fixed
+              column track — a longer value can't shove its neighbors around or
+              make the row jump. Restores the single centered flex row on lg,
+              where there's room for it. */}
+          <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-3 lg:flex lg:items-center lg:justify-around lg:gap-0">
             {cleaner.years_experience != null && (
               <div>
                 <p className="text-sm text-gray-500">{t('cleanerProfile.experience')}</p>

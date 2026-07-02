@@ -133,7 +133,9 @@ export default async function CustomerProfilePage({
             {household.map((f) => (
               <div key={f.label}>
                 <p className="text-gray-400 uppercase tracking-wide text-xs mb-0.5">{f.label}</p>
-                <p className="text-base font-semibold text-gray-900">{f.value}</p>
+                {/* break-words so a long value wraps inside its cell instead of
+                    overflowing and pushing the grid out of alignment. */}
+                <p className="text-base font-semibold text-gray-900 break-words">{f.value}</p>
               </div>
             ))}
           </div>
