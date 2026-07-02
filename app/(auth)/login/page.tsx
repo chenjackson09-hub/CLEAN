@@ -120,7 +120,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-2xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+            className="rounded-2xl w-full bg-blue-600 text-white rounded-2xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
             {loading ? <><Spinner />{t("auth.login.signingIn")}</> : t("auth.login.signIn")}
           </button>

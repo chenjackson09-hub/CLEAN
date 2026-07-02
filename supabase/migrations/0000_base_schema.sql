@@ -13,6 +13,15 @@
 --   * added the postgis extension (cleaners.location is a geography column),
 --     installed into `public` to match the dumped `public.geography` type
 --
+-- Made IDEMPOTENT so replaying this file against a database that ALREADY has
+-- the schema is a no-op instead of an error: CREATE TYPE is wrapped in a
+-- duplicate_object-swallowing DO block, CREATE TABLE -> CREATE TABLE IF NOT
+-- EXISTS, CREATE FUNCTION -> CREATE OR REPLACE FUNCTION, each ADD CONSTRAINT is
+-- wrapped in a DO block, and each policy is DROP-IF-EXISTS'd before re-create.
+-- This is what lets Supabase's Preview/Branching check (which replays the whole
+-- migrations/ folder in order) run without "type ... already exists" (42710)
+-- and friends. The manual "run once on a fresh project" workflow is unchanged.
+--
 -- Still required AFTER this file (not contained here):
 --   * the auth trigger on auth.users  -> see 0000b_auth_trigger.sql
 --   * storage buckets + policies      -> see 0000c_storage.sql
@@ -43,12 +52,6 @@ SET row_security = off;
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
-
-
---
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 --
 
@@ -59,65 +62,75 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 -- Name: application_status; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.application_status AS ENUM (
-    'pending',
-    'approved',
-    'rejected',
-    'needs_info'
-);
+DO $$ BEGIN
+    CREATE TYPE public.application_status AS ENUM (
+        'pending',
+        'approved',
+        'rejected',
+        'needs_info'
+    );
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: booking_status; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.booking_status AS ENUM (
-    'pending',
-    'accepted',
-    'declined',
-    'completed',
-    'cancelled'
-);
+DO $$ BEGIN
+    CREATE TYPE public.booking_status AS ENUM (
+        'pending',
+        'accepted',
+        'declined',
+        'completed',
+        'cancelled'
+    );
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_status; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.cleaner_status AS ENUM (
-    'pending',
-    'approved',
-    'rejected',
-    'suspended'
-);
+DO $$ BEGIN
+    CREATE TYPE public.cleaner_status AS ENUM (
+        'pending',
+        'approved',
+        'rejected',
+        'suspended'
+    );
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: service_type; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.service_type AS ENUM (
-    'residential',
-    'commercial'
-);
+DO $$ BEGIN
+    CREATE TYPE public.service_type AS ENUM (
+        'residential',
+        'commercial'
+    );
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: user_role; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.user_role AS ENUM (
-    'customer',
-    'cleaner',
-    'admin'
-);
+DO $$ BEGIN
+    CREATE TYPE public.user_role AS ENUM (
+        'customer',
+        'cleaner',
+        'admin'
+    );
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.handle_new_user() RETURNS trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
@@ -184,7 +197,7 @@ SET default_table_access_method = heap;
 -- Name: admin_action_log; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.admin_action_log (
+CREATE TABLE IF NOT EXISTS public.admin_action_log (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     admin_id uuid,
     target_type text NOT NULL,
@@ -199,7 +212,7 @@ CREATE TABLE public.admin_action_log (
 -- Name: bookings; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.bookings (
+CREATE TABLE IF NOT EXISTS public.bookings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     customer_id uuid,
     cleaner_id uuid,
@@ -224,7 +237,7 @@ CREATE TABLE public.bookings (
 -- Name: cleaner_applications; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.cleaner_applications (
+CREATE TABLE IF NOT EXISTS public.cleaner_applications (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     cleaner_id uuid,
     id_document_url text,
@@ -240,7 +253,7 @@ CREATE TABLE public.cleaner_applications (
 -- Name: cleaner_availability; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.cleaner_availability (
+CREATE TABLE IF NOT EXISTS public.cleaner_availability (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     cleaner_id uuid,
     day_of_week integer,
@@ -255,7 +268,7 @@ CREATE TABLE public.cleaner_availability (
 -- Name: cleaner_gallery; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.cleaner_gallery (
+CREATE TABLE IF NOT EXISTS public.cleaner_gallery (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     cleaner_id uuid NOT NULL,
     photo_url text NOT NULL,
@@ -267,7 +280,7 @@ CREATE TABLE public.cleaner_gallery (
 -- Name: cleaner_weekly_availability; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.cleaner_weekly_availability (
+CREATE TABLE IF NOT EXISTS public.cleaner_weekly_availability (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     cleaner_id uuid NOT NULL,
     day_of_week smallint NOT NULL,
@@ -282,7 +295,7 @@ CREATE TABLE public.cleaner_weekly_availability (
 -- Name: cleaners; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.cleaners (
+CREATE TABLE IF NOT EXISTS public.cleaners (
     id uuid NOT NULL,
     bio text,
     service_types text[],
@@ -301,7 +314,7 @@ CREATE TABLE public.cleaners (
 -- Name: customers; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.customers (
+CREATE TABLE IF NOT EXISTS public.customers (
     id uuid NOT NULL,
     bio text,
     address text,
@@ -326,7 +339,7 @@ CREATE TABLE public.customers (
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid NOT NULL,
     full_name text,
     phone text,
@@ -340,166 +353,207 @@ CREATE TABLE public.profiles (
 -- Name: admin_action_log admin_action_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.admin_action_log
-    ADD CONSTRAINT admin_action_log_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.admin_action_log
+        ADD CONSTRAINT admin_action_log_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: bookings bookings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.bookings
-    ADD CONSTRAINT bookings_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.bookings
+        ADD CONSTRAINT bookings_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_applications cleaner_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_applications
-    ADD CONSTRAINT cleaner_applications_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_applications
+        ADD CONSTRAINT cleaner_applications_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_availability cleaner_availability_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_availability
-    ADD CONSTRAINT cleaner_availability_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_availability
+        ADD CONSTRAINT cleaner_availability_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_gallery cleaner_gallery_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_gallery
-    ADD CONSTRAINT cleaner_gallery_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_gallery
+        ADD CONSTRAINT cleaner_gallery_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_weekly_availability cleaner_weekly_availability_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_weekly_availability
-    ADD CONSTRAINT cleaner_weekly_availability_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_weekly_availability
+        ADD CONSTRAINT cleaner_weekly_availability_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaners cleaners_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaners
-    ADD CONSTRAINT cleaners_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaners
+        ADD CONSTRAINT cleaners_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: customers customers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.customers
-    ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.customers
+        ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_pkey PRIMARY KEY (id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.profiles
+        ADD CONSTRAINT profiles_pkey PRIMARY KEY (id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: admin_action_log admin_action_log_admin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.admin_action_log
-    ADD CONSTRAINT admin_action_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.profiles(id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.admin_action_log
+        ADD CONSTRAINT admin_action_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.profiles(id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: bookings bookings_cleaner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.bookings
-    ADD CONSTRAINT bookings_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.profiles(id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.bookings
+        ADD CONSTRAINT bookings_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.profiles(id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: bookings bookings_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.bookings
-    ADD CONSTRAINT bookings_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.profiles(id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.bookings
+        ADD CONSTRAINT bookings_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.profiles(id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_applications cleaner_applications_cleaner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_applications
-    ADD CONSTRAINT cleaner_applications_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.cleaners(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_applications
+        ADD CONSTRAINT cleaner_applications_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.cleaners(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_applications cleaner_applications_reviewed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_applications
-    ADD CONSTRAINT cleaner_applications_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.profiles(id);
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_applications
+        ADD CONSTRAINT cleaner_applications_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.profiles(id);
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_availability cleaner_availability_cleaner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_availability
-    ADD CONSTRAINT cleaner_availability_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.cleaners(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_availability
+        ADD CONSTRAINT cleaner_availability_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.cleaners(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_gallery cleaner_gallery_cleaner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_gallery
-    ADD CONSTRAINT cleaner_gallery_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_gallery
+        ADD CONSTRAINT cleaner_gallery_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_weekly_availability cleaner_weekly_availability_cleaner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaner_weekly_availability
-    ADD CONSTRAINT cleaner_weekly_availability_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaner_weekly_availability
+        ADD CONSTRAINT cleaner_weekly_availability_cleaner_id_fkey FOREIGN KEY (cleaner_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaners cleaners_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.cleaners
-    ADD CONSTRAINT cleaners_id_fkey FOREIGN KEY (id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.cleaners
+        ADD CONSTRAINT cleaners_id_fkey FOREIGN KEY (id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: customers customers_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.customers
-    ADD CONSTRAINT customers_id_fkey FOREIGN KEY (id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.customers
+        ADD CONSTRAINT customers_id_fkey FOREIGN KEY (id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: profiles profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE ONLY public.profiles
+        ADD CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 
 --
 -- Name: cleaner_gallery Cleaners manage own gallery; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "Cleaners manage own gallery" ON public.cleaner_gallery;
 CREATE POLICY "Cleaners manage own gallery" ON public.cleaner_gallery USING ((cleaner_id = auth.uid())) WITH CHECK ((cleaner_id = auth.uid()));
 
 
@@ -507,6 +561,7 @@ CREATE POLICY "Cleaners manage own gallery" ON public.cleaner_gallery USING ((cl
 -- Name: cleaner_weekly_availability Cleaners manage own weekly availability; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "Cleaners manage own weekly availability" ON public.cleaner_weekly_availability;
 CREATE POLICY "Cleaners manage own weekly availability" ON public.cleaner_weekly_availability USING ((cleaner_id = auth.uid())) WITH CHECK ((cleaner_id = auth.uid()));
 
 
@@ -514,6 +569,7 @@ CREATE POLICY "Cleaners manage own weekly availability" ON public.cleaner_weekly
 -- Name: cleaner_gallery Public read gallery; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "Public read gallery" ON public.cleaner_gallery;
 CREATE POLICY "Public read gallery" ON public.cleaner_gallery FOR SELECT USING (true);
 
 
@@ -533,6 +589,7 @@ ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 -- Name: cleaner_applications cleaner manages own application; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "cleaner manages own application" ON public.cleaner_applications;
 CREATE POLICY "cleaner manages own application" ON public.cleaner_applications USING ((auth.uid() = cleaner_id));
 
 
@@ -540,6 +597,7 @@ CREATE POLICY "cleaner manages own application" ON public.cleaner_applications U
 -- Name: cleaner_availability cleaner manages own availability; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "cleaner manages own availability" ON public.cleaner_availability;
 CREATE POLICY "cleaner manages own availability" ON public.cleaner_availability USING ((auth.uid() = cleaner_id));
 
 
@@ -547,6 +605,7 @@ CREATE POLICY "cleaner manages own availability" ON public.cleaner_availability 
 -- Name: bookings cleaner reads assigned bookings; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "cleaner reads assigned bookings" ON public.bookings;
 CREATE POLICY "cleaner reads assigned bookings" ON public.bookings FOR SELECT USING ((auth.uid() = cleaner_id));
 
 
@@ -554,6 +613,7 @@ CREATE POLICY "cleaner reads assigned bookings" ON public.bookings FOR SELECT US
 -- Name: bookings cleaner updates assigned bookings; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "cleaner updates assigned bookings" ON public.bookings;
 CREATE POLICY "cleaner updates assigned bookings" ON public.bookings FOR UPDATE USING ((auth.uid() = cleaner_id));
 
 
@@ -591,6 +651,7 @@ ALTER TABLE public.cleaners ENABLE ROW LEVEL SECURITY;
 -- Name: cleaners cleaners manage own row; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "cleaners manage own row" ON public.cleaners;
 CREATE POLICY "cleaners manage own row" ON public.cleaners USING ((auth.uid() = id));
 
 
@@ -598,6 +659,7 @@ CREATE POLICY "cleaners manage own row" ON public.cleaners USING ((auth.uid() = 
 -- Name: bookings customer manages own bookings; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "customer manages own bookings" ON public.bookings;
 CREATE POLICY "customer manages own bookings" ON public.bookings USING ((auth.uid() = customer_id));
 
 
@@ -617,6 +679,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 -- Name: cleaners public read approved cleaners; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "public read approved cleaners" ON public.cleaners;
 CREATE POLICY "public read approved cleaners" ON public.cleaners FOR SELECT USING ((status = 'approved'::public.cleaner_status));
 
 
@@ -624,6 +687,7 @@ CREATE POLICY "public read approved cleaners" ON public.cleaners FOR SELECT USIN
 -- Name: cleaner_availability public read availability; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "public read availability" ON public.cleaner_availability;
 CREATE POLICY "public read availability" ON public.cleaner_availability FOR SELECT USING (true);
 
 
@@ -631,6 +695,7 @@ CREATE POLICY "public read availability" ON public.cleaner_availability FOR SELE
 -- Name: customers users manage own customer; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "users manage own customer" ON public.customers;
 CREATE POLICY "users manage own customer" ON public.customers USING ((auth.uid() = id));
 
 
@@ -638,11 +703,10 @@ CREATE POLICY "users manage own customer" ON public.customers USING ((auth.uid()
 -- Name: profiles users manage own profile; Type: POLICY; Schema: public; Owner: -
 --
 
+DROP POLICY IF EXISTS "users manage own profile" ON public.profiles;
 CREATE POLICY "users manage own profile" ON public.profiles USING ((auth.uid() = id));
 
 
 --
 -- PostgreSQL database dump complete
 --
-
-
