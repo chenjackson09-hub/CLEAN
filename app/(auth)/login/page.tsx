@@ -66,7 +66,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#8FABD6]/20 via-white to-[#80A1D4]/20 px-4">
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
           <svg className="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ export default function LoginPage() {
           <p className="text-sm font-medium text-gray-600">{t("auth.login.signingIn")}</p>
         </div>
       )}
-      <div className="w-full max-w-md bg-white rounded-3xl shadow p-8">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
         <div className="flex justify-end mb-2">
           <LanguageToggle />
         </div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
               name="email"
               autoComplete="email"
               required
-              className="w-full border border-gray-300 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
               name="password"
               autoComplete="current-password"
               required
-              className="w-full border border-gray-300 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -120,7 +120,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-full py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+            className="w-full bg-blue-600 text-white rounded-2xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
             {loading ? <><Spinner />{t("auth.login.signingIn")}</> : t("auth.login.signIn")}
           </button>
