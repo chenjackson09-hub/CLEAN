@@ -77,6 +77,22 @@ export interface Cleaner {
   // Free-text notes the admin keeps on this cleaner. See migration
   // 0002_admin_panel_foundation.
   admin_notes: string | null;
+  // Richer signup/profile fields added alongside the redesigned cleaner
+  // registration flow. See migration 0018_cleaner_profile_v2.
+  birthdate: string | null;
+  weekly_clean_target: number;
+  weekly_clean_other: string | null;
+  has_car: boolean | null;
+  gas_return_enabled: boolean;
+  gas_return_rate: number | null;
+  match_preferences: string[];
+  match_preference_other: string | null;
+  work_areas: string[];
+  // Deliberately separate from service_types (residential/commercial, used by
+  // the browse type filter) — this is the newer 13-option cleaning-category
+  // list from the redesigned signup flow (deep cleaning, laundry, Airbnb, ...).
+  cleaning_categories: string[];
+  cleaning_category_other: string | null;
 }
 
 export interface CleanerApplication {

@@ -74,7 +74,10 @@ export async function updateCleanerProfile(formData: FormData) {
   const hourlyRate = parseFloat(formData.get("hourly_rate") as string) || null;
   const serviceRadius = parseInt(formData.get("service_radius_km") as string) || 10;
   const yearsExp = parseInt(formData.get("years_experience") as string) || 0;
-  const minHours = parseInt(formData.get("min_hours") as string) || null;
+  // min_hours now allows half-hour steps (migration 0018 widened it to
+  // numeric) since the signup flow's "minimum job length" question does —
+  // parseFloat, not parseInt, or a value like 3.5 would silently truncate to 3.
+  const minHours = parseFloat(formData.get("min_hours") as string) || null;
   const maxHours = parseInt(formData.get("max_hours") as string) || null;
   if (minHours != null && maxHours != null && minHours > maxHours) {
     return { error: "Minimum hours can't be greater than maximum hours." };
@@ -83,6 +86,41 @@ export async function updateCleanerProfile(formData: FormData) {
   const languages = languagesRaw.split(",").map((l) => l.trim()).filter(Boolean);
   const serviceTypes = formData.getAll("service_types") as string[];
   const address = formData.get("address") as string;
+
+  // Separate from service_types (residential/commercial) — see migration
+  // 0018_cleaner_profile_v2 for why these aren't the same field.
+  const cleaningCategories = formData.getAll("cleaning_categories") as string[];
+  const cleaningCategoryOther = (formData.get("cleaning_category_other") as string) || null;
+
+  // Richer profile fields added alongside the redesigned signup flow (see
+  // migration 0018_cleaner_profile_v2). All optional — a cleaner filling in
+  // this form isn't required to have answered every signup question.
+  const birthD = formData.get("birth_d") as string;
+  const birthM = formData.get("birth_m") as string;
+  const birthY = formData.get("birth_y") as string;
+  const birthdate =
+    birthD && birthM && birthY
+      ? `${birthY}-${String(birthM).padStart(2, "0")}-${String(birthD).padStart(2, "0")}`
+      : null;
+
+  const freqType = formData.get("freq_type") as string;
+  const freqVal = parseInt(formData.get("freq_val") as string) || 3;
+  const freqOtherText = (formData.get("freq_other") as string) || null;
+  const weeklyCleanTarget = freqType === "num" ? freqVal : 0;
+  const weeklyCleanOther = freqType === "monthly" ? "monthly" : freqType === "other" ? freqOtherText : null;
+
+  const hasCarRaw = formData.get("has_car") as string;
+  const hasCar = hasCarRaw === "yes" ? true : hasCarRaw === "no" ? false : null;
+
+  const gasReturnEnabled = hasCar === true && formData.get("gas_return_enabled") === "yes";
+  const gasReturnRate = gasReturnEnabled ? parseFloat(formData.get("gas_return_rate") as string) || 1 : null;
+
+  const matchPreferences = (formData.getAll("match_preferences") as string[]).filter(
+    (v) => v === "recurring" || v === "occasional" || v === "other"
+  );
+  const matchPreferenceOther = matchPreferences.includes("other") ? (formData.get("match_preference_other") as string) || null : null;
+
+  const workAreas = formData.getAll("work_areas") as string[];
 
   const avatarFile = formData.get("avatar") as File;
 
@@ -119,7 +157,18 @@ export async function updateCleanerProfile(formData: FormData) {
     max_hours: maxHours,
     languages,
     service_types: serviceTypes,
+    cleaning_categories: cleaningCategories,
+    cleaning_category_other: cleaningCategoryOther,
     address,
+    birthdate,
+    weekly_clean_target: weeklyCleanTarget,
+    weekly_clean_other: weeklyCleanOther,
+    has_car: hasCar,
+    gas_return_enabled: gasReturnEnabled,
+    gas_return_rate: gasReturnRate,
+    match_preferences: matchPreferences,
+    match_preference_other: matchPreferenceOther,
+    work_areas: workAreas,
   };
   if (geocodeResult) {
     cleanerUpdate.location = `POINT(${geocodeResult.lng} ${geocodeResult.lat})`;

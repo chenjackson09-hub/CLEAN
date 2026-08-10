@@ -5,9 +5,10 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 interface Props {
   unmatchedCount: number
   pendingApplications: number
+  minorCleanersPending: number
 }
 
-export function NeedsAttentionPanel({ unmatchedCount, pendingApplications }: Props) {
+export function NeedsAttentionPanel({ unmatchedCount, pendingApplications, minorCleanersPending }: Props) {
   const { t } = useLanguage()
 
   const items: { text: string; href: string }[] = []
@@ -16,6 +17,9 @@ export function NeedsAttentionPanel({ unmatchedCount, pendingApplications }: Pro
   }
   if (pendingApplications > 0) {
     items.push({ text: t('admin.dashboard.attentionApplications', { count: pendingApplications }), href: '/admin/applications' })
+  }
+  if (minorCleanersPending > 0) {
+    items.push({ text: t('admin.dashboard.attentionMinors', { count: minorCleanersPending }), href: '/admin/applications' })
   }
 
   return (

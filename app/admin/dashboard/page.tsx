@@ -30,7 +30,7 @@ export default async function AdminDashboardPage() {
     { data: appRows },
     { data: bookingRows },
   ] = await Promise.all([
-    admin.from('cleaners').select('status, rating_avg, rating_count'),
+    admin.from('cleaners').select('status, rating_avg, rating_count, birthdate'),
     admin.from('profiles').select('id, created_at').eq('role', 'customer'),
     admin.from('customers').select('rating_avg, rating_count'),
     admin.from('cleaner_applications').select('status'),
@@ -46,6 +46,14 @@ export default async function AdminDashboardPage() {
   // WAR-FIX cleaner_status enum: 'approved' cleaners are live; 'pending' are awaiting review.
   const activeCleaners = cleaners.filter((c) => c.status === 'approved').length
   const newCleaners = cleaners.filter((c) => c.status === 'pending').length
+  // Cleaners still pending review whose birthdate puts them under 18 — not a
+  // blocker, just something the admin needs to know follows a different
+  // verification protocol. Computed on read from birthdate rather than a
+  // stored flag, so it can never drift.
+  const eighteenYearsAgo = new Date(now.getFullYear() - 18, now.getMonth(), now.getDate())
+  const minorCleanersPending = cleaners.filter(
+    (c) => c.status === 'pending' && c.birthdate && new Date(c.birthdate) > eighteenYearsAgo,
+  ).length
 
   const customers = customerProfileRows ?? []
   const totalHosts = customers.length
@@ -136,6 +144,7 @@ export default async function AdminDashboardPage() {
           matchesChangePct={matchesChangePct}
           cancellationRate={cancellationRate}
           unmatchedCount={unmatchedCount}
+          minorCleanersPending={minorCleanersPending}
           overallRatingAvg={overallRatingAvg}
           overallRatingCount={overallRatingCount}
           cleanersRatingAvg={cleanersRatingAvg}

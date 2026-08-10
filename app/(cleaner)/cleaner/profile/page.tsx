@@ -1,7 +1,7 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import ProfileForm from "./ProfileForm";
+import ProfileViewEdit from "./ProfileViewEdit";
 import GalleryManager from "./GalleryManager";
 import type { Profile, Cleaner, CleanerGalleryPhoto } from "@/types/database";
 import type { Lang } from "@/lib/lang";
@@ -31,7 +31,7 @@ export default async function CleanerProfilePage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "prof_title")}</h1>
       <p className="text-base text-gray-500 mb-6">{t(lang, "prof_subtitle")}</p>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
-        <ProfileForm profile={profile} cleaner={cleaner} />
+        <ProfileViewEdit profile={profile} cleaner={cleaner} />
         <GalleryManager photos={photos ?? []} />
       </div>
     </div>

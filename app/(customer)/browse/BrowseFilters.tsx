@@ -6,7 +6,6 @@ import { AvailabilityRange } from './AvailabilityRange'
 
 type Props = {
   dates: string | undefined
-  type: string | undefined
   sort: string | undefined
   from: string | undefined
   to: string | undefined
@@ -18,7 +17,7 @@ const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 const DEFAULT_FROM = '06:00'
 const DEFAULT_TO = '22:00'
 
-export function BrowseFilters({ dates, type, sort, from, to, duration }: Props) {
+export function BrowseFilters({ dates, sort, from, to, duration }: Props) {
   const { t } = useLanguage()
   const router = useRouter()
   // Optional refinements (availability range, duration, type, sort) — collapsed
@@ -30,14 +29,12 @@ export function BrowseFilters({ dates, type, sort, from, to, duration }: Props) 
   const [fromVal, setFromVal] = useState(from ?? DEFAULT_FROM)
   const [toVal, setToVal] = useState(to ?? DEFAULT_TO)
   const [durationVal, setDurationVal] = useState(duration ?? 'any')
-  const [typeVal, setTypeVal] = useState(type ?? '')
   const [sortVal, setSortVal] = useState(sort ?? '')
 
   function handleClear() {
     setFromVal(DEFAULT_FROM)
     setToVal(DEFAULT_TO)
     setDurationVal('any')
-    setTypeVal('')
     setSortVal('')
     router.push('/browse')
   }
@@ -97,22 +94,6 @@ export function BrowseFilters({ dates, type, sort, from, to, duration }: Props) 
               {DURATION_OPTIONS.map(d => (
                 <option key={d} value={d}>{d}{t('filterBar.hoursShort')}</option>
               ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="type" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-              {t('browse.serviceType')}
-            </label>
-            <select
-              id="type"
-              name="type"
-              value={typeVal}
-              onChange={e => setTypeVal(e.target.value)}
-              className="h-10 border border-gray-300 rounded-xl px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">{t('browse.allTypes')}</option>
-              <option value="residential">{t('browse.residential')}</option>
-              <option value="commercial">{t('browse.commercial')}</option>
             </select>
           </div>
           <div className="flex flex-col gap-1">

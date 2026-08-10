@@ -115,3 +115,13 @@ export async function signOutToRegister() {
   await supabase.auth.signOut();
   redirect("/register");
 }
+
+// Used when a cleaner picks "Yes, continue later" partway through the
+// registration wizard: their partial answers are already saved, so signing
+// them out and landing on /login (rather than the dashboard) makes clear
+// they'll need to log back in to finish.
+export async function signOutToLogin() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}

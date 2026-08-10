@@ -6,7 +6,12 @@ import Image from 'next/image'
 // The cleaner avatar shown on the profile: same markup as before, but tapping it
 // opens a full-size zoom overlay. Used by both the customer-facing profile and
 // the cleaner's own preview.
-export function AvatarLightbox({ src, name }: { src: string; name: string }) {
+const SIZE = {
+  lg: { button: 'w-32 h-32 lg:w-48 lg:h-48', sizes: '(min-width: 1024px) 12rem, 8rem' },
+  md: { button: 'w-16 h-16', sizes: '4rem' },
+} as const
+
+export function AvatarLightbox({ src, name, size = 'lg' }: { src: string; name: string; size?: keyof typeof SIZE }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -15,13 +20,13 @@ export function AvatarLightbox({ src, name }: { src: string; name: string }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={name}
-        className="relative w-32 h-32 lg:w-48 lg:h-48 rounded-full shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity"
+        className={`relative ${SIZE[size].button} rounded-full shrink-0 cursor-zoom-in hover:opacity-90 transition-opacity`}
       >
         <Image
           src={src}
           alt={name}
           fill
-          sizes="(min-width: 1024px) 12rem, 8rem"
+          sizes={SIZE[size].sizes}
           className="rounded-full object-cover shadow"
         />
       </button>

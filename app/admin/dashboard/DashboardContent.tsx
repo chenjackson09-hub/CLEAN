@@ -35,6 +35,7 @@ interface Props {
   matchesChangePct: number | null
   cancellationRate: number | null
   unmatchedCount: number
+  minorCleanersPending: number
   overallRatingAvg: number | null
   overallRatingCount: number
   cleanersRatingAvg: number | null
@@ -56,6 +57,7 @@ export function DashboardContent({
   matchesChangePct,
   cancellationRate,
   unmatchedCount,
+  minorCleanersPending,
   overallRatingAvg,
   overallRatingCount,
   cleanersRatingAvg,
@@ -123,7 +125,11 @@ export function DashboardContent({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <NeedsAttentionPanel unmatchedCount={unmatchedCount} pendingApplications={pendingApplications} />
+        <NeedsAttentionPanel
+          unmatchedCount={unmatchedCount}
+          pendingApplications={pendingApplications}
+          minorCleanersPending={minorCleanersPending}
+        />
         <RecentActivityFeed bookings={recentBookings} />
         <TopAreasWidget addresses={areaAddresses} />
       </div>

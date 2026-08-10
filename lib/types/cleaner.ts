@@ -28,6 +28,16 @@ export type CleanerResult = {
   // booking form's duration options. See migration 0013.
   min_hours?: number | null
   max_hours?: number | null
+  // Richer profile fields from the redesigned signup (migration 0018) — all
+  // optional/additive, purely for display. Not read by any matching/filter logic.
+  birthdate?: string | null
+  cleaning_categories?: string[]
+  cleaning_category_other?: string | null
+  match_preferences?: string[]
+  match_preference_other?: string | null
+  has_car?: boolean | null
+  gas_return_enabled?: boolean
+  gas_return_rate?: number | null
   // The cleaner's available time slots for the date group this result is shown
   // under (union of weekly + specific-date slots). Per-date, so it's attached
   // when building each day's group rather than on the shared base result.

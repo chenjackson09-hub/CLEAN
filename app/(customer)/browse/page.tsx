@@ -11,7 +11,7 @@ import { parsePoint, distanceKm } from '@/lib/geo'
 import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
-  searchParams: { dates?: string; type?: string; sort?: string; from?: string; to?: string; duration?: string }
+  searchParams: { dates?: string; sort?: string; from?: string; to?: string; duration?: string }
 }
 
 function toMin(t: string): number {
@@ -24,7 +24,7 @@ function ymd(d: Date): string {
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, type, sort, from, to, duration } = searchParams
+  const { dates, sort, from, to, duration } = searchParams
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
   const hasDates = selectedDates.length > 0
 
@@ -98,11 +98,6 @@ export default async function BrowsePage({ searchParams }: Props) {
     const rangeFrom = from ? toMin(from) : null
     const rangeTo = to ? toMin(to) : null
     const hasRange = rangeFrom !== null && rangeTo !== null && rangeTo > rangeFrom
-
-    // Apply service type filter (date-independent).
-    if (type) {
-      base = base.filter(c => (c.service_types as string[]).includes(type))
-    }
 
     // Duration filter (date-independent): when the customer picked a specific
     // duration, hide cleaners whose accepted hour window (min_hours/max_hours)
@@ -304,7 +299,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         </div>
 
         <div className="lg:order-2 lg:flex-1 lg:min-w-0">
-          <BrowseFilters dates={dates} type={type} sort={sort} from={from} to={to} duration={duration} />
+          <BrowseFilters dates={dates} sort={sort} from={from} to={to} duration={duration} />
         </div>
       </div>
 

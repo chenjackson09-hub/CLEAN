@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { UserRole } from "@/types/database";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
+import { createClient } from "@/lib/supabase/client";
 
 function Spinner() {
   return (
@@ -38,16 +39,49 @@ export default function RegisterPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleEmailBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const email = e.target.value.trim();
+    if (!email || !email.includes("@")) return;
+    setCheckingEmail(true);
+    const supabase = createClient();
+    const { data: exists } = await supabase.rpc("email_exists", { check_email: email });
+    setCheckingEmail(false);
+    setEmailTaken(!!exists);
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!role) return;
     setError(null);
-    setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim();
     const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      setError(t("auth.register.passwordMismatch"));
+      return;
+    }
+
+    setLoading(true);
+
+    const supabase = createClient();
+    const { data: exists, error: checkErr } = await supabase.rpc("email_exists", { check_email: email });
+    if (checkErr) {
+      setError(checkErr.message);
+      setLoading(false);
+      return;
+    }
+    if (exists) {
+      setEmailTaken(true);
+      setError(t("auth.register.emailTaken"));
+      setLoading(false);
+      return;
+    }
 
     // Hold credentials in localStorage — the Supabase account is created only
     // when the user completes and submits the role-specific onboarding form.
@@ -132,8 +166,22 @@ export default function RegisterPage() {
               autoComplete="email"
               required
               disabled={loading}
+              onChange={() => {
+                if (emailTaken) setEmailTaken(false);
+                if (error) setError(null);
+              }}
+              onBlur={handleEmailBlur}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
+            {checkingEmail && (
+              <p className="text-xs text-gray-400 mt-1">{t("auth.register.checkingEmail")}</p>
+            )}
+            {emailTaken && !checkingEmail && (
+              <p className="text-sm text-red-600 mt-1">
+                {t("auth.register.emailTaken")}{" "}
+                <Link href="/login" className="underline font-medium">{t("auth.register.signIn")}</Link>
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.password")}</label>
@@ -148,6 +196,19 @@ export default function RegisterPage() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
           </div>
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.confirmPassword")}</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              required
+              minLength={6}
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+            />
+          </div>
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
@@ -155,7 +216,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={!role || loading}
+            disabled={!role || loading || emailTaken}
             className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
             {loading ? (

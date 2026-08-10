@@ -6,19 +6,35 @@ import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
+import { WORK_AREAS } from "@/lib/workAreas";
 import type { Profile, Cleaner } from "@/types/database";
+
+function birthdateParts(birthdate: string | null | undefined) {
+  if (!birthdate) return { d: "", m: "", y: "" };
+  const [y, m, d] = birthdate.split("-");
+  return { d: String(Number(d)), m: String(Number(m)), y };
+}
 
 interface Props {
   profile: Profile | null;
   cleaner: Cleaner | null;
+  onSaved?: () => void;
 }
 
-export default function ProfileForm({ profile, cleaner }: Props) {
+export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
   const { t } = useLang();
   const router = useRouter();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url ?? null);
+  const birth = birthdateParts(cleaner?.birthdate);
+  const [freqType, setFreqType] = useState<"num" | "monthly" | "other">(
+    cleaner?.weekly_clean_target ? "num" : cleaner?.weekly_clean_other === "monthly" ? "monthly" : cleaner?.weekly_clean_other ? "other" : "num"
+  );
+  const [hasCar, setHasCar] = useState(cleaner?.has_car === true ? "yes" : cleaner?.has_car === false ? "no" : "");
+  const [gasEnabled, setGasEnabled] = useState(cleaner?.gas_return_enabled ? "yes" : "no");
+  const [matchPrefs, setMatchPrefs] = useState<string[]>(cleaner?.match_preferences ?? []);
+  const [servicesOtherPicked, setServicesOtherPicked] = useState(cleaner?.cleaning_categories?.includes("Other") ?? false);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -32,6 +48,7 @@ export default function ProfileForm({ profile, cleaner }: Props) {
       // data so the preview/edit pages no longer show the previous photo.
       if (result?.avatarUrl) setAvatarPreview(result.avatarUrl);
       router.refresh();
+      onSaved?.();
     }
     setLoading(false);
   }
@@ -216,6 +233,189 @@ export default function ProfileForm({ profile, cleaner }: Props) {
             placeholder="English, French"
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="min_job_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_min_job_length")}</label>
+        <input
+          id="min_job_hours"
+          type="number"
+          name="min_hours"
+          step="0.5"
+          min="1"
+          defaultValue={cleaner?.min_hours ?? 3}
+          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <span className="block text-base font-medium text-gray-700 mb-1">{t("prof_birthdate")}</span>
+        <div className="flex gap-2">
+          <select name="birth_d" defaultValue={birth.d} className="flex-1 border border-gray-300 rounded-xl px-2 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">{t("prof_day")}</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <select name="birth_m" defaultValue={birth.m} className="flex-[1.4] border border-gray-300 rounded-xl px-2 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">{t("prof_month")}</option>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <select name="birth_y" defaultValue={birth.y} className="flex-[1.2] border border-gray-300 rounded-xl px-2 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">{t("prof_year")}</option>
+            {Array.from({ length: 101 }, (_, i) => new Date().getFullYear() - i).map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</span>
+        <div className="flex flex-wrap gap-2">
+          {["General home cleaning","Deep cleaning","Closets","Windows","Laundry","Pesach","Move-in","Move-out","Airbnb","Organization","Newly renovated","Pet friendly","Residential cleaning","Commercial cleaning","Offices","Other"].map((cat) => (
+            <label key={cat} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${cleaner?.cleaning_categories?.includes(cat) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <input
+                type="checkbox"
+                name="cleaning_categories"
+                value={cat}
+                defaultChecked={cleaner?.cleaning_categories?.includes(cat)}
+                onChange={(e) => cat === "Other" && setServicesOtherPicked(e.target.checked)}
+                className="sr-only"
+              />
+              {cat}
+            </label>
+          ))}
+        </div>
+        {servicesOtherPicked && (
+          <input
+            type="text"
+            name="cleaning_category_other"
+            defaultValue={cleaner?.cleaning_category_other ?? ""}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        )}
+      </div>
+
+      <div>
+        <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_match_preference")}</span>
+        <div className="flex flex-col gap-2">
+          {([
+            ["recurring", t("prof_match_recurring")],
+            ["occasional", t("prof_match_occasional")],
+            ["other", t("prof_match_other")],
+          ] as const).map(([v, label]) => (
+            <label key={v} className={`text-start px-3.5 py-2 rounded-xl border text-sm cursor-pointer ${matchPrefs.includes(v) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <input
+                type="checkbox"
+                name="match_preferences"
+                value={v}
+                checked={matchPrefs.includes(v)}
+                onChange={() => setMatchPrefs((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))}
+                className="sr-only"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        {matchPrefs.includes("other") && (
+          <input
+            type="text"
+            name="match_preference_other"
+            defaultValue={cleaner?.match_preference_other ?? ""}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        )}
+      </div>
+
+      <div>
+        <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_work_areas")}</span>
+        <div className="flex flex-wrap gap-2">
+          {WORK_AREAS.map((area) => (
+            <label key={area} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${cleaner?.work_areas?.includes(area) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <input type="checkbox" name="work_areas" value={area} defaultChecked={cleaner?.work_areas?.includes(area)} className="sr-only" />
+              {area}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-gray-50 p-4 space-y-4">
+        <p className="text-sm font-semibold text-gray-500">{t("prof_other_details")}</p>
+
+        <div>
+          <span className="block text-base font-medium text-gray-700 mb-1">{t("prof_has_car")}</span>
+          <div className="flex gap-2">
+            {(["yes", "no"] as const).map((v) => (
+              <label key={v} className={`flex-1 text-center py-2 rounded-xl border text-sm cursor-pointer ${hasCar === v ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+                <input type="radio" name="has_car" value={v} checked={hasCar === v} onChange={() => setHasCar(v)} className="sr-only" />
+                {v === "yes" ? t("prof_yes") : t("prof_no")}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {hasCar === "yes" && (
+          <div>
+            <span className="block text-base font-medium text-gray-700 mb-1">{t("prof_gas_returns")}</span>
+            <div className="flex gap-2">
+              {(["yes", "no"] as const).map((v) => (
+                <label key={v} className={`flex-1 text-center py-2 rounded-xl border text-sm cursor-pointer ${gasEnabled === v ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+                  <input type="radio" name="gas_return_enabled" value={v} checked={gasEnabled === v} onChange={() => setGasEnabled(v)} className="sr-only" />
+                  {v === "yes" ? t("prof_yes") : t("prof_no")}
+                </label>
+              ))}
+            </div>
+            {gasEnabled === "yes" && (
+              <div className="flex items-center gap-2 mt-2">
+                <span>₪</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="gas_return_rate"
+                  defaultValue={cleaner?.gas_return_rate ?? 1}
+                  className="w-24 border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-500">{t("prof_per_km")}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div>
+          <span className="block text-base font-medium text-gray-700 mb-1">{t("prof_weekly_freq")}</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <label key={n} className={`w-9 h-9 flex items-center justify-center rounded-full border text-sm cursor-pointer ${freqType === "num" && cleaner?.weekly_clean_target === n ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+                <input
+                  type="radio"
+                  name="freq_val"
+                  value={n}
+                  defaultChecked={cleaner?.weekly_clean_target === n}
+                  onChange={() => setFreqType("num")}
+                  className="sr-only"
+                />
+                {n}
+              </label>
+            ))}
+            <input type="hidden" name="freq_type" value={freqType} />
+          </div>
+          <div className="flex gap-2 mt-2">
+            <label className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${freqType === "monthly" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <input type="radio" name="freq_type_monthly" checked={freqType === "monthly"} onChange={() => setFreqType("monthly")} className="sr-only" />
+              A few times a month
+            </label>
+            <label className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${freqType === "other" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <input type="radio" name="freq_type_other" checked={freqType === "other"} onChange={() => setFreqType("other")} className="sr-only" />
+              Other
+            </label>
+          </div>
+          {freqType === "other" && (
+            <input
+              type="text"
+              name="freq_other"
+              defaultValue={cleaner?.weekly_clean_other ?? ""}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          )}
+          <p className="text-sm text-gray-400 mt-1">{t("prof_weekly_freq_hint")}</p>
         </div>
       </div>
 

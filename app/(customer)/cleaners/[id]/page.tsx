@@ -24,7 +24,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
   ] = await Promise.all([
     supabase
       .from('cleaners')
-      .select('id, bio, service_types, hourly_rate, years_experience, languages, rating_avg, rating_count, cleans_completed, min_hours, max_hours')
+      .select('id, bio, service_types, hourly_rate, years_experience, languages, rating_avg, rating_count, cleans_completed, min_hours, max_hours, birthdate, cleaning_categories, cleaning_category_other, match_preferences, match_preference_other, has_car, gas_return_enabled, gas_return_rate')
       .eq('id', params.id)
       .neq('status', 'rejected')
       .single(),
@@ -73,6 +73,14 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
     cleans_completed: (cleaner as { cleans_completed?: number }).cleans_completed ?? 0,
     min_hours: (cleaner as { min_hours?: number | null }).min_hours ?? null,
     max_hours: (cleaner as { max_hours?: number | null }).max_hours ?? null,
+    birthdate: (cleaner as { birthdate?: string | null }).birthdate ?? null,
+    cleaning_categories: ((cleaner as { cleaning_categories?: string[] }).cleaning_categories ?? []) as string[],
+    cleaning_category_other: (cleaner as { cleaning_category_other?: string | null }).cleaning_category_other ?? null,
+    match_preferences: ((cleaner as { match_preferences?: string[] }).match_preferences ?? []) as string[],
+    match_preference_other: (cleaner as { match_preference_other?: string | null }).match_preference_other ?? null,
+    has_car: (cleaner as { has_car?: boolean | null }).has_car ?? null,
+    gas_return_enabled: (cleaner as { gas_return_enabled?: boolean }).gas_return_enabled ?? false,
+    gas_return_rate: (cleaner as { gas_return_rate?: number | null }).gas_return_rate ?? null,
   }
 
   return (

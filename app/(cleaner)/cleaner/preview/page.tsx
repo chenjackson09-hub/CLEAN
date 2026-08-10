@@ -7,6 +7,7 @@ import type { Profile, Cleaner } from "@/types/database";
 import type { CleanerResult } from "@/lib/types/cleaner";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
+import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
 
 // The cleaner's preview is the customer-facing profile, one-to-one. It reuses the
 // same <CleanerProfile> shell and only overrides what's preview-specific: an edit
@@ -47,6 +48,13 @@ export default async function PreviewPage() {
   const fullName = profile?.full_name ?? t(lang, "prev_no_name");
   const gallery = (galleryRows ?? []).map((r) => r.photo_url as string);
 
+  // Same completeness bar the cleaner sees on their own editable profile
+  // (ProfileView.tsx) — shown here too so it's visible on the exact layout a
+  // customer would see, with "Edit" routing back to /cleaner/profile.
+  const missing = computeProfileMissing((k) => t(lang, k), cleaner, profile);
+  const completionPct = profileCompletionPct(missing.length);
+  const missingSummary = missing.length > 0 ? t(lang, "prof_still_missing").replace("{list}", missing.join(", ")) : undefined;
+
   const cleanerResult: CleanerResult = {
     id: user.id,
     full_name: fullName,
@@ -61,6 +69,14 @@ export default async function PreviewPage() {
     rating_count: cleaner?.rating_count ?? 0,
     min_hours: cleaner?.min_hours ?? null,
     max_hours: cleaner?.max_hours ?? null,
+    birthdate: cleaner?.birthdate ?? null,
+    cleaning_categories: (cleaner?.cleaning_categories ?? []) as string[],
+    cleaning_category_other: cleaner?.cleaning_category_other ?? null,
+    match_preferences: (cleaner?.match_preferences ?? []) as string[],
+    match_preference_other: cleaner?.match_preference_other ?? null,
+    has_car: cleaner?.has_car ?? null,
+    gas_return_enabled: cleaner?.gas_return_enabled ?? false,
+    gas_return_rate: cleaner?.gas_return_rate ?? null,
   };
 
   const banner = (
@@ -81,6 +97,9 @@ export default async function PreviewPage() {
         dateAvailability={dateAvailability ?? []}
         banner={banner}
         bookingDisabled
+        completionPct={completionPct}
+        missingSummary={missingSummary}
+        editHref="/cleaner/profile"
       />
     </div>
   );
