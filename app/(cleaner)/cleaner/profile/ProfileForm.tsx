@@ -35,6 +35,9 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
   const [gasEnabled, setGasEnabled] = useState(cleaner?.gas_return_enabled ? "yes" : "no");
   const [matchPrefs, setMatchPrefs] = useState<string[]>(cleaner?.match_preferences ?? []);
   const [servicesOtherPicked, setServicesOtherPicked] = useState(cleaner?.cleaning_categories?.includes("Other") ?? false);
+  const [cleaningCategories, setCleaningCategories] = useState<string[]>(cleaner?.cleaning_categories ?? []);
+  const [workAreas, setWorkAreas] = useState<string[]>(cleaner?.work_areas ?? []);
+  const [freqVal, setFreqVal] = useState<number | null>(cleaner?.weekly_clean_target ?? null);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -271,13 +274,16 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
         <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</span>
         <div className="flex flex-wrap gap-2">
           {["General home cleaning","Deep cleaning","Closets","Windows","Laundry","Pesach","Move-in","Move-out","Airbnb","Organization","Newly renovated","Pet friendly","Residential cleaning","Commercial cleaning","Offices","Other"].map((cat) => (
-            <label key={cat} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${cleaner?.cleaning_categories?.includes(cat) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+            <label key={cat} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${cleaningCategories.includes(cat) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
               <input
                 type="checkbox"
                 name="cleaning_categories"
                 value={cat}
-                defaultChecked={cleaner?.cleaning_categories?.includes(cat)}
-                onChange={(e) => cat === "Other" && setServicesOtherPicked(e.target.checked)}
+                checked={cleaningCategories.includes(cat)}
+                onChange={(e) => {
+                  setCleaningCategories((prev) => (prev.includes(cat) ? prev.filter((x) => x !== cat) : [...prev, cat]));
+                  if (cat === "Other") setServicesOtherPicked(e.target.checked);
+                }}
                 className="sr-only"
               />
               {cat}
@@ -329,8 +335,15 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
         <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_work_areas")}</span>
         <div className="flex flex-wrap gap-2">
           {WORK_AREAS.map((area) => (
-            <label key={area} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${cleaner?.work_areas?.includes(area) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
-              <input type="checkbox" name="work_areas" value={area} defaultChecked={cleaner?.work_areas?.includes(area)} className="sr-only" />
+            <label key={area} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${workAreas.includes(area) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <input
+                type="checkbox"
+                name="work_areas"
+                value={area}
+                checked={workAreas.includes(area)}
+                onChange={() => setWorkAreas((prev) => (prev.includes(area) ? prev.filter((x) => x !== area) : [...prev, area]))}
+                className="sr-only"
+              />
               {area}
             </label>
           ))}
@@ -383,13 +396,16 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
           <span className="block text-base font-medium text-gray-700 mb-1">{t("prof_weekly_freq")}</span>
           <div className="flex gap-1.5 flex-wrap items-center">
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <label key={n} className={`w-9 h-9 flex items-center justify-center rounded-full border text-sm cursor-pointer ${freqType === "num" && cleaner?.weekly_clean_target === n ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
+              <label key={n} className={`w-9 h-9 flex items-center justify-center rounded-full border text-sm cursor-pointer ${freqType === "num" && freqVal === n ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
                 <input
                   type="radio"
                   name="freq_val"
                   value={n}
-                  defaultChecked={cleaner?.weekly_clean_target === n}
-                  onChange={() => setFreqType("num")}
+                  checked={freqType === "num" && freqVal === n}
+                  onChange={() => {
+                    setFreqType("num");
+                    setFreqVal(n);
+                  }}
                   className="sr-only"
                 />
                 {n}

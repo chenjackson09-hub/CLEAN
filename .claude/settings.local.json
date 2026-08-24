@@ -81,7 +81,9 @@
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} in %{time_total}s\\\\n\" http://localhost:3000/login)",
       "Bash(pkill -f \"next-server\")",
       "Bash(node -e \"try{console.log\\('config host =>', new URL\\(require\\('fs'\\).readFileSync\\('.env','utf8'\\).match\\(/NEXT_PUBLIC_SUPABASE_URL=\\(.*\\)/\\)[1].trim\\(\\)\\).hostname\\)}catch\\(e\\){console.log\\(e.message\\)}\")",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(git config *)",
+      "mcp__visualize__show_widget"
     ]
   }
 }
