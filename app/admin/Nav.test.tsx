@@ -40,12 +40,21 @@ describe('Nav', () => {
     expect(screen.getByText('Test Admin')).toBeInTheDocument()
   })
 
+  it('opens the account menu with a link to the profile page', async () => {
+    const user = userEvent.setup()
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
+
+    await user.click(screen.getByRole('button', { name: 'Account menu' }))
+
+    expect(screen.getByRole('link', { name: /Profile/ })).toHaveAttribute('href', '/admin/profile')
+  })
+
   it('switches all links to Hebrew when the language is toggled', async () => {
     const user = userEvent.setup()
     render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
-    // Language toggle lives inside the Settings dropdown
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    // Language toggle lives inside the account menu (opened via the avatar button)
+    await user.click(screen.getByRole('button', { name: 'Account menu' }))
     await user.click(screen.getByRole('button', { name: 'HE' }))
 
     expect(screen.getByRole('link', { name: 'בקשות הצטרפות' })).toHaveAttribute('href', '/admin/applications')

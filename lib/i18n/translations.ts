@@ -39,6 +39,15 @@ const translations = {
       inactive: 'Inactive',
       admins: 'Admins',
     },
+    adminProfile: {
+      title: 'My Profile',
+      avatarComingSoon: 'Profile picture — coming soon',
+      firstName: 'First name',
+      lastName: 'Last name',
+      email: 'Email',
+      nameRequired: 'Name cannot be empty.',
+      saveError: 'Could not save. Please try again.',
+    },
     support: {
       title: 'Support messages',
       empty: 'No support messages yet.',
@@ -596,6 +605,15 @@ const translations = {
       blocked: 'חסומים',
       inactive: 'לא פעילים',
       admins: 'מנהלים',
+    },
+    adminProfile: {
+      title: 'הפרופיל שלי',
+      avatarComingSoon: 'תמונת פרופיל — בקרוב',
+      firstName: 'שם פרטי',
+      lastName: 'שם משפחה',
+      email: 'אימייל',
+      nameRequired: 'השם לא יכול להיות ריק.',
+      saveError: 'לא ניתן היה לשמור. נסה/י שוב.',
     },
     support: {
       title: 'הודעות תמיכה',
