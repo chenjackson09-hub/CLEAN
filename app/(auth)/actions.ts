@@ -22,6 +22,17 @@ export async function completeOnboarding(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  // Only a Google-only user who hasn't onboarded yet may run this — mirrors the
+  // "needs onboarding" check in the OAuth callback route. Blocks an already-set-up
+  // user (any role) from reaching this action a second time and overwriting their
+  // own role/profile — the page itself has no such guard, so this is the one place
+  // that has to stop it.
+  const providers: string[] = user.app_metadata?.providers ?? [];
+  const isGoogleOnly = providers.includes("google") && !providers.includes("email");
+  if (!isGoogleOnly || user.user_metadata?.onboarded === true) {
+    return { error: "Onboarding has already been completed for this account." };
+  }
+
   const role = input.role;
   const full_name = input.full_name.trim();
   const phone = input.phone.trim();
