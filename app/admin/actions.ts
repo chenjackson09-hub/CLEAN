@@ -2,6 +2,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { randomBytes } from 'crypto'
 import { sendApplicationApproved, sendApplicationRejected, sendApplicationNeedsInfo } from '@/lib/resend'
 
 type ActionResult = { error?: string }
@@ -159,6 +160,36 @@ export async function deleteCustomerAdmin(id: string): Promise<ActionResult> {
   if (authErr) return { error: authErr.message }
   revalidatePath('/admin/customers')
   revalidatePath('/admin/blocked')
+  return {}
+}
+
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+export async function createAdminInvite(): Promise<{ id?: string; token?: string; expiresAt?: string; error?: string }> {
+  const authError = await requireAdmin()
+  if (authError) return authError
+  const user = await getCurrentUser()
+  if (!user) return { error: 'Not authenticated' }
+  const admin = createAdminClient()
+  const token = randomBytes(24).toString('base64url')
+  const expiresAt = new Date(Date.now() + INVITE_TTL_MS).toISOString()
+  const { data, error } = await admin
+    .from('admin_invites')
+    .insert({ token, created_by: user.id, expires_at: expiresAt })
+    .select('id')
+    .single()
+  if (error) return { error: error.message }
+  revalidatePath('/admin/admins')
+  return { id: data.id, token, expiresAt }
+}
+
+export async function revokeAdminInvite(id: string): Promise<ActionResult> {
+  const authError = await requireAdmin()
+  if (authError) return authError
+  const admin = createAdminClient()
+  const { error } = await admin.from('admin_invites').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/admin/admins')
   return {}
 }
 
