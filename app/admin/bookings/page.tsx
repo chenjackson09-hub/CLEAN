@@ -1,4 +1,3 @@
-import { Nav } from '../Nav'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { BookingsList } from './BookingsList'
 import type { BookingResult } from '@/lib/types/booking'
@@ -42,11 +41,8 @@ export default async function AdminBookingsPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-[#EFEFEF] md:ps-56">
-      <Nav />
       <div className="px-6 py-6">
         <BookingsList bookings={bookings} />
       </div>
-    </div>
   )
 }

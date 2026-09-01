@@ -13,7 +13,7 @@ describe('Nav', () => {
   })
 
   it('renders links for applications, booking requests, cleaners, and customers', () => {
-    render(<LanguageProvider><Nav /></LanguageProvider>)
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
     expect(screen.getByRole('link', { name: 'Applications' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'Booking Requests' })).toHaveAttribute('href', '/admin/bookings')
@@ -22,27 +22,31 @@ describe('Nav', () => {
   })
 
   it('does not render the temporarily-hidden availability link', () => {
-    render(<LanguageProvider><Nav /></LanguageProvider>)
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
     expect(screen.queryByRole('link', { name: 'Availability' })).toBeNull()
   })
 
   it('highlights the current page', () => {
-    render(<LanguageProvider><Nav /></LanguageProvider>)
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
     expect(screen.getByRole('link', { name: 'Booking Requests' }).className).toContain('bg-[#F7F4EA]')
   })
 
+  it('shows the "Admin" title and the current user\'s name in the top bar', () => {
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
+
+    expect(screen.getByText('Admin')).toBeInTheDocument()
+    expect(screen.getByText('Test Admin')).toBeInTheDocument()
+  })
+
   it('switches all links to Hebrew when the language is toggled', async () => {
     const user = userEvent.setup()
-    render(<LanguageProvider><Nav /></LanguageProvider>)
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
-    // Language toggle also lives in the always-rendered desktop sidebar footer
-    // (Tailwind's responsive hiding isn't applied in this CSS-less test
-    // environment, so both the mobile dropdown's and the sidebar's language
-    // buttons exist in the DOM — use the mobile Settings dropdown explicitly).
+    // Language toggle lives inside the Settings dropdown
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    await user.click(screen.getAllByRole('button', { name: 'HE' })[0])
+    await user.click(screen.getByRole('button', { name: 'HE' }))
 
     expect(screen.getByRole('link', { name: 'בקשות הצטרפות' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'בקשות הזמנה' })).toHaveAttribute('href', '/admin/bookings')

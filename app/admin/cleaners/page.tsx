@@ -1,4 +1,3 @@
-import { Nav } from '../Nav'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CleanersList } from './CleanersList'
 import type { CleanerResult } from '@/lib/types/cleaner'
@@ -41,11 +40,8 @@ export default async function AdminCleanersPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#EFEFEF] md:ps-56">
-      <Nav />
       <div className="px-6 py-6">
         <CleanersList cleaners={cleaners} />
       </div>
-    </div>
   )
 }
