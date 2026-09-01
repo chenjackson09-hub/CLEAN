@@ -30,16 +30,19 @@ describe('Nav', () => {
   it('highlights the current page', () => {
     render(<LanguageProvider><Nav /></LanguageProvider>)
 
-    expect(screen.getByRole('link', { name: 'Booking Requests' }).className).toContain('bg-blue-50')
+    expect(screen.getByRole('link', { name: 'Booking Requests' }).className).toContain('bg-[#F7F4EA]')
   })
 
   it('switches all links to Hebrew when the language is toggled', async () => {
     const user = userEvent.setup()
     render(<LanguageProvider><Nav /></LanguageProvider>)
 
-    // Language toggle lives inside the Settings dropdown
+    // Language toggle also lives in the always-rendered desktop sidebar footer
+    // (Tailwind's responsive hiding isn't applied in this CSS-less test
+    // environment, so both the mobile dropdown's and the sidebar's language
+    // buttons exist in the DOM — use the mobile Settings dropdown explicitly).
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    await user.click(screen.getByRole('button', { name: 'HE' }))
+    await user.click(screen.getAllByRole('button', { name: 'HE' })[0])
 
     expect(screen.getByRole('link', { name: 'בקשות הצטרפות' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'בקשות הזמנה' })).toHaveAttribute('href', '/admin/bookings')

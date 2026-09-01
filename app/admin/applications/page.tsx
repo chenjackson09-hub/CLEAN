@@ -45,7 +45,7 @@ export default async function ApplicationsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#EFEFEF]">
+    <div className="min-h-screen bg-[#EFEFEF] md:ps-56">
       <Nav />
       <div className="px-6 py-6">
         <ApplicationsList applications={applications} />

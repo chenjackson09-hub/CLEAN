@@ -64,7 +64,7 @@ export default async function AdminInactivePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EFEFEF]">
+    <div className="min-h-screen bg-[#EFEFEF] md:ps-56">
       <Nav />
       <div className="px-6 py-6">
         <InactiveList noLogin={noLogin} noRequests={noRequests} />

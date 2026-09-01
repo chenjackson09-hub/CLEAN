@@ -130,7 +130,7 @@ export default async function AdminDashboardPage() {
     .map((b) => b.address)
 
   return (
-    <div className="min-h-screen bg-[#EFEFEF]">
+    <div className="min-h-screen bg-[#EFEFEF] md:ps-56">
       <Nav />
       <div className="px-6 py-6 max-w-6xl mx-auto">
         <DashboardContent

@@ -108,6 +108,8 @@ export function Nav() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
   const LangButtons = (
     <div className="flex gap-1">
       <button
@@ -131,39 +133,15 @@ export function Nav() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 shadow-sm bg-[#EFEFEF]">
+      {/* Mobile top bar — hidden at md+, replaced by the sidebar below */}
+      <header className="md:hidden sticky top-0 z-40 shadow-sm bg-[#EFEFEF]">
         <div className="flex items-center justify-between px-4 h-14 gap-2">
-          {/* Logo */}
           <div className="flex items-center shrink-0">
             <span className="text-lg font-bold text-blue-600">ADMIN</span>
           </div>
 
-          {/* Nav items — Link-based for instant prefetched navigation.
-              Hidden below md, where they'd overflow — replaced by the menu button. */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-6">
-            {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(item.href + '/')
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex flex-col lg:flex-row items-center lg:gap-2 px-1.5 lg:px-3 py-1.5 rounded-lg transition-colors ${
-                    active
-                      ? 'text-[#6EB5B4] font-semibold'
-                      : 'text-gray-600 hover:text-[#80A1D4]'
-                  }`}
-                >
-                  <span className="w-5 h-5 shrink-0">{item.icon}</span>
-                  <span className="text-[10px] lg:text-sm mt-0.5 lg:mt-0">{t(item.labelKey)}</span>
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* Right cluster: mobile menu button + settings */}
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Below md the nav buttons collapse into this dropdown */}
-            <div className="relative md:hidden">
+          <div className="flex items-center gap-1 shrink-0 ms-auto">
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => { setMenuOpen((o) => !o); setSettingsOpen(false) }}
@@ -180,11 +158,10 @@ export function Nav() {
 
               {menuOpen && (
                 <>
-                  {/* Click-away backdrop */}
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                   <div className="absolute end-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-2 flex flex-col">
                     {NAV_ITEMS.map((item) => {
-                      const active = pathname === item.href || pathname.startsWith(item.href + '/')
+                      const active = isActive(item.href)
                       return (
                         <Link
                           key={item.href}
@@ -206,45 +183,82 @@ export function Nav() {
               )}
             </div>
 
-            {/* Settings dropdown — holds language + sign out */}
             <div className="relative shrink-0">
-            <button
-              onClick={() => setSettingsOpen((o) => !o)}
-              className={`flex flex-col lg:flex-row items-center lg:gap-2 px-1.5 lg:px-3 py-1.5 rounded-lg transition-colors ${
-                settingsOpen ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              <span className="w-5 h-5 shrink-0">
+              <button
+                onClick={() => setSettingsOpen((o) => !o)}
+                aria-label={lang === 'he' ? 'הגדרות' : 'Settings'}
+                aria-expanded={settingsOpen}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                  settingsOpen ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-              </span>
-              <span className="text-[10px] lg:text-sm mt-0.5 lg:mt-0">{lang === 'he' ? 'הגדרות' : 'Settings'}</span>
-            </button>
+              </button>
 
-            {settingsOpen && (
-              <>
-                {/* Click-away backdrop */}
-                <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
-                <div className="absolute end-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4 flex flex-col gap-3">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1.5">{lang === 'he' ? 'שפה' : 'Language'}</p>
-                    {LangButtons}
+              {settingsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
+                  <div className="absolute end-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4 flex flex-col gap-3">
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1.5">{lang === 'he' ? 'שפה' : 'Language'}</p>
+                      {LangButtons}
+                    </div>
+                    <button
+                      onClick={() => { setSettingsOpen(false); setConfirmSignOut(true) }}
+                      className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
+                    >
+                      {lang === 'he' ? 'התנתק' : 'Sign out'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { setSettingsOpen(false); setConfirmSignOut(true) }}
-                    className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
-                  >
-                    {lang === 'he' ? 'התנתק' : 'Sign out'}
-                  </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Desktop sidebar — md and up */}
+      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:start-0 md:w-56 bg-white border-e border-gray-200 z-40">
+        <div className="h-14 flex items-center px-5 shrink-0 border-b border-gray-100">
+          <span className="text-lg font-bold text-blue-600">ADMIN</span>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  active
+                    ? 'bg-[#F7F4EA] text-[#6EB5B4] font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-[#80A1D4]'
+                }`}
+              >
+                <span className="w-5 h-5 shrink-0">{item.icon}</span>
+                <span className="text-sm">{t(item.labelKey)}</span>
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="border-t border-gray-100 p-3 flex flex-col gap-3 shrink-0">
+          <div>
+            <p className="text-xs text-gray-400 mb-1.5 px-1">{lang === 'he' ? 'שפה' : 'Language'}</p>
+            {LangButtons}
+          </div>
+          <button
+            onClick={() => setConfirmSignOut(true)}
+            className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
+          >
+            {lang === 'he' ? 'התנתק' : 'Sign out'}
+          </button>
+        </div>
+      </aside>
 
       {confirmSignOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setConfirmSignOut(false)}>
