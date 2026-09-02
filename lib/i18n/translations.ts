@@ -41,7 +41,9 @@ const translations = {
     },
     adminProfile: {
       title: 'My Profile',
-      avatarComingSoon: 'Profile picture — coming soon',
+      changePhoto: 'Change photo',
+      uploading: 'Uploading…',
+      uploadError: 'Could not upload photo. Please try again.',
       firstName: 'First name',
       lastName: 'Last name',
       email: 'Email',
@@ -608,7 +610,9 @@ const translations = {
     },
     adminProfile: {
       title: 'הפרופיל שלי',
-      avatarComingSoon: 'תמונת פרופיל — בקרוב',
+      changePhoto: 'שינוי תמונה',
+      uploading: 'מעלה…',
+      uploadError: 'לא ניתן היה להעלות את התמונה. נסה/י שוב.',
       firstName: 'שם פרטי',
       lastName: 'שם משפחה',
       email: 'אימייל',

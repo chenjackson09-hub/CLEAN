@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role')
+    .select('full_name, role, avatar_url')
     .eq('id', user.id)
     .single()
 
@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-[#EFEFEF]">
-      <Nav currentUserName={profile.full_name ?? user.email ?? ''} />
+      <Nav currentUserName={profile.full_name ?? user.email ?? ''} currentUserAvatarUrl={profile.avatar_url} />
       <main className="pt-14 md:ps-56">{children}</main>
     </div>
   )

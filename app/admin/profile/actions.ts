@@ -22,3 +22,31 @@ export async function updateAdminName(input: {
   revalidatePath('/admin', 'layout')
   return { success: true }
 }
+
+export async function updateAdminAvatar(formData: FormData): Promise<{ error?: string; avatarUrl?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const avatarFile = formData.get('avatar') as File
+  if (!avatarFile || avatarFile.size === 0) return { error: 'No file provided' }
+
+  const ext = avatarFile.name.split('.').pop()
+  const path = `${user.id}/avatar.${ext}`
+  const { error: uploadErr } = await supabase.storage
+    .from('avatars')
+    .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
+  if (uploadErr) return { error: uploadErr.message }
+
+  const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+  // The storage path is stable (upsert overwrites the same file), so the public
+  // URL never changes between uploads — cache-bust it so the new photo shows.
+  const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`
+
+  const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id)
+  if (dbErr) return { error: dbErr.message }
+
+  revalidatePath('/admin/profile')
+  revalidatePath('/admin', 'layout')
+  return { avatarUrl }
+}

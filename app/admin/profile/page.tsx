@@ -11,7 +11,7 @@ export default async function AdminProfilePage() {
   if (!user) redirect('/login')
 
   const supabase = await createClient()
-  const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single()
 
   const fullName = (profile?.full_name ?? '').trim()
   const spaceIndex = fullName.indexOf(' ')
@@ -19,6 +19,11 @@ export default async function AdminProfilePage() {
   const lastName = spaceIndex === -1 ? '' : fullName.slice(spaceIndex + 1)
 
   return (
-    <AdminProfileView initialFirstName={firstName} initialLastName={lastName} email={user.email ?? ''} />
+    <AdminProfileView
+      initialFirstName={firstName}
+      initialLastName={lastName}
+      email={user.email ?? ''}
+      initialAvatarUrl={profile?.avatar_url ?? null}
+    />
   )
 }
