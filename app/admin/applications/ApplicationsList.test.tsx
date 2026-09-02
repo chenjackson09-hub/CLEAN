@@ -27,6 +27,7 @@ const apps = [
     reviewed_at: null,
     id_document_url: null,
     admin_notes: null,
+    cleans_completed: 0,
   },
 ]
 
@@ -39,7 +40,7 @@ describe('ApplicationsList', () => {
     expect(screen.getByText('10 Ben Yehuda St, Tel Aviv')).toBeInTheDocument()
 
     const link = screen.getByText('Pending Cleaner').closest('a')
-    expect(link).toHaveAttribute('href', '/admin/cleaners/c1')
+    expect(link).toHaveAttribute('href', '/cleaners/c1')
   })
 
   it('shows a "coming soon" note when Message is clicked, with no inline approve/reject buttons', async () => {

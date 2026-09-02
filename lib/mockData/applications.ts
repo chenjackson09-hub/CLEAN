@@ -18,6 +18,7 @@ export const MOCK_APPLICATIONS: CleanerApplicationResult[] = [
     admin_notes: null,
     avatar_url: null,
     reviewed_at: null,
+    cleans_completed: 0,
   },
   {
     id: '2',
@@ -36,6 +37,7 @@ export const MOCK_APPLICATIONS: CleanerApplicationResult[] = [
     admin_notes: null,
     avatar_url: null,
     reviewed_at: null,
+    cleans_completed: 0,
   },
   {
     id: '3',
@@ -54,5 +56,6 @@ export const MOCK_APPLICATIONS: CleanerApplicationResult[] = [
     admin_notes: null,
     avatar_url: null,
     reviewed_at: null,
+    cleans_completed: 0,
   },
 ]

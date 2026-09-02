@@ -6,6 +6,11 @@ import type { UserRole } from '@/types/database'
 const CUSTOMER_PATHS = ['/browse', '/bookings', '/home', '/cleaners', '/profile']
 const CLEANER_PATHS = ['/cleaner']
 const ADMIN_PATHS = ['/admin']
+// /cleaners/[id] is the one customer-facing page an admin also needs — the
+// admin panel links a cleaner's row straight to the exact profile customers
+// see, rather than a separate admin-styled mimic. Every other customer path
+// (browse, bookings, home, profile) stays customer-only.
+const ADMIN_READABLE_CUSTOMER_PATHS = ['/cleaners']
 
 function matchesPath(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p + '/'))
@@ -88,7 +93,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(home, request.url))
     }
     if (matchesPath(pathname, CUSTOMER_PATHS) && role !== 'customer') {
-      return NextResponse.redirect(new URL(home, request.url))
+      const adminReadable = matchesPath(pathname, ADMIN_READABLE_CUSTOMER_PATHS) && role === 'admin'
+      if (!adminReadable) return NextResponse.redirect(new URL(home, request.url))
     }
     if (matchesPath(pathname, ADMIN_PATHS) && role !== 'admin') {
       return NextResponse.redirect(new URL(home, request.url))

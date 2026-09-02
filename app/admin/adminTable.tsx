@@ -118,6 +118,79 @@ export function StatusPill({ status, label }: { status: string; label: string })
   )
 }
 
+/* ------------------------------------------------------- contact icons */
+
+function MailGlyph() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
+  )
+}
+
+// Small popover ("coming soon") instead of a text label, so the button stays
+// icon-only and doesn't push the row's height around when clicked.
+function MessageIconButton() {
+  const { t } = useLanguage()
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={t('admin.shared.message')}
+        title={t('admin.shared.message')}
+        className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#F7F4EA] hover:text-[#2f7d7c] transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute end-0 z-50 mt-1 w-44 rounded-lg bg-gray-900 text-white text-xs px-2.5 py-2 shadow-lg">
+            {t('admin.shared.messageComingSoon')}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// A real mailto: link — the address is already on hand, no reason to fake it.
+function EmailIconButton({ email }: { email?: string | null }) {
+  const { t } = useLanguage()
+  if (!email) {
+    return (
+      <span className="w-8 h-8 flex items-center justify-center text-gray-200" aria-hidden="true">
+        <MailGlyph />
+      </span>
+    )
+  }
+  return (
+    <a
+      href={`mailto:${email}`}
+      aria-label={t('admin.shared.email')}
+      title={email}
+      className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#F7F4EA] hover:text-[#43629e] transition-colors"
+    >
+      <MailGlyph />
+    </a>
+  )
+}
+
+// Chat icon over an email icon, stacked — the compact replacement for the
+// old wide "Message" text button, so rows fit without horizontal scroll.
+export function ContactIconStack({ email }: { email?: string | null }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <MessageIconButton />
+      <EmailIconButton email={email} />
+    </div>
+  )
+}
+
 /* -------------------------------------------------------- status filter */
 
 // Shared "Active / Inactive / Blocked / All" filter dropdown used by the

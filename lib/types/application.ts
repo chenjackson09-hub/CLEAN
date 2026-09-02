@@ -17,4 +17,5 @@ export type CleanerApplicationResult = {
   reviewed_at: string | null
   id_document_url: string | null
   admin_notes: string | null
+  cleans_completed: number
 }

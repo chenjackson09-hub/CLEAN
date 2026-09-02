@@ -10,7 +10,7 @@ export default async function ApplicationsPage() {
 
   const [{ data: appRows }, { data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
     admin.from('cleaner_applications').select('id, status, submitted_at, reviewed_at, cleaner_id, id_document_url, admin_notes').order('submitted_at', { ascending: false }),
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, address'),
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, address, cleans_completed'),
     admin.from('profiles').select('id, full_name, phone, avatar_url'),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
@@ -42,6 +42,7 @@ export default async function ApplicationsPage() {
       reviewed_at: row.status === 'approved' && row.reviewed_at ? new Date(row.reviewed_at).toLocaleDateString() : null,
       id_document_url: row.id_document_url ?? null,
       admin_notes: row.admin_notes ?? null,
+      cleans_completed: (cleaner as { cleans_completed?: number } | undefined)?.cleans_completed ?? 0,
     }
   })
 

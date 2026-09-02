@@ -16,7 +16,11 @@ export default async function CustomerLayout({ children }: { children: React.Rea
     .eq("id", user.id)
     .single()
 
-  if (!profile || profile.role !== "customer") redirect("/login")
+  // Admins are let in too, but only as far as middleware's ADMIN_READABLE_CUSTOMER_PATHS
+  // allows (currently just /cleaners/[id]) — the admin panel links a cleaner's row
+  // straight to the exact profile a customer sees, so this defense-in-depth check
+  // (mirroring admin/layout.tsx's own) has to allow that role through too.
+  if (!profile || (profile.role !== "customer" && profile.role !== "admin")) redirect("/login")
 
   // Count bookings a cleaner accepted since the customer last opened /bookings,
   // to show a red badge on the Bookings nav item (cleared on visit).

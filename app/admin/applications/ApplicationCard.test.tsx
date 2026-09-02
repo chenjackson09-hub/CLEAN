@@ -21,6 +21,7 @@ const baseApplication: CleanerApplicationResult = {
   admin_notes: null,
   avatar_url: null,
   reviewed_at: null,
+  cleans_completed: 0,
 }
 
 describe('ApplicationCard', () => {

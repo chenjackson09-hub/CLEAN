@@ -15,7 +15,7 @@ export default async function AdminCleanersPage() {
   // until admin has approved their application. Pending/rejected applicants
   // only ever appear on the Applications screen.
   const [{ data: cleanerRows }, { data: profileRows }, { data: appRows }, authData] = await Promise.all([
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address').in('status', ['approved', 'suspended']).limit(500),
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address, cleans_completed').in('status', ['approved', 'suspended']).limit(500),
     admin.from('profiles').select('id, full_name, phone, avatar_url').limit(500),
     admin.from('cleaner_applications').select('cleaner_id, reviewed_at, submitted_at').order('submitted_at', { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -53,6 +53,7 @@ export default async function AdminCleanersPage() {
       rating_count: (c as { rating_count?: number }).rating_count ?? 0,
       email: authUser?.email ?? '',
       phone: profile?.phone ?? '',
+      cleans_completed: (c as { cleans_completed?: number }).cleans_completed ?? 0,
       adminNotes: '',
       userStatus,
       joinedAt: reviewedAt ? new Date(reviewedAt).toLocaleDateString() : null,
