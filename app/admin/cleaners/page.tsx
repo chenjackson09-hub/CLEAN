@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CleanersList } from './CleanersList'
 import type { CleanerResult } from '@/lib/types/cleaner'
+import { classifyUserStatus, type UserStatus } from '@/lib/adminUserStatus'
 import { unstable_noStore as noStore } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
@@ -9,17 +10,26 @@ export default async function AdminCleanersPage() {
   noStore()
   const admin = createAdminClient()
 
+  // No status filter here (unlike before) — the page now shows every cleaner,
+  // including suspended ("blocked") ones, and the client filters by the
+  // Active/Inactive/Blocked/All dropdown instead.
   const [{ data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address').neq('status', 'suspended').limit(500),
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address').limit(500),
     admin.from('profiles').select('id, full_name, phone, avatar_url').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
   const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
-  const emailMap = new Map((authData.data?.users ?? []).map(u => [u.id, u.email ?? '']))
+  const authMap = new Map((authData.data?.users ?? []).map(u => [u.id, u]))
 
   const cleaners = (cleanerRows ?? []).map(c => {
     const profile = profileMap.get(c.id)
+    const authUser = authMap.get(c.id)
+    const userStatus: UserStatus = classifyUserStatus({
+      isBlocked: c.status === 'suspended',
+      lastSignInAt: authUser?.last_sign_in_at ?? null,
+      createdAt: authUser?.created_at ?? new Date().toISOString(),
+    })
     return {
       id: c.id,
       full_name: profile?.full_name ?? '',
@@ -33,10 +43,11 @@ export default async function AdminCleanersPage() {
       area: (c as { address?: string | null }).address ?? '',
       rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
       rating_count: (c as { rating_count?: number }).rating_count ?? 0,
-      email: emailMap.get(c.id) ?? '',
+      email: authUser?.email ?? '',
       phone: profile?.phone ?? '',
       adminNotes: '',
-    } satisfies CleanerResult & { adminNotes: string }
+      userStatus,
+    } satisfies CleanerResult & { adminNotes: string; userStatus: UserStatus }
   })
 
   return (

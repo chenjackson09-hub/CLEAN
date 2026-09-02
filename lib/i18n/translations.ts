@@ -406,6 +406,10 @@ const translations = {
         contact: 'Contact',
         status: 'Status',
         details: 'Details',
+        filterActive: 'Active',
+        filterInactive: 'Inactive',
+        filterBlocked: 'Blocked',
+        filterAll: 'All',
       },
       dashboard: {
         title: 'Dashboard',
@@ -985,6 +989,10 @@ const translations = {
         contact: 'יצירת קשר',
         status: 'סטטוס',
         details: 'פרטים',
+        filterActive: 'פעילים',
+        filterInactive: 'לא פעילים',
+        filterBlocked: 'חסומים',
+        filterAll: 'הכל',
       },
       dashboard: {
         title: 'דשבורד',

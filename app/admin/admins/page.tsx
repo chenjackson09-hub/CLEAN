@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUser } from '@/lib/supabase/server'
 import { AdminsList, type AdminAccount, type PendingInvite } from './AdminsList'
+import { isInactiveSince } from '@/lib/adminUserStatus'
 import { unstable_noStore as noStore } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
@@ -23,14 +24,22 @@ export default async function AdminAdminsPage() {
       .order('created_at', { ascending: false }),
   ])
 
-  const emailMap = new Map((authData.data?.users ?? []).map((u) => [u.id, u.email ?? '']))
+  const authMap = new Map((authData.data?.users ?? []).map((u) => [u.id, u]))
 
-  const admins: AdminAccount[] = (profileRows ?? []).map((p) => ({
-    id: p.id,
-    full_name: p.full_name ?? '',
-    email: emailMap.get(p.id) ?? '',
-    isYou: p.id === currentUser?.id,
-  }))
+  const admins: AdminAccount[] = (profileRows ?? []).map((p) => {
+    const authUser = authMap.get(p.id)
+    return {
+      id: p.id,
+      full_name: p.full_name ?? '',
+      email: authUser?.email ?? '',
+      isYou: p.id === currentUser?.id,
+      // No "blocked" concept for admins — deleting one deletes the account
+      // outright, there's no soft-suspend/snapshot state to represent here.
+      userStatus: isInactiveSince(authUser?.last_sign_in_at ?? null, authUser?.created_at ?? new Date().toISOString())
+        ? 'inactive'
+        : 'active',
+    }
+  })
 
   const invites: PendingInvite[] = (inviteRes.error ? [] : inviteRes.data ?? []).map((i) => ({
     id: i.id,

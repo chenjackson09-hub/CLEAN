@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { createAdminInvite, revokeAdminInvite } from '@/app/admin/actions'
+import { StatusFilterDropdown, StatusPill } from '@/app/admin/adminTable'
 
 export type AdminAccount = {
   id: string
   full_name: string
   email: string
   isYou: boolean
+  userStatus: 'active' | 'inactive'
 }
 
 export type PendingInvite = {
@@ -52,6 +54,18 @@ export function AdminsList({
   const [newLink, setNewLink] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState<'active' | 'inactive' | 'all'>('active')
+
+  const filteredAdmins = useMemo(
+    () => (filter === 'all' ? admins : admins.filter((a) => a.userStatus === filter)),
+    [admins, filter],
+  )
+  const filterOptions = [
+    { value: 'active', label: t('admin.shared.filterActive') },
+    { value: 'inactive', label: t('admin.shared.filterInactive') },
+    { value: 'all', label: t('admin.shared.filterAll') },
+  ]
+  const statusLabel = { active: t('admin.shared.filterActive'), inactive: t('admin.shared.filterInactive') }
 
   async function handleGenerate() {
     setGenerating(true)
@@ -83,23 +97,31 @@ export function AdminsList({
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
-      <h1 className="text-xl font-bold text-gray-900">{t('admin.admins.title')}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-xl font-bold text-gray-900">{t('admin.admins.title')}</h1>
+        <div className="ms-auto">
+          <StatusFilterDropdown value={filter} onChange={(v) => setFilter(v as typeof filter)} options={filterOptions} />
+        </div>
+      </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-1">
-        {admins.length === 0 ? (
+        {filteredAdmins.length === 0 ? (
           <p className="text-sm text-gray-400">{t('admin.admins.empty')}</p>
         ) : (
-          admins.map((a) => (
+          filteredAdmins.map((a) => (
             <div key={a.id} className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-100 last:border-0">
               <div className="flex flex-col min-w-0">
                 <span className="font-semibold text-gray-900 truncate">{a.full_name || '—'}</span>
                 <span className="text-sm text-gray-500 break-all">{a.email}</span>
               </div>
-              {a.isYou && (
-                <span className="text-xs font-semibold text-[#2f7d7c] bg-[#75C9C8]/15 rounded-full px-2.5 py-1 whitespace-nowrap shrink-0">
-                  {t('admin.admins.you')}
-                </span>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                <StatusPill status={a.userStatus} label={statusLabel[a.userStatus]} />
+                {a.isYou && (
+                  <span className="text-xs font-semibold text-[#2f7d7c] bg-[#75C9C8]/15 rounded-full px-2.5 py-1 whitespace-nowrap">
+                    {t('admin.admins.you')}
+                  </span>
+                )}
+              </div>
             </div>
           ))
         )}

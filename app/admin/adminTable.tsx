@@ -96,6 +96,10 @@ const STATUS_PILL: Record<string, string> = {
   completed: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15',
   declined: 'bg-red-100 text-red-600 ring-red-100',
   cancelled: 'bg-gray-200 text-gray-500 ring-gray-200',
+  // Active/Inactive/Blocked (Cleaners/Customers/Admins filter — lib/adminUserStatus.ts)
+  active: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/20',
+  inactive: 'bg-[#DED9E2] text-gray-700 ring-[#DED9E2]',
+  blocked: 'bg-red-50 text-red-600 ring-red-50',
 }
 
 export function StatusPill({ status, label }: { status: string; label: string }) {
@@ -107,6 +111,33 @@ export function StatusPill({ status, label }: { status: string; label: string })
     >
       {label}
     </span>
+  )
+}
+
+/* -------------------------------------------------------- status filter */
+
+// Shared "Active / Inactive / Blocked / All" filter dropdown used by the
+// Cleaners/Customers/Admins list pages (see lib/adminUserStatus.ts for the
+// classification these options filter on).
+export function StatusFilterDropdown({
+  value,
+  onChange,
+  options,
+}: {
+  value: string
+  onChange: (value: string) => void
+  options: { value: string; label: string }[]
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#75C9C8]"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
   )
 }
 
