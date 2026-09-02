@@ -176,6 +176,12 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.min_hours} {t('filterBar.hoursShort')}</p>
               </div>
             )}
+            {cleaner.max_hours != null && (
+              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+                <p className="text-xs text-gray-400">{t('cleanerProfile.maxJob')}</p>
+                <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.max_hours} {t('filterBar.hoursShort')}</p>
+              </div>
+            )}
             <div className="bg-gray-50 rounded-xl px-3 py-2.5">
               <p className="text-xs text-gray-400">{t('cleanerProfile.cleansDone')}</p>
               <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.cleans_completed ?? 0}</p>

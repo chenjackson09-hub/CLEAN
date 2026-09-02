@@ -99,19 +99,10 @@ export default async function BrowsePage({ searchParams }: Props) {
     const rangeTo = to ? toMin(to) : null
     const hasRange = rangeFrom !== null && rangeTo !== null && rangeTo > rangeFrom
 
-    // Duration filter (date-independent): when the customer picked a specific
-    // duration, hide cleaners whose accepted ceiling (max_hours) can't take it.
-    // min_hours is informational only (shown on the cleaner's profile as their
-    // stated standard) and no longer filters results. "Not sure" (duration ===
-    // 'any') applies no such filter. See migration 0013.
+    // Neither of the cleaner's own min_hours/max_hours filters browse results
+    // anymore — both are informational only, shown on the cleaner's profile as
+    // their stated standard. See migration 0013.
     const reqDuration = duration && duration !== 'any' ? parseInt(duration) : null
-    if (reqDuration != null && Number.isFinite(reqDuration)) {
-      base = base.filter(c => {
-        const max = (c as { max_hours?: number | null }).max_hours
-        if (max != null && reqDuration > max) return false
-        return true
-      })
-    }
 
     // Location filter: keep only cleaners whose service radius covers the
     // customer's location. A cleaner with no saved location can't be shown to

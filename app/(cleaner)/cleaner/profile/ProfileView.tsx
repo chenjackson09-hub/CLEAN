@@ -87,6 +87,12 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
           <p className="text-xs text-gray-400">{t("prof_min_job")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.min_hours ?? 0} hrs</p>
         </div>
+        {cleaner?.max_hours != null && (
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+            <p className="text-xs text-gray-400">{t("prof_max_job")}</p>
+            <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.max_hours} hrs</p>
+          </div>
+        )}
         <div className="bg-gray-50 rounded-xl px-3 py-2.5">
           <p className="text-xs text-gray-400">{t("prof_houses_cleaned")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.cleans_completed ?? 0}</p>

@@ -26,6 +26,8 @@ type Answers = {
   freqOtherText: string;
   rate: string;
   duration: string;
+  maxDuration: string;
+  maxDurationNoLimit: boolean;
   services: string[];
   serviceOtherText: string;
   matchTypes: string[];
@@ -62,7 +64,7 @@ const MATCH_OPTS: { value: MatchType; key: string }[] = [
   { value: "other", key: "matchOther" },
 ];
 
-const DEFAULTED_KEYS = ["freq", "rate", "duration", "gasrate"];
+const DEFAULTED_KEYS = ["freq", "rate", "duration", "maxDuration", "gasrate"];
 const REQUIRED_KEYS = ["name", "birth", "loc", "services", "match", "areas"];
 
 const initialAnswers: Answers = {
@@ -78,6 +80,8 @@ const initialAnswers: Answers = {
   freqOtherText: "",
   rate: "75",
   duration: "3",
+  maxDuration: "5",
+  maxDurationNoLimit: false,
   services: [],
   serviceOtherText: "",
   matchTypes: [],
@@ -134,6 +138,7 @@ export default function CleanerRegisterPage() {
     { key: "freq" },
     { key: "rate" },
     { key: "duration" },
+    { key: "maxDuration" },
     { key: "services" },
     { key: "match" },
     { key: "car" },
@@ -307,6 +312,7 @@ export default function CleanerRegisterPage() {
       cleaning_category_other: answers.services.includes("Other") ? answers.serviceOtherText || null : null,
       hourly_rate: answers.rate ? Number(answers.rate) : null,
       min_hours: answers.duration ? Number(answers.duration) : null,
+      max_hours: answers.maxDurationNoLimit ? null : answers.maxDuration ? Number(answers.maxDuration) : null,
       address: answers.loc || null,
       ...(location && { location: `POINT(${location.lng} ${location.lat})` }),
       birthdate,
@@ -616,6 +622,33 @@ export default function CleanerRegisterPage() {
                     />
                     <span className="text-sm text-gray-500">hrs</span>
                   </div>
+                </>
+              )}
+
+              {current.key === "maxDuration" && (
+                <>
+                  <p className="text-lg font-medium text-gray-900 mb-4">{t("auth.registerCleaner.qMaxDuration")}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={answers.maxDuration}
+                      disabled={answers.maxDurationNoLimit}
+                      onChange={(e) => setAnswers((a) => ({ ...a, maxDuration: e.target.value }))}
+                      className="w-28 border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+                    />
+                    <span className="text-sm text-gray-500">hrs</span>
+                    <button
+                      type="button"
+                      onClick={() => setAnswers((a) => ({ ...a, maxDurationNoLimit: !a.maxDurationNoLimit }))}
+                      className={`px-3 py-2 rounded-full border text-sm ${
+                        answers.maxDurationNoLimit ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
+                      }`}
+                    >
+                      {t("auth.registerCleaner.noLimit")}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">{t("auth.registerCleaner.qMaxDurationNote")}</p>
                 </>
               )}
 

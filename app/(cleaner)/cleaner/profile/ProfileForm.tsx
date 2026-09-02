@@ -164,8 +164,10 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
             min="1"
             max="24"
             defaultValue={cleaner?.max_hours ?? ""}
+            placeholder={t("prof_no_limit")}
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <p className="text-sm text-gray-400 mt-1">{t("prof_max_hours_hint")}</p>
         </div>
       </div>
 

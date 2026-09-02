@@ -51,14 +51,12 @@ export function BookingRequestForm({
   disabled?: boolean
 }) {
   const { t, lang } = useLanguage()
-  // The cleaner's accepted duration ceiling. max defaults to 8 when unset, and
-  // the duration options are capped to it so the customer can't request more
-  // hours than the cleaner will take. min_hours is informational only (shown
-  // on the cleaner's profile as their stated standard) and no longer bounds
-  // what can be requested here. See migration 0013.
-  const maxHours = Math.min(8, cleaner.max_hours ?? 8)
-  // The flexible ("Not sure") default, kept inside the cleaner's ceiling.
-  const flexibleHours = Math.min(2, maxHours)
+  // A flat sanity ceiling (matches the DB's own duration_hours check). Neither
+  // of the cleaner's own min_hours/max_hours bounds what can be requested here
+  // anymore — both are informational only, shown on the cleaner's profile as
+  // their stated standard. See migration 0013.
+  const maxHours = 8
+  const flexibleHours = 2
   const [open, setOpen] = useState(defaultOpen)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -69,9 +67,8 @@ export function BookingRequestForm({
   const [date, setDate] = useState(presetDate ?? '')
   // Duration and the availability window are carried over read-only from the
   // browse filter — the customer doesn't re-pick them here. 'any' = "Not sure":
-  // sent as the flexible default (kept inside the cleaner's ceiling) so the
-  // request still has a concrete duration the cleaner can adjust. A preset
-  // duration above the cleaner's ceiling falls back to "Not sure".
+  // sent as the flexible default so the request still has a concrete duration
+  // the cleaner can adjust. A preset duration outside 1-8h falls back to "Not sure".
   const duration: number | 'any' =
     presetDuration != null && presetDuration >= 1 && presetDuration <= maxHours
       ? presetDuration
