@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { DashboardContent } from './DashboardContent'
 import { unstable_noStore as noStore } from 'next/cache'
 
@@ -15,6 +16,13 @@ export default async function AdminDashboardPage() {
   noStore()
   const admin = createAdminClient()
 
+  const user = await getCurrentUser()
+  const supabase = await createClient()
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+    : { data: null }
+  const firstName = (profile?.full_name ?? '').trim().split(' ')[0] ?? ''
+
   const now = new Date()
   const thisWeekStart = startOfWeek(now)
   const lastWeekStart = new Date(thisWeekStart)
@@ -28,6 +36,7 @@ export default async function AdminDashboardPage() {
     { data: customerRatingRows },
     { data: appRows },
     { data: bookingRows },
+    { count: disputesOpenCount },
   ] = await Promise.all([
     admin.from('cleaners').select('status, rating_avg, rating_count, birthdate'),
     admin.from('profiles').select('id, created_at').eq('role', 'customer'),
@@ -38,6 +47,9 @@ export default async function AdminDashboardPage() {
       .select('id, status, address, created_at, responded_at, scheduled_date, cleaner_id, customer_id')
       .order('created_at', { ascending: false })
       .limit(500),
+    // "Disputes" are open (unresolved) support messages — every user question
+    // surfaces here until an admin resolves it from /admin/support.
+    admin.from('support_messages').select('id', { count: 'exact', head: true }).eq('resolved', false),
   ])
 
   const cleaners = cleanerRows ?? []
@@ -131,6 +143,8 @@ export default async function AdminDashboardPage() {
   return (
       <div className="px-6 py-6 max-w-6xl mx-auto">
         <DashboardContent
+          firstName={firstName}
+          disputesOpen={disputesOpenCount ?? 0}
           totalCleaners={totalCleaners}
           activeCleaners={activeCleaners}
           newCleaners={newCleaners}

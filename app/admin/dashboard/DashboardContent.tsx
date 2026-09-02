@@ -1,6 +1,8 @@
 'use client'
+import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { DashboardKpiCard } from './DashboardKpiCard'
+import { DashboardGreeting } from './DashboardGreeting'
 import { NeedsAttentionPanel } from './NeedsAttentionPanel'
 import { RecentActivityFeed } from './RecentActivityFeed'
 import { TopAreasWidget } from './TopAreasWidget'
@@ -25,6 +27,8 @@ interface RecentBooking {
 }
 
 interface Props {
+  firstName: string
+  disputesOpen: number
   totalCleaners: number
   activeCleaners: number
   newCleaners: number
@@ -47,6 +51,8 @@ interface Props {
 }
 
 export function DashboardContent({
+  firstName,
+  disputesOpen,
   totalCleaners,
   activeCleaners,
   newCleaners,
@@ -73,7 +79,7 @@ export function DashboardContent({
 
   return (
     <>
-      <h1 className="text-xl font-bold text-gray-900 mb-6">{t('admin.dashboard.title')}</h1>
+      <DashboardGreeting name={firstName} />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
         <DashboardKpiCard
@@ -109,29 +115,43 @@ export function DashboardContent({
           highlight={unmatchedCount > 0}
         />
         <DashboardKpiCard
+          href="/admin/support"
+          value={disputesOpen}
+          label={t('admin.dashboard.disputes')}
+          sub={t('admin.dashboard.disputesSub')}
+          highlight={disputesOpen > 0}
+        />
+        <DashboardKpiCard
           href="/admin/bookings"
           value={cancellationRate === null ? '—' : `${cancellationRate}%`}
           label={t('admin.dashboard.cancellationRate')}
         />
-        {/* All three rating averages combined on one card. */}
-        <div className="col-span-2 rounded-2xl p-4 shadow-2xl bg-white border border-gray-100">
+        {/* All three rating averages combined on one card — the whole card links
+            to /admin/ratings for the fuller breakdown. */}
+        <Link
+          href="/admin/ratings"
+          className="col-span-2 rounded-2xl p-4 shadow-2xl bg-white border border-gray-100 hover:shadow-lg transition-shadow"
+        >
           <div className="text-sm font-semibold text-gray-700 mb-3">{t('admin.dashboard.ratingsTitle')}</div>
           <div className="flex items-stretch divide-x divide-gray-100">
             <RatingStat label={t('admin.dashboard.ratingOverall')} value={fmtRating(overallRatingAvg)} count={overallRatingCount} />
             <RatingStat label={t('admin.dashboard.ratingCleaners')} value={fmtRating(cleanersRatingAvg)} count={cleanersRatingCount} />
             <RatingStat label={t('admin.dashboard.ratingCustomers')} value={fmtRating(customersRatingAvg)} count={customersRatingCount} />
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <NeedsAttentionPanel
-          unmatchedCount={unmatchedCount}
-          pendingApplications={pendingApplications}
-          minorCleanersPending={minorCleanersPending}
-        />
         <RecentActivityFeed bookings={recentBookings} />
-        <TopAreasWidget addresses={areaAddresses} />
+        <div className="flex flex-col gap-6">
+          <NeedsAttentionPanel
+            unmatchedCount={unmatchedCount}
+            pendingApplications={pendingApplications}
+            minorCleanersPending={minorCleanersPending}
+            disputesOpen={disputesOpen}
+          />
+          <TopAreasWidget addresses={areaAddresses} />
+        </div>
       </div>
     </>
   )

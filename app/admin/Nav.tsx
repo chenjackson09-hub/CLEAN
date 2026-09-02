@@ -102,6 +102,16 @@ const NAV_ITEMS: NavEntry[] = [
       </svg>
     ),
   },
+  {
+    type: 'link',
+    href: '/admin/ratings',
+    labelKey: 'adminNav.ratings',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.05 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.367 2.446a1 1 0 00-.364 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.366-2.446a1 1 0 00-1.176 0l-3.366 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.355 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
+      </svg>
+    ),
+  },
   // TEMPORARY: Availability is hidden from the admin nav for now — unsure if admins
   // need it. The /admin/availability page still exists and is reachable by URL.
   // Re-add this entry to restore the nav button. See CLAUDE.md "Route groups".
@@ -121,7 +131,28 @@ const NAV_ITEMS: NavEntry[] = [
   // are reachable by URL, just no longer linked from the nav.
 ]
 
-export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName: string; currentUserAvatarUrl?: string | null }) {
+// Small red count badge shown next to a nav item that needs attention
+// (open support disputes on Support, stale unmatched requests on Matches).
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null
+  return (
+    <span className="ms-auto shrink-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
+
+export function Nav({
+  currentUserName,
+  currentUserAvatarUrl,
+  openDisputesCount = 0,
+  unmatchedRequestsCount = 0,
+}: {
+  currentUserName: string
+  currentUserAvatarUrl?: string | null
+  openDisputesCount?: number
+  unmatchedRequestsCount?: number
+}) {
   const pathname = usePathname()
   const { t, lang, toggleLanguage } = useLanguage()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
@@ -129,6 +160,12 @@ export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName
   const [menuOpen, setMenuOpen] = useState(false)
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
+  const badgeCountFor = (href: string) => {
+    if (href === '/admin/support') return openDisputesCount
+    if (href === '/admin/bookings') return unmatchedRequestsCount
+    return 0
+  }
 
   const LangButtons = (
     <div className="flex gap-1">
@@ -224,6 +261,7 @@ export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName
                       >
                         <span className="w-5 h-5 shrink-0">{entry.icon}</span>
                         <span className="text-sm">{t(entry.labelKey)}</span>
+                        <NavBadge count={badgeCountFor(entry.href)} />
                       </Link>
                     )
                   })}
@@ -282,6 +320,7 @@ export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName
               >
                 <span className="w-5 h-5 shrink-0">{entry.icon}</span>
                 <span className="text-sm">{t(entry.labelKey)}</span>
+                <NavBadge count={badgeCountFor(entry.href)} />
               </Link>
             )
           })}

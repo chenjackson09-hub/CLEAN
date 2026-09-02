@@ -6,12 +6,16 @@ interface Props {
   unmatchedCount: number
   pendingApplications: number
   minorCleanersPending: number
+  disputesOpen: number
 }
 
-export function NeedsAttentionPanel({ unmatchedCount, pendingApplications, minorCleanersPending }: Props) {
+export function NeedsAttentionPanel({ unmatchedCount, pendingApplications, minorCleanersPending, disputesOpen }: Props) {
   const { t } = useLanguage()
 
   const items: { text: string; href: string }[] = []
+  if (disputesOpen > 0) {
+    items.push({ text: t('admin.dashboard.attentionDisputes', { count: disputesOpen }), href: '/admin/support' })
+  }
   if (unmatchedCount > 0) {
     items.push({ text: t('admin.dashboard.attentionUnmatched', { count: unmatchedCount }), href: '/admin/bookings' })
   }
