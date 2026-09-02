@@ -29,8 +29,8 @@ const translations = {
     },
     adminNav: {
       dashboard: 'Dashboard',
-      applications: 'Applications',
-      bookings: 'Booking Requests',
+      applications: 'All Applications',
+      bookings: 'Match User Requests',
       cleaners: 'Cleaners',
       customers: 'Customers',
       availability: 'Availability',
@@ -38,6 +38,8 @@ const translations = {
       blocked: 'Blocked',
       inactive: 'Inactive',
       admins: 'Admins',
+      ads: 'Ads',
+      pushNotifications: 'Push Notifications',
     },
     adminProfile: {
       title: 'My Profile',
@@ -347,6 +349,14 @@ const translations = {
         confirmRevoke: 'Revoke this invite link? It will stop working immediately.',
         error: 'Something went wrong. Please try again.',
       },
+      ads: {
+        title: 'Ads',
+        comingSoon: "Ad management isn't built yet — coming soon.",
+      },
+      pushNotifications: {
+        title: 'Push Notifications',
+        comingSoon: "Sending push notifications isn't built yet — coming soon.",
+      },
       blocked: {
         title: 'Blocked Users',
         empty: 'No blocked users.',
@@ -598,8 +608,8 @@ const translations = {
     },
     adminNav: {
       dashboard: 'דשבורד',
-      applications: 'בקשות הצטרפות',
-      bookings: 'בקשות הזמנה',
+      applications: 'כל בקשות ההצטרפות',
+      bookings: 'התאמת בקשות משתמשים',
       cleaners: 'מנקים',
       customers: 'לקוחות',
       availability: 'זמינות',
@@ -607,6 +617,8 @@ const translations = {
       blocked: 'חסומים',
       inactive: 'לא פעילים',
       admins: 'מנהלים',
+      ads: 'מודעות',
+      pushNotifications: 'התראות Push',
     },
     adminProfile: {
       title: 'הפרופיל שלי',
@@ -915,6 +927,14 @@ const translations = {
         revoke: 'ביטול',
         confirmRevoke: 'לבטל את קישור ההזמנה הזה? הוא יפסיק לעבוד מיד.',
         error: 'משהו השתבש. נסה/י שוב.',
+      },
+      ads: {
+        title: 'מודעות',
+        comingSoon: 'ניהול מודעות עדיין לא זמין — בקרוב.',
+      },
+      pushNotifications: {
+        title: 'התראות Push',
+        comingSoon: 'שליחת התראות Push עדיין לא זמינה — בקרוב.',
       },
       blocked: {
         title: 'משתמשים חסומים',

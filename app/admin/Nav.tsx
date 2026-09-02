@@ -5,8 +5,13 @@ import { usePathname } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { signOut } from '@/app/(auth)/actions'
 
-const NAV_ITEMS = [
+type NavEntry =
+  | { type: 'link'; href: string; labelKey: string; icon: React.ReactNode }
+  | { type: 'divider' }
+
+const NAV_ITEMS: NavEntry[] = [
   {
+    type: 'link',
     href: '/admin/dashboard',
     labelKey: 'adminNav.dashboard',
     icon: (
@@ -16,6 +21,7 @@ const NAV_ITEMS = [
     ),
   },
   {
+    type: 'link',
     href: '/admin/applications',
     labelKey: 'adminNav.applications',
     icon: (
@@ -25,6 +31,7 @@ const NAV_ITEMS = [
     ),
   },
   {
+    type: 'link',
     href: '/admin/bookings',
     labelKey: 'adminNav.bookings',
     icon: (
@@ -33,7 +40,9 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  { type: 'divider' },
   {
+    type: 'link',
     href: '/admin/cleaners',
     labelKey: 'adminNav.cleaners',
     icon: (
@@ -43,6 +52,7 @@ const NAV_ITEMS = [
     ),
   },
   {
+    type: 'link',
     href: '/admin/customers',
     labelKey: 'adminNav.customers',
     icon: (
@@ -52,33 +62,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/admin/support',
-    labelKey: 'adminNav.support',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/blocked',
-    labelKey: 'adminNav.blocked',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/inactive',
-    labelKey: 'adminNav.inactive',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2 2m6-2a8 8 0 11-16 0 8 8 0 0116 0z" />
-      </svg>
-    ),
-  },
-  {
+    type: 'link',
     href: '/admin/admins',
     labelKey: 'adminNav.admins',
     icon: (
@@ -87,10 +71,41 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    type: 'link',
+    href: '/admin/ads',
+    labelKey: 'adminNav.ads',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.062 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 12.25c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-15.44c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73" />
+      </svg>
+    ),
+  },
+  {
+    type: 'link',
+    href: '/admin/push-notifications',
+    labelKey: 'adminNav.pushNotifications',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a2.857 2.857 0 01-5.714 0" />
+      </svg>
+    ),
+  },
+  {
+    type: 'link',
+    href: '/admin/support',
+    labelKey: 'adminNav.support',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+  },
   // TEMPORARY: Availability is hidden from the admin nav for now — unsure if admins
   // need it. The /admin/availability page still exists and is reachable by URL.
   // Re-add this entry to restore the nav button. See CLAUDE.md "Route groups".
   // {
+  //   type: 'link',
   //   href: '/admin/availability',
   //   labelKey: 'adminNav.availability',
   //   icon: (
@@ -99,7 +114,11 @@ const NAV_ITEMS = [
   //     </svg>
   //   ),
   // },
-] as const
+  // Blocked and Inactive were separate pages/nav entries — that functionality
+  // now lives as filters within the Cleaners/Customers/Admins pages instead.
+  // The pages themselves (/admin/blocked, /admin/inactive) still exist and
+  // are reachable by URL, just no longer linked from the nav.
+]
 
 export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName: string; currentUserAvatarUrl?: string | null }) {
   const pathname = usePathname()
@@ -185,13 +204,16 @@ export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                <div className="absolute end-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-2 flex flex-col">
-                  {NAV_ITEMS.map((item) => {
-                    const active = isActive(item.href)
+                <div className="absolute end-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-2 flex flex-col max-h-[calc(100vh-4rem)] overflow-y-auto">
+                  {NAV_ITEMS.map((entry, i) => {
+                    if (entry.type === 'divider') {
+                      return <hr key={`divider-${i}`} className="my-2 border-gray-100" />
+                    }
+                    const active = isActive(entry.href)
                     return (
                       <Link
-                        key={item.href}
-                        href={item.href}
+                        key={entry.href}
+                        href={entry.href}
                         onClick={() => setMenuOpen(false)}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           active
@@ -199,8 +221,8 @@ export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName
                             : 'text-gray-700 hover:bg-gray-50'
                         }`}
                       >
-                        <span className="w-5 h-5 shrink-0">{item.icon}</span>
-                        <span className="text-sm">{t(item.labelKey)}</span>
+                        <span className="w-5 h-5 shrink-0">{entry.icon}</span>
+                        <span className="text-sm">{t(entry.labelKey)}</span>
                       </Link>
                     )
                   })}
@@ -242,20 +264,23 @@ export function Nav({ currentUserName, currentUserAvatarUrl }: { currentUserName
       {/* Sidebar — nav links only, desktop (md+), fixed below the top bar */}
       <aside className="hidden md:flex md:flex-col md:fixed md:top-14 md:bottom-0 md:start-0 md:w-56 bg-white border-e border-gray-200 z-40">
         <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href)
+          {NAV_ITEMS.map((entry, i) => {
+            if (entry.type === 'divider') {
+              return <hr key={`divider-${i}`} className="my-2 border-gray-100" />
+            }
+            const active = isActive(entry.href)
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={entry.href}
+                href={entry.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   active
                     ? 'bg-[#F7F4EA] text-[#6EB5B4] font-semibold'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-[#80A1D4]'
                 }`}
               >
-                <span className="w-5 h-5 shrink-0">{item.icon}</span>
-                <span className="text-sm">{t(item.labelKey)}</span>
+                <span className="w-5 h-5 shrink-0">{entry.icon}</span>
+                <span className="text-sm">{t(entry.labelKey)}</span>
               </Link>
             )
           })}

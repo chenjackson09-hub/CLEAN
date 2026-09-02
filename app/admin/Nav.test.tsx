@@ -12,13 +12,28 @@ describe('Nav', () => {
     window.localStorage.clear()
   })
 
-  it('renders links for applications, booking requests, cleaners, and customers', () => {
+  it('renders links for all applications, match user requests, cleaners, and customers', () => {
     render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
-    expect(screen.getByRole('link', { name: 'Applications' })).toHaveAttribute('href', '/admin/applications')
-    expect(screen.getByRole('link', { name: 'Booking Requests' })).toHaveAttribute('href', '/admin/bookings')
+    expect(screen.getByRole('link', { name: 'All Applications' })).toHaveAttribute('href', '/admin/applications')
+    expect(screen.getByRole('link', { name: 'Match User Requests' })).toHaveAttribute('href', '/admin/bookings')
     expect(screen.getByRole('link', { name: 'Cleaners' })).toHaveAttribute('href', '/admin/cleaners')
     expect(screen.getByRole('link', { name: 'Customers' })).toHaveAttribute('href', '/admin/customers')
+  })
+
+  it('renders the Ads and Push Notifications links, and Support last', () => {
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
+
+    expect(screen.getByRole('link', { name: 'Ads' })).toHaveAttribute('href', '/admin/ads')
+    expect(screen.getByRole('link', { name: 'Push Notifications' })).toHaveAttribute('href', '/admin/push-notifications')
+    expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute('href', '/admin/support')
+  })
+
+  it('no longer renders standalone Blocked/Inactive links (folded into per-page filters)', () => {
+    render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
+
+    expect(screen.queryByRole('link', { name: 'Blocked' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Inactive' })).toBeNull()
   })
 
   it('does not render the temporarily-hidden availability link', () => {
@@ -30,7 +45,7 @@ describe('Nav', () => {
   it('highlights the current page', () => {
     render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
-    expect(screen.getByRole('link', { name: 'Booking Requests' }).className).toContain('bg-[#F7F4EA]')
+    expect(screen.getByRole('link', { name: 'Match User Requests' }).className).toContain('bg-[#F7F4EA]')
   })
 
   it('shows the "Admin" title and the current user\'s name in the top bar', () => {
@@ -57,8 +72,8 @@ describe('Nav', () => {
     await user.click(screen.getByRole('button', { name: 'Account menu' }))
     await user.click(screen.getByRole('button', { name: 'HE' }))
 
-    expect(screen.getByRole('link', { name: 'בקשות הצטרפות' })).toHaveAttribute('href', '/admin/applications')
-    expect(screen.getByRole('link', { name: 'בקשות הזמנה' })).toHaveAttribute('href', '/admin/bookings')
+    expect(screen.getByRole('link', { name: 'כל בקשות ההצטרפות' })).toHaveAttribute('href', '/admin/applications')
+    expect(screen.getByRole('link', { name: 'התאמת בקשות משתמשים' })).toHaveAttribute('href', '/admin/bookings')
     expect(screen.getByRole('link', { name: 'מנקים' })).toHaveAttribute('href', '/admin/cleaners')
     expect(screen.getByRole('link', { name: 'לקוחות' })).toHaveAttribute('href', '/admin/customers')
   })
