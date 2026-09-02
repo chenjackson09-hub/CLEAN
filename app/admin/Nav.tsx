@@ -71,6 +71,7 @@ const NAV_ITEMS: NavEntry[] = [
       </svg>
     ),
   },
+  { type: 'divider' },
   {
     type: 'link',
     href: '/admin/ads',
