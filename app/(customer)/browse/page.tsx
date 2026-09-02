@@ -100,15 +100,14 @@ export default async function BrowsePage({ searchParams }: Props) {
     const hasRange = rangeFrom !== null && rangeTo !== null && rangeTo > rangeFrom
 
     // Duration filter (date-independent): when the customer picked a specific
-    // duration, hide cleaners whose accepted hour window (min_hours/max_hours)
-    // can't take it — below their minimum or above their maximum. "Not sure"
-    // (duration === 'any') applies no such filter. See migration 0013.
+    // duration, hide cleaners whose accepted ceiling (max_hours) can't take it.
+    // min_hours is informational only (shown on the cleaner's profile as their
+    // stated standard) and no longer filters results. "Not sure" (duration ===
+    // 'any') applies no such filter. See migration 0013.
     const reqDuration = duration && duration !== 'any' ? parseInt(duration) : null
     if (reqDuration != null && Number.isFinite(reqDuration)) {
       base = base.filter(c => {
-        const min = (c as { min_hours?: number | null }).min_hours
         const max = (c as { max_hours?: number | null }).max_hours
-        if (min != null && reqDuration < min) return false
         if (max != null && reqDuration > max) return false
         return true
       })
@@ -260,10 +259,9 @@ export default async function BrowsePage({ searchParams }: Props) {
               ...slots.map(s => Math.min(toMin(s.end), rangeTo) - Math.max(toMin(s.start), rangeFrom)),
             )
             if (bestOverlap <= 0) return false
-            // The overlap must cover the cleaner's minimum hours (their rule) and,
-            // when the customer picked a concrete duration, fit that clean too.
-            const cleanerMin = (c as { min_hours?: number | null }).min_hours ?? 0
-            const requiredMin = Math.max(cleanerMin, reqDuration ?? 0) * 60
+            // The overlap must fit the customer's chosen duration, if any —
+            // min_hours is informational only and no longer required here.
+            const requiredMin = (reqDuration ?? 0) * 60
             return bestOverlap >= requiredMin
           })
           .map(({ c, slots }) => {

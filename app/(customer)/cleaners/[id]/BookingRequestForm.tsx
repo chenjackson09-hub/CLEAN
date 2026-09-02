@@ -51,13 +51,14 @@ export function BookingRequestForm({
   disabled?: boolean
 }) {
   const { t, lang } = useLanguage()
-  // The cleaner's accepted duration window. min/max default to 1/8 when unset,
-  // and the duration options are limited to this range so the customer can't
-  // request fewer or more hours than the cleaner will take. See migration 0013.
-  const minHours = Math.max(1, cleaner.min_hours ?? 1)
+  // The cleaner's accepted duration ceiling. max defaults to 8 when unset, and
+  // the duration options are capped to it so the customer can't request more
+  // hours than the cleaner will take. min_hours is informational only (shown
+  // on the cleaner's profile as their stated standard) and no longer bounds
+  // what can be requested here. See migration 0013.
   const maxHours = Math.min(8, cleaner.max_hours ?? 8)
-  // The flexible ("Not sure") default, kept inside the cleaner's window.
-  const flexibleHours = Math.min(Math.max(2, minHours), maxHours)
+  // The flexible ("Not sure") default, kept inside the cleaner's ceiling.
+  const flexibleHours = Math.min(2, maxHours)
   const [open, setOpen] = useState(defaultOpen)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -68,11 +69,11 @@ export function BookingRequestForm({
   const [date, setDate] = useState(presetDate ?? '')
   // Duration and the availability window are carried over read-only from the
   // browse filter — the customer doesn't re-pick them here. 'any' = "Not sure":
-  // sent as the flexible default (kept inside the cleaner's window) so the
+  // sent as the flexible default (kept inside the cleaner's ceiling) so the
   // request still has a concrete duration the cleaner can adjust. A preset
-  // duration outside the cleaner's window falls back to "Not sure".
+  // duration above the cleaner's ceiling falls back to "Not sure".
   const duration: number | 'any' =
-    presetDuration != null && presetDuration >= minHours && presetDuration <= maxHours
+    presetDuration != null && presetDuration >= 1 && presetDuration <= maxHours
       ? presetDuration
       : 'any'
   // When the customer came from a location search, the area is fixed (read-only)

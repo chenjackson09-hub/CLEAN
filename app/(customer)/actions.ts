@@ -154,21 +154,20 @@ export async function createBooking(data: {
   // pending, rejected, or suspended cleaner by passing a cleaner_id directly.
   const { data: cleaner } = await adminClient
     .from('cleaners')
-    .select('status, min_hours, max_hours')
+    .select('status, max_hours')
     .eq('id', data.cleaner_id)
     .single()
   if (!cleaner || cleaner.status !== 'approved') {
     return { error: 'This cleaner is not available for booking.' }
   }
 
-  // Enforce the cleaner's accepted hour window (authoritative — the form also
-  // limits the options). A flexible ("Not sure") request carries no chosen
+  // Enforce the cleaner's accepted max-hours ceiling (authoritative — the form
+  // also limits the options). min_hours is informational only (shown on the
+  // cleaner's profile so customers know their stated standard) — it doesn't
+  // gate what can be booked. A flexible ("Not sure") request carries no chosen
   // number, so it isn't range-checked; the client already seeds its default
   // inside the window. See migration 0013.
   if (!data.duration_flexible) {
-    if (cleaner.min_hours != null && data.duration_hours < cleaner.min_hours) {
-      return { error: `This cleaner only accepts cleans of at least ${cleaner.min_hours} hours.` }
-    }
     if (cleaner.max_hours != null && data.duration_hours > cleaner.max_hours) {
       return { error: `This cleaner only accepts cleans of at most ${cleaner.max_hours} hours.` }
     }
