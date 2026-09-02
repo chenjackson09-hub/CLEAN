@@ -91,6 +91,10 @@ const STATUS_PILL: Record<string, string> = {
   needs_info: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15',
   approved: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/20',
   rejected: 'bg-red-50 text-red-600 ring-red-50',
+  // cleaners.status (the four-value cleaner_status enum) — 'suspended' is the
+  // "blocked" cleaner state, styled the same as the Active/Inactive/Blocked
+  // 'blocked' pill below.
+  suspended: 'bg-red-50 text-red-600 ring-red-50',
   // Booking statuses
   accepted: 'bg-[#75C9C8]/20 text-[#2f7d7c] ring-[#75C9C8]/20',
   completed: 'bg-[#80A1D4]/15 text-[#43629e] ring-[#80A1D4]/15',

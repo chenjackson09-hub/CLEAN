@@ -10,21 +10,29 @@ export default async function AdminCleanersPage() {
   noStore()
   const admin = createAdminClient()
 
-  // No status filter here (unlike before) — the page now shows every cleaner,
-  // including suspended ("blocked") ones, and the client filters by the
-  // Active/Inactive/Blocked/All dropdown instead.
-  const [{ data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address').limit(500),
+  // Only approved (or later suspended, still shown under the Blocked filter)
+  // cleaners are listed here — a cleaner isn't tallied as a real cleaner
+  // until admin has approved their application. Pending/rejected applicants
+  // only ever appear on the Applications screen.
+  const [{ data: cleanerRows }, { data: profileRows }, { data: appRows }, authData] = await Promise.all([
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address').in('status', ['approved', 'suspended']).limit(500),
     admin.from('profiles').select('id, full_name, phone, avatar_url').limit(500),
+    admin.from('cleaner_applications').select('cleaner_id, reviewed_at, submitted_at').order('submitted_at', { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
   const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
   const authMap = new Map((authData.data?.users ?? []).map(u => [u.id, u]))
+  // Latest application per cleaner (rows are already ordered newest-first).
+  const appMap = new Map<string, { reviewed_at: string | null }>()
+  for (const row of appRows ?? []) {
+    if (!appMap.has(row.cleaner_id)) appMap.set(row.cleaner_id, { reviewed_at: row.reviewed_at })
+  }
 
   const cleaners = (cleanerRows ?? []).map(c => {
     const profile = profileMap.get(c.id)
     const authUser = authMap.get(c.id)
+    const reviewedAt = appMap.get(c.id)?.reviewed_at ?? null
     const userStatus: UserStatus = classifyUserStatus({
       isBlocked: c.status === 'suspended',
       lastSignInAt: authUser?.last_sign_in_at ?? null,
@@ -47,7 +55,8 @@ export default async function AdminCleanersPage() {
       phone: profile?.phone ?? '',
       adminNotes: '',
       userStatus,
-    } satisfies CleanerResult & { adminNotes: string; userStatus: UserStatus }
+      joinedAt: reviewedAt ? new Date(reviewedAt).toLocaleDateString() : null,
+    } satisfies CleanerResult & { adminNotes: string; userStatus: UserStatus; joinedAt: string | null }
   })
 
   return (

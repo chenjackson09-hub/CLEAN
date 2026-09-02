@@ -19,6 +19,8 @@ const baseApplication: CleanerApplicationResult = {
   submitted_at: '2026-06-10',
   id_document_url: null,
   admin_notes: null,
+  avatar_url: null,
+  reviewed_at: null,
 }
 
 describe('ApplicationCard', () => {

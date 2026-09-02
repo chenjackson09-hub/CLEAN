@@ -3,6 +3,7 @@ export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'needs_inf
 export type CleanerApplicationResult = {
   id: string
   full_name: string
+  avatar_url: string | null
   email: string
   phone: string
   bio: string
@@ -13,6 +14,7 @@ export type CleanerApplicationResult = {
   address: string
   status: ApplicationStatus
   submitted_at: string
+  reviewed_at: string | null
   id_document_url: string | null
   admin_notes: string | null
 }

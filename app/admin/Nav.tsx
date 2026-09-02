@@ -147,11 +147,13 @@ export function Nav({
   currentUserAvatarUrl,
   openDisputesCount = 0,
   unmatchedRequestsCount = 0,
+  pendingApplicationsCount = 0,
 }: {
   currentUserName: string
   currentUserAvatarUrl?: string | null
   openDisputesCount?: number
   unmatchedRequestsCount?: number
+  pendingApplicationsCount?: number
 }) {
   const pathname = usePathname()
   const { t, lang, toggleLanguage } = useLanguage()
@@ -164,6 +166,7 @@ export function Nav({
   const badgeCountFor = (href: string) => {
     if (href === '/admin/support') return openDisputesCount
     if (href === '/admin/bookings') return unmatchedRequestsCount
+    if (href === '/admin/applications') return pendingApplicationsCount
     return 0
   }
 

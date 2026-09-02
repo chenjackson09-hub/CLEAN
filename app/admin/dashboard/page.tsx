@@ -53,10 +53,13 @@ export default async function AdminDashboardPage() {
   ])
 
   const cleaners = cleanerRows ?? []
-  const totalCleaners = cleaners.length
-  // WAR-FIX cleaner_status enum: 'approved' cleaners are live; 'pending' are awaiting review.
+  // A cleaner isn't tallied here until admin has approved their application —
+  // pending/rejected applicants only show up on the Applications KPI/screen.
+  // Suspended cleaners were once approved, so they still count toward the
+  // total (broken down as active vs. blocked below).
+  const totalCleaners = cleaners.filter((c) => c.status === 'approved' || c.status === 'suspended').length
   const activeCleaners = cleaners.filter((c) => c.status === 'approved').length
-  const newCleaners = cleaners.filter((c) => c.status === 'pending').length
+  const blockedCleaners = cleaners.filter((c) => c.status === 'suspended').length
   // Cleaners still pending review whose birthdate puts them under 18 — not a
   // blocker, just something the admin needs to know follows a different
   // verification protocol. Computed on read from birthdate rather than a
@@ -147,7 +150,7 @@ export default async function AdminDashboardPage() {
           disputesOpen={disputesOpenCount ?? 0}
           totalCleaners={totalCleaners}
           activeCleaners={activeCleaners}
-          newCleaners={newCleaners}
+          blockedCleaners={blockedCleaners}
           totalHosts={totalHosts}
           newHostsThisMonth={newHostsThisMonth}
           pendingApplications={pendingApplications}

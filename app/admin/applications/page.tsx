@@ -9,9 +9,9 @@ export default async function ApplicationsPage() {
   const admin = createAdminClient()
 
   const [{ data: appRows }, { data: cleanerRows }, { data: profileRows }, authData] = await Promise.all([
-    admin.from('cleaner_applications').select('id, status, submitted_at, cleaner_id, id_document_url, admin_notes').order('submitted_at', { ascending: false }),
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages'),
-    admin.from('profiles').select('id, full_name, phone'),
+    admin.from('cleaner_applications').select('id, status, submitted_at, reviewed_at, cleaner_id, id_document_url, admin_notes').order('submitted_at', { ascending: false }),
+    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, address'),
+    admin.from('profiles').select('id, full_name, phone, avatar_url'),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
@@ -28,6 +28,7 @@ export default async function ApplicationsPage() {
       id: row.id,
       cleaner_id: row.cleaner_id,
       full_name: profile?.full_name ?? '',
+      avatar_url: profile?.avatar_url ?? null,
       email: emailMap.get(row.cleaner_id) ?? '',
       phone: profile?.phone ?? '',
       bio: cleaner?.bio ?? '',
@@ -35,9 +36,10 @@ export default async function ApplicationsPage() {
       hourly_rate: cleaner?.hourly_rate ?? 0,
       years_experience: cleaner?.years_experience ?? 0,
       languages: (cleaner?.languages ?? []) as string[],
-      address: '',
+      address: cleaner?.address ?? '',
       status: row.status as CleanerApplicationResult['status'],
       submitted_at: row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '',
+      reviewed_at: row.status === 'approved' && row.reviewed_at ? new Date(row.reviewed_at).toLocaleDateString() : null,
       id_document_url: row.id_document_url ?? null,
       admin_notes: row.admin_notes ?? null,
     }

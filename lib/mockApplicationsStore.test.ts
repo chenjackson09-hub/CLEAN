@@ -17,6 +17,8 @@ const application: CleanerApplicationResult = {
   submitted_at: '2026-06-13',
   id_document_url: null,
   admin_notes: null,
+  avatar_url: null,
+  reviewed_at: null,
 }
 
 describe('mockApplicationsStore', () => {

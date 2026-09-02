@@ -1,5 +1,6 @@
 'use client'
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { deleteCleanerAdmin } from '@/app/admin/actions'
 import { StarRatingDisplay } from '@/components/StarRating'
@@ -8,22 +9,21 @@ import {
   AdminRow,
   NameCell,
   ContactCell,
-  ServiceBadge,
   TextCell,
   NotesPanel,
   StatusFilterDropdown,
   StatusPill,
+  btnGhost,
   btnDanger,
 } from '@/app/admin/adminTable'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import type { UserStatus } from '@/lib/adminUserStatus'
 
-type CleanerWithNotes = CleanerResult & { adminNotes: string; userStatus: UserStatus }
+type CleanerWithNotes = CleanerResult & { adminNotes: string; userStatus: UserStatus; joinedAt: string | null }
 
-// Cleaners rendered as the shared admin "table of rows" (see app/admin/adminTable.tsx).
-// The same TEMPLATE (grid-template-columns) feeds AdminTable's header and every
-// AdminRow so columns stay aligned; the last track is the actions/expand cell.
-const TEMPLATE = 'minmax(180px,1.3fr) 90px 96px minmax(150px,1fr) minmax(120px,1fr) 84px 132px minmax(150px,auto)'
+// Name / Status / Contact / Location / Rate / Rating / (Message, Delete) — see
+// app/admin/adminTable.tsx for the shared "table of rows" this feeds.
+const TEMPLATE = 'minmax(180px,1.3fr) 96px minmax(150px,1fr) minmax(120px,1fr) 84px 132px minmax(190px,auto)'
 
 function CleanerRow({
   cleaner,
@@ -36,6 +36,7 @@ function CleanerRow({
 }) {
   const { t } = useLanguage()
   const [notes, setNotes] = useState(cleaner.adminNotes)
+  const [messageNote, setMessageNote] = useState(false)
 
   function handleDelete() {
     if (window.confirm(t('admin.shared.confirmDelete'))) onDelete(cleaner.id)
@@ -48,14 +49,14 @@ function CleanerRow({
   }[cleaner.userStatus]
 
   const cells = [
-    <NameCell
-      key="n"
-      name={cleaner.full_name}
-      url={cleaner.avatar_url}
-      subtitle={t('common.yearsExp', { years: cleaner.years_experience })}
-    />,
+    <Link key="n" href={`/admin/cleaners/${cleaner.id}`} className="min-w-0 block hover:opacity-80 transition-opacity">
+      <NameCell
+        name={cleaner.full_name}
+        url={cleaner.avatar_url}
+        subtitle={cleaner.joinedAt ? t('admin.cleaners.joined', { date: cleaner.joinedAt }) : null}
+      />
+    </Link>,
     <StatusPill key="st" status={cleaner.userStatus} label={statusLabel} />,
-    <ServiceBadge key="s" types={cleaner.service_types} />,
     <ContactCell key="c" email={cleaner.email} phone={cleaner.phone} />,
     <TextCell key="l">{cleaner.area || t('admin.shared.none')}</TextCell>,
     cleaner.hourly_rate > 0 ? (
@@ -73,9 +74,17 @@ function CleanerRow({
   ]
 
   const actions = (
-    <button type="button" onClick={handleDelete} className={btnDanger}>
-      {t('admin.shared.delete')}
-    </button>
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={() => setMessageNote((o) => !o)} className={btnGhost}>
+          {t('admin.shared.message')}
+        </button>
+        <button type="button" onClick={handleDelete} className={btnDanger}>
+          {t('admin.shared.delete')}
+        </button>
+      </div>
+      {messageNote && <p className="text-xs text-gray-400 whitespace-nowrap">{t('admin.shared.messageComingSoon')}</p>}
+    </div>
   )
 
   const expanded = <NotesPanel id={cleaner.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(cleaner.id, notes)} />
@@ -105,7 +114,6 @@ export function CleanersList({ cleaners: initial }: { cleaners: CleanerWithNotes
   const columns = [
     { key: 'name', label: t('admin.shared.name') },
     { key: 'status', label: t('admin.shared.status') },
-    { key: 'service', label: t('admin.shared.service') },
     { key: 'contact', label: t('admin.shared.contact') },
     { key: 'location', label: t('admin.shared.location') },
     { key: 'rate', label: t('admin.shared.rate') },
@@ -127,7 +135,7 @@ export function CleanersList({ cleaners: initial }: { cleaners: CleanerWithNotes
       toolbar={<StatusFilterDropdown value={filter} onChange={(v) => setFilter(v as typeof filter)} options={filterOptions} />}
       columns={columns}
       template={TEMPLATE}
-      minWidth="min-w-[1020px]"
+      minWidth="min-w-[980px]"
       isEmpty={filtered.length === 0}
       empty={t('admin.cleaners.empty')}
     >

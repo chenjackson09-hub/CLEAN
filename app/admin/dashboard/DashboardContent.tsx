@@ -31,7 +31,7 @@ interface Props {
   disputesOpen: number
   totalCleaners: number
   activeCleaners: number
-  newCleaners: number
+  blockedCleaners: number
   totalHosts: number
   newHostsThisMonth: number
   pendingApplications: number
@@ -55,7 +55,7 @@ export function DashboardContent({
   disputesOpen,
   totalCleaners,
   activeCleaners,
-  newCleaners,
+  blockedCleaners,
   totalHosts,
   newHostsThisMonth,
   pendingApplications,
@@ -86,7 +86,7 @@ export function DashboardContent({
           href="/admin/cleaners"
           value={totalCleaners}
           label={t('admin.dashboard.cleaners')}
-          sub={t('admin.dashboard.cleanersSub', { active: activeCleaners, new: newCleaners })}
+          sub={t('admin.dashboard.cleanersSub', { active: activeCleaners, blocked: blockedCleaners })}
         />
         <DashboardKpiCard
           href="/admin/customers"

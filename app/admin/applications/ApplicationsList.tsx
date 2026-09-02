@@ -1,18 +1,17 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { updateApplicationStatus, updateApplicationNotes } from '@/app/admin/actions'
+import { updateApplicationNotes } from '@/app/admin/actions'
 import {
   AdminTable,
   AdminRow,
   NameCell,
   ContactCell,
-  ServiceBadge,
+  TextCell,
   StatusPill,
   NotesPanel,
   btnGhost,
-  btnBlue,
-  btnPrimary,
 } from '@/app/admin/adminTable'
 import type { ApplicationStatus, CleanerApplicationResult } from '@/lib/types/application'
 
@@ -20,46 +19,46 @@ type App = CleanerApplicationResult & { cleaner_id: string }
 
 const TABS: ('all' | ApplicationStatus)[] = ['all', 'pending', 'needs_info', 'approved', 'rejected']
 
-const TEMPLATE = 'minmax(180px,1.4fr) 96px minmax(150px,1.1fr) 96px 110px 112px minmax(250px,auto)'
+// Name / Contact / Rate / Location / Submitted / Approved / Status / Message —
+// approve/reject/needs-info moved to the cleaner's own detail page (reached by
+// clicking the row) so they're immediately visible there without needing to
+// scroll the table horizontally to reach a trailing actions column.
+const TEMPLATE = 'minmax(180px,1.3fr) minmax(150px,1.1fr) 96px minmax(130px,1fr) 100px 100px 112px minmax(120px,auto)'
 
 function ApplicationRow({
   app,
-  onUpdateStatus,
   onSaveNotes,
 }: {
   app: App
-  onUpdateStatus: (id: string, status: ApplicationStatus, notes?: string) => void
   onSaveNotes: (id: string, notes: string) => void
 }) {
   const { t } = useLanguage()
   const [notes, setNotes] = useState(app.admin_notes ?? '')
-  const canAct = app.status === 'pending' || app.status === 'needs_info'
+  const [messageNote, setMessageNote] = useState(false)
 
   const cells = [
-    <NameCell key="n" name={app.full_name} subtitle={t('common.yearsExp', { years: app.years_experience })} />,
-    <ServiceBadge key="s" types={app.service_types} />,
+    <Link key="n" href={`/admin/cleaners/${app.cleaner_id}`} className="min-w-0 block hover:opacity-80 transition-opacity">
+      <NameCell name={app.full_name} url={app.avatar_url} />
+    </Link>,
     <ContactCell key="c" email={app.email} phone={app.phone} />,
     <span key="r" className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap">
       ₪{app.hourly_rate}
       {t('common.perHour')}
     </span>,
+    <TextCell key="l">{app.address || t('admin.shared.none')}</TextCell>,
     <span key="d" className="text-sm text-gray-500 whitespace-nowrap">{app.submitted_at}</span>,
+    <span key="ap" className="text-sm text-gray-500 whitespace-nowrap">{app.reviewed_at ?? t('admin.shared.none')}</span>,
     <StatusPill key="st" status={app.status} label={t(`admin.applications.status.${app.status}`)} />,
   ]
 
-  const actions = canAct ? (
-    <>
-      <button type="button" onClick={() => onUpdateStatus(app.id, 'rejected', notes)} className={btnGhost}>
-        {t('admin.applications.reject')}
+  const actions = (
+    <div className="flex flex-col items-end gap-1">
+      <button type="button" onClick={() => setMessageNote((o) => !o)} className={btnGhost}>
+        {t('admin.shared.message')}
       </button>
-      <button type="button" onClick={() => onUpdateStatus(app.id, 'needs_info', notes)} className={btnBlue}>
-        {t('admin.applications.needsInfo')}
-      </button>
-      <button type="button" onClick={() => onUpdateStatus(app.id, 'approved', notes)} className={btnPrimary}>
-        {t('admin.applications.approve')}
-      </button>
-    </>
-  ) : null
+      {messageNote && <p className="text-xs text-gray-400 whitespace-nowrap">{t('admin.shared.messageComingSoon')}</p>}
+    </div>
+  )
 
   const expanded = (
     <NotesPanel id={app.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(app.id, notes)}>
@@ -84,13 +83,6 @@ export function ApplicationsList({ applications: initial }: { applications: App[
   const [applications, setApplications] = useState(initial)
   const [tab, setTab] = useState<'all' | ApplicationStatus>('all')
 
-  async function handleUpdateStatus(id: string, status: ApplicationStatus, notes?: string) {
-    const app = applications.find(a => a.id === id)
-    if (!app) return
-    await updateApplicationStatus(id, app.cleaner_id, status as 'approved' | 'rejected' | 'needs_info', notes)
-    setApplications(prev => prev.map(a => (a.id === id ? { ...a, status, admin_notes: notes ?? a.admin_notes } : a)))
-  }
-
   async function handleSaveNotes(id: string, notes: string) {
     await updateApplicationNotes(id, notes)
     setApplications(prev => prev.map(a => (a.id === id ? { ...a, admin_notes: notes } : a)))
@@ -100,10 +92,11 @@ export function ApplicationsList({ applications: initial }: { applications: App[
 
   const columns = [
     { key: 'name', label: t('admin.shared.name') },
-    { key: 'service', label: t('admin.shared.service') },
     { key: 'contact', label: t('admin.shared.contact') },
     { key: 'rate', label: t('admin.shared.rate') },
+    { key: 'location', label: t('admin.shared.location') },
     { key: 'submitted', label: t('admin.applications.submitted') },
+    { key: 'approved', label: t('admin.applications.approvedCol') },
     { key: 'status', label: t('admin.shared.status') },
     { key: 'actions', label: '', className: 'text-end' },
   ]
@@ -136,12 +129,12 @@ export function ApplicationsList({ applications: initial }: { applications: App[
       toolbar={toolbar}
       columns={columns}
       template={TEMPLATE}
-      minWidth="min-w-[1000px]"
+      minWidth="min-w-[1080px]"
       isEmpty={filtered.length === 0}
       empty={t('admin.applications.empty')}
     >
       {filtered.map(app => (
-        <ApplicationRow key={app.id} app={app} onUpdateStatus={handleUpdateStatus} onSaveNotes={handleSaveNotes} />
+        <ApplicationRow key={app.id} app={app} onSaveNotes={handleSaveNotes} />
       ))}
     </AdminTable>
   )

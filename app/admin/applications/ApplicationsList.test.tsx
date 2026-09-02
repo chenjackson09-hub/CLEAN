@@ -2,7 +2,6 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithLanguage as render } from '@/lib/i18n/testUtils'
 import { ApplicationsList } from './ApplicationsList'
-import { updateApplicationStatus } from '@/app/admin/actions'
 
 jest.mock('@/app/admin/actions', () => ({
   updateApplicationStatus: jest.fn().mockResolvedValue({}),
@@ -14,6 +13,7 @@ const apps = [
     id: '1',
     cleaner_id: 'c1',
     full_name: 'Pending Cleaner',
+    avatar_url: null,
     email: 'a@b.com',
     phone: '050',
     bio: 'bio',
@@ -21,37 +21,46 @@ const apps = [
     hourly_rate: 75,
     years_experience: 2,
     languages: [],
-    address: 'addr',
+    address: '10 Ben Yehuda St, Tel Aviv',
     status: 'pending' as const,
     submitted_at: '2026-06-10',
+    reviewed_at: null,
     id_document_url: null,
     admin_notes: null,
   },
 ]
 
 describe('ApplicationsList', () => {
-  it('moves a card out of the current tab once its status changes, without a page reload', async () => {
-    const user = userEvent.setup()
+  it('renders applicant name, contact, rate, location and links the row to their profile', () => {
     render(<ApplicationsList applications={apps} />)
 
-    await user.click(screen.getByRole('button', { name: /Pending review/ }))
     expect(screen.getByText('Pending Cleaner')).toBeInTheDocument()
+    expect(screen.getByText('a@b.com')).toBeInTheDocument()
+    expect(screen.getByText('10 Ben Yehuda St, Tel Aviv')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Approve' }))
-
-    expect(updateApplicationStatus).toHaveBeenCalledWith('1', 'c1', 'approved', '')
-    // Still on the "Pending review" tab — the approved card should no longer match it.
-    expect(screen.queryByText('Pending Cleaner')).not.toBeInTheDocument()
+    const link = screen.getByText('Pending Cleaner').closest('a')
+    expect(link).toHaveAttribute('href', '/admin/cleaners/c1')
   })
 
-  it('updates the tab counts after a status change', async () => {
+  it('shows a "coming soon" note when Message is clicked, with no inline approve/reject buttons', async () => {
     const user = userEvent.setup()
     render(<ApplicationsList applications={apps} />)
 
-    expect(screen.getByRole('button', { name: /Approved \(0\)/ })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Approve' }))
+    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reject' })).not.toBeInTheDocument()
 
-    expect(screen.getByRole('button', { name: /Approved \(1\)/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Pending review \(0\)/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Message' }))
+    expect(screen.getByText(/isn't built yet/)).toBeInTheDocument()
+  })
+
+  it('filters by status tab', async () => {
+    const user = userEvent.setup()
+    render(<ApplicationsList applications={apps} />)
+
+    await user.click(screen.getByRole('button', { name: /Approved \(0\)/ }))
+    expect(screen.queryByText('Pending Cleaner')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Pending review \(1\)/ }))
+    expect(screen.getByText('Pending Cleaner')).toBeInTheDocument()
   })
 })
