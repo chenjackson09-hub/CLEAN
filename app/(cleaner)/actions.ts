@@ -203,6 +203,8 @@ export async function addAvailability(formData: FormData) {
   const date = formData.get("date") as string;
   const startTime = formData.get("start_time") as string;
   const endTime = formData.get("end_time") as string;
+  const noteRaw = (formData.get("note") as string | null)?.trim();
+  const note = noteRaw ? noteRaw : null;
 
   if (endTime <= startTime) {
     return { error: "End time must be after start time." };
@@ -249,6 +251,7 @@ export async function addAvailability(formData: FormData) {
     date,
     start_time: startTime,
     end_time: endTime,
+    note,
   });
 
   if (error) return { error: error.message };

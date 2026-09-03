@@ -112,6 +112,7 @@ export interface CleanerAvailability {
   date: string;
   start_time: string;
   end_time: string;
+  note: string | null;
 }
 
 export interface CleanerGalleryPhoto {
