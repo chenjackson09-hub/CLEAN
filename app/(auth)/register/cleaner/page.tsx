@@ -362,10 +362,10 @@ export default function CleanerRegisterPage() {
           <div className="text-4xl">✅</div>
           <p className="text-lg font-semibold text-gray-900">{t("auth.registerCleaner.congratsTitle")}</p>
           <button
-            onClick={() => router.push("/cleaner/dashboard")}
+            onClick={() => router.push("/cleaner/availability?welcome=1")}
             className="mt-2 bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors"
           >
-            {t("auth.registerCleaner.viewProfile")}
+            {t("auth.registerCleaner.startBooking")}
           </button>
         </div>
       </div>

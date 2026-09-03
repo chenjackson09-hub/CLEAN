@@ -112,6 +112,10 @@ export const translations = {
     avail_legend_pending: "Pending",
     avail_legend_none: "Not available",
     avail_subtitle: "Set a recurring weekly schedule, or mark specific dates you're available.",
+    avail_welcome_title: "Welcome, {name}! 👋",
+    avail_welcome_body:
+      "Cindy is here to help you find work that fits your schedule.\n\nStart by choosing the days you're available. Once your profile is approved, hosts can start finding you right away.\n\nLet's get you started!",
+    avail_welcome_close: "Close",
     avail_weekly: "Weekly schedule",
     avail_weekly_body: "Hours that repeat every week. Customers can book you on these days automatically.",
     avail_specific: "Specific dates",
@@ -375,6 +379,10 @@ export const translations = {
     avail_legend_pending: "ממתין",
     avail_legend_none: "לא זמין",
     avail_subtitle: "קבע לוח זמנים שבועי קבוע, או סמן תאריכים ספציפיים שאתה זמין.",
+    avail_welcome_title: "ברוכים הבאים, {name}! 👋",
+    avail_welcome_body:
+      "סינדי כאן כדי לעזור לך למצוא עבודה שמתאימה ללוח הזמנים שלך.\n\nהתחילו בבחירת הימים שבהם אתם זמינים. לאחר אישור הפרופיל שלכם, לקוחות יוכלו למצוא אתכם מיד.\n\nבואו נתחיל!",
+    avail_welcome_close: "סגירה",
     avail_weekly: "לוח שבועי",
     avail_weekly_body: "שעות שחוזרות כל שבוע. לקוחות יכולים להזמין אותך בימים אלה אוטומטית.",
     avail_specific: "תאריכים ספציפיים",

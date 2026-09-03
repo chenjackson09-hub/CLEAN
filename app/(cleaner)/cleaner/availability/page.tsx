@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import CalendarGrid from "./CalendarGrid";
 import AvailabilityHeader from "./AvailabilityHeader";
+import WelcomeBubble from "./WelcomeBubble";
 import { declineExpiredRequests } from "@/lib/expireRequests";
 import type { CleanerAvailability, CleanerWeeklyAvailability, BookingWithCustomer } from "@/types/database";
 
@@ -27,7 +29,8 @@ export default async function AvailabilityPage() {
   const from = fmtDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
   const to = fmtDate(new Date(today.getFullYear(), today.getMonth() + 4, 0));
 
-  const [{ data: weeklySlots }, { data: specificSlots }, { data: bookings }, { data: pendingBookings }] = await Promise.all([
+  const [{ data: profile }, { data: weeklySlots }, { data: specificSlots }, { data: bookings }, { data: pendingBookings }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
     supabase
       .from("cleaner_weekly_availability")
       .select("*")
@@ -66,9 +69,15 @@ export default async function AvailabilityPage() {
       .returns<BookingWithCustomer[]>(),
   ]);
 
+  const firstName = (profile?.full_name ?? "").trim().split(" ")[0] ?? "";
+
   return (
     <div className="-mt-2 -mx-4 px-0 md:mx-0 flex flex-col min-h-screen">
       <AvailabilityHeader />
+
+      <Suspense fallback={null}>
+        <WelcomeBubble name={firstName} />
+      </Suspense>
 
       <div className="flex flex-col flex-1 w-full md:w-[45vw] md:mx-auto px-0 md:px-0">
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />
