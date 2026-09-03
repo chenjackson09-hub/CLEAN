@@ -5,6 +5,7 @@ import { CalendarPicker } from './CalendarPicker'
 import { BrowseResults } from './BrowseResults'
 import { BrowseFilters } from './BrowseFilters'
 import { BrowseTitle } from './BrowseTitle'
+import { WaitlistNotice } from './WaitlistNotice'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
@@ -46,6 +47,27 @@ export default async function BrowsePage({ searchParams }: Props) {
         .eq('id', user.id)
         .single<{ address: string | null; lat: number | null; lng: number | null }>()
     : { data: null }
+
+  // Approval gate, queried separately from the address/lat/lng fetch above so
+  // that a stale schema cache or not-yet-run migration on this one column
+  // can't take down the address lookup too. Fail OPEN: only gate when we
+  // positively know the customer isn't approved — anything else (query
+  // error, no row, column missing) falls through to normal browsing so an
+  // infra hiccup here can never lock out an already-working customer.
+  const { data: statusRow } = user
+    ? await admin.from('customers').select('status').eq('id', user.id).single<{ status: string | null }>()
+    : { data: null }
+  const isPendingApproval = statusRow?.status === 'pending' || statusRow?.status === 'rejected'
+
+  if (user && isPendingApproval) {
+    const { data: profile } = await admin.from('profiles').select('full_name').eq('id', user.id).single()
+    const firstName = (profile?.full_name ?? '').trim().split(' ')[0] ?? ''
+    return (
+      <div className="max-w-3xl mx-auto">
+        <WaitlistNotice name={firstName} />
+      </div>
+    )
+  }
 
   const locationQuery = customer?.address?.trim() ?? ''
   // The customer has a usable location when they've saved an address.

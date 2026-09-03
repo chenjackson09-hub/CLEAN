@@ -34,6 +34,7 @@ export default async function AdminDashboardPage() {
     { data: cleanerRows },
     { data: customerProfileRows },
     { data: customerRatingRows },
+    { data: customerStatusRows },
     { data: appRows },
     { data: bookingRows },
     { count: disputesOpenCount },
@@ -41,6 +42,11 @@ export default async function AdminDashboardPage() {
     admin.from('cleaners').select('status, rating_avg, rating_count, birthdate'),
     admin.from('profiles').select('id, created_at').eq('role', 'customer'),
     admin.from('customers').select('rating_avg, rating_count'),
+    // Queried separately from the rating fetch above so a stale schema cache
+    // on this one column (see migration 0023) can't also take down the
+    // pre-existing ratings KPI — a failure here just falls back to counting
+    // every customer profile as a host, same as before this feature shipped.
+    admin.from('customers').select('id, status'),
     admin.from('cleaner_applications').select('status'),
     admin
       .from('bookings')
@@ -70,11 +76,24 @@ export default async function AdminDashboardPage() {
   ).length
 
   const customers = customerProfileRows ?? []
-  const totalHosts = customers.length
-  const newHostsThisMonth = customers.filter((c) => c.created_at && new Date(c.created_at) >= thisMonthStart).length
+  // A customer isn't tallied as a host until admin has approved their signup
+  // (mirroring the cleaner rule above). `customerStatusRows` is `null`
+  // specifically on a query error (e.g. migration 0023 not run yet /
+  // schema cache not reloaded) — fall back to counting every customer
+  // profile as before this feature shipped, rather than the KPI reading
+  // zero because of an infra hiccup.
+  const statusKnown = customerStatusRows != null
+  const customerStatusMap = new Map((customerStatusRows ?? []).map((c) => [c.id, c.status]))
+  const approvedCustomers = statusKnown ? customers.filter((c) => customerStatusMap.get(c.id) === 'approved') : customers
+  const totalHosts = approvedCustomers.length
+  const newHostsThisMonth = approvedCustomers.filter((c) => c.created_at && new Date(c.created_at) >= thisMonthStart).length
+  const pendingCustomers = statusKnown ? customers.filter((c) => customerStatusMap.get(c.id) === 'pending').length : 0
 
   const applications = appRows ?? []
-  const pendingApplications = applications.filter((a) => a.status === 'pending').length
+  // Combined with pending customer signups so this KPI (and the sidebar
+  // badge fed by the same rule in admin/layout.tsx) matches what "All
+  // Applications" actually shows once both categories are unified there.
+  const pendingApplications = applications.filter((a) => a.status === 'pending').length + pendingCustomers
 
   const bookings = bookingRows ?? []
   const matchesThisWeek = bookings.filter(

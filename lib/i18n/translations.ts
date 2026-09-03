@@ -103,6 +103,13 @@ const translations = {
     },
     browse: {
       title: 'Schedule a Clean',
+      waitlistTitle: 'Welcome, {name}! 👋',
+      waitlistIntro: 'Cindy is here to help you find reliable help that fits your home and schedule.',
+      waitlistBody1: "We haven't opened all the spots in your area just yet, but",
+      waitlistBold: "you're on the waitlist!",
+      waitlistBody2:
+        "We're working on bringing more cleaners to your area and will let you know as soon as your spot opens.",
+      waitlistClosing: "Thanks for joining Cindy — we're excited to have you here. 💚",
       useFilters: 'Use the filters above to find cleaners near you.',
       selectDate: 'Select a day on the calendar above to see available cleaners.',
       enterLocation: 'Add your address in your profile to find cleaners who serve your area.',
@@ -298,7 +305,7 @@ const translations = {
     },
     admin: {
       applications: {
-        title: 'Cleaner Applications',
+        title: 'All Applications',
         empty: 'No applications match this filter.',
         approve: 'Approve',
         reject: 'Reject',
@@ -306,6 +313,10 @@ const translations = {
         idDocument: '📄 View ID document',
         submitted: 'Submitted',
         approvedCol: 'Approved',
+        category: {
+          cleaner: 'Cleaner',
+          customer: 'Customer',
+        },
         status: {
           pending: 'Pending',
           approved: 'Approved',
@@ -716,6 +727,12 @@ const translations = {
     },
     browse: {
       title: 'תזמון ניקיון',
+      waitlistTitle: 'ברוכים הבאים, {name}! 👋',
+      waitlistIntro: 'סינדי כאן כדי לעזור לך למצוא עזרה אמינה שמתאימה לבית ולוח הזמנים שלך.',
+      waitlistBody1: 'עדיין לא פתחנו את כל המקומות באזור שלך, אבל',
+      waitlistBold: 'את/ה ברשימת ההמתנה!',
+      waitlistBody2: 'אנחנו עובדים על הבאת עוד מנקים לאזור שלך ונעדכן אותך ברגע שהמקום שלך ייפתח.',
+      waitlistClosing: 'תודה שהצטרפת ל-Cindy — אנחנו נרגשים שאת/ה כאן. 💚',
       useFilters: 'השתמשו במסננים מעל כדי למצוא מנקים בקרבתכם.',
       selectDate: 'בחרו יום בלוח השנה למעלה כדי לראות מנקים זמינים.',
       enterLocation: 'הוסיפו את הכתובת שלכם בפרופיל כדי למצוא מנקים שמשרתים את האזור שלכם.',
@@ -911,7 +928,7 @@ const translations = {
     },
     admin: {
       applications: {
-        title: 'בקשות הצטרפות מנקים',
+        title: 'כל הבקשות',
         empty: 'אין בקשות התואמות את הסינון.',
         approve: 'אישור',
         reject: 'דחייה',
@@ -919,6 +936,10 @@ const translations = {
         idDocument: '📄 צפייה במסמך זיהוי',
         submitted: 'הוגש',
         approvedCol: 'אושר',
+        category: {
+          cleaner: 'מנקה',
+          customer: 'לקוח',
+        },
         status: {
           pending: 'בהמתנה',
           approved: 'אושר',

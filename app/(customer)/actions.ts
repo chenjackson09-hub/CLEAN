@@ -150,6 +150,21 @@ export async function createBooking(data: {
 
   const adminClient = createAdminClient()
 
+  // A customer can't book until admin has approved their account — this is
+  // the authoritative check (the /browse UI is gated too, but a pending
+  // customer could still reach a booking form via a hand-crafted URL, e.g.
+  // /cleaners/[id]?date=...). Fail OPEN on an unreadable status (query error,
+  // no row, column not yet migrated) so an infra hiccup can't lock out an
+  // already-working customer — only a definitively non-approved status blocks.
+  const { data: customerRow } = await adminClient
+    .from('customers')
+    .select('status')
+    .eq('id', user.id)
+    .single<{ status: string | null }>()
+  if (customerRow?.status === 'pending' || customerRow?.status === 'rejected') {
+    return { error: "Your account is still awaiting approval — you can't book a cleaner yet." }
+  }
+
   // Verify the cleaner exists and is approved — never let a customer book a
   // pending, rejected, or suspended cleaner by passing a cleaner_id directly.
   const { data: cleaner } = await adminClient

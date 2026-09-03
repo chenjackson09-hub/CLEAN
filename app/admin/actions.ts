@@ -127,6 +127,41 @@ export async function updateApplicationNotes(applicationId: string, notes: strin
   return {}
 }
 
+// The customer-side analog of updateApplicationStatus — customers have no
+// separate "applications" table (no cleaner_applications equivalent), so
+// this writes straight to customers.status/status_reviewed_at. No "needs
+// info" state and no email notification yet (cleaners' rejected path also
+// records a blocked_users snapshot; customers don't, since a rejected
+// customer's account still exists and can be reconsidered later, unlike a
+// rejected cleaner application which is a one-shot decision).
+export async function updateCustomerApprovalStatus(
+  customerId: string,
+  status: 'approved' | 'rejected',
+  notes?: string,
+): Promise<ActionResult> {
+  const authError = await requireAdmin()
+  if (authError) return authError
+  const admin = createAdminClient()
+  const update: Record<string, unknown> = { status, status_reviewed_at: new Date().toISOString() }
+  if (notes !== undefined) update.admin_notes = notes
+  const { error } = await admin.from('customers').update(update).eq('id', customerId)
+  if (error) return { error: error.message }
+  revalidatePath('/admin/applications')
+  revalidatePath('/admin/customers')
+  return {}
+}
+
+export async function updateCustomerNotes(customerId: string, notes: string): Promise<ActionResult> {
+  const authError = await requireAdmin()
+  if (authError) return authError
+  const admin = createAdminClient()
+  const { error } = await admin.from('customers').update({ admin_notes: notes }).eq('id', customerId)
+  if (error) return { error: error.message }
+  revalidatePath('/admin/applications')
+  revalidatePath('/admin/customers')
+  return {}
+}
+
 export async function deleteCleanerAdmin(id: string): Promise<ActionResult> {
   const authError = await requireAdmin()
   if (authError) return authError

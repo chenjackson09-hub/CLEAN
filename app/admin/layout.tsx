@@ -26,11 +26,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // page). Kept intentionally cheap (count-only, head:true).
   const admin = createAdminClient()
   const staleCutoff = new Date(Date.now() - UNMATCHED_STALE_MS).toISOString()
-  const [{ count: openDisputesCount }, { count: unmatchedRequestsCount }, { count: pendingApplicationsCount }] = await Promise.all([
+  const [
+    { count: openDisputesCount },
+    { count: unmatchedRequestsCount },
+    { count: pendingCleanerAppsCount },
+    { count: pendingCustomersCount },
+  ] = await Promise.all([
     admin.from('support_messages').select('id', { count: 'exact', head: true }).eq('resolved', false),
     admin.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'pending').lt('created_at', staleCutoff),
     admin.from('cleaner_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    // Combined with pending cleaner applications below so this badge matches
+    // the unified "All Applications" list (migration 0023). `count` naturally
+    // falls back to 0 via `?? 0` if the column isn't readable yet, same as
+    // every other count here.
+    admin.from('customers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ])
+  const pendingApplicationsCount = (pendingCleanerAppsCount ?? 0) + (pendingCustomersCount ?? 0)
 
   return (
     <div className="min-h-screen bg-[#EFEFEF]">

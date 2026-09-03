@@ -14,8 +14,11 @@ export default async function AdminCustomersPage() {
   // only trace left is their blocked_users snapshot. So "Blocked" for
   // customers isn't a filter on this query, it's a second, separate source
   // merged in below as read-only phantom rows (no live account backs them).
+  //
+  // A customer isn't tallied here until approved (mirroring the same rule
+  // for cleaners) — pending/rejected signups only ever show on Applications.
   const [{ data: customerRows }, { data: profileRows }, authData, { data: blockedRows }] = await Promise.all([
-    admin.from('customers').select('id, address, rating_avg, rating_count').limit(500),
+    admin.from('customers').select('id, address, rating_avg, rating_count').eq('status', 'approved').limit(500),
     admin.from('profiles').select('id, full_name, phone').eq('role', 'customer').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('blocked_users').select('id, name, email, phone').eq('role', 'customer').limit(500),
