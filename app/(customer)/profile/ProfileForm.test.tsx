@@ -12,7 +12,6 @@ const baseProfile = {
   full_name: 'Maya Cohen',
   phone: '050-1234567',
   bio: 'Looking for a reliable cleaner for my apartment.',
-  preferred_service_type: 'residential' as const,
   address: '12 Rothschild Blvd, Tel Aviv',
   avatar_url: null as string | null,
   num_rooms: '',
@@ -41,7 +40,6 @@ describe('ProfileForm', () => {
     expect(screen.getByLabelText<HTMLInputElement>(/full name/i).value).toBe('Maya Cohen')
     expect(screen.getByLabelText<HTMLInputElement>(/phone/i).value).toBe('050-1234567')
     expect(screen.getByLabelText<HTMLTextAreaElement>(/about me/i).value).toBe('Looking for a reliable cleaner for my apartment.')
-    expect(screen.getByLabelText<HTMLSelectElement>(/preferred service type/i).value).toBe('residential')
     expect(screen.getByLabelText<HTMLInputElement>(/address/i).value).toBe('12 Rothschild Blvd, Tel Aviv')
   })
 

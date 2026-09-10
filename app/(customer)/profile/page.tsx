@@ -48,7 +48,6 @@ export default async function ProfilePage() {
           full_name: profile?.full_name ?? "",
           phone: profile?.phone ?? "",
           bio: customer?.bio ?? "",
-          preferred_service_type: (customer?.preferred_service_type as 'residential' | 'commercial') ?? "residential",
           address: customer?.address ?? "",
           avatar_url: profile?.avatar_url ?? null,
           num_rooms: numOrEmpty(customer?.num_rooms),

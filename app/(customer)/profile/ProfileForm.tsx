@@ -11,7 +11,6 @@ type DefaultValues = {
   full_name: string
   phone: string
   bio: string
-  preferred_service_type: 'residential' | 'commercial'
   address: string
   avatar_url: string | null
   num_rooms: string
@@ -142,9 +141,6 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
         <div>
           <p className="text-lg font-bold text-gray-900">{defaultValues.full_name || t('profile.yourName')}</p>
           <p className="text-sm text-gray-500">{defaultValues.address || t('profile.addAddress')}</p>
-          <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-100">
-            {defaultValues.preferred_service_type === 'commercial' ? t('profile.commercial') : t('profile.residential')}
-          </span>
         </div>
       </div>
 
@@ -193,19 +189,6 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
             defaultValue={defaultValues.bio}
             className={`${fieldClass} resize-none`}
           />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="preferred_service_type" className={labelClass}>{t('profile.preferredServiceType')}</label>
-          <select
-            id="preferred_service_type"
-            name="preferred_service_type"
-            defaultValue={defaultValues.preferred_service_type}
-            className={fieldClass}
-          >
-            <option value="residential">{t('profile.residential')}</option>
-            <option value="commercial">{t('profile.commercial')}</option>
-          </select>
         </div>
 
         <div className="flex flex-col gap-1">

@@ -37,7 +37,6 @@ export async function updateCustomerProfile(
   const fullName = formData.get("full_name") as string
   const phone = formData.get("phone") as string
   const bio = formData.get("bio") as string
-  const preferredServiceType = formData.get("preferred_service_type") as string
   const address = formData.get("address") as string
 
   // Household details — all optional. Numbers come from keyboard inputs, so parse
@@ -126,10 +125,13 @@ export async function updateCustomerProfile(
       id: user.id,
       bio,
       address,
-      preferred_service_type: preferredServiceType || null,
-      // max_hours is intentionally omitted: no longer customer-editable, and
-      // omitting it from the upsert preserves any value already stored
-      // (mirrors the num_kids_under_15/num_people pattern below).
+      // preferred_service_type and max_hours are intentionally omitted: no
+      // longer customer-editable, and omitting them from the upsert preserves
+      // any value already stored (mirrors the num_kids_under_15/num_people
+      // pattern below). preferred_service_type was never read by browse,
+      // booking, or matching — it only ever drove a display-only pill on this
+      // page, which was removed too ("not relevant to any of the users, at
+      // this point of the app").
       lat: location?.lat ?? null,
       lng: location?.lng ?? null,
       num_rooms: toInt(formData.get("num_rooms")),
