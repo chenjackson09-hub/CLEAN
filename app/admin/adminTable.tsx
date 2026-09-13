@@ -20,6 +20,16 @@ export const btnGhost =
   'bg-white hover:bg-[#F7F4EA] text-gray-700 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition'
 export const btnDanger =
   'bg-red-50 hover:bg-red-100 text-red-600 px-3.5 py-1.5 rounded-full text-sm font-semibold transition'
+// A moderate, affirmative green for a positive/approve action — deliberately
+// not the admin palette's teal (too close to the neutral/primary buttons
+// elsewhere) and not a saturated/neon green either.
+export const btnApprove =
+  'bg-green-500 hover:bg-green-600 text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition disabled:opacity-60'
+// A muted/"hazed" red for a reject action — softer than a solid red button,
+// matching the existing btnDanger pill treatment already used elsewhere
+// (e.g. delete actions) rather than inventing a second red style.
+export const btnReject =
+  'bg-red-50 hover:bg-red-100 text-red-600 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition disabled:opacity-60'
 
 /* --------------------------------------------------------------- cells */
 
@@ -342,11 +352,18 @@ export function AdminRow({
   template,
   cells,
   actions,
+  inlineActions,
   expanded,
 }: {
   template: string
   cells: ReactNode[]
   actions?: ReactNode
+  // Rendered as its own strip right below the row, always visible — for
+  // actions important enough that a click-to-expand chevron would slow
+  // things down (e.g. approve/reject on a new application). Keep `expanded`
+  // for lower-frequency stuff (notes, supporting documents) that's fine
+  // being one click away.
+  inlineActions?: ReactNode
   expanded?: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -383,6 +400,9 @@ export function AdminRow({
           )}
         </div>
       </div>
+      {inlineActions && (
+        <div className="border-b border-[#DED9E2]/60 px-4 py-3">{inlineActions}</div>
+      )}
       {expanded && open && (
         <div className="border-b border-[#DED9E2] bg-[#F7F4EA]/40 px-4 py-4">{expanded}</div>
       )}

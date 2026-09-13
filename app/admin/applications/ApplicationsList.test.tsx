@@ -71,12 +71,16 @@ describe('ApplicationsList', () => {
     expect(screen.getByText('Customer')).toBeInTheDocument()
   })
 
-  it('shows a "coming soon" note when Message is clicked, with no inline approve/reject buttons', async () => {
-    const user = userEvent.setup()
+  it('shows inline approve/reject buttons for a pending application without needing to expand the row', () => {
     render(<ApplicationsList applications={[cleanerApp]} />)
 
-    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Reject' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
+  })
+
+  it('shows a "coming soon" note when Message is clicked', async () => {
+    const user = userEvent.setup()
+    render(<ApplicationsList applications={[cleanerApp]} />)
 
     await user.click(screen.getByRole('button', { name: 'Message' }))
     expect(screen.getByText(/isn't built yet/)).toBeInTheDocument()

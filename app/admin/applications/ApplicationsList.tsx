@@ -12,9 +12,9 @@ import {
   StatusPill,
   NotesPanel,
   ContactIconStack,
-  btnGhost,
   btnBlue,
-  btnPrimary,
+  btnApprove,
+  btnReject,
 } from '@/app/admin/adminTable'
 import { SeenCheckbox } from '@/app/admin/SeenCheckbox'
 import { SearchInput } from '@/app/admin/SearchInput'
@@ -102,6 +102,27 @@ function ApplicationRow({
 
   const actions = <ContactIconStack email={app.email} />
 
+  // Approve/reject are important enough to act on immediately — shown as
+  // their own always-visible strip rather than behind the chevron, so a new
+  // application can be handled in one click with no expand step. The
+  // chevron/expanded panel is reserved for lower-frequency stuff: the badge,
+  // admin notes, and the ID document link.
+  const inlineActions = canAct ? (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" disabled={busy} onClick={() => handleStatus('approved')} className={btnApprove}>
+        {t('admin.applications.approve')}
+      </button>
+      {isCleaner && (
+        <button type="button" disabled={busy} onClick={() => handleStatus('needs_info')} className={btnBlue}>
+          {t('admin.applications.needsInfo')}
+        </button>
+      )}
+      <button type="button" disabled={busy} onClick={() => handleStatus('rejected')} className={btnReject}>
+        {t('admin.applications.reject')}
+      </button>
+    </div>
+  ) : undefined
+
   const expanded = (
     <div className="flex flex-col gap-4">
       {isCleaner && (
@@ -114,22 +135,6 @@ function ApplicationRow({
           ) : (
             <span className="text-sm text-gray-400">—</span>
           )}
-        </div>
-      )}
-
-      {canAct && (
-        <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={busy} onClick={() => handleStatus('approved')} className={btnPrimary}>
-            {t('admin.applications.approve')}
-          </button>
-          {isCleaner && (
-            <button type="button" disabled={busy} onClick={() => handleStatus('needs_info')} className={btnBlue}>
-              {t('admin.applications.needsInfo')}
-            </button>
-          )}
-          <button type="button" disabled={busy} onClick={() => handleStatus('rejected')} className={btnGhost}>
-            {t('admin.applications.reject')}
-          </button>
         </div>
       )}
 
@@ -148,7 +153,7 @@ function ApplicationRow({
     </div>
   )
 
-  return <AdminRow template={TEMPLATE} cells={cells} actions={actions} expanded={expanded} />
+  return <AdminRow template={TEMPLATE} cells={cells} actions={actions} inlineActions={inlineActions} expanded={expanded} />
 }
 
 export function ApplicationsList({ applications: initial }: { applications: UnifiedApplication[] }) {
