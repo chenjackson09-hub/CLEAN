@@ -17,6 +17,8 @@ export function ScheduleCleanModal({
   duration,
   availFrom,
   availTo,
+  cleanGroupId,
+  cleanGroupColor,
   onClose,
 }: {
   cleaner: CleanerResult
@@ -25,6 +27,8 @@ export function ScheduleCleanModal({
   duration?: number
   availFrom?: string
   availTo?: string
+  cleanGroupId?: string
+  cleanGroupColor?: string
   onClose: () => void
 }) {
   const { t } = useLanguage()
@@ -75,6 +79,8 @@ export function ScheduleCleanModal({
           presetDate={date}
           presetAddress={location}
           presetDuration={duration}
+          cleanGroupId={cleanGroupId}
+          cleanGroupColor={cleanGroupColor}
           defaultOpen
           onCancel={onClose}
         />

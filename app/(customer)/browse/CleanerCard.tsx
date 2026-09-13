@@ -14,7 +14,7 @@ function shortenName(fullName: string): string {
   return `${parts.slice(0, -1).join(' ')} ${last.charAt(0).toUpperCase()}.`
 }
 
-export function CleanerCard({ cleaner, date, location, duration, availFrom, availTo }: { cleaner: CleanerResult; date?: string; location?: string; duration?: number; availFrom?: string; availTo?: string }) {
+export function CleanerCard({ cleaner, date, location, duration, availFrom, availTo, cleanGroupId, cleanGroupColor }: { cleaner: CleanerResult; date?: string; location?: string; duration?: number; availFrom?: string; availTo?: string; cleanGroupId?: string; cleanGroupColor?: string }) {
   const { t } = useLanguage()
   const [scheduling, setScheduling] = useState(false)
   const initial = cleaner.full_name.charAt(0).toUpperCase()
@@ -30,6 +30,8 @@ export function CleanerCard({ cleaner, date, location, duration, availFrom, avai
   if (duration) params.set('duration', String(duration))
   if (availFrom) params.set('from', availFrom)
   if (availTo) params.set('to', availTo)
+  if (cleanGroupId) params.set('cleanGroup', cleanGroupId)
+  if (cleanGroupColor) params.set('cleanColor', cleanGroupColor)
   const qs = params.toString()
   const href = qs ? `/cleaners/${cleaner.id}?${qs}` : `/cleaners/${cleaner.id}`
 
@@ -146,6 +148,8 @@ export function CleanerCard({ cleaner, date, location, duration, availFrom, avai
           duration={duration}
           availFrom={availFrom}
           availTo={availTo}
+          cleanGroupId={cleanGroupId}
+          cleanGroupColor={cleanGroupColor}
           onClose={() => setScheduling(false)}
         />
       )}

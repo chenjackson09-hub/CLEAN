@@ -201,6 +201,14 @@ export interface Booking {
   extras: string[];
   pets_present: boolean | null;
   host_present: boolean | null;
+  // "Add a clean" grouping (migration 0031) — a client-generated id stamped
+  // on every booking created while a host is marking multiple candidate days
+  // for one need, plus the color they picked to tell it apart from another
+  // simultaneous need. Null for the normal single-request flow (the default
+  // and the vast majority of bookings) — see respondToBooking's sibling
+  // cancel for why this distinction matters.
+  clean_group_id: string | null;
+  clean_group_color: string | null;
 }
 
 export interface BookingWithCustomer extends Booking {

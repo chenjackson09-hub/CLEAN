@@ -21,7 +21,7 @@ function ageFromBirthdate(birthdate: string | null | undefined): number | null {
   return age
 }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, banner, bookingDisabled = false, completionPct, missingSummary, editHref }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, cleanGroupColor, banner, bookingDisabled = false, completionPct, missingSummary, editHref }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
@@ -31,6 +31,10 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   presetDuration?: number
   presetAvailFrom?: string
   presetAvailTo?: string
+  // "Add a clean" (migration 0031) — carried through from the browse "View
+  // Profile" link's query params when reached mid-flow. See BookingRequestForm.
+  cleanGroupId?: string
+  cleanGroupColor?: string
   // Preview overrides — the cleaner's own preview reuses this exact shell, but
   // swaps a couple pieces: an edit banner instead of the back button and a
   // non-interactive booking form. The customer page passes neither, so its
@@ -276,7 +280,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 </span>
               ))}
             </div>
-            <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} disabled={bookingDisabled} />
+            <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} cleanGroupId={cleanGroupId} cleanGroupColor={cleanGroupColor} disabled={bookingDisabled} />
           </div>
         ) : (
           <div className="bg-white shadow-sm rounded-2xl p-6 text-center">

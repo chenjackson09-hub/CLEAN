@@ -6,13 +6,19 @@ import { BrowseResults } from './BrowseResults'
 import { BrowseFilters } from './BrowseFilters'
 import { BrowseTitle } from './BrowseTitle'
 import { WaitlistNotice } from './WaitlistNotice'
+import { AddCleanPanel, type GroupBooking } from './AddCleanPanel'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
 import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
-  searchParams: { dates?: string; sort?: string; from?: string; to?: string; duration?: string }
+  searchParams: {
+    dates?: string; sort?: string; from?: string; to?: string; duration?: string
+    // "Add a clean" (migration 0031) — an in-progress group id/color carried
+    // through the URL across every search while active. See AddCleanPanel.
+    cleanGroup?: string; cleanColor?: string
+  }
 }
 
 function toMin(t: string): number {
@@ -25,7 +31,7 @@ function ymd(d: Date): string {
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, sort, from, to, duration } = searchParams
+  const { dates, sort, from, to, duration, cleanGroup, cleanColor } = searchParams
   const selectedDates = dates ? dates.split(',').filter(Boolean) : []
   const hasDates = selectedDates.length > 0
 
@@ -68,6 +74,19 @@ export default async function BrowsePage({ searchParams }: Props) {
       </div>
     )
   }
+
+  // "Add a clean" in-progress group: the days requested so far, for the
+  // AddCleanPanel banner. Scoped to this customer even though clean_group_id
+  // is already unguessable (a random uuid) — belt and suspenders.
+  const { data: groupBookingRows } = user && cleanGroup
+    ? await admin
+        .from('bookings')
+        .select('id, scheduled_date, status')
+        .eq('clean_group_id', cleanGroup)
+        .eq('customer_id', user.id)
+        .order('scheduled_date', { ascending: true })
+        .returns<GroupBooking[]>()
+    : { data: null }
 
   const locationQuery = customer?.address?.trim() ?? ''
   // The customer has a usable location when they've saved an address.
@@ -302,6 +321,8 @@ export default async function BrowsePage({ searchParams }: Props) {
 
       {/* On desktop the filters/sorting sit to the left of a compact calendar;
           on mobile they stack (calendar first, then filters) as before. */}
+      <AddCleanPanel cleanGroupId={cleanGroup} cleanGroupColor={cleanColor} groupBookings={groupBookingRows ?? undefined} />
+
       <div className="mb-4 lg:flex lg:items-start lg:gap-4">
         <div className="lg:order-1 lg:w-96 lg:shrink-0">
           <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 h-72 animate-pulse mb-4" />}>
@@ -314,7 +335,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         </div>
       </div>
 
-      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} availFrom={from} availTo={to} groups={groups} />
+      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} availFrom={from} availTo={to} groups={groups} cleanGroupId={cleanGroup} cleanGroupColor={cleanColor} />
     </div>
   )
 }

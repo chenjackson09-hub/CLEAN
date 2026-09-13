@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createBooking, updateHomeQuickFields } from '@/app/(customer)/actions'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
@@ -39,6 +40,8 @@ export function BookingRequestForm({
   presetDate,
   presetAddress,
   presetDuration,
+  cleanGroupId,
+  cleanGroupColor,
   defaultOpen = false,
   onCancel,
   disabled = false,
@@ -51,6 +54,11 @@ export function BookingRequestForm({
   // When the customer arrived from a browse search that specified a duration,
   // the duration field starts pre-selected to it — still fully editable.
   presetDuration?: number
+  // "Add a clean" (migration 0031) — set when this request is one of several
+  // candidate days the host marked for one need. Threaded straight through to
+  // createBooking; nothing here needs to know more than "tag it."
+  cleanGroupId?: string
+  cleanGroupColor?: string
   // When embedded (e.g. in the browse "Schedule a clean" modal) the form
   // starts expanded and Cancel is delegated to the host (closes the modal)
   // instead of collapsing back to the inline button state.
@@ -61,6 +69,7 @@ export function BookingRequestForm({
   disabled?: boolean
 }) {
   const { t, lang } = useLanguage()
+  const router = useRouter()
   const [phase, setPhase] = useState<'closed' | 'draft' | 'sent'>(defaultOpen ? 'draft' : 'closed')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -177,6 +186,8 @@ export function BookingRequestForm({
       extras,
       pets_present: hasPets ? petsPresent : undefined,
       host_present: hostPresent,
+      clean_group_id: cleanGroupId,
+      clean_group_color: cleanGroupColor,
     })
     setLoading(false)
     if (result?.error) {
@@ -184,6 +195,10 @@ export function BookingRequestForm({
       return
     }
     setPhase('sent')
+    // Keeps the browse page's "add a clean" progress banner (days requested
+    // so far, fetched server-side by clean_group_id) in sync immediately,
+    // without waiting for the host to run another search.
+    if (cleanGroupId) router.refresh()
   }
 
   const summaryData: BookingSummaryData = {
@@ -255,7 +270,10 @@ export function BookingRequestForm({
   return (
     <form onSubmit={handleSubmit} className="pt-4 border-t border-gray-100 flex flex-col gap-5">
       <div>
-        <h2 className="font-bold text-lg text-gray-900">{t('bookingRequestForm.headingDraft')}</h2>
+        <div className="flex items-center gap-2">
+          {cleanGroupColor && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cleanGroupColor }} />}
+          <h2 className="font-bold text-lg text-gray-900">{t('bookingRequestForm.headingDraft')}</h2>
+        </div>
         <p className="text-sm text-gray-500 mt-0.5">
           {t('bookingRequestForm.headingDraftSub', { name: cleaner.full_name })}
         </p>

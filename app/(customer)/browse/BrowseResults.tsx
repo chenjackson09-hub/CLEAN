@@ -14,9 +14,11 @@ type Props = {
   availFrom?: string
   availTo?: string
   groups: DateGroup[] | null
+  cleanGroupId?: string
+  cleanGroupColor?: string
 }
 
-export function BrowseResults({ hasDates, hasLocation, locationError, location, duration, availFrom, availTo, groups }: Props) {
+export function BrowseResults({ hasDates, hasLocation, locationError, location, duration, availFrom, availTo, groups, cleanGroupId, cleanGroupColor }: Props) {
   const { t, lang } = useLanguage()
 
   // Open the first day that actually has cleaners by default (fall back to the
@@ -108,7 +110,7 @@ export function BrowseResults({ hasDates, hasLocation, locationError, location, 
                       <p className="text-gray-500 text-sm py-2">{t('browse.noneThisDay')}</p>
                     ) : (
                       <div className="grid grid-cols-1 gap-4">
-                        {g.cleaners.map(c => <CleanerCard key={c.id} cleaner={c} date={g.date} location={location} duration={duration} availFrom={availFrom} availTo={availTo} />)}
+                        {g.cleaners.map(c => <CleanerCard key={c.id} cleaner={c} date={g.date} location={location} duration={duration} availFrom={availFrom} availTo={availTo} cleanGroupId={cleanGroupId} cleanGroupColor={cleanGroupColor} />)}
                       </div>
                     )}
                   </div>

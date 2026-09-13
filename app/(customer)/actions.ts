@@ -203,6 +203,11 @@ export async function createBooking(data: {
   extras?: string[]
   pets_present?: boolean
   host_present?: boolean
+  // "Add a clean" grouping (migration 0031) — set together when this request
+  // was created as one of several candidate days for the same need. See
+  // respondToBooking's sibling-cancel for how this changes on accept.
+  clean_group_id?: string
+  clean_group_color?: string
 }): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -311,6 +316,8 @@ export async function createBooking(data: {
     extras: data.extras ?? [],
     pets_present: data.pets_present ?? null,
     host_present: data.host_present ?? null,
+    clean_group_id: data.clean_group_id ?? null,
+    clean_group_color: data.clean_group_color ?? null,
     status: "pending",
     response_deadline: deadline.toISOString(),
   })

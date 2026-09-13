@@ -502,19 +502,39 @@ export async function respondToBooking(
   if (response === "accepted") {
     await carveAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
 
-    // The customer typically fans the same job out to several cleaners (and may
-    // have requested other days too). Now that one cleaner has accepted, cancel
-    // ALL of the customer's other still-pending requests so they stop showing as
-    // actionable for every other cleaner. These belong to other cleaners, so the
-    // acting cleaner's RLS-scoped session can't touch them — use the service-role
-    // client to bypass RLS for this cross-cleaner cleanup.
+    // The customer typically fans the same need out to several cleaners (and
+    // may have requested other days too). Now that one cleaner has accepted,
+    // cancel the customer's other still-pending requests for that *same*
+    // need so they stop showing as actionable elsewhere. These belong to
+    // other cleaners, so the acting cleaner's RLS-scoped session can't touch
+    // them — use the service-role client to bypass RLS for this cross-cleaner
+    // cleanup.
     const admin = createAdminClient();
-    await admin
-      .from("bookings")
-      .update({ status: "cancelled", responded_at: new Date().toISOString() })
-      .eq("customer_id", booking.customer_id)
-      .eq("status", "pending")
-      .neq("id", bookingId);
+    if (booking.clean_group_id) {
+      // "Add a clean" (migration 0031): this request was one of several
+      // candidate days the host marked for one specific need. Only cancel
+      // the other candidate days in that *same* group — the host may have an
+      // entirely separate, unrelated clean group (or an ungrouped request)
+      // pending at the same time, and that must not be touched.
+      await admin
+        .from("bookings")
+        .update({ status: "cancelled", responded_at: new Date().toISOString() })
+        .eq("clean_group_id", booking.clean_group_id)
+        .eq("status", "pending")
+        .neq("id", bookingId);
+    } else {
+      // Ungrouped request (the normal single-request flow, and every booking
+      // made before migration 0031): a customer selecting several dates/
+      // cleaners in one browse search still represents one need, so
+      // accepting any one of them resolves all of them — this is deliberate,
+      // confirmed product behavior, not a bug.
+      await admin
+        .from("bookings")
+        .update({ status: "cancelled", responded_at: new Date().toISOString() })
+        .eq("customer_id", booking.customer_id)
+        .eq("status", "pending")
+        .neq("id", bookingId);
+    }
   }
 
   // Fire and forget — email failure must not delay the booking response

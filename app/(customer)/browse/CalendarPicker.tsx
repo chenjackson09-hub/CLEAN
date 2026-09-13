@@ -98,6 +98,13 @@ export function CalendarPicker({ dateHeat = {} }: CalendarPickerProps) {
     if (selectedSet.size > 0) {
       params.set('dates', Array.from(selectedSet).sort().join(','))
     }
+    // Carry an in-progress "add a clean" group through every search while
+    // it's active — neither branch above copies these (they're not form
+    // fields), so they'd otherwise be dropped the moment a search re-runs.
+    const cleanGroup = searchParams.get('cleanGroup')
+    const cleanColor = searchParams.get('cleanColor')
+    if (cleanGroup) params.set('cleanGroup', cleanGroup)
+    if (cleanColor) params.set('cleanColor', cleanColor)
     startTransition(() => router.push(`/browse?${params}`))
   }
 
