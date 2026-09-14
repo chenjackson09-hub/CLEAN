@@ -10,6 +10,7 @@ import Tr from "./Tr";
 import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
+import type { CustomerHomeInfo } from "@/lib/bookingSummary";
 
 export default async function CleanerDashboardPage() {
   const user = await getCurrentUser();
@@ -29,7 +30,7 @@ export default async function CleanerDashboardPage() {
   const startDateTime = (b: BookingWithCustomer) =>
     new Date(`${b.scheduled_date}T${b.scheduled_start}`);
 
-  const [cleanerStatus, { data: profile }, { data: upcomingRaw }, { data: pastRaw }, { data: cancelledRaw }] =
+  const [cleanerStatus, { data: profile }, { data: cleanerRow }, { data: upcomingRaw }, { data: pastRaw }, { data: cancelledRaw }] =
     await Promise.all([
       getCleanerStatus(user.id),
       supabase
@@ -37,6 +38,10 @@ export default async function CleanerDashboardPage() {
         .select("full_name")
         .eq("id", user.id)
         .single<{ full_name: string | null }>(),
+      // This cleaner's own rate, for the "Estimated total" row on the shared
+      // BookingRequestSummary (see lib/bookingSummary.ts) — same value for
+      // every clean shown on this page, so fetched once.
+      admin.from("cleaners").select("hourly_rate").eq("id", user.id).single<{ hourly_rate: number | null }>(),
       // Accepted cleans from today onward; today's already-started ones are
       // dropped below so only genuinely upcoming cleans remain.
       admin
@@ -77,6 +82,8 @@ export default async function CleanerDashboardPage() {
         .returns<BookingWithCustomer[]>(),
     ]);
 
+  const hourlyRate = cleanerRow?.hourly_rate ?? null;
+
   const upcomingBookings = (upcomingRaw ?? [])
     .filter((b) => startDateTime(b) >= now)
     .slice(0, 6);
@@ -107,6 +114,23 @@ export default async function CleanerDashboardPage() {
       my_rating: ratingMap[b.customer_id] ?? null,
       my_review_text: reviewMap[b.customer_id] ?? null,
     }));
+
+  // Each requesting host's live home/pet snapshot, for the shared
+  // BookingRequestSummary's "Your home"/"Pets" rows (see lib/bookingSummary.ts)
+  // — batch-fetched once for every customer shown on this page, same pattern
+  // as /cleaner/requests.
+  const homeCustomerIds = Array.from(new Set([...upcomingBookings, ...pastBookings].map((b) => b.customer_id)));
+  const { data: homeRows } = homeCustomerIds.length
+    ? await admin
+        .from("customers")
+        .select("id, dwelling_type, bedrooms, num_rooms, bathrooms, pet_types, num_pets")
+        .in("id", homeCustomerIds)
+        .returns<(CustomerHomeInfo & { id: string })[]>()
+    : { data: [] as (CustomerHomeInfo & { id: string })[] };
+  const homeInfoMap = new Map((homeRows ?? []).map((r) => [r.id, r]));
+
+  const upcomingWithHome = upcomingBookings.map((b) => ({ ...b, home_info: homeInfoMap.get(b.customer_id) ?? null }));
+  const pastWithHome = pastBookings.map((b) => ({ ...b, home_info: homeInfoMap.get(b.customer_id) ?? null }));
 
   if (!cleanerStatus || cleanerStatus === "pending") {
     return (
@@ -159,10 +183,10 @@ export default async function CleanerDashboardPage() {
           <Tr k="dash_upcoming" />
         </h2>
 
-        {upcomingBookings && upcomingBookings.length > 0 ? (
+        {upcomingWithHome.length > 0 ? (
           <div className="space-y-4">
-            {upcomingBookings.map((b) => (
-              <UpcomingCleanCard key={b.id} booking={b} daysUntil={daysUntilClean(b)} />
+            {upcomingWithHome.map((b) => (
+              <UpcomingCleanCard key={b.id} booking={b} daysUntil={daysUntilClean(b)} hourlyRate={hourlyRate} />
             ))}
           </div>
         ) : (
@@ -177,10 +201,10 @@ export default async function CleanerDashboardPage() {
           <Tr k="dash_past" />
         </h2>
 
-        {pastBookings.length > 0 ? (
+        {pastWithHome.length > 0 ? (
           <div className="space-y-4">
-            {pastBookings.map((b) => (
-              <PastCleanCard key={b.id} booking={b} />
+            {pastWithHome.map((b) => (
+              <PastCleanCard key={b.id} booking={b} hourlyRate={hourlyRate} />
             ))}
           </div>
         ) : (

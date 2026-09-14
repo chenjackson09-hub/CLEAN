@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { cancelBooking, acknowledgeBookingModified, rateCleaner } from '../actions'
 import { StarRatingInput } from '@/components/StarRating'
+import BookingRequestSummary from '@/components/BookingRequestSummary'
+import { buildBookingSummaryData } from '@/lib/bookingSummary'
 import type { BookingResult } from '@/lib/types/booking'
 
 export function BookingDetailModal({
@@ -25,12 +27,7 @@ export function BookingDetailModal({
   const [seen, setSeen] = useState(false)
   const [seeing, startSeeing] = useTransition()
 
-  const [y, m, d] = booking.scheduled_date.split('-').map(Number)
-  const month = new Date(y, m - 1, d).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US', { month: 'short' })
-
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`)
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000)
-  const endStr = end.toTimeString().slice(0, 5)
+  const summaryData = buildBookingSummaryData(booking, booking.home_info, booking.hourly_rate)
 
   // Display name as "First L." — first name plus the last name's initial (same
   // as BookingCard).
@@ -138,38 +135,15 @@ export function BookingDetailModal({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.date')}</p>
-              <p className="text-lg font-semibold text-gray-900">{d} {month}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.time')}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {booking.scheduled_start.slice(0, 5)} - {endStr}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.duration')}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {booking.duration_hours} {t(booking.duration_hours !== 1 ? 'bookingCard.hours' : 'bookingCard.hour')}
-                {booking.duration_flexible && (
-                  <span className="ms-2 text-sm font-semibold text-red-600">{t('bookingRequestForm.durationNotSure')}</span>
-                )}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.address')}</p>
-              <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
-            </div>
-          </div>
-
-          {booking.notes && (
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.notes')}</p>
-              <p className="text-lg text-gray-700 bg-gray-50 rounded-xl px-4 py-3">{booking.notes}</p>
-            </div>
+          <BookingRequestSummary data={summaryData} cleanerName={booking.cleaner_name} lang={lang} />
+          {booking.duration_flexible && (
+            <p className="text-sm font-semibold text-red-600">{t('bookingRequestForm.durationNotSure')}</p>
           )}
+
+          <div>
+            <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.address')}</p>
+            <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
+          </div>
 
           {booking.status === 'accepted' && booking.cleaner_phone && (
             <div className="bg-green-50 border border-green-100 rounded-xl px-5 py-4">

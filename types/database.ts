@@ -220,6 +220,10 @@ export interface BookingWithCustomer extends Booking {
   // The review text the current cleaner already left for this customer, if
   // any (null = none yet). Attached by the dashboard page alongside my_rating.
   my_review_text?: string | null;
+  // The requesting customer's live home/pet snapshot, for building a full
+  // BookingRequestSummary (see lib/bookingSummary.ts). Attached by whichever
+  // page fetched it (dashboard/requests) — undefined where it wasn't needed.
+  home_info?: import("@/lib/bookingSummary").CustomerHomeInfo | null;
 }
 
 export interface Rating {

@@ -8,34 +8,33 @@ import Image from "next/image";
 import { useLang } from "@/context/LangContext";
 import { cancelClean, rateCustomer } from "../../actions";
 import { StarRatingInput } from "@/components/StarRating";
-import EditBookingForm from "../EditBookingForm";
-import type { TranslationKey } from "@/lib/lang";
+import BookingRequestSummary from "@/components/BookingRequestSummary";
+import { buildBookingSummaryData } from "@/lib/bookingSummary";
 import type { BookingWithCustomer } from "@/types/database";
-
-const MONTH_KEYS: TranslationKey[] = [
-  "month_jan", "month_feb", "month_mar", "month_apr", "month_may", "month_jun",
-  "month_jul", "month_aug", "month_sep", "month_oct", "month_nov", "month_dec",
-];
 
 export default function CleanDetailModal({
   booking,
   onClose,
+  hourlyRate,
 }: {
   booking: BookingWithCustomer;
   onClose: () => void;
+  hourlyRate?: number | null;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const [, mm, dd] = booking.scheduled_date.split("-");
-  const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
+  const summaryData = buildBookingSummaryData(booking, booking.home_info, hourlyRate);
 
   // Only an accepted clean can be cancelled by the cleaner. Pending requests are
   // answered from /cleaner/requests; completed/cancelled cleans are terminal.
+  // Once accepted, the booking's terms are locked — editing was removed to
+  // avoid post-match miscommunication between the host and cleaner; a cleaner
+  // whose plans change cancels instead (which notifies the host and reopens
+  // the freed time on the calendar).
   const cancellable = booking.status === "accepted";
 
   // Rating — only for completed cleans (cleaner rates the customer). Seeds from
@@ -142,32 +141,18 @@ export default function CleanDetailModal({
 
         {/* Details */}
         <div className="px-8 py-6 space-y-5">
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_date")}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {parseInt(dd)} {monthName}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_time")}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {booking.scheduled_start?.slice(0, 5)}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_duration")}</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {booking.duration_hours}{t("req_h")}
-                {booking.duration_flexible && (
-                  <span className="ms-2 text-sm font-semibold text-red-600">{t("req_duration_not_sure")}</span>
-                )}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_address")}</p>
-              <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
-            </div>
+          <BookingRequestSummary
+            data={summaryData}
+            cleanerName={booking.profiles?.full_name ?? t("req_customer")}
+            lang={lang}
+          />
+          {booking.duration_flexible && (
+            <p className="text-sm font-semibold text-red-600">{t("req_duration_not_sure")}</p>
+          )}
+
+          <div>
+            <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_address")}</p>
+            <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
           </div>
 
           {booking.avail_window_start && booking.avail_window_end && (
@@ -176,13 +161,6 @@ export default function CleanDetailModal({
               <p className="text-lg font-semibold text-blue-900">
                 {booking.avail_window_start.slice(0, 5)} – {booking.avail_window_end.slice(0, 5)}
               </p>
-            </div>
-          )}
-
-          {booking.notes && (
-            <div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_notes")}</p>
-              <p className="text-lg text-gray-700 bg-gray-50 rounded-xl px-4 py-3">{booking.notes}</p>
             </div>
           )}
 
@@ -243,15 +221,7 @@ export default function CleanDetailModal({
           )}
         </div>
 
-        {cancellable && editing && (
-          <EditBookingForm
-            booking={booking}
-            onDone={onClose}
-            onCancel={() => setEditing(false)}
-          />
-        )}
-
-        {cancellable && !editing && (
+        {cancellable && (
           <div className="px-8 pb-8 space-y-3">
             {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
@@ -276,20 +246,12 @@ export default function CleanDetailModal({
                 </div>
               </>
             ) : (
-              <>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="w-full border border-gray-300 text-gray-700 rounded-xl py-4 text-lg font-semibold hover:bg-gray-50 transition-colors"
-                >
-                  {t("req_edit")}
-                </button>
-                <button
-                  onClick={() => setConfirming(true)}
-                  className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
-                >
-                  {t("req_cancel")}
-                </button>
-              </>
+              <button
+                onClick={() => setConfirming(true)}
+                className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
+              >
+                {t("req_cancel")}
+              </button>
             )}
           </div>
         )}

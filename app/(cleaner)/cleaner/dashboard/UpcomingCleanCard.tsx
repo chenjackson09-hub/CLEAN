@@ -15,9 +15,11 @@ const MONTH_KEYS: TranslationKey[] = [
 export default function UpcomingCleanCard({
   booking,
   daysUntil,
+  hourlyRate,
 }: {
   booking: BookingWithCustomer;
   daysUntil: number;
+  hourlyRate?: number | null;
 }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
@@ -61,7 +63,7 @@ export default function UpcomingCleanCard({
         </span>
       </button>
 
-      {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} />}
+      {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} hourlyRate={hourlyRate} />}
     </>
   );
 }

@@ -44,4 +44,18 @@ export type BookingResult = {
   // Shared admin "seen/unseen" worklist flag (migration 0024). See
   // app/admin/seenItems.ts. Optional because non-admin views never set it.
   seen?: boolean
+  // Booking-specific fields for the redesigned request card (migration 0029) —
+  // see types/database.ts's Booking for the full backstory. Optional here
+  // since older call sites/tests don't set them.
+  cleaning_type?: 'regular' | 'deep' | null
+  extras?: string[]
+  pets_present?: boolean | null
+  host_present?: boolean | null
+  // The booked cleaner's hourly rate, for the summary's "Estimated total" —
+  // and the requesting customer's live home/pet snapshot, for the summary's
+  // "Your home"/"Pets" rows. Both attached by whichever fetch built this
+  // result (lib/customerBookings.ts, app/admin/bookingsData.ts) so every
+  // reader can build a full BookingRequestSummary without a second query.
+  hourly_rate?: number | null
+  home_info?: import('@/lib/bookingSummary').CustomerHomeInfo | null
 }

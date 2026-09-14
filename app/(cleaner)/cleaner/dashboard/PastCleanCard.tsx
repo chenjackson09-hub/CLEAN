@@ -14,7 +14,7 @@ const MONTH_KEYS: TranslationKey[] = [
   "month_jul", "month_aug", "month_sep", "month_oct", "month_nov", "month_dec",
 ];
 
-export default function PastCleanCard({ booking }: { booking: BookingWithCustomer }) {
+export default function PastCleanCard({ booking, hourlyRate }: { booking: BookingWithCustomer; hourlyRate?: number | null }) {
   const { t } = useLang();
   const router = useRouter();
   const [status, setStatus] = useState(booking.status);
@@ -78,7 +78,7 @@ export default function PastCleanCard({ booking }: { booking: BookingWithCustome
         </div>
       )}
 
-      {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} />}
+      {open && <CleanDetailModal booking={booking} onClose={() => setOpen(false)} hourlyRate={hourlyRate} />}
     </div>
   );
 }

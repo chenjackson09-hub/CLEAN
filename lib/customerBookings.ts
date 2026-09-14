@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { BookingResult } from '@/lib/types/booking'
+import type { CustomerHomeInfo } from '@/lib/bookingSummary'
 
 // Shared by /bookings and /home so the two pages' booking data can't drift —
 // same query, same cleaner-profile join, same rating lookup, same "expired
@@ -10,7 +11,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
 
   const { data: rawBookings } = await supabase
     .from('bookings')
-    .select('id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive')
+    .select('id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive, cleaning_type, extras, pets_present, host_present')
     .eq('customer_id', userId)
     .order('created_at', { ascending: false })
 
@@ -25,17 +26,31 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
     .eq('rater_id', userId)
   const ratingMap = Object.fromEntries((myRatings ?? []).map(r => [r.ratee_id, r.score]))
 
+  // The customer's own home/pet snapshot, for every booking's "Your home"/
+  // "Pets" rows in the shared BookingRequestSummary (see lib/bookingSummary.ts)
+  // — it's the same one row regardless of which booking is being viewed.
+  const { data: homeRow } = await supabase
+    .from('customers')
+    .select('dwelling_type, bedrooms, num_rooms, bathrooms, pet_types, num_pets')
+    .eq('id', userId)
+    .single<CustomerHomeInfo>()
+
   const cleanerIds = Array.from(new Set((rawBookings ?? []).map(b => b.cleaner_id)))
 
-  // Read cleaner profiles with the service-role client: RLS prevents a customer's
-  // session from reading other users' `profiles` rows, so the session client would
-  // return nothing and every booking would fall back to the literal "Cleaner".
+  // Read cleaner profiles + rate with the service-role client: RLS prevents a
+  // customer's session from reading other users' `profiles`/`cleaners` rows,
+  // so the session client would return nothing and every booking would fall
+  // back to the literal "Cleaner".
   const admin = createAdminClient()
-  const { data: cleanerProfiles } = cleanerIds.length > 0
-    ? await admin.from('profiles').select('id, full_name, avatar_url, phone').in('id', cleanerIds)
-    : { data: [] }
+  const [{ data: cleanerProfiles }, { data: cleanerRows }] = cleanerIds.length > 0
+    ? await Promise.all([
+        admin.from('profiles').select('id, full_name, avatar_url, phone').in('id', cleanerIds),
+        admin.from('cleaners').select('id, hourly_rate').in('id', cleanerIds),
+      ])
+    : [{ data: [] }, { data: [] }]
 
   const profileMap = Object.fromEntries((cleanerProfiles ?? []).map(p => [p.id, p]))
+  const rateMap = Object.fromEntries((cleanerRows ?? []).map(c => [c.id, c.hourly_rate]))
 
   return (rawBookings ?? []).map(b => {
     const cleaner = profileMap[b.cleaner_id]
@@ -59,6 +74,12 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       cleaner_modified: b.cleaner_modified ?? false,
       customer_ack_inactive: b.customer_ack_inactive ?? false,
       my_rating: ratingMap[b.cleaner_id] ?? null,
+      cleaning_type: b.cleaning_type,
+      extras: b.extras ?? [],
+      pets_present: b.pets_present,
+      host_present: b.host_present,
+      hourly_rate: rateMap[b.cleaner_id] ?? null,
+      home_info: homeRow ?? null,
     } satisfies BookingResult
   })
 }

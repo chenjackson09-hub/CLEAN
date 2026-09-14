@@ -7,17 +7,11 @@ import Link from "next/link";
 import { respondToBooking } from "../../actions";
 import EditBookingForm from "../EditBookingForm";
 import { useLang } from "@/context/LangContext";
-import BookingRequestSummary, { type BookingSummaryData } from "@/components/BookingRequestSummary";
+import BookingRequestSummary from "@/components/BookingRequestSummary";
+import { buildBookingSummaryData, type CustomerHomeInfo } from "@/lib/bookingSummary";
 import type { BookingWithCustomer, BookingStatus } from "@/types/database";
 
-export type CustomerHomeInfo = {
-  dwelling_type: "apartment" | "house" | "guesthouse" | "office" | "villa" | "other" | null;
-  bedrooms: number | null;
-  num_rooms: number | null;
-  bathrooms: number | null;
-  pet_types: ("dog" | "cat" | "other")[];
-  num_pets: number | null;
-};
+export type { CustomerHomeInfo };
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   pending:   "bg-yellow-100 text-yellow-700",
@@ -66,32 +60,7 @@ export default function RequestCard({ booking, showActions, homeInfo, hourlyRate
   const [confirmingAccept, setConfirmingAccept] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  const hasPets = (homeInfo?.pet_types.length ?? 0) > 0;
-  const petsLabel = homeInfo && hasPets
-    ? (() => {
-        const kind = homeInfo.pet_types[0];
-        const noun = kind === "dog" ? "dog" : kind === "cat" ? "cat" : "pet";
-        const n = homeInfo.num_pets ?? homeInfo.pet_types.length;
-        return `${n} ${noun}${n === 1 ? "" : "s"}`;
-      })()
-    : null;
-
-  const summaryData: BookingSummaryData = {
-    scheduledDate: booking.scheduled_date,
-    scheduledStart: booking.scheduled_start,
-    durationHours: booking.duration_hours,
-    homeDwellingType: homeInfo?.dwelling_type ?? null,
-    homeArea: booking.address,
-    homeBedrooms: homeInfo?.bedrooms ?? homeInfo?.num_rooms ?? null,
-    homeBathrooms: homeInfo?.bathrooms ?? null,
-    cleaningType: booking.cleaning_type,
-    extras: booking.extras ?? [],
-    petsLabel,
-    petsPresent: hasPets ? booking.pets_present : null,
-    hostPresent: booking.host_present,
-    notes: booking.notes,
-    hourlyRate: hourlyRate ?? null,
-  };
+  const summaryData = buildBookingSummaryData(booking, homeInfo, hourlyRate);
 
   async function handleRespond(response: "accepted" | "declined") {
     setLoading(response);
