@@ -97,6 +97,14 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
           <p className="text-xs text-gray-400">{t("prof_houses_cleaned")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.cleans_completed ?? 0}</p>
         </div>
+        {!!cleaner?.years_experience && (
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+            <p className="text-xs text-gray-400">{t("prof_experience")}</p>
+            <p className="text-base font-semibold text-gray-900 mt-0.5">
+              {cleaner.years_experience} {cleaner.years_experience === 1 ? t("prev_year") : t("prev_years")}
+            </p>
+          </div>
+        )}
         {cleaner?.has_car && cleaner?.gas_return_enabled && (
           <div className="bg-gray-50 rounded-xl px-3 py-2.5">
             <p className="text-xs text-gray-400">{t("prof_gas_return_stat")}</p>
@@ -106,6 +114,19 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
           </div>
         )}
       </div>
+
+      {cleaner?.languages && cleaner.languages.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs text-gray-400 mb-1.5">{t("prof_languages_label")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {cleaner.languages.map((lang) => (
+              <span key={lang} className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">
+                {lang}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="text-xs text-gray-400 mb-1.5">{t("prof_services_label")}</p>
       <div className="flex flex-wrap gap-1.5 mb-4">
