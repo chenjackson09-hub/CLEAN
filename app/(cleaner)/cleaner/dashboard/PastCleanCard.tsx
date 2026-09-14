@@ -52,7 +52,7 @@ export default function PastCleanCard({ booking, hourlyRate }: { booking: Bookin
         }
       }}
       className={`rounded-2xl shadow-md p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition ${
-        completed ? "bg-gray-100" : "bg-white"
+        completed ? "bg-gray-50 opacity-60 hover:opacity-100" : "bg-white"
       }`}
     >
       <DateBlock day={parseInt(dd)} month={monthName} />

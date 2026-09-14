@@ -3,10 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import RealtimeBookings from "./RealtimeBookings";
-import PastCleanCard from "./PastCleanCard";
-import UpcomingCleanCard from "./UpcomingCleanCard";
+import DashboardGreeting from "./DashboardGreeting";
+import DashboardLists from "./DashboardLists";
 import UpdatesSection from "./UpdatesSection";
-import Tr from "./Tr";
 import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
@@ -30,7 +29,7 @@ export default async function CleanerDashboardPage() {
   const startDateTime = (b: BookingWithCustomer) =>
     new Date(`${b.scheduled_date}T${b.scheduled_start}`);
 
-  const [cleanerStatus, { data: profile }, { data: cleanerRow }, { data: upcomingRaw }, { data: pastRaw }, { data: cancelledRaw }] =
+  const [cleanerStatus, { data: profile }, { data: cleanerRow }, { count: pendingCount }, { data: upcomingRaw }, { data: pastRaw }, { data: cancelledRaw }] =
     await Promise.all([
       getCleanerStatus(user.id),
       supabase
@@ -42,6 +41,14 @@ export default async function CleanerDashboardPage() {
       // BookingRequestSummary (see lib/bookingSummary.ts) — same value for
       // every clean shown on this page, so fetched once.
       admin.from("cleaners").select("hourly_rate").eq("id", user.id).single<{ hourly_rate: number | null }>(),
+      // Same query the layout already runs for the nav's Requests badge —
+      // drives the dashboard's own bell/dot (see DashboardGreeting.tsx).
+      supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("cleaner_id", user.id)
+        .eq("status", "pending")
+        .gt("response_deadline", now.toISOString()),
       // Accepted cleans from today onward; today's already-started ones are
       // dropped below so only genuinely upcoming cleans remain.
       admin
@@ -129,7 +136,11 @@ export default async function CleanerDashboardPage() {
     : { data: [] as (CustomerHomeInfo & { id: string })[] };
   const homeInfoMap = new Map((homeRows ?? []).map((r) => [r.id, r]));
 
-  const upcomingWithHome = upcomingBookings.map((b) => ({ ...b, home_info: homeInfoMap.get(b.customer_id) ?? null }));
+  const upcomingWithHome = upcomingBookings.map((b) => ({
+    ...b,
+    home_info: homeInfoMap.get(b.customer_id) ?? null,
+    daysUntil: daysUntilClean(b),
+  }));
   const pastWithHome = pastBookings.map((b) => ({ ...b, home_info: homeInfoMap.get(b.customer_id) ?? null }));
 
   if (!cleanerStatus || cleanerStatus === "pending") {
@@ -171,48 +182,11 @@ export default async function CleanerDashboardPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <RealtimeBookings cleanerId={user.id} />
-      <div className="mb-6">
-        <p className="text-lg text-gray-400"><Tr k="dash_welcome" /></p>
-        <h1 className="text-3xl font-bold text-black mt-0.5">{profile?.full_name ?? user.email}</h1>
-      </div>
+      <DashboardGreeting name={profile?.full_name ?? user.email ?? ""} pendingCount={pendingCount ?? 0} />
 
       <UpdatesSection bookings={cancelledRaw ?? []} />
 
-      <section className="mb-8">
-        <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          <Tr k="dash_upcoming" />
-        </h2>
-
-        {upcomingWithHome.length > 0 ? (
-          <div className="space-y-4">
-            {upcomingWithHome.map((b) => (
-              <UpcomingCleanCard key={b.id} booking={b} daysUntil={daysUntilClean(b)} hourlyRate={hourlyRate} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-base">
-            <Tr k="dash_no_upcoming" />
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          <Tr k="dash_past" />
-        </h2>
-
-        {pastWithHome.length > 0 ? (
-          <div className="space-y-4">
-            {pastWithHome.map((b) => (
-              <PastCleanCard key={b.id} booking={b} hourlyRate={hourlyRate} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-base">
-            <Tr k="dash_no_past" />
-          </div>
-        )}
-      </section>
+      <DashboardLists upcoming={upcomingWithHome} past={pastWithHome} hourlyRate={hourlyRate} />
     </div>
   );
 }
