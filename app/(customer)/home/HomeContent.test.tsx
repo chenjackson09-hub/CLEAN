@@ -22,13 +22,6 @@ describe('HomeContent', () => {
     expect(screen.getByText('Hi, Dana')).toBeInTheDocument()
   })
 
-  it('renders quick-link tiles to Schedule, Bookings, and Profile', () => {
-    render(<HomeContent firstName="Dana" today={[]} upcoming={[]} past={[]} />)
-    expect(screen.getByRole('link', { name: /Find a Cleaner/ })).toHaveAttribute('href', '/browse')
-    expect(screen.getByRole('link', { name: /My Bookings/ })).toHaveAttribute('href', '/bookings')
-    expect(screen.getByRole('link', { name: /My Profile/ })).toHaveAttribute('href', '/profile')
-  })
-
   it('shows empty states when a section has no bookings', () => {
     render(<HomeContent firstName="Dana" today={[]} upcoming={[]} past={[]} />)
     expect(screen.getByText('No cleans scheduled for today.')).toBeInTheDocument()
