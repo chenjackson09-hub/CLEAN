@@ -83,7 +83,11 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
 
       <Section title={t('home.confirmed')} empty={t('home.noConfirmed')} hasRows={confirmed.length > 0}>
         {confirmed.map(b => {
-          const area = extractArea(b.address) ?? b.address
+          // The cleaner's own area (e.g. "Beit Hillel"), not this booking's
+          // clean address (the host's own place) — the whole point of
+          // showing a location here is "which cleaner is this," not
+          // "where does this booking happen."
+          const area = (b.cleaner_address ? extractArea(b.cleaner_address) : null) ?? b.cleaner_address ?? ''
           const daysUntil = daysBetween(todayStr, b.scheduled_date)
           const countdown =
             daysUntil <= 0 ? t('home.today') : daysUntil === 1 ? t('home.tomorrow') : t('home.inDays', { n: String(daysUntil) })
@@ -92,7 +96,7 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
               key={b.id}
               booking={b}
               dotColor="bg-green-600"
-              title={`${b.cleaner_name} — ${area}`}
+              title={area ? `${b.cleaner_name} — ${area}` : b.cleaner_name}
               subtitle={`${formatDate(b.scheduled_date)} · ${b.scheduled_start.slice(0, 5)} · ${countdown}`}
               badgeText={t('home.badgeConfirmed')}
               badgeColor="bg-green-100 text-green-700"

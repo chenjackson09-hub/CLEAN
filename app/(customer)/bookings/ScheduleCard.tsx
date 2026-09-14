@@ -28,7 +28,11 @@ export function ScheduleCard({ booking, todayStr }: { booking: BookingResult; to
         ? t('scheduleCard.tomorrow')
         : t('scheduleCard.inDays', { n: String(daysUntil) })
 
-  const area = extractArea(booking.address) ?? booking.address
+  // The cleaner's own area (e.g. "Beit Hillel"), not this booking's clean
+  // address (the host's own place) — "Booked with {name}" already tells the
+  // host what's happening; the location here is "which cleaner," so it
+  // should describe the cleaner, not repeat the host's own address back.
+  const area = (booking.cleaner_address ? extractArea(booking.cleaner_address) : null) ?? booking.cleaner_address ?? ''
 
   return (
     <>
@@ -44,7 +48,8 @@ export function ScheduleCard({ booking, todayStr }: { booking: BookingResult; to
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-gray-900 truncate">{t('scheduleCard.bookedWith', { name: booking.cleaner_name })}</p>
           <p className="text-sm text-gray-500 truncate">
-            {area} · {booking.scheduled_start.slice(0, 5)}
+            {area && <>{area} · </>}
+            {booking.scheduled_start.slice(0, 5)}
             {countdown && <> · {countdown}</>}
           </p>
           <span

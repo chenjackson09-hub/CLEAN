@@ -58,6 +58,11 @@ export type BookingResult = {
   // reader can build a full BookingRequestSummary without a second query.
   hourly_rate?: number | null
   home_info?: import('@/lib/bookingSummary').CustomerHomeInfo | null
+  // The cleaner's own saved address (`cleaners.address`) — distinct from
+  // `address` above, which is this specific booking's clean location (the
+  // host's own place). Used to show "which area is this cleaner based in"
+  // next to their name, since `address` is the wrong field for that.
+  cleaner_address?: string | null
   // When the request was created — drives "requested {n} days ago" on the
   // customer's /home pending section. Optional since older call sites don't
   // select it.

@@ -31,17 +31,24 @@ describe('HomeContent', () => {
     expect(screen.getByText('No past cleans yet.')).toBeInTheDocument()
   })
 
-  it('renders a confirmed row with the cleaner name, area, and a countdown', () => {
+  it("renders a confirmed row with the cleaner's own area (not the booking's clean address) and a countdown", () => {
     render(
       <HomeContent
         firstName="Dana"
         todayStr={TODAY_STR}
-        confirmed={[booking({ id: 'c1', cleaner_name: 'Noa R.', address: '5 Herzl St, Kibbutz Amir', scheduled_date: '2026-06-18' })]}
+        confirmed={[booking({
+          id: 'c1',
+          cleaner_name: 'Noa R.',
+          address: '5 Herzl St, Tel Aviv', // the clean's own location — must NOT be used for the area shown
+          cleaner_address: '10 Amir Rd, Kibbutz Amir', // the cleaner's own address — this is what should show
+          scheduled_date: '2026-06-18',
+        })]}
         pending={[]}
         past={[]}
       />
     )
     expect(screen.getByText('Noa R. — Kibbutz Amir')).toBeInTheDocument()
+    expect(screen.queryByText(/Tel Aviv/)).not.toBeInTheDocument()
     expect(screen.getByText(/09:00 · in 3 days/)).toBeInTheDocument()
     expect(screen.getByText('Confirmed')).toBeInTheDocument()
   })

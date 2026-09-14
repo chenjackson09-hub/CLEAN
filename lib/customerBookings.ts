@@ -45,12 +45,13 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
   const [{ data: cleanerProfiles }, { data: cleanerRows }] = cleanerIds.length > 0
     ? await Promise.all([
         admin.from('profiles').select('id, full_name, avatar_url, phone').in('id', cleanerIds),
-        admin.from('cleaners').select('id, hourly_rate').in('id', cleanerIds),
+        admin.from('cleaners').select('id, hourly_rate, address').in('id', cleanerIds),
       ])
     : [{ data: [] }, { data: [] }]
 
   const profileMap = Object.fromEntries((cleanerProfiles ?? []).map(p => [p.id, p]))
   const rateMap = Object.fromEntries((cleanerRows ?? []).map(c => [c.id, c.hourly_rate]))
+  const cleanerAddressMap = Object.fromEntries((cleanerRows ?? []).map(c => [c.id, c.address]))
 
   return (rawBookings ?? []).map(b => {
     const cleaner = profileMap[b.cleaner_id]
@@ -81,6 +82,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       hourly_rate: rateMap[b.cleaner_id] ?? null,
       home_info: homeRow ?? null,
       created_at: b.created_at,
+      cleaner_address: cleanerAddressMap[b.cleaner_id] ?? null,
     } satisfies BookingResult
   })
 }
