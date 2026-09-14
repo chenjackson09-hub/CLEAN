@@ -219,8 +219,6 @@ export const translations = {
     gallery_empty: "No photos yet.",
     gallery_empty_sub: "Add some to show customers your work.",
     // Preview
-    prev_banner: "This is your public profile — as customers see it.",
-    prev_edit: "Edit profile →",
     prev_request: "Request for cleaning",
     prev_experience: "Experience",
     prev_radius: "Service radius",
@@ -489,8 +487,6 @@ export const translations = {
     gallery_empty: "אין תמונות עדיין.",
     gallery_empty_sub: "הוסף כמה כדי להראות ללקוחות את עבודתך.",
     // Preview
-    prev_banner: "זהו הפרופיל הציבורי שלך — כפי שלקוחות רואים אותו.",
-    prev_edit: "ערוך פרופיל ←",
     prev_request: "בקש ניקיון",
     prev_experience: "ניסיון",
     prev_radius: "רדיוס שירות",

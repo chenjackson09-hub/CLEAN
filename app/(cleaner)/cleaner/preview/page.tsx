@@ -1,7 +1,6 @@
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { CleanerProfile } from "@/app/(customer)/cleaners/[id]/CleanerProfile";
 import type { Profile, Cleaner } from "@/types/database";
 import type { CleanerResult } from "@/lib/types/cleaner";
@@ -79,14 +78,11 @@ export default async function PreviewPage() {
     gas_return_rate: cleaner?.gas_return_rate ?? null,
   };
 
-  const banner = (
-    <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2 flex items-center justify-between">
-      <p className="text-base text-yellow-800 font-medium">{t(lang, "prev_banner")}</p>
-      <Link href="/cleaner/profile" className="text-base text-blue-600 hover:underline font-semibold">
-        {t(lang, "prev_edit")}
-      </Link>
-    </div>
-  );
+  // No back button, no explanatory banner — a cleaner viewing their own
+  // preview already knows what this page is; the in-card pencil (editHref
+  // below) is the one edit affordance. An empty (non-null) element suppresses
+  // CleanerProfile's default "back to search" button, which doesn't apply here.
+  const banner = <></>;
 
   return (
     <div className="max-w-3xl mx-auto">

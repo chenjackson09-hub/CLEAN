@@ -123,9 +123,10 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               <button
                 type="button"
                 onClick={() => router.push(editHref)}
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+                aria-label={t('cleanerProfile.edit')}
+                className="text-lg text-gray-500 hover:text-gray-800 transition-colors"
               >
-                ✏️ {t('cleanerProfile.edit')}
+                ✏️
               </button>
             </div>
           )}
