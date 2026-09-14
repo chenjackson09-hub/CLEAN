@@ -7,6 +7,7 @@ import type { CleanerResult } from "@/lib/types/cleaner";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
+import { extractArea } from "@/lib/bookingArea";
 
 // The cleaner's preview is the customer-facing profile, one-to-one. It reuses the
 // same <CleanerProfile> shell and only overrides what's preview-specific: no
@@ -64,6 +65,7 @@ export default async function PreviewPage() {
     hourly_rate: cleaner?.hourly_rate ?? 0,
     years_experience: cleaner?.years_experience ?? 0,
     languages: (cleaner?.languages ?? []) as string[],
+    area: extractArea(cleaner?.address ?? '') ?? undefined,
     distance_km: 0,
     rating_avg: cleaner?.rating_avg ?? null,
     rating_count: cleaner?.rating_count ?? 0,

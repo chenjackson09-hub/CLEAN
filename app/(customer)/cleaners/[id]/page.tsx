@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CleanerProfile } from './CleanerProfile'
+import { extractArea } from '@/lib/bookingArea'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
@@ -24,7 +25,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
   ] = await Promise.all([
     supabase
       .from('cleaners')
-      .select('id, bio, service_types, hourly_rate, years_experience, languages, rating_avg, rating_count, cleans_completed, min_hours, max_hours, birthdate, cleaning_categories, cleaning_category_other, match_preferences, match_preference_other, has_car, gas_return_enabled, gas_return_rate')
+      .select('id, address, bio, service_types, hourly_rate, years_experience, languages, rating_avg, rating_count, cleans_completed, min_hours, max_hours, birthdate, cleaning_categories, cleaning_category_other, match_preferences, match_preference_other, has_car, gas_return_enabled, gas_return_rate')
       .eq('id', params.id)
       .neq('status', 'rejected')
       .single(),
@@ -67,6 +68,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
     hourly_rate: cleaner.hourly_rate ?? 0,
     years_experience: cleaner.years_experience ?? 0,
     languages: (cleaner.languages ?? []) as string[],
+    area: extractArea((cleaner as { address?: string | null }).address ?? '') ?? undefined,
     distance_km: 0,
     rating_avg: (cleaner as { rating_avg?: number | null }).rating_avg ?? null,
     rating_count: (cleaner as { rating_count?: number }).rating_count ?? 0,

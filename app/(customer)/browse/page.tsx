@@ -10,6 +10,7 @@ import { parseCleans, allCleanDates, resolveFocusedDate } from './cleanGroups'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
+import { extractArea } from '@/lib/bookingArea'
 import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
@@ -133,7 +134,7 @@ export default async function BrowsePage({ searchParams }: Props) {
         .limit(500),
       admin
         .from('cleaners')
-        .select('id, bio, service_types, hourly_rate, years_experience, languages, location, service_radius_km, rating_avg, rating_count, min_hours, max_hours')
+        .select('id, address, bio, service_types, hourly_rate, years_experience, languages, location, service_radius_km, rating_avg, rating_count, min_hours, max_hours')
         .eq('status', 'approved')
         .limit(500),
     ])
@@ -264,6 +265,7 @@ export default async function BrowsePage({ searchParams }: Props) {
           hourly_rate: c.hourly_rate ?? 0,
           years_experience: c.years_experience ?? 0,
           languages: (c.languages ?? []) as string[],
+          area: extractArea((c as { address?: string | null }).address ?? '') ?? undefined,
           distance_km: distanceById.get(c.id) ?? 0,
           rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
           rating_count: (c as { rating_count?: number }).rating_count ?? 0,

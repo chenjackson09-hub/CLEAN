@@ -3,6 +3,7 @@
 import { useLang } from "@/context/LangContext";
 import { StarRatingDisplay } from "@/components/StarRating";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
+import { extractArea } from "@/lib/bookingArea";
 import type { Profile, Cleaner } from "@/types/database";
 
 interface Props {
@@ -26,6 +27,7 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
   const age = ageFromBirthdate(cleaner?.birthdate ?? null);
   const missing = computeProfileMissing(t, cleaner, profile);
   const pct = profileCompletionPct(missing.length);
+  const area = cleaner?.address ? extractArea(cleaner.address) ?? cleaner.address : null;
 
   return (
     <div className="bg-white rounded-3xl shadow-md p-6">
@@ -71,7 +73,7 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
             <div className="mt-1">
               <StarRatingDisplay value={cleaner?.rating_avg} count={cleaner?.rating_count} emptyLabel={t("prof_no_ratings")} />
             </div>
-            <p className="text-sm text-gray-500 mt-1 truncate">{cleaner?.address || "—"}</p>
+            <p className="text-sm text-gray-500 mt-1 truncate">{area ?? "—"}</p>
           </div>
         </div>
         <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5 text-center shrink-0">
