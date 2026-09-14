@@ -33,9 +33,6 @@ export default function CleanDetailModal({
 
   const [, mm, dd] = booking.scheduled_date.split("-");
   const monthName = t(MONTH_KEYS[parseInt(mm) - 1]);
-  const start = new Date(`1970-01-01T${booking.scheduled_start}`);
-  const end = new Date(start.getTime() + booking.duration_hours * 60 * 60 * 1000);
-  const endFormatted = end.toTimeString().slice(0, 5);
 
   // Only an accepted clean can be cancelled by the cleaner. Pending requests are
   // answered from /cleaner/requests; completed/cancelled cleans are terminal.
@@ -155,7 +152,7 @@ export default function CleanDetailModal({
             <div>
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_time")}</p>
               <p className="text-lg font-semibold text-gray-900">
-                {booking.scheduled_start?.slice(0, 5)} - {endFormatted}
+                {booking.scheduled_start?.slice(0, 5)}
               </p>
             </div>
             <div>
