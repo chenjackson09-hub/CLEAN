@@ -305,6 +305,14 @@ const translations = {
       noUpcoming: 'No upcoming cleans.',
       noPast: 'No past cleans yet.',
     },
+    scheduleCard: {
+      bookedWith: 'Booked with {name}',
+      confirmed: 'Confirmed',
+      completed: 'Completed',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      inDays: 'In {n} days',
+    },
     bookings: {
       title: 'My Bookings',
       empty: "You don't have any bookings yet.",
@@ -1113,6 +1121,14 @@ const translations = {
       noToday: 'אין ניקיונות מתוזמנים להיום.',
       noUpcoming: 'אין ניקיונות קרובים.',
       noPast: 'אין ניקיונות קודמים עדיין.',
+    },
+    scheduleCard: {
+      bookedWith: 'הוזמן עם {name}',
+      confirmed: 'מאושר',
+      completed: 'הושלם',
+      today: 'היום',
+      tomorrow: 'מחר',
+      inDays: 'בעוד {n} ימים',
     },
     bookings: {
       title: 'ההזמנות שלי',

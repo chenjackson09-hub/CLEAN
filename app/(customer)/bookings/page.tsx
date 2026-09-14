@@ -5,12 +5,17 @@ import { BookingsSections } from './BookingsSections'
 import { MarkBookingsSeen } from './MarkBookingsSeen'
 import { fetchCustomerBookingResults } from '@/lib/customerBookings'
 
+function ymd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default async function BookingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
   const bookings = await fetchCustomerBookingResults(user.id)
+  const todayStr = ymd(new Date())
 
   // Five buckets, split purely by status: confirmed (accepted) up top, pending
   // requests, "Refused requests" (declined — the cleaner said no, or a request
@@ -42,7 +47,7 @@ export default async function BookingsPage() {
           to make your first booking.
         </p>
       ) : (
-        <BookingsSections confirmed={confirmed} pending={pending} inactive={inactive} past={past} />
+        <BookingsSections confirmed={confirmed} pending={pending} inactive={inactive} past={past} todayStr={todayStr} />
       )}
     </div>
   )

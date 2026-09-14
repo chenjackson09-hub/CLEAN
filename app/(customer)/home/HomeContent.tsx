@@ -1,10 +1,11 @@
 'use client'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { BookingCard } from '@/app/(customer)/bookings/BookingCard'
+import { ScheduleCard } from '@/app/(customer)/bookings/ScheduleCard'
 import type { BookingResult } from '@/lib/types/booking'
 
 type Props = {
   firstName: string
+  todayStr: string
   today: BookingResult[]
   upcoming: BookingResult[]
   past: BookingResult[]
@@ -13,7 +14,9 @@ type Props = {
 // Mirrors the cleaner dashboard's shape: a greeting, then Today/Upcoming/Past
 // sections of actual bookings — replaces /home's old plain link-tile menu
 // entirely (Schedule/Bookings/Profile are already one tap away via the nav).
-export function HomeContent({ firstName, today, upcoming, past }: Props) {
+// Uses the shared ScheduleCard (not the general BookingCard) since every
+// booking here is accepted/completed only — see ScheduleCard.tsx.
+export function HomeContent({ firstName, todayStr, today, upcoming, past }: Props) {
   const { t } = useLanguage()
 
   return (
@@ -25,7 +28,7 @@ export function HomeContent({ firstName, today, upcoming, past }: Props) {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('home.today')}</h2>
         {today.length > 0 ? (
           <div className="space-y-4">
-            {today.map(b => <BookingCard key={b.id} booking={b} />)}
+            {today.map(b => <ScheduleCard key={b.id} booking={b} todayStr={todayStr} />)}
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-sm">
@@ -38,7 +41,7 @@ export function HomeContent({ firstName, today, upcoming, past }: Props) {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('home.upcoming')}</h2>
         {upcoming.length > 0 ? (
           <div className="space-y-4">
-            {upcoming.map(b => <BookingCard key={b.id} booking={b} />)}
+            {upcoming.map(b => <ScheduleCard key={b.id} booking={b} todayStr={todayStr} />)}
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-sm">
@@ -51,7 +54,7 @@ export function HomeContent({ firstName, today, upcoming, past }: Props) {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('home.past')}</h2>
         {past.length > 0 ? (
           <div className="space-y-4">
-            {past.map(b => <BookingCard key={b.id} booking={b} muted />)}
+            {past.map(b => <ScheduleCard key={b.id} booking={b} todayStr={todayStr} />)}
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 py-8 text-center text-gray-400 text-sm">

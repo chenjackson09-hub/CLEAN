@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingCard } from './BookingCard'
+import { ScheduleCard } from './ScheduleCard'
 import { acknowledgeAllBookingsSeen } from '@/app/(customer)/actions'
 import type { BookingResult } from '@/lib/types/booking'
 
@@ -29,13 +30,31 @@ function MarkAllSeenButton({ ids }: { ids: string[] }) {
   )
 }
 
-function Grid({ bookings, empty, muted = false, dismissible = false }: { bookings: BookingResult[]; empty: string; muted?: boolean; dismissible?: boolean }) {
+function Grid({
+  bookings,
+  empty,
+  muted = false,
+  dismissible = false,
+  schedule = false,
+  todayStr,
+}: {
+  bookings: BookingResult[]
+  empty: string
+  muted?: boolean
+  dismissible?: boolean
+  schedule?: boolean
+  todayStr: string
+}) {
   if (bookings.length === 0) {
     return <p className="text-gray-400 text-sm">{empty}</p>
   }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {bookings.map(b => <BookingCard key={b.id} booking={b} muted={muted} dismissible={dismissible} />)}
+      {bookings.map(b =>
+        schedule
+          ? <ScheduleCard key={b.id} booking={b} todayStr={todayStr} />
+          : <BookingCard key={b.id} booking={b} muted={muted} dismissible={dismissible} />
+      )}
     </div>
   )
 }
@@ -45,22 +64,28 @@ export function BookingsSections({
   pending,
   inactive,
   past,
+  todayStr,
 }: {
   confirmed: BookingResult[]
   pending: BookingResult[]
   inactive: BookingResult[]
   past: BookingResult[]
+  todayStr: string
 }) {
   const { t } = useLanguage()
 
   // Every category always gets a tab, even empty ones, so the customer can see
   // the full set at a glance (an empty tab just shows its "none" message when
   // selected). Order: confirmed → pending → refused/cancelled → past.
+  // Confirmed and past are accepted/completed-only, so they use the same
+  // ScheduleCard as /home ("schedule: true") — matching the developer spec's
+  // "only what's accepted shows this format" — pending/refused-cancelled keep
+  // BookingCard, which shows their own status-specific state.
   const sections = [
-    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, empty: t('bookings.noneConfirmed') },
-    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, empty: t('bookings.nonePending') },
-    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, empty: t('bookings.noneRefusedCancelled') },
-    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, empty: t('bookings.nonePast') },
+    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, schedule: true, empty: t('bookings.noneConfirmed') },
+    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, schedule: false, empty: t('bookings.nonePending') },
+    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, schedule: false, empty: t('bookings.noneRefusedCancelled') },
+    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, schedule: true, empty: t('bookings.nonePast') },
   ]
 
   // Land the customer on the first tab that actually has bookings (falling back
@@ -113,7 +138,7 @@ export function BookingsSections({
         {current.key === 'inactive' && current.data.length > 1 && (
           <MarkAllSeenButton ids={current.data.map(b => b.id)} />
         )}
-        <Grid bookings={current.data} empty={current.empty} muted={current.muted} dismissible={current.dismissible} />
+        <Grid bookings={current.data} empty={current.empty} muted={current.muted} dismissible={current.dismissible} schedule={current.schedule} todayStr={todayStr} />
       </div>
     </div>
   )

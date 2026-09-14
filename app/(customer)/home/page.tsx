@@ -34,5 +34,5 @@ export default async function CustomerHomePage() {
     .sort((a, b) => b.scheduled_date === a.scheduled_date ? b.scheduled_start.localeCompare(a.scheduled_start) : b.scheduled_date.localeCompare(a.scheduled_date))
     .slice(0, 20)
 
-  return <HomeContent firstName={firstName} today={today} upcoming={upcoming} past={past} />
+  return <HomeContent firstName={firstName} todayStr={todayStr} today={today} upcoming={upcoming} past={past} />
 }

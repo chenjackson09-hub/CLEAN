@@ -1,14 +1,6 @@
 'use client'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-
-// Rough heuristic only — addresses are free text and there's no dedicated
-// area/city column, so we bucket by the last comma-separated segment (usually
-// the city/area). Good enough for a "what's trending" widget, not exact.
-function extractArea(address: string): string | null {
-  const parts = address.split(',').map((p) => p.trim()).filter(Boolean)
-  if (parts.length === 0) return null
-  return parts[parts.length - 1]
-}
+import { extractArea } from '@/lib/bookingArea'
 
 export function TopAreasWidget({ addresses }: { addresses: string[] }) {
   const { t } = useLanguage()
