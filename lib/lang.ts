@@ -109,10 +109,9 @@ export const translations = {
     svc_commercial: "Commercial",
     // Availability
     avail_title: "Availability",
-    avail_legend_available: "Available",
+    avail_legend_available: "Free to work",
     avail_legend_booked: "Booked",
-    avail_legend_pending: "Pending",
-    avail_legend_none: "Not available",
+    avail_legend_none: "Unavailable",
     avail_welcome_title: "Welcome, {name}! 👋",
     avail_welcome_body:
       "Cindy is here to help you find work that fits your schedule.\n\nStart by choosing the days you're available. Once your profile is approved, hosts can start finding you right away.\n\nLet's get you started!",
@@ -377,9 +376,8 @@ export const translations = {
     svc_commercial: "מסחרי",
     // Availability
     avail_title: "זמינות",
-    avail_legend_available: "פנוי",
+    avail_legend_available: "פנוי לעבודה",
     avail_legend_booked: "מוזמן",
-    avail_legend_pending: "ממתין",
     avail_legend_none: "לא זמין",
     avail_welcome_title: "ברוכים הבאים, {name}! 👋",
     avail_welcome_body:

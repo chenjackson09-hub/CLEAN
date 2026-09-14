@@ -77,13 +77,16 @@ function isPast(d: Date): boolean {
   return d < today;
 }
 
+// Three states only: booked (an accepted clean), free to work (marked
+// availability, whether or not a request is pending on it), or unavailable
+// (no marked availability). A pending request is a separate signal — the red
+// count badge rendered on the cell — not its own color bucket, since a
+// pending request doesn't change whether the cleaner is actually free.
 function dayCardColor(
   allSlots: Array<{ start_time: string }>,
   hasAccepted: boolean,
-  hasPending: boolean,
 ): string {
   if (hasAccepted) return "bg-blue-500 hover:bg-blue-600";
-  if (hasPending)  return "bg-blue-200 hover:bg-blue-300";
   if (allSlots.length === 0) return "bg-gray-100 hover:bg-gray-200";
   return "bg-blue-100 hover:bg-blue-200";
 }
@@ -289,7 +292,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
               const hasPending = dayPending.length > 0;
               const colorClass = past
                 ? "bg-gray-50 hover:bg-gray-100 opacity-40"
-                : dayCardColor([...daySlots, ...recurring], hasAccepted, hasPending);
+                : dayCardColor([...daySlots, ...recurring], hasAccepted);
               // Quick-glance preview of what's scheduled — up to 2 hour-only
               // time ranges from this day's own added slots, no notes, "+N"
               // for the rest. Full detail (minutes, notes) is one tap away.
@@ -332,9 +335,6 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
       <div className="flex items-center justify-center gap-4 px-4 pt-1 pb-4 flex-wrap text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-blue-500" /> {t("avail_legend_booked")}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-blue-200" /> {t("avail_legend_pending")}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-blue-100" /> {t("avail_legend_available")}
