@@ -6,7 +6,6 @@ import { GalleryLightbox } from './GalleryLightbox'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { StarRatingDisplay } from '@/components/StarRating'
 import type { CleanerResult } from '@/lib/types/cleaner'
-import type { ReactNode } from 'react'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
@@ -21,7 +20,7 @@ function ageFromBirthdate(birthdate: string | null | undefined): number | null {
   return age
 }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, cleanGroupColor, banner, bookingDisabled = false, completionPct, missingSummary, editHref }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, cleanGroupColor, bookingDisabled = false, completionPct, missingSummary, editHref }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
@@ -35,12 +34,10 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   // Profile" link's query params when reached mid-flow. See BookingRequestForm.
   cleanGroupId?: string
   cleanGroupColor?: string
-  // Preview overrides — the cleaner's own preview reuses this exact shell, but
-  // swaps a couple pieces: an edit banner instead of the back button, and no
-  // booking section at all (a cleaner booking themselves makes no sense — see
-  // showBooking below). The customer page passes neither, so its behavior is
-  // unchanged. (Avatar + gallery zoom is now the default for both.)
-  banner?: ReactNode
+  // Preview override — the cleaner's own preview reuses this exact shell, but
+  // shows no booking section at all (a cleaner booking themselves makes no
+  // sense — see showBooking below). The customer page never sets this, so its
+  // behavior is unchanged. (Avatar + gallery zoom is the default for both.)
   bookingDisabled?: boolean
   // Profile-completeness bar + edit pencil, mirroring the cleaner's own
   // editable profile view (ProfileView.tsx). Only the preview page passes
@@ -85,22 +82,6 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
 
   return (
     <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen">
-      {/* Back button — uses browser history so filters are preserved. The
-          preview passes a `banner` instead (its own edit bar). */}
-      {banner ?? (
-        <div className="px-6 lg:px-10 pt-5">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            {t('cleanerProfile.backToSearch')}
-          </button>
-        </div>
-      )}
-
       <div className="px-4 lg:px-10 py-6 space-y-4">
 
         {/* Main card: avatar/name/price header, bio, stats, services, looking for —

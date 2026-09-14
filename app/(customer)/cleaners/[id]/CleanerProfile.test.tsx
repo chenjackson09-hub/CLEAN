@@ -54,10 +54,9 @@ describe('CleanerProfile', () => {
     expect(screen.getByRole('button', { name: /request booking/i })).toBeInTheDocument()
   })
 
-  it('renders a back to search button', () => {
+  it('does not render a back to search button — the nav bar\'s Schedule link is the way back', () => {
     render(<CleanerProfile cleaner={cleaner} />)
-    // Back navigation uses router.back() (preserves filters), so it's a button.
-    expect(screen.getByRole('button', { name: /back to search/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /back to search/i })).not.toBeInTheDocument()
   })
 
   it('renders initial avatar when avatar_url is null', () => {

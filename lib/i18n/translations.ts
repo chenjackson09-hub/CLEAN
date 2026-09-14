@@ -160,8 +160,6 @@ const translations = {
       schedule: 'Schedule a clean',
     },
     cleanerProfile: {
-      backToBrowse: '← Back to Schedule',
-      backToSearch: '← Back to search',
       experience: 'Experience',
       distance: 'Distance',
       rate: 'Rate',
@@ -978,8 +976,6 @@ const translations = {
       schedule: 'קביעת ניקיון',
     },
     cleanerProfile: {
-      backToBrowse: '→ חזרה ללוח הזמנים',
-      backToSearch: 'חזרה לחיפוש →',
       experience: 'ניסיון',
       distance: 'מרחק',
       rate: 'תעריף',

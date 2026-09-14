@@ -9,9 +9,10 @@ import { t } from "@/lib/lang";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
 
 // The cleaner's preview is the customer-facing profile, one-to-one. It reuses the
-// same <CleanerProfile> shell and only overrides what's preview-specific: an edit
-// banner instead of the back button and a non-interactive booking form. The
-// zoomable avatar + gallery are now the default in CleanerProfile, shared by both.
+// same <CleanerProfile> shell and only overrides what's preview-specific: no
+// booking section at all (bookingDisabled — a cleaner can't book themselves) and
+// the completeness bar/edit pencil. The zoomable avatar + gallery are the default
+// in CleanerProfile, shared by both.
 export default async function PreviewPage() {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()]);
   if (!user) redirect("/login");
@@ -78,12 +79,6 @@ export default async function PreviewPage() {
     gas_return_rate: cleaner?.gas_return_rate ?? null,
   };
 
-  // No back button, no explanatory banner — a cleaner viewing their own
-  // preview already knows what this page is; the in-card pencil (editHref
-  // below) is the one edit affordance. An empty (non-null) element suppresses
-  // CleanerProfile's default "back to search" button, which doesn't apply here.
-  const banner = <></>;
-
   return (
     <div className="max-w-3xl mx-auto">
       <CleanerProfile
@@ -91,7 +86,6 @@ export default async function PreviewPage() {
         gallery={gallery}
         weeklyAvailability={weeklyAvailability ?? []}
         dateAvailability={dateAvailability ?? []}
-        banner={banner}
         bookingDisabled
         completionPct={completionPct}
         missingSummary={missingSummary}
