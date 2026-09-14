@@ -163,18 +163,18 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.min_hours} {t('filterBar.hoursShort')}</p>
               </div>
             )}
-            {cleaner.max_hours != null && (
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-                <p className="text-xs text-gray-400">{t('cleanerProfile.maxJob')}</p>
-                <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.max_hours} {t('filterBar.hoursShort')}</p>
-              </div>
-            )}
+            <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+              <p className="text-xs text-gray-400">{t('cleanerProfile.maxJob')}</p>
+              <p className="text-base font-semibold text-gray-900 mt-0.5">
+                {cleaner.max_hours != null ? `${cleaner.max_hours} ${t('filterBar.hoursShort')}` : t('cleanerProfile.noLimit')}
+              </p>
+            </div>
             <div className="bg-gray-50 rounded-xl px-3 py-2.5">
               <p className="text-xs text-gray-400">{t('cleanerProfile.cleansDone')}</p>
               <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.cleans_completed ?? 0}</p>
             </div>
             {cleaner.has_car && cleaner.gas_return_enabled && (
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5 col-span-2">
+              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
                 <p className="text-xs text-gray-400">{t('cleanerProfile.gasReturn')}</p>
                 <p className="text-base font-semibold text-gray-900 mt-0.5">
                   ₪{Number(cleaner.gas_return_rate ?? 1).toFixed(2)} <b>{t('cleanerProfile.perKm')}</b>

@@ -89,7 +89,7 @@ export default async function PreviewPage() {
         bookingDisabled
         completionPct={completionPct}
         missingSummary={missingSummary}
-        editHref="/cleaner/profile"
+        editHref="/cleaner/profile?edit=1"
       />
     </div>
   );

@@ -7,7 +7,7 @@ import type { Profile, Cleaner, CleanerGalleryPhoto } from "@/types/database";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 
-export default async function CleanerProfilePage() {
+export default async function CleanerProfilePage({ searchParams }: { searchParams: { edit?: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -31,7 +31,7 @@ export default async function CleanerProfilePage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "prof_title")}</h1>
       <p className="text-base text-gray-500 mb-6">{t(lang, "prof_subtitle")}</p>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
-        <ProfileViewEdit profile={profile} cleaner={cleaner} />
+        <ProfileViewEdit profile={profile} cleaner={cleaner} startInEdit={searchParams.edit === "1"} />
         <GalleryManager photos={photos ?? []} />
       </div>
     </div>

@@ -87,18 +87,18 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
           <p className="text-xs text-gray-400">{t("prof_min_job")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.min_hours ?? 0} hrs</p>
         </div>
-        {cleaner?.max_hours != null && (
-          <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-            <p className="text-xs text-gray-400">{t("prof_max_job")}</p>
-            <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.max_hours} hrs</p>
-          </div>
-        )}
+        <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+          <p className="text-xs text-gray-400">{t("prof_max_job")}</p>
+          <p className="text-base font-semibold text-gray-900 mt-0.5">
+            {cleaner?.max_hours != null ? `${cleaner.max_hours} hrs` : t("prof_no_limit")}
+          </p>
+        </div>
         <div className="bg-gray-50 rounded-xl px-3 py-2.5">
           <p className="text-xs text-gray-400">{t("prof_houses_cleaned")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.cleans_completed ?? 0}</p>
         </div>
         {cleaner?.has_car && cleaner?.gas_return_enabled && (
-          <div className="bg-gray-50 rounded-xl px-3 py-2.5 col-span-2">
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5">
             <p className="text-xs text-gray-400">{t("prof_gas_return_stat")}</p>
             <p className="text-base font-semibold text-gray-900 mt-0.5">
               ₪{Number(cleaner.gas_return_rate ?? 1).toFixed(2)} <b>{t("prof_per_km")}</b>

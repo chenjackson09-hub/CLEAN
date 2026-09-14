@@ -84,11 +84,8 @@ export async function updateCleanerProfile(formData: FormData) {
   }
   const languagesRaw = formData.get("languages") as string;
   const languages = languagesRaw.split(",").map((l) => l.trim()).filter(Boolean);
-  const serviceTypes = formData.getAll("service_types") as string[];
   const address = formData.get("address") as string;
 
-  // Separate from service_types (residential/commercial) — see migration
-  // 0018_cleaner_profile_v2 for why these aren't the same field.
   const cleaningCategories = formData.getAll("cleaning_categories") as string[];
   const cleaningCategoryOther = (formData.get("cleaning_category_other") as string) || null;
 
@@ -156,7 +153,6 @@ export async function updateCleanerProfile(formData: FormData) {
     min_hours: minHours,
     max_hours: maxHours,
     languages,
-    service_types: serviceTypes,
     cleaning_categories: cleaningCategories,
     cleaning_category_other: cleaningCategoryOther,
     address,

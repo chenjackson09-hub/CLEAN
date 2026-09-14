@@ -154,39 +154,40 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div>
-          <label htmlFor="max_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_max_hours")}</label>
-          <input
-            id="max_hours"
-            type="number"
-            name="max_hours"
-            inputMode="numeric"
-            min="1"
-            max="24"
-            defaultValue={cleaner?.max_hours ?? ""}
-            placeholder={t("prof_no_limit")}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-sm text-gray-400 mt-1">{t("prof_max_hours_hint")}</p>
-        </div>
       </div>
 
+      {/* Min/max job length — paired side by side, one shared hint below both
+          rather than each field carrying its own copy of the same sentence. */}
       <div>
-        <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</span>
-        <div className="flex gap-4">
-          {(["residential", "commercial"] as const).map((type) => (
-            <label key={type} className="flex items-center gap-2 text-base text-gray-700">
-              <input
-                type="checkbox"
-                name="service_types"
-                value={type}
-                defaultChecked={cleaner?.service_types?.includes(type)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              {type === "residential" ? t("svc_residential") : t("svc_commercial")}
-            </label>
-          ))}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="min_job_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_min_job_length")}</label>
+            <input
+              id="min_job_hours"
+              type="number"
+              name="min_hours"
+              step="0.5"
+              min="1"
+              defaultValue={cleaner?.min_hours ?? 3}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="max_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_max_hours")}</label>
+            <input
+              id="max_hours"
+              type="number"
+              name="max_hours"
+              inputMode="numeric"
+              min="1"
+              max="24"
+              defaultValue={cleaner?.max_hours ?? ""}
+              placeholder={t("prof_no_limit")}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
+        <p className="text-sm text-gray-400 mt-1">{t("prof_min_job_length_hint")}</p>
       </div>
 
       <div>
@@ -214,6 +215,7 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
             defaultValue={cleaner?.years_experience ?? 0}
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <p className="text-sm text-gray-400 mt-1">{t("prof_optional")}</p>
         </div>
         <div>
           <label htmlFor="languages" className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
@@ -226,20 +228,6 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="min_job_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_min_job_length")}</label>
-        <input
-          id="min_job_hours"
-          type="number"
-          name="min_hours"
-          step="0.5"
-          min="1"
-          defaultValue={cleaner?.min_hours ?? 3}
-          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <p className="text-sm text-gray-400 mt-1">{t("prof_min_job_length_hint")}</p>
       </div>
 
       <div>
