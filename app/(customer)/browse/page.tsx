@@ -6,7 +6,7 @@ import { BrowseResults } from './BrowseResults'
 import { BrowseFilters } from './BrowseFilters'
 import { BrowseTitle } from './BrowseTitle'
 import { WaitlistNotice } from './WaitlistNotice'
-import { AddCleanPanel, type GroupBooking } from './AddCleanPanel'
+import { parseCleans, allCleanDates, resolveFocusedDate } from './cleanGroups'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
@@ -14,10 +14,10 @@ import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
 
 type Props = {
   searchParams: {
-    dates?: string; sort?: string; from?: string; to?: string; duration?: string
-    // "Add a clean" (migration 0031) — an in-progress group id/color carried
-    // through the URL across every search while active. See AddCleanPanel.
-    cleanGroup?: string; cleanColor?: string
+    // "Add a clean" (migration 0031) — `cleans` is a JSON-encoded array of
+    // {id, color, dates[]} candidate-day groups (see cleanGroups.ts); `focus`
+    // is which single day's cleaner list is shown below the calendar.
+    cleans?: string; focus?: string; sort?: string; from?: string; to?: string; duration?: string
   }
 }
 
@@ -31,9 +31,11 @@ function ymd(d: Date): string {
 }
 
 export default async function BrowsePage({ searchParams }: Props) {
-  const { dates, sort, from, to, duration, cleanGroup, cleanColor } = searchParams
-  const selectedDates = dates ? dates.split(',').filter(Boolean) : []
+  const { sort, from, to, duration } = searchParams
+  const cleans = parseCleans(searchParams.cleans)
+  const selectedDates = allCleanDates(cleans)
   const hasDates = selectedDates.length > 0
+  const focusedDate = resolveFocusedDate(cleans, searchParams.focus)
 
   // A concrete duration from the search filter locks the booking form's duration
   // field. The "Not sure" option (duration === 'any') or no filter leaves it
@@ -75,18 +77,24 @@ export default async function BrowsePage({ searchParams }: Props) {
     )
   }
 
-  // "Add a clean" in-progress group: the days requested so far, for the
-  // AddCleanPanel banner. Scoped to this customer even though clean_group_id
-  // is already unguessable (a random uuid) — belt and suspenders.
-  const { data: groupBookingRows } = user && cleanGroup
+  // For the calendar's clean-legend chips: the live status of any booking
+  // already sent for one of the marked days, so a host can tell a released
+  // (sibling-cancelled) or matched day apart from one still just "marked".
+  // Scoped to this customer even though clean_group_id is already
+  // unguessable (a random uuid) — belt and suspenders.
+  const cleanGroupIds = cleans.map(g => g.id)
+  const { data: groupBookingRows } = user && cleanGroupIds.length > 0
     ? await admin
         .from('bookings')
-        .select('id, scheduled_date, status')
-        .eq('clean_group_id', cleanGroup)
+        .select('scheduled_date, status')
+        .in('clean_group_id', cleanGroupIds)
         .eq('customer_id', user.id)
-        .order('scheduled_date', { ascending: true })
-        .returns<GroupBooking[]>()
+        .returns<{ scheduled_date: string; status: string }[]>()
     : { data: null }
+  const bookingStatusByDate: Record<string, 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed'> = {}
+  for (const row of groupBookingRows ?? []) {
+    bookingStatusByDate[row.scheduled_date] = row.status as typeof bookingStatusByDate[string]
+  }
 
   const locationQuery = customer?.address?.trim() ?? ''
   // The customer has a usable location when they've saved an address.
@@ -321,21 +329,19 @@ export default async function BrowsePage({ searchParams }: Props) {
 
       {/* On desktop the filters/sorting sit to the left of a compact calendar;
           on mobile they stack (calendar first, then filters) as before. */}
-      <AddCleanPanel cleanGroupId={cleanGroup} cleanGroupColor={cleanColor} groupBookings={groupBookingRows ?? undefined} />
-
       <div className="mb-4 lg:flex lg:items-start lg:gap-4">
         <div className="lg:order-1 lg:w-96 lg:shrink-0">
           <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 h-72 animate-pulse mb-4" />}>
-            <CalendarPicker dateHeat={dateHeat} />
+            <CalendarPicker dateHeat={dateHeat} bookingStatusByDate={bookingStatusByDate} />
           </Suspense>
         </div>
 
         <div className="lg:order-2 lg:flex-1 lg:min-w-0">
-          <BrowseFilters dates={dates} sort={sort} from={from} to={to} duration={duration} />
+          <BrowseFilters cleans={searchParams.cleans} focus={searchParams.focus} sort={sort} from={from} to={to} duration={duration} />
         </div>
       </div>
 
-      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} availFrom={from} availTo={to} groups={groups} cleanGroupId={cleanGroup} cleanGroupColor={cleanColor} />
+      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} availFrom={from} availTo={to} groups={groups} cleans={cleans} focusedDate={focusedDate} />
     </div>
   )
 }

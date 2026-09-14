@@ -5,7 +5,8 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { AvailabilityRange } from './AvailabilityRange'
 
 type Props = {
-  dates: string | undefined
+  cleans: string | undefined
+  focus: string | undefined
   sort: string | undefined
   from: string | undefined
   to: string | undefined
@@ -17,7 +18,7 @@ const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8]
 const DEFAULT_FROM = '06:00'
 const DEFAULT_TO = '22:00'
 
-export function BrowseFilters({ dates, sort, from, to, duration }: Props) {
+export function BrowseFilters({ cleans, focus, sort, from, to, duration }: Props) {
   const { t } = useLanguage()
   const router = useRouter()
   // Optional refinements (availability range, duration, type, sort) — collapsed
@@ -65,7 +66,8 @@ export function BrowseFilters({ dates, sort, from, to, duration }: Props) {
 
       {open && (
         <form id="browse-search-form" method="get" action="/browse" className="border-t border-gray-100 px-4 py-4 flex flex-wrap gap-3 justify-start items-end">
-          <input type="hidden" name="dates" value={dates ?? ''} />
+          <input type="hidden" name="cleans" value={cleans ?? ''} />
+          <input type="hidden" name="focus" value={focus ?? ''} />
           <div className="flex flex-col gap-1">
             {/* Not a <label>: the range is a composite widget (two thumbs), not a
                 single form field, so it's labelled as a group via aria-labelledby. */}
@@ -121,6 +123,12 @@ export function BrowseFilters({ dates, sort, from, to, duration }: Props) {
             className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
           >
             {t('browse.clear')}
+          </button>
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          >
+            {t('filterBar.search')}
           </button>
         </form>
       )}
