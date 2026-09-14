@@ -36,9 +36,10 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   cleanGroupId?: string
   cleanGroupColor?: string
   // Preview overrides — the cleaner's own preview reuses this exact shell, but
-  // swaps a couple pieces: an edit banner instead of the back button and a
-  // non-interactive booking form. The customer page passes neither, so its
-  // behavior is unchanged. (Avatar + gallery zoom is now the default for both.)
+  // swaps a couple pieces: an edit banner instead of the back button, and no
+  // booking section at all (a cleaner booking themselves makes no sense — see
+  // showBooking below). The customer page passes neither, so its behavior is
+  // unchanged. (Avatar + gallery zoom is now the default for both.)
   banner?: ReactNode
   bookingDisabled?: boolean
   // Profile-completeness bar + edit pencil, mirroring the cleaner's own
@@ -78,9 +79,9 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   // browse search — the "View profile" link carries the searched `date` (and the
   // duration/availability window the booking form needs). Landing on the profile
   // without that context (a direct/shared link) shows a prompt to search rather
-  // than the form. The cleaner's own preview (`bookingDisabled`) still renders
-  // the form so they see exactly what a browsing customer would.
-  const showBooking = bookingDisabled || presetDate != null
+  // than the form. The cleaner's own preview (`bookingDisabled`) skips the whole
+  // booking section — there's no context in which a cleaner should book themselves.
+  const showBooking = !bookingDisabled && presetDate != null
 
   return (
     <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen">
@@ -262,37 +263,40 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           )}
         </div>
 
-        {/* Booking form — only when the customer arrived from a
-            dated browse search (or the cleaner's own preview). Otherwise a
-            prompt to search, since booking needs that context. */}
-        {showBooking ? (
-          <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <h2 className="text-lg font-bold text-gray-900">
-                {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
-              </h2>
-              {availabilityBadges.map((s, i) => (
-                <span
-                  key={i}
-                  className="rounded-xl bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
-                >
-                  {s.start} – {s.end}
-                </span>
-              ))}
+        {/* Booking form — only when the customer arrived from a dated browse
+            search. Otherwise a prompt to search, since booking needs that
+            context. The cleaner's own preview shows neither — booking
+            themselves makes no sense, so the whole section is skipped. */}
+        {!bookingDisabled && (
+          showBooking ? (
+            <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
+                </h2>
+                {availabilityBadges.map((s, i) => (
+                  <span
+                    key={i}
+                    className="rounded-xl bg-blue-50 text-blue-700 text-sm font-medium px-2 py-0.5 whitespace-nowrap"
+                  >
+                    {s.start} – {s.end}
+                  </span>
+                ))}
+              </div>
+              <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} cleanGroupId={cleanGroupId} cleanGroupColor={cleanGroupColor} />
             </div>
-            <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} cleanGroupId={cleanGroupId} cleanGroupColor={cleanGroupColor} disabled={bookingDisabled} />
-          </div>
-        ) : (
-          <div className="bg-white shadow-sm rounded-2xl p-6 text-center">
-            <p className="text-base text-gray-700 mb-3">{t('cleanerProfile.bookPrompt')}</p>
-            <button
-              type="button"
-              onClick={() => router.push('/browse')}
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-2xl text-sm font-semibold transition-colors"
-            >
-              {t('cleanerProfile.bookCta')}
-            </button>
-          </div>
+          ) : (
+            <div className="bg-white shadow-sm rounded-2xl p-6 text-center">
+              <p className="text-base text-gray-700 mb-3">{t('cleanerProfile.bookPrompt')}</p>
+              <button
+                type="button"
+                onClick={() => router.push('/browse')}
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-2xl text-sm font-semibold transition-colors"
+              >
+                {t('cleanerProfile.bookCta')}
+              </button>
+            </div>
+          )
         )}
 
         {/* Gallery — tap a thumbnail to zoom. Renders nothing when empty. */}

@@ -44,7 +44,6 @@ export function BookingRequestForm({
   cleanGroupColor,
   defaultOpen = false,
   onCancel,
-  disabled = false,
 }: {
   cleaner: CleanerResult
   weeklyAvailability?: WeeklySlot[]
@@ -64,9 +63,6 @@ export function BookingRequestForm({
   // instead of collapsing back to the inline button state.
   defaultOpen?: boolean
   onCancel?: () => void
-  // Non-interactive mode for the cleaner's own profile preview: shows the
-  // same collapsed button, but it can't expand the card.
-  disabled?: boolean
 }) {
   const { t, lang } = useLanguage()
   const router = useRouter()
@@ -238,8 +234,7 @@ export function BookingRequestForm({
         <button
           type="button"
           onClick={() => setPhase('draft')}
-          disabled={disabled}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
         >
           {t('bookingRequestForm.requestBooking')}
         </button>
