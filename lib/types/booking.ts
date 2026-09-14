@@ -58,4 +58,8 @@ export type BookingResult = {
   // reader can build a full BookingRequestSummary without a second query.
   hourly_rate?: number | null
   home_info?: import('@/lib/bookingSummary').CustomerHomeInfo | null
+  // When the request was created — drives "requested {n} days ago" on the
+  // customer's /home pending section. Optional since older call sites don't
+  // select it.
+  created_at?: string
 }

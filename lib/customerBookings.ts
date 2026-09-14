@@ -11,7 +11,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
 
   const { data: rawBookings } = await supabase
     .from('bookings')
-    .select('id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive, cleaning_type, extras, pets_present, host_present')
+    .select('id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive, cleaning_type, extras, pets_present, host_present, created_at')
     .eq('customer_id', userId)
     .order('created_at', { ascending: false })
 
@@ -80,6 +80,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       host_present: b.host_present,
       hourly_rate: rateMap[b.cleaner_id] ?? null,
       home_info: homeRow ?? null,
+      created_at: b.created_at,
     } satisfies BookingResult
   })
 }

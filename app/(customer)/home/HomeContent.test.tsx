@@ -20,60 +20,60 @@ const booking = (overrides: Partial<BookingResult>): BookingResult => ({
 
 describe('HomeContent', () => {
   it('greets the customer by first name', () => {
-    render(<HomeContent firstName="Dana" todayStr={TODAY_STR} today={[]} upcoming={[]} past={[]} />)
-    expect(screen.getByText('Hi, Dana')).toBeInTheDocument()
+    render(<HomeContent firstName="Dana" todayStr={TODAY_STR} confirmed={[]} pending={[]} past={[]} />)
+    expect(screen.getByText('Hello, Dana')).toBeInTheDocument()
   })
 
   it('shows empty states when a section has no bookings', () => {
-    render(<HomeContent firstName="Dana" todayStr={TODAY_STR} today={[]} upcoming={[]} past={[]} />)
-    expect(screen.getByText('No cleans scheduled for today.')).toBeInTheDocument()
-    expect(screen.getByText('No upcoming cleans.')).toBeInTheDocument()
+    render(<HomeContent firstName="Dana" todayStr={TODAY_STR} confirmed={[]} pending={[]} past={[]} />)
+    expect(screen.getByText('No confirmed cleans yet.')).toBeInTheDocument()
+    expect(screen.getByText('No pending requests.')).toBeInTheDocument()
     expect(screen.getByText('No past cleans yet.')).toBeInTheDocument()
   })
 
-  it('renders a booking card in each populated section', () => {
+  it('renders a confirmed row with the cleaner name, area, and a countdown', () => {
     render(
       <HomeContent
         firstName="Dana"
         todayStr={TODAY_STR}
-        today={[booking({ id: 't1', cleaner_name: 'Today Cleaner' })]}
-        upcoming={[booking({ id: 'u1', cleaner_name: 'Upcoming Cleaner', scheduled_date: '2026-06-20' })]}
-        past={[booking({ id: 'p1', cleaner_name: 'Past Cleaner', status: 'completed' })]}
-      />
-    )
-    expect(screen.getByText(/Booked with Today Cleaner/)).toBeInTheDocument()
-    expect(screen.getByText(/Booked with Upcoming Cleaner/)).toBeInTheDocument()
-    expect(screen.getByText(/Booked with Past Cleaner/)).toBeInTheDocument()
-    expect(screen.queryByText('No upcoming cleans.')).not.toBeInTheDocument()
-  })
-
-  it("shows the customer's saved area, not the full street address", () => {
-    render(
-      <HomeContent
-        firstName="Dana"
-        todayStr={TODAY_STR}
-        today={[booking({ address: '12 Rothschild Blvd, Beit Hillel' })]}
-        upcoming={[]}
+        confirmed={[booking({ id: 'c1', cleaner_name: 'Noa R.', address: '5 Herzl St, Kibbutz Amir', scheduled_date: '2026-06-18' })]}
+        pending={[]}
         past={[]}
       />
     )
-    expect(screen.getByText(/Beit Hillel/)).toBeInTheDocument()
-    expect(screen.queryByText(/Rothschild/)).not.toBeInTheDocument()
+    expect(screen.getByText('Noa R. — Kibbutz Amir')).toBeInTheDocument()
+    expect(screen.getByText(/09:00 · in 3 days/)).toBeInTheDocument()
+    expect(screen.getByText('Confirmed')).toBeInTheDocument()
   })
 
-  it('shows a countdown for today vs. a future upcoming booking', () => {
+  it('renders a pending row without the cleaner name, showing "requested X" instead', () => {
     render(
       <HomeContent
         firstName="Dana"
         todayStr={TODAY_STR}
-        today={[booking({ id: 't1' })]}
-        upcoming={[booking({ id: 'u1', scheduled_date: '2026-06-18' })]}
+        confirmed={[]}
+        pending={[{ ...booking({ id: 'p1', cleaner_name: 'Hidden Cleaner', status: 'pending' }), daysAgo: 1 }]}
         past={[]}
       />
     )
-    // "Today" also appears as the section heading, so match the full line
-    // rather than a bare substring to avoid ambiguity.
-    expect(screen.getByText(/09:00 · Today$/)).toBeInTheDocument()
-    expect(screen.getByText(/In 3 days/)).toBeInTheDocument()
+    expect(screen.getByText('Awaiting cleaner response')).toBeInTheDocument()
+    expect(screen.queryByText('Hidden Cleaner')).not.toBeInTheDocument()
+    expect(screen.getByText(/requested yesterday/)).toBeInTheDocument()
+    expect(screen.getByText('Pending')).toBeInTheDocument()
+  })
+
+  it('renders a past row with just the cleaner name and date, no time', () => {
+    render(
+      <HomeContent
+        firstName="Dana"
+        todayStr={TODAY_STR}
+        confirmed={[]}
+        pending={[]}
+        past={[booking({ id: 'pa1', cleaner_name: 'Maya S.', status: 'completed', scheduled_date: '2026-06-02' })]}
+      />
+    )
+    expect(screen.getByText('Maya S.')).toBeInTheDocument()
+    expect(screen.getByText('Done')).toBeInTheDocument()
+    expect(screen.queryByText(/09:00/)).not.toBeInTheDocument()
   })
 })

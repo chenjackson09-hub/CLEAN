@@ -3,17 +3,8 @@ import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingDetailModal } from './BookingDetailModal'
 import { extractArea } from '@/lib/bookingArea'
+import { daysBetween } from '@/lib/dateMath'
 import type { BookingResult } from '@/lib/types/booking'
-
-// Pure date-string math (no Date.now()) so the "in N days" label can never
-// hydrate-mismatch between server and client — both `todayStr` and
-// `booking.scheduled_date` are plain YYYY-MM-DD strings computed once,
-// server-side, and passed down as props.
-function daysBetween(fromStr: string, toStr: string): number {
-  const [fy, fm, fd] = fromStr.split('-').map(Number)
-  const [ty, tm, td] = toStr.split('-').map(Number)
-  return Math.round((new Date(ty, tm - 1, td).getTime() - new Date(fy, fm - 1, fd).getTime()) / 86_400_000)
-}
 
 // A quick-glance "confirmed schedule" card — accepted/completed bookings
 // only (see /home and the /bookings "Confirmed"/"Past cleans" tabs) — matching
