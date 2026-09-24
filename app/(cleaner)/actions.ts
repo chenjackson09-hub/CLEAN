@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { geocodeAddress } from "@/lib/geocode";
 import { restoreAvailability } from "@/lib/availability";
+import { ensureBookingInConversation } from "@/lib/chat";
 import {
   sendBookingAccepted,
   sendBookingDeclined,
@@ -530,6 +531,22 @@ export async function respondToBooking(
         .eq("customer_id", booking.customer_id)
         .eq("status", "pending")
         .neq("id", bookingId);
+    }
+
+    // The match is now confirmed: make sure the host<->cleaner conversation
+    // exists (one per pair, reused for every rebooking) and that this booking
+    // is attached to it as a card. Idempotent (unique constraints + upserts)
+    // and best-effort — the chat page also re-syncs on open, so a failure
+    // here must never undo or block the approval itself.
+    try {
+      await ensureBookingInConversation(admin, {
+        id: bookingId,
+        customer_id: booking.customer_id,
+        cleaner_id: user.id,
+        responded_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error("chat: failed to attach booking to conversation", e);
     }
   }
 

@@ -102,12 +102,22 @@ export function BookingDetailModal({
           <div className="min-w-0">
             <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
             {booking.cleaner_id && (
-              <Link
-                href={`/cleaners/${booking.cleaner_id}`}
-                className="inline-flex items-center gap-1 p-1 px-2 mt-1 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-              >
-                {t('cleanerCard.viewProfile')}
-              </Link>
+              <div className="flex flex-wrap gap-2 mt-1">
+                <Link
+                  href={`/cleaners/${booking.cleaner_id}`}
+                  className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  {t('cleanerCard.viewProfile')}
+                </Link>
+                {(booking.status === 'accepted' || booking.status === 'completed') && (
+                  <Link
+                    href={`/chat/${booking.cleaner_id}`}
+                    className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100"
+                  >
+                    {t('cleanerCard.message')}
+                  </Link>
+                )}
+              </div>
             )}
           </div>
           <button

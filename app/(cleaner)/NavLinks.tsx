@@ -36,6 +36,15 @@ const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode
     ),
   },
   {
+    href: "/cleaner/chat",
+    labelKey: "nav_messages",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5m-9 6 3.5-3.5H18a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14z" />
+      </svg>
+    ),
+  },
+  {
     href: "/cleaner/preview",
     labelKey: "nav_profile",
     icon: (

@@ -5,6 +5,7 @@ export const translations = {
     // Nav
     nav_home: "Home",
     nav_requests: "Requests",
+    nav_messages: "Messages",
     nav_availability: "Schedule",
     nav_profile: "Profile",
     nav_preview: "Preview",
@@ -97,6 +98,7 @@ export const translations = {
     req_m_left: "m left",
     req_customer: "Customer",
     req_view_profile: "View profile",
+    req_message: "Message",
     req_back_requests: "← Back to requests",
     req_back_dashboard: "← Back to dashboard",
     req_edit: "Edit",
@@ -275,6 +277,7 @@ export const translations = {
     // Nav
     nav_home: "בית",
     nav_requests: "בקשות",
+    nav_messages: "הודעות",
     nav_availability: "לוח זמנים",
     nav_profile: "פרופיל",
     nav_preview: "תצוגה מקדימה",
@@ -367,6 +370,7 @@ export const translations = {
     req_m_left: "ד׳ נותרו",
     req_customer: "לקוח",
     req_view_profile: "צפייה בפרופיל",
+    req_message: "שליחת הודעה",
     req_back_requests: "→ חזרה לבקשות",
     req_back_dashboard: "→ חזרה ללוח הבקרה",
     req_edit: "עריכה",

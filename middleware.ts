@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { ROLE_HOME } from '@/lib/roleHome'
 import type { UserRole } from '@/types/database'
 
-const CUSTOMER_PATHS = ['/browse', '/bookings', '/home', '/cleaners', '/profile']
+const CUSTOMER_PATHS = ['/browse', '/bookings', '/home', '/cleaners', '/profile', '/chat']
 const CLEANER_PATHS = ['/cleaner']
 const ADMIN_PATHS = ['/admin']
 // /cleaners/[id] is the one customer-facing page an admin also needs — the

@@ -121,13 +121,23 @@ export default function CleanDetailModal({
                 {booking.profiles?.full_name ?? t("req_customer")}
               </h2>
               {booking.customer_id && (
-                <Link
-                  href={`/cleaner/customers/${booking.customer_id}?from=dashboard`}
-                  className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 mt-1"
-                >
-                  {t("req_view_profile")}
-                  <span aria-hidden></span>
-                </Link>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  <Link
+                    href={`/cleaner/customers/${booking.customer_id}?from=dashboard`}
+                    className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    {t("req_view_profile")}
+                    <span aria-hidden></span>
+                  </Link>
+                  {(booking.status === "accepted" || booking.status === "completed") && (
+                    <Link
+                      href={`/cleaner/chat/${booking.customer_id}`}
+                      className="inline-flex items-center gap-1 p-1 px-2 rounded-full text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100"
+                    >
+                      {t("req_message")}
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           </div>

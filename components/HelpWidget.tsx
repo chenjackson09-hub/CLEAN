@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { sendSupportMessage } from "@/lib/actions/support";
 
 // Self-contained floating "Need help?" widget rendered on every cleaner and
@@ -34,6 +35,7 @@ const STRINGS = {
 } as const;
 
 export default function HelpWidget() {
+  const pathname = usePathname();
   const [lang, setLang] = useState<"en" | "he">("en");
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -86,6 +88,9 @@ export default function HelpWidget() {
       setError(null);
     }, 200);
   }
+
+  // The floating bubble would sit on top of a chat thread's send button.
+  if (/^\/(cleaner\/)?chat\/[^/]+/.test(pathname ?? "")) return null;
 
   return (
     <div className="fixed bottom-4 end-4 z-[60] flex flex-col items-end gap-3 print:hidden">

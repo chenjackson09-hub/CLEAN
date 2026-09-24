@@ -157,6 +157,7 @@ const translations = {
     },
     cleanerCard: {
       viewProfile: 'View Profile',
+      message: 'Message',
       schedule: 'Schedule a clean',
     },
     cleanerProfile: {
@@ -983,6 +984,7 @@ const translations = {
     },
     cleanerCard: {
       viewProfile: 'צפייה בפרופיל',
+      message: 'שליחת הודעה',
       schedule: 'קביעת ניקיון',
     },
     cleanerProfile: {
