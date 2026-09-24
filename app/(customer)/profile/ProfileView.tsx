@@ -31,15 +31,14 @@ export default function ProfileView({
       customer={customer}
       reviews={reviews}
       action={
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            ✏️ {t('profile.editProfile')}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={t('profile.editProfile')}
+          className="text-lg text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          ✏️
+        </button>
       }
     />
   )

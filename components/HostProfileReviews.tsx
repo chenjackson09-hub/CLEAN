@@ -16,7 +16,7 @@ function FilledStars({ score }: { score: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
-        <StarIcon key={n} className={`w-4 h-4 ${n <= score ? "text-emerald-700" : "text-emerald-100"}`} />
+        <StarIcon key={n} className={`w-4 h-4 ${n <= score ? "text-amber-400" : "text-gray-200"}`} />
       ))}
     </div>
   );
@@ -33,17 +33,17 @@ export default function ReviewsList({ reviews }: { reviews: ReviewItem[] }) {
   return (
     <div className="flex flex-col">
       {shown.map((r, i) => (
-        <div key={r.id} className={`flex flex-col gap-1 py-3 ${i > 0 ? "border-t border-emerald-900/10" : "pt-0"}`}>
+        <div key={r.id} className={`flex flex-col gap-1 py-3 ${i > 0 ? "border-t border-gray-100" : "pt-0"}`}>
           <FilledStars score={r.score} />
-          <p className="text-sm sm:text-base text-gray-700">&ldquo;{r.reviewText}&rdquo;</p>
-          <p className="text-xs sm:text-sm text-gray-400">— {r.reviewerName}</p>
+          <p className="text-sm text-gray-700">&ldquo;{r.reviewText}&rdquo;</p>
+          <p className="text-xs text-gray-400">— {r.reviewerName}</p>
         </div>
       ))}
       {!expanded && remaining > 0 && (
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-2 text-sm font-semibold text-emerald-800 hover:text-emerald-900 text-center"
+          className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700 text-center"
         >
           See all reviews ({reviews.length}) →
         </button>
