@@ -24,9 +24,9 @@ export default async function CleanerLayout({
   const [{ data: profile }, { count: pendingCount }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("full_name, role")
+      .select("full_name, role, avatar_url")
       .eq("id", user.id)
-      .single<{ full_name: string | null; role: string | null }>(),
+      .single<{ full_name: string | null; role: string | null; avatar_url: string | null }>(),
     supabase
       .from("bookings")
       .select("id", { count: "exact", head: true })
@@ -42,6 +42,7 @@ export default async function CleanerLayout({
       <NavLinks
         signOut={signOut}
         userName={profile.full_name ?? user.email ?? ""}
+        avatarUrl={profile.avatar_url}
         pendingCount={pendingCount ?? 0}
         statusBadge={
           <Suspense>
@@ -49,7 +50,7 @@ export default async function CleanerLayout({
           </Suspense>
         }
       />
-      <main className="relative p-3 pt-16">
+      <main className="relative p-3 pt-28">
         {children}
       </main>
       <HelpWidget />

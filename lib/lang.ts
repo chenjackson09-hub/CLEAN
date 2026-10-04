@@ -5,7 +5,7 @@ export const translations = {
     // Nav
     nav_home: "Home",
     nav_requests: "Requests",
-    nav_messages: "Messages",
+    nav_messages: "Chat",
     nav_availability: "Schedule",
     nav_profile: "Profile",
     nav_preview: "Preview",
@@ -277,7 +277,7 @@ export const translations = {
     // Nav
     nav_home: "בית",
     nav_requests: "בקשות",
-    nav_messages: "הודעות",
+    nav_messages: "צ'אט",
     nav_availability: "לוח זמנים",
     nav_profile: "פרופיל",
     nav_preview: "תצוגה מקדימה",

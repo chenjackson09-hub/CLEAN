@@ -257,7 +257,7 @@ export default function ChatView({
   const subtitle = currentUserRole === "host" ? s.matchedCleaner : s.matchedHost;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-5.25rem)] -mx-3 sm:mx-auto sm:max-w-xl bg-[#F5F3EE] sm:rounded-2xl sm:border sm:border-gray-200 overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-8.25rem)] -mx-3 sm:mx-auto sm:max-w-xl bg-[#F5F3EE] sm:rounded-2xl sm:border sm:border-gray-200 overflow-hidden">
       <header className="flex items-center gap-3 bg-white px-4 py-3 border-b border-gray-200 shrink-0">
         <Link href={backHref} aria-label={s.back} className="text-gray-400 hover:text-gray-700 text-lg leading-none rtl:rotate-180">
           ‹

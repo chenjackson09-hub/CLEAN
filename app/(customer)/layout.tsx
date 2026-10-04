@@ -12,7 +12,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name, role, avatar_url")
     .eq("id", user.id)
     .single()
 
@@ -39,9 +39,10 @@ export default async function CustomerLayout({ children }: { children: React.Rea
       <CustomerNav
         signOut={signOut}
         userName={profile.full_name ?? user.email ?? ""}
+        avatarUrl={profile.avatar_url ?? null}
         acceptedCount={acceptedCount ?? 0}
       />
-      <main className="px-3 pb-4 pt-16 sm:px-8 sm:pb-8">{children}</main>
+      <main className="px-3 pb-4 pt-28 sm:px-8 sm:pb-8">{children}</main>
       <HelpWidget />
     </div>
   )
