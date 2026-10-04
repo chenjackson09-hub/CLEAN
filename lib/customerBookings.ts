@@ -15,6 +15,15 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
     .eq('customer_id', userId)
     .order('created_at', { ascending: false })
 
+  // Migration-0033 columns, read in their own query so an un-applied
+  // migration can never break the bookings pages (the result just comes back
+  // empty and no notices/reasons show).
+  const { data: scheduleRows } = await supabase
+    .from('bookings')
+    .select('id, status_reason, availability_notice')
+    .eq('customer_id', userId)
+  const scheduleMap = new Map((scheduleRows ?? []).map(r => [r.id as string, r]))
+
   const now = Date.now()
 
   // The customer's own ratings (rater_id = user.id), keyed by the cleaner they
@@ -83,6 +92,8 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       home_info: homeRow ?? null,
       created_at: b.created_at,
       cleaner_address: cleanerAddressMap[b.cleaner_id] ?? null,
+      status_reason: (scheduleMap.get(b.id)?.status_reason ?? null) as 'cleaner_unavailable' | null,
+      availability_notice: scheduleMap.get(b.id)?.availability_notice ?? null,
     } satisfies BookingResult
   })
 }

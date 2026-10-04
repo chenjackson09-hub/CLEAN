@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { geocodeAddress } from "@/lib/geocode";
 import { restoreAvailability } from "@/lib/availability";
 import { ensureBookingInConversation } from "@/lib/chat";
+import { findAffectedRequests, formatSlotTimes } from "@/lib/availabilityImpact";
 import {
   sendBookingAccepted,
   sendBookingDeclined,
@@ -362,12 +363,88 @@ export async function deleteWeeklyAvailability(id: string) {
   return { success: true };
 }
 
+// What a slot change does to the OTHER users. Pending requests that the old
+// availability covered but the new one doesn't:
+//   - slot deleted  -> the request is cancelled with reason 'cleaner_unavailable'
+//     (the host sees "Cleaner no longer available", same place as a request
+//     the cleaner gave up on by accepting a different one),
+//   - slot changed  -> the request stays pending but gets a notice with the new
+//     times that the host must confirm (v) or cancel (x).
+// Either way a schedule_events row is written for the admin "Recent activity"
+// feed (flagged "!"). All best-effort: it runs after the slot change itself has
+// succeeded, so a failure (e.g. migration 0033 not applied yet) is logged and
+// never undoes the cleaner's edit.
+async function applySlotChangeImpact(opts: {
+  cleanerId: string;
+  date: string;
+  mode: "deleted" | "changed";
+  beforeSlots: { start_time: string; end_time: string }[];
+  afterSlots: { start_time: string; end_time: string }[];
+}) {
+  try {
+    const { cleanerId, date, mode, beforeSlots, afterSlots } = opts;
+    const admin = createAdminClient();
+    const { data: pending } = await admin
+      .from("bookings")
+      .select("id, scheduled_start, duration_hours")
+      .eq("cleaner_id", cleanerId)
+      .eq("scheduled_date", date)
+      .eq("status", "pending")
+      .gt("response_deadline", new Date().toISOString());
+
+    const affected = findAffectedRequests(pending ?? [], beforeSlots, afterSlots);
+    if (affected.length === 0) return;
+
+    const now = new Date().toISOString();
+    const newTimes = formatSlotTimes(afterSlots);
+    // Per-row updates by id: bulk status-filtered updates hang on this DB.
+    for (const b of affected) {
+      await admin
+        .from("bookings")
+        .update(
+          mode === "deleted"
+            ? { status: "cancelled", status_reason: "cleaner_unavailable", responded_at: now, cleaner_ack_cancelled: true }
+            : { availability_notice: newTimes, availability_notice_at: now },
+        )
+        .eq("id", b.id);
+    }
+
+    await admin.from("schedule_events").insert({
+      kind: mode === "deleted" ? "slot_deleted" : "slot_changed",
+      cleaner_id: cleanerId,
+      affected_count: affected.length,
+      detail: mode === "deleted" ? date : `${date} · ${newTimes}`,
+    });
+  } catch (e) {
+    console.error("schedule: failed to apply slot change impact", e);
+  }
+}
+
+// The cleaner's date slots for `date` plus the weekly slots that apply to that
+// weekday — the full availability picture used to judge coverage.
+async function slotsForImpact(supabase: Awaited<ReturnType<typeof createClient>>, cleanerId: string, date: string) {
+  const dow = new Date(date + "T12:00:00").getDay();
+  const [{ data: dateSlots }, { data: weeklySlots }] = await Promise.all([
+    supabase.from("cleaner_availability").select("id, start_time, end_time").eq("cleaner_id", cleanerId).eq("date", date),
+    supabase.from("cleaner_weekly_availability").select("start_time, end_time").eq("cleaner_id", cleanerId).eq("day_of_week", dow),
+  ]);
+  return { dateSlots: dateSlots ?? [], weeklySlots: weeklySlots ?? [] };
+}
+
 export async function deleteAvailability(id: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
+
+  const { data: slot } = await supabase
+    .from("cleaner_availability")
+    .select("date")
+    .eq("id", id)
+    .eq("cleaner_id", user.id)
+    .maybeSingle<{ date: string }>();
+  const before = slot ? await slotsForImpact(supabase, user.id, slot.date) : null;
 
   const { error } = await supabase
     .from("cleaner_availability")
@@ -376,6 +453,88 @@ export async function deleteAvailability(id: string) {
     .eq("cleaner_id", user.id);
 
   if (error) return { error: error.message };
+
+  if (slot && before) {
+    await applySlotChangeImpact({
+      cleanerId: user.id,
+      date: slot.date,
+      mode: "deleted",
+      beforeSlots: [...before.dateSlots, ...before.weeklySlots],
+      afterSlots: [...before.dateSlots.filter((s) => s.id !== id), ...before.weeklySlots],
+    });
+  }
+
+  revalidatePath("/cleaner/availability");
+  return { success: true };
+}
+
+// Edit an existing date slot's hours and/or note without deleting it. Same
+// overlap rules as addAvailability (other slots and accepted bookings), minus
+// the slot itself. Shrinking or moving it can break pending requests — see
+// applySlotChangeImpact.
+export async function updateAvailability(id: string, startTime: string, endTime: string, noteInput: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) return { error: "Invalid time." };
+  if (endTime <= startTime) return { error: "End time must be after start time." };
+  const note = noteInput?.trim() ? noteInput.trim() : null;
+
+  const { data: slot } = await supabase
+    .from("cleaner_availability")
+    .select("date, start_time, end_time")
+    .eq("id", id)
+    .eq("cleaner_id", user.id)
+    .maybeSingle<{ date: string; start_time: string; end_time: string }>();
+  if (!slot) return { error: "Slot not found." };
+  if (slot.date < new Date().toISOString().split("T")[0]) return { error: "Past days can't be edited." };
+
+  const newStart = timeToMinutes(startTime);
+  const newEnd = timeToMinutes(endTime);
+
+  const { dateSlots, weeklySlots } = await slotsForImpact(supabase, user.id, slot.date);
+  const { data: acceptedBookings } = await supabase
+    .from("bookings")
+    .select("scheduled_start, duration_hours")
+    .eq("cleaner_id", user.id)
+    .eq("scheduled_date", slot.date)
+    .eq("status", "accepted");
+
+  const overlapsSlot = dateSlots
+    .filter((s) => s.id !== id)
+    .some((s) => newStart < timeToMinutes(s.end_time) && newEnd > timeToMinutes(s.start_time));
+  if (overlapsSlot) return { error: "This time overlaps availability you already added." };
+
+  const overlapsBooking = (acceptedBookings ?? []).some((b) => {
+    const s = timeToMinutes(b.scheduled_start);
+    return newStart < s + b.duration_hours * 60 && newEnd > s;
+  });
+  if (overlapsBooking) return { error: "This time overlaps a booking you already accepted." };
+
+  const { error } = await supabase
+    .from("cleaner_availability")
+    .update({ start_time: startTime, end_time: endTime, note })
+    .eq("id", id)
+    .eq("cleaner_id", user.id);
+  if (error) return { error: error.message };
+
+  const timesChanged =
+    timeToMinutes(slot.start_time) !== newStart || timeToMinutes(slot.end_time) !== newEnd;
+  if (timesChanged) {
+    await applySlotChangeImpact({
+      cleanerId: user.id,
+      date: slot.date,
+      mode: "changed",
+      beforeSlots: [...dateSlots, ...weeklySlots],
+      afterSlots: [
+        ...dateSlots.map((s) => (s.id === id ? { start_time: startTime, end_time: endTime } : s)),
+        ...weeklySlots,
+      ],
+    });
+  }
 
   revalidatePath("/cleaner/availability");
   return { success: true };

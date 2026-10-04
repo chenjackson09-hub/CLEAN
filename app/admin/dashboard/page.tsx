@@ -173,6 +173,28 @@ export default async function AdminDashboardPage() {
     customer_name: recentProfileMap.get(b.customer_id) ?? null,
   }))
 
+  // Cleaner schedule changes that touched pending requests (migration 0033).
+  // Isolated + fail-open: before the migration runs this just comes back empty.
+  const { data: eventRows } = await admin
+    .from('schedule_events')
+    .select('id, kind, cleaner_id, affected_count, detail, created_at')
+    .gte('created_at', activityCutoff.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(100)
+  const eventCleanerIds = Array.from(new Set((eventRows ?? []).map((e) => e.cleaner_id as string)))
+  const { data: eventProfileRows } = eventCleanerIds.length
+    ? await admin.from('profiles').select('id, full_name').in('id', eventCleanerIds)
+    : { data: [] }
+  const eventProfileMap = new Map((eventProfileRows ?? []).map((p) => [p.id, p.full_name]))
+  const scheduleEvents = (eventRows ?? []).map((e) => ({
+    id: e.id as string,
+    kind: e.kind as 'slot_deleted' | 'slot_changed',
+    created_at: e.created_at as string,
+    cleaner_name: eventProfileMap.get(e.cleaner_id as string) ?? null,
+    affected_count: e.affected_count as number,
+    detail: (e.detail as string | null) ?? null,
+  }))
+
   const thisWeekAreas = bookings
     .filter((b) => new Date(b.created_at) >= thisWeekStart)
     .map((b) => b.address)
@@ -201,6 +223,7 @@ export default async function AdminDashboardPage() {
           customersRatingAvg={customersRatingAvg}
           customersRatingCount={customerRating.count}
           recentBookings={recentBookings}
+          scheduleEvents={scheduleEvents}
           areaAddresses={thisWeekAreas}
         />
       </div>

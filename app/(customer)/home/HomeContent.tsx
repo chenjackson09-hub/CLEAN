@@ -116,8 +116,8 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
               dotColor="bg-amber-500"
               title={t('home.awaitingResponse')}
               subtitle={`${formatDate(b.scheduled_date)} · ${requested}`}
-              badgeText={t('home.badgePending')}
-              badgeColor="bg-amber-100 text-amber-700"
+              badgeText={b.availability_notice ? `! ${t('bookingCard.noticeBadge')}` : t('home.badgePending')}
+              badgeColor={b.availability_notice ? 'bg-amber-200 text-amber-900' : 'bg-amber-100 text-amber-700'}
             />
           )
         })}

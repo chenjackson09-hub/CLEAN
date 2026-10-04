@@ -4,7 +4,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { DashboardKpiCard } from './DashboardKpiCard'
 import { DashboardGreeting } from './DashboardGreeting'
 import { NeedsAttentionPanel } from './NeedsAttentionPanel'
-import { RecentActivityFeed } from './RecentActivityFeed'
+import { RecentActivityFeed, type ScheduleEvent } from './RecentActivityFeed'
 import { TopAreasWidget } from './TopAreasWidget'
 
 // One rating average within the combined ratings card.
@@ -48,6 +48,7 @@ interface Props {
   customersRatingAvg: number | null
   customersRatingCount: number
   recentBookings: RecentBooking[]
+  scheduleEvents?: ScheduleEvent[]
   areaAddresses: string[]
 }
 
@@ -73,6 +74,7 @@ export function DashboardContent({
   customersRatingAvg,
   customersRatingCount,
   recentBookings,
+  scheduleEvents = [],
   areaAddresses,
 }: Props) {
   const { t } = useLanguage()
@@ -151,7 +153,7 @@ export function DashboardContent({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentActivityFeed bookings={recentBookings} />
+        <RecentActivityFeed bookings={recentBookings} events={scheduleEvents} />
         <div className="flex flex-col gap-6">
           <NeedsAttentionPanel
             unmatchedCount={unmatchedCount}

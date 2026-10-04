@@ -67,4 +67,11 @@ export type BookingResult = {
   // customer's /home pending section. Optional since older call sites don't
   // select it.
   created_at?: string
+  // Why a request ended without the host doing it. 'cleaner_unavailable' =
+  // the cleaner deleted the availability slot it depended on (migration 0033).
+  status_reason?: 'cleaner_unavailable' | null
+  // Set when the cleaner changed their times so this still-pending request no
+  // longer fits; holds the new times ("10:00–13:00"). The host confirms (v) or
+  // cancels (x) — see AvailabilityNotice.
+  availability_notice?: string | null
 }

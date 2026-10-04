@@ -10,6 +10,20 @@ interface Booking {
   customer_name: string | null
 }
 
+export interface ScheduleEvent {
+  id: string
+  kind: 'slot_deleted' | 'slot_changed'
+  created_at: string
+  cleaner_name: string | null
+  affected_count: number
+  detail: string | null
+}
+
+// One feed row — either a booking or a flagged cleaner schedule change.
+type FeedItem =
+  | { type: 'booking'; at: string; booking: Booking }
+  | { type: 'event'; at: string; event: ScheduleEvent }
+
 type Range = 'day' | 'week' | 'month'
 const RANGE_DAYS: Record<Range, number> = { day: 1, week: 7, month: 31 }
 const RANGE_KEY: Record<Range, string> = {
@@ -39,7 +53,7 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
-export function RecentActivityFeed({ bookings }: { bookings: Booking[] }) {
+export function RecentActivityFeed({ bookings, events = [] }: { bookings: Booking[]; events?: ScheduleEvent[] }) {
   const { t, lang } = useLanguage()
   const [range, setRange] = useState<Range>('week')
 
@@ -48,13 +62,18 @@ export function RecentActivityFeed({ bookings }: { bookings: Booking[] }) {
   const timeFmt = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
 
   const cutoff = Date.now() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000
-  const filtered = bookings.filter((b) => new Date(b.created_at).getTime() >= cutoff)
+  const filtered: FeedItem[] = [
+    ...bookings.map((booking): FeedItem => ({ type: 'booking', at: booking.created_at, booking })),
+    ...events.map((event): FeedItem => ({ type: 'event', at: event.created_at, event })),
+  ]
+    .filter((i) => new Date(i.at).getTime() >= cutoff)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
 
   // Group into days, preserving the incoming newest-first order.
   const order: string[] = []
-  const map = new Map<string, { date: Date; items: Booking[] }>()
+  const map = new Map<string, { date: Date; items: FeedItem[] }>()
   for (const b of filtered) {
-    const d = new Date(b.created_at)
+    const d = new Date(b.at)
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
     let group = map.get(key)
     if (!group) {
@@ -108,7 +127,33 @@ export function RecentActivityFeed({ bookings }: { bookings: Booking[] }) {
                 {dayHeader(group.date)}
               </div>
               <ul className="flex flex-col gap-2.5">
-                {group.items.map((b) => {
+                {group.items.map((item) => {
+                  if (item.type === 'event') {
+                    const e = item.event
+                    const who = e.cleaner_name ?? (lang === 'he' ? 'מנקה' : 'A cleaner')
+                    return (
+                      <li key={`e-${e.id}`} className="flex items-start gap-2.5 text-sm rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2">
+                        <span
+                          title={t('admin.dashboard.flagTitle')}
+                          aria-label={t('admin.dashboard.flagTitle')}
+                          className="mt-0.5 w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0"
+                        >
+                          !
+                        </span>
+                        <span className="text-gray-800 flex-1 min-w-0">
+                          <span className="font-semibold">{who}</span>{' '}
+                          {t(e.kind === 'slot_deleted' ? 'admin.dashboard.eventSlotDeleted' : 'admin.dashboard.eventSlotChanged', {
+                            n: String(e.affected_count),
+                            detail: e.detail ?? '',
+                          })}
+                        </span>
+                        <span className="text-gray-400 text-xs whitespace-nowrap shrink-0">
+                          {timeFmt.format(new Date(e.created_at))}
+                        </span>
+                      </li>
+                    )
+                  }
+                  const b = item.booking
                   const statusText = STATUS_TEXT[b.status]?.[lang] ?? b.status
                   const cleaner = b.cleaner_name ?? (lang === 'he' ? 'מנקה' : 'A cleaner')
                   const customer = b.customer_name ?? (lang === 'he' ? 'לקוח' : 'a customer')

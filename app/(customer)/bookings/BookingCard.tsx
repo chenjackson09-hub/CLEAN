@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingDetailModal } from './BookingDetailModal'
 import { acknowledgeBookingSeen } from '@/app/(customer)/actions'
+import { AvailabilityNotice } from './AvailabilityNotice'
 import type { BookingResult, BookingStatus } from '@/lib/types/booking'
 
 const STATUS_BADGE: Record<BookingStatus, string> = {
@@ -112,6 +113,15 @@ export function BookingCard({ booking, muted = false, dismissible = false }: { b
 
         <p className="text-sm text-gray-600 mt-1">{booking.address}</p>
 
+        {booking.status === 'cancelled' && booking.status_reason === 'cleaner_unavailable' && (
+          <p className="mt-2 text-sm font-semibold text-red-600">{t('bookingCard.reasonCleanerUnavailable')}</p>
+        )}
+
+        {booking.status === 'pending' && booking.availability_notice && (
+          <div className="mt-3">
+            <AvailabilityNotice bookingId={booking.id} name={displayName} times={booking.availability_notice} />
+          </div>
+        )}
 
         {booking.status === 'accepted' && booking.cleaner_phone && booking.cleaner_email && (
           <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-700 flex flex-col gap-1">

@@ -385,6 +385,27 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
   return { success: true }
 }
 
+// The host's "yes, this request is still relevant" answer to a cleaner's
+// changed-availability notice: just clears the notice (the request stays
+// pending; the cleaner can still accept it or edit its time). "No" goes
+// through cancelBooking instead.
+export async function acknowledgeAvailabilityNotice(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ availability_notice: null, availability_notice_at: null })
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+  if (error) return { error: error.message }
+
+  revalidatePath("/bookings")
+  revalidatePath("/home")
+  return { success: true }
+}
+
 // Clears the "updated by the cleaner" indicator once the customer has seen the
 // change (the "seen" button in the booking detail's modified banner). Sets
 // cleaner_modified back to false; if the cleaner edits the booking again,

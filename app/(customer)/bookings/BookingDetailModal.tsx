@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { cancelBooking, acknowledgeBookingModified, rateCleaner } from '../actions'
+import { AvailabilityNotice } from './AvailabilityNotice'
 import { StarRatingInput } from '@/components/StarRating'
 import BookingRequestSummary from '@/components/BookingRequestSummary'
 import { buildBookingSummaryData } from '@/lib/bookingSummary'
@@ -131,6 +132,12 @@ export function BookingDetailModal({
 
         {/* Details */}
         <div className="px-8 py-6 space-y-5">
+          {booking.status === 'cancelled' && booking.status_reason === 'cleaner_unavailable' && (
+            <p className="text-sm font-semibold text-red-600">{t('bookingCard.reasonCleanerUnavailable')}</p>
+          )}
+          {booking.status === 'pending' && booking.availability_notice && (
+            <AvailabilityNotice bookingId={booking.id} name={displayName} times={booking.availability_notice} />
+          )}
           {modified && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
               <p className="text-sm font-semibold text-amber-800">{t('bookingCard.modified')}</p>
