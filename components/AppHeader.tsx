@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NotificationBell from "@/components/NotificationBell";
 
 export type HeaderItem = {
   href: string;
@@ -17,6 +18,7 @@ export type HeaderItem = {
 // utilities only, so Hebrew mirrors it right-to-left with no extra code. The
 // callers own their own i18n and sign-out flow and pass the menu body in.
 export default function AppHeader({
+  userId,
   items,
   profileHref,
   profileMatch,
@@ -26,6 +28,7 @@ export default function AppHeader({
   menuLabel,
   children,
 }: {
+  userId: string;
   items: HeaderItem[];
   profileHref: string;
   profileMatch: string[];
@@ -36,7 +39,9 @@ export default function AppHeader({
   children: (close: () => void) => React.ReactNode;
 }) {
   const pathname = usePathname() ?? "";
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Only one of the bell / account menu is open at a time.
+  const [openPanel, setOpenPanel] = useState<"bell" | "menu" | null>(null);
+  const menuOpen = openPanel === "menu";
   const onProfile = profileMatch.some((p) => pathname === p || pathname.startsWith(p + "/"));
   const initial = (userName.trim().charAt(0) || "?").toUpperCase();
 
@@ -46,9 +51,15 @@ export default function AppHeader({
         <span className="text-lg font-bold text-blue-600">Clean</span>
 
         <div className="flex items-center gap-2">
+          <NotificationBell
+            userId={userId}
+            open={openPanel === "bell"}
+            onToggle={() => setOpenPanel((p) => (p === "bell" ? null : "bell"))}
+            onClose={() => setOpenPanel(null)}
+          />
           <button
             type="button"
-            onClick={() => setMenuOpen((o) => !o)}
+            onClick={() => setOpenPanel((p) => (p === "menu" ? null : "menu"))}
             aria-label={menuLabel}
             aria-expanded={menuOpen}
             className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors ${
@@ -77,9 +88,9 @@ export default function AppHeader({
 
         {menuOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+            <div className="fixed inset-0 z-40" onClick={() => setOpenPanel(null)} />
             <div className="absolute end-3 top-full mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4 flex flex-col gap-3">
-              {children(() => setMenuOpen(false))}
+              {children(() => setOpenPanel(null))}
             </div>
           </>
         )}

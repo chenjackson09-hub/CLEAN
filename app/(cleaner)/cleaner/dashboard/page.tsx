@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import RealtimeBookings from "./RealtimeBookings";
 import DashboardGreeting from "./DashboardGreeting";
 import DashboardLists from "./DashboardLists";
-import UpdatesSection from "./UpdatesSection";
 import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
@@ -29,7 +28,7 @@ export default async function CleanerDashboardPage() {
   const startDateTime = (b: BookingWithCustomer) =>
     new Date(`${b.scheduled_date}T${b.scheduled_start}`);
 
-  const [cleanerStatus, { data: profile }, { data: cleanerRow }, { count: pendingCount }, { data: upcomingRaw }, { data: pastRaw }, { data: cancelledRaw }] =
+  const [cleanerStatus, { data: profile }, { data: cleanerRow }, { data: upcomingRaw }, { data: pastRaw }] =
     await Promise.all([
       getCleanerStatus(user.id),
       supabase
@@ -41,14 +40,6 @@ export default async function CleanerDashboardPage() {
       // BookingRequestSummary (see lib/bookingSummary.ts) — same value for
       // every clean shown on this page, so fetched once.
       admin.from("cleaners").select("hourly_rate").eq("id", user.id).single<{ hourly_rate: number | null }>(),
-      // Same query the layout already runs for the nav's Requests badge —
-      // drives the dashboard's own bell/dot (see DashboardGreeting.tsx).
-      supabase
-        .from("bookings")
-        .select("id", { count: "exact", head: true })
-        .eq("cleaner_id", user.id)
-        .eq("status", "pending")
-        .gt("response_deadline", now.toISOString()),
       // Accepted cleans from today onward; today's already-started ones are
       // dropped below so only genuinely upcoming cleans remain.
       admin
@@ -72,20 +63,6 @@ export default async function CleanerDashboardPage() {
         .order("scheduled_date", { ascending: false })
         .order("scheduled_start", { ascending: false })
         .limit(40)
-        .returns<BookingWithCustomer[]>(),
-      // Cancellations the cleaner hasn't dismissed yet — surfaced as "Updates".
-      // cancelClean sets cleaner_ack_cancelled on the cleaner's own cancels, so
-      // only cancellations she didn't initiate (customer cancel / sibling
-      // auto-cancel) land here.
-      admin
-        .from("bookings")
-        .select("*, profiles!customer_id(full_name, phone, avatar_url)")
-        .eq("cleaner_id", user.id)
-        .eq("status", "cancelled")
-        .eq("cleaner_ack_cancelled", false)
-        .order("scheduled_date", { ascending: false })
-        .order("scheduled_start", { ascending: false })
-        .limit(20)
         .returns<BookingWithCustomer[]>(),
     ]);
 
@@ -182,9 +159,7 @@ export default async function CleanerDashboardPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <RealtimeBookings cleanerId={user.id} />
-      <DashboardGreeting name={profile?.full_name ?? user.email ?? ""} pendingCount={pendingCount ?? 0} />
-
-      <UpdatesSection bookings={cancelledRaw ?? []} />
+      <DashboardGreeting name={profile?.full_name ?? user.email ?? ""} />
 
       <DashboardLists upcoming={upcomingWithHome} past={pastWithHome} hourlyRate={hourlyRate} />
     </div>

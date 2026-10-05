@@ -49,12 +49,13 @@ const NAV_ITEMS = [
 
 interface Props {
   signOut: () => Promise<void>;
+  userId: string;
   userName: string;
   avatarUrl?: string | null;
   acceptedCount?: number;
 }
 
-export default function CustomerNav({ signOut, userName, avatarUrl = null, acceptedCount = 0 }: Props) {
+export default function CustomerNav({ signOut, userId, userName, avatarUrl = null, acceptedCount = 0 }: Props) {
   const { lang, toggleLanguage } = useLanguage();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
 
@@ -82,6 +83,7 @@ export default function CustomerNav({ signOut, userName, avatarUrl = null, accep
   return (
     <>
       <AppHeader
+        userId={userId}
         items={NAV_ITEMS.map((item) => ({
           href: item.href,
           label: lang === "he" ? item.labelHe : item.label,

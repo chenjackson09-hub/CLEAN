@@ -7,6 +7,8 @@ import { geocodeAddress } from "@/lib/geocode";
 import { restoreAvailability } from "@/lib/availability";
 import { ensureBookingInConversation } from "@/lib/chat";
 import { findAffectedRequests, formatSlotTimes } from "@/lib/availabilityImpact";
+import { notify, profileNames } from "@/lib/notifications";
+import { shortName } from "@/lib/chatFormat";
 import {
   sendBookingAccepted,
   sendBookingDeclined,
@@ -386,7 +388,7 @@ async function applySlotChangeImpact(opts: {
     const admin = createAdminClient();
     const { data: pending } = await admin
       .from("bookings")
-      .select("id, scheduled_start, duration_hours")
+      .select("id, customer_id, scheduled_start, duration_hours")
       .eq("cleaner_id", cleanerId)
       .eq("scheduled_date", date)
       .eq("status", "pending")
@@ -408,6 +410,22 @@ async function applySlotChangeImpact(opts: {
         )
         .eq("id", b.id);
     }
+
+    // Each affected host hears about it in their bell, too.
+    const names = await profileNames(admin, [cleanerId]);
+    const cleanerName = shortName(names.get(cleanerId) ?? "");
+    await notify(
+      admin,
+      affected.map((b) => ({
+        userId: (b as { customer_id: string }).customer_id,
+        kind: mode === "deleted" ? ("request_cleaner_unavailable" as const) : ("availability_changed" as const),
+        actorId: cleanerId,
+        bookingId: b.id,
+        data: { name: cleanerName, date, times: newTimes },
+        href: "/bookings",
+        once: mode === "deleted",
+      })),
+    );
 
     await admin.from("schedule_events").insert({
       kind: mode === "deleted" ? "slot_deleted" : "slot_changed",
@@ -653,6 +671,21 @@ export async function respondToBooking(
 
   if (error) return { error: error.message };
 
+  // Tell the host the answer in their bell.
+  {
+    const notifyAdmin = createAdminClient();
+    const names = await profileNames(notifyAdmin, [user.id]);
+    await notify(notifyAdmin, {
+      userId: booking.customer_id,
+      kind: response === "accepted" ? "request_accepted" : "request_declined",
+      actorId: user.id,
+      bookingId,
+      data: { name: shortName(names.get(user.id) ?? ""), date: booking.scheduled_date },
+      href: "/bookings",
+      once: true,
+    });
+  }
+
   // On approval, remove the booked time from the cleaner's availability so the
   // remaining hours stay open (e.g. 08:00–12:00 booked 08:00–10:00 → 10:00–12:00).
   if (response === "accepted") {
@@ -666,6 +699,18 @@ export async function respondToBooking(
     // them — use the service-role client to bypass RLS for this cross-cleaner
     // cleanup.
     const admin = createAdminClient();
+    // Who else had a pending request from this host that's about to be closed?
+    // They get told in their bell instead of the request silently vanishing.
+    let siblingQuery = admin
+      .from("bookings")
+      .select("id, cleaner_id, scheduled_date")
+      .eq("status", "pending")
+      .neq("id", bookingId);
+    siblingQuery = booking.clean_group_id
+      ? siblingQuery.eq("clean_group_id", booking.clean_group_id)
+      : siblingQuery.eq("customer_id", booking.customer_id);
+    const { data: siblings } = await siblingQuery;
+
     if (booking.clean_group_id) {
       // "Add a clean" (migration 0031): this request was one of several
       // candidate days the host marked for one specific need. Only cancel
@@ -690,6 +735,22 @@ export async function respondToBooking(
         .eq("customer_id", booking.customer_id)
         .eq("status", "pending")
         .neq("id", bookingId);
+    }
+
+    if (siblings && siblings.length > 0) {
+      const hostName = (await profileNames(admin, [booking.customer_id])).get(booking.customer_id) ?? "";
+      await notify(
+        admin,
+        siblings.map((sib) => ({
+          userId: sib.cleaner_id as string,
+          kind: "request_taken" as const,
+          actorId: booking.customer_id,
+          bookingId: sib.id as string,
+          data: { name: hostName, date: sib.scheduled_date as string },
+          href: "/cleaner/requests",
+          once: true,
+        })),
+      );
     }
 
     // The match is now confirmed: make sure the host<->cleaner conversation
@@ -897,6 +958,19 @@ export async function editBooking(
 
   if (error) return { error: error.message };
 
+  {
+    const notifyAdmin = createAdminClient();
+    const names = await profileNames(notifyAdmin, [user.id]);
+    await notify(notifyAdmin, {
+      userId: booking.customer_id,
+      kind: "request_updated",
+      actorId: user.id,
+      bookingId,
+      data: { name: shortName(names.get(user.id) ?? ""), date: newDate },
+      href: "/bookings",
+    });
+  }
+
   revalidatePath("/cleaner/dashboard");
   revalidatePath("/cleaner/requests");
   revalidatePath("/cleaner/availability");
@@ -913,7 +987,7 @@ export async function completeBooking(bookingId: string) {
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
-    .select("status, scheduled_date, scheduled_start")
+    .select("status, scheduled_date, scheduled_start, customer_id")
     .eq("id", bookingId)
     .eq("cleaner_id", user.id)
     .single();
@@ -931,6 +1005,20 @@ export async function completeBooking(bookingId: string) {
     .eq("cleaner_id", user.id);
 
   if (error) return { error: error.message };
+
+  {
+    const notifyAdmin = createAdminClient();
+    const names = await profileNames(notifyAdmin, [user.id]);
+    await notify(notifyAdmin, {
+      userId: booking.customer_id,
+      kind: "clean_completed",
+      actorId: user.id,
+      bookingId,
+      data: { name: shortName(names.get(user.id) ?? ""), date: booking.scheduled_date },
+      href: "/bookings",
+      once: true,
+    });
+  }
 
   revalidatePath("/cleaner/dashboard");
   return { success: true };
@@ -953,7 +1041,7 @@ export async function cancelClean(bookingId: string) {
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
-    .select("status, scheduled_date, scheduled_start, duration_hours")
+    .select("status, scheduled_date, scheduled_start, duration_hours, customer_id")
     .eq("id", bookingId)
     .eq("cleaner_id", user.id)
     .single();
@@ -974,56 +1062,21 @@ export async function cancelClean(bookingId: string) {
   const bookedEnd = bookedStart + booking.duration_hours * 60;
   await restoreAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
 
+  {
+    const notifyAdmin = createAdminClient();
+    const names = await profileNames(notifyAdmin, [user.id]);
+    await notify(notifyAdmin, {
+      userId: booking.customer_id,
+      kind: "booking_cancelled_by_cleaner",
+      actorId: user.id,
+      bookingId,
+      data: { name: shortName(names.get(user.id) ?? ""), date: booking.scheduled_date },
+      href: "/bookings",
+      once: true,
+    });
+  }
+
   revalidatePath("/cleaner/availability");
-  revalidatePath("/cleaner/dashboard");
-  return { success: true };
-}
-
-// Dismisses a cancelled booking from the dashboard's "Updates" section once the
-// cleaner has read it ("I have seen this"). Sets cleaner_ack_cancelled = true so
-// the booking no longer surfaces as an update. Scoped to the calling cleaner;
-// the "cleaner updates assigned bookings" RLS policy enforces ownership too.
-export async function acknowledgeCancellation(bookingId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated." };
-
-  const { error } = await supabase
-    .from("bookings")
-    .update({ cleaner_ack_cancelled: true })
-    .eq("id", bookingId)
-    .eq("cleaner_id", user.id)
-    .eq("status", "cancelled");
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/cleaner/dashboard");
-  return { success: true };
-}
-
-// Bulk version of acknowledgeCancellation: dismisses every cancellation the
-// cleaner currently sees in "Updates" at once ("I've seen all"). The caller
-// passes the visible booking ids, so we filter by `id` (not `status`) — a bulk
-// PostgREST update filtering on `status` can hang against this DB. Ownership is
-// still enforced by the cleaner_id filter + RLS.
-export async function acknowledgeAllCancellations(bookingIds: string[]) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated." };
-  if (bookingIds.length === 0) return { success: true };
-
-  const { error } = await supabase
-    .from("bookings")
-    .update({ cleaner_ack_cancelled: true })
-    .in("id", bookingIds)
-    .eq("cleaner_id", user.id);
-
-  if (error) return { error: error.message };
-
   revalidatePath("/cleaner/dashboard");
   return { success: true };
 }
@@ -1069,6 +1122,20 @@ export async function rateCustomer(bookingId: string, score: number, reviewText?
   );
 
   if (rErr) return { error: rErr.message };
+
+  {
+    const notifyAdmin = createAdminClient();
+    const names = await profileNames(notifyAdmin, [user.id]);
+    await notify(notifyAdmin, {
+      userId: booking.customer_id,
+      kind: "rating_received",
+      actorId: user.id,
+      bookingId,
+      data: { name: shortName(names.get(user.id) ?? ""), score },
+      href: "/profile",
+      once: true,
+    });
+  }
 
   revalidatePath("/cleaner/dashboard");
   return { success: true };

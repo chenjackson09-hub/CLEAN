@@ -35,11 +35,13 @@ function fakeDb(results: Record<string, unknown>) {
 }
 const updatesTo = (db: ReturnType<typeof fakeDb>, table: string) =>
   db.calls.filter((c) => c.table === table).flatMap((c) => c.ops.filter(([o]) => o === 'update').map(([, a]) => a[0]))
+const upsertsTo = (db: ReturnType<typeof fakeDb>, table: string) =>
+  db.calls.filter((c) => c.table === table).flatMap((c) => c.ops.filter(([o]) => o === 'upsert').map(([, a]) => a[0] as Record<string, unknown>[]))
 const insertsTo = (db: ReturnType<typeof fakeDb>, table: string) =>
   db.calls.filter((c) => c.table === table).flatMap((c) => c.ops.filter(([o]) => o === 'insert').map(([, a]) => a[0]))
 
 const FUTURE = '2099-01-10'
-const pendingRow = { id: 'b1', scheduled_start: '10:00:00', duration_hours: 3 }
+const pendingRow = { id: 'b1', customer_id: 'host-1', scheduled_start: '10:00:00', duration_hours: 3 }
 
 function setup(userResults: Record<string, unknown>, adminResults: Record<string, unknown>) {
   const user = fakeDb(userResults)
@@ -66,6 +68,11 @@ describe('deleteAvailability side effects', () => {
       status: 'cancelled', status_reason: 'cleaner_unavailable', cleaner_ack_cancelled: true,
     })
     expect(insertsTo(admin, 'schedule_events')[0]).toMatchObject({ kind: 'slot_deleted', cleaner_id: 'cleaner-1', affected_count: 1 })
+
+    // ...and the host hears about it in their bell.
+    expect(upsertsTo(admin, 'notifications')[0][0]).toMatchObject({
+      user_id: 'host-1', kind: 'request_cleaner_unavailable', booking_id: 'b1', href: '/bookings',
+    })
   })
 
   it('leaves requests alone when another slot still covers them', async () => {
@@ -117,12 +124,16 @@ describe('updateAvailability side effects', () => {
     expect(upd).toMatchObject({ availability_notice: '09:00–12:00' })
     expect(upd).not.toHaveProperty('status')
     expect(insertsTo(admin, 'schedule_events')[0]).toMatchObject({ kind: 'slot_changed', affected_count: 1 })
+    expect(upsertsTo(admin, 'notifications')[0][0]).toMatchObject({
+      user_id: 'host-1', kind: 'availability_changed', data: expect.objectContaining({ times: '09:00–12:00' }),
+    })
   })
 
   it('a note-only edit never touches requests', async () => {
     const { admin } = setup(base, { bookings: { data: [pendingRow], error: null } })
     await updateAvailability('s1', '09:00', '15:00', 'new note')
     expect(updatesTo(admin, 'bookings')).toHaveLength(0)
+    expect(upsertsTo(admin, 'notifications')).toHaveLength(0)
     expect(insertsTo(admin, 'schedule_events')).toHaveLength(0)
   })
 

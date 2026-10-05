@@ -47,13 +47,14 @@ const NAV_ITEMS: { href: string; labelKey: TranslationKey; icon: React.ReactNode
 
 interface Props {
   signOut: () => Promise<void>;
+  userId: string;
   userName: string;
   avatarUrl?: string | null;
   statusBadge?: React.ReactNode;
   pendingCount?: number;
 }
 
-export default function NavLinks({ signOut, userName, avatarUrl = null, statusBadge, pendingCount = 0 }: Props) {
+export default function NavLinks({ signOut, userId, userName, avatarUrl = null, statusBadge, pendingCount = 0 }: Props) {
   const { lang, setLang, t } = useLang();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
 
@@ -81,6 +82,7 @@ export default function NavLinks({ signOut, userName, avatarUrl = null, statusBa
   return (
     <>
       <AppHeader
+        userId={userId}
         items={NAV_ITEMS.map((item) => ({
           href: item.href,
           label: t(item.labelKey),

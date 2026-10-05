@@ -38,6 +38,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
       <RealtimeCustomerBookings customerId={user.id} />
       <CustomerNav
         signOut={signOut}
+        userId={user.id}
         userName={profile.full_name ?? user.email ?? ""}
         avatarUrl={profile.avatar_url ?? null}
         acceptedCount={acceptedCount ?? 0}

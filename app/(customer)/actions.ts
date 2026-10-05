@@ -6,6 +6,7 @@ import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
 import { restoreAvailability } from "@/lib/availability"
 import { sendNewBookingRequest } from "@/lib/resend"
+import { notify, profileNames } from "@/lib/notifications"
 
 // Records that the customer has now seen their bookings, clearing the "newly
 // accepted" badge on the Bookings nav item. Called when the bookings page opens.
@@ -328,6 +329,16 @@ export async function createBooking(data: {
   // fail the booking if email delivery has a problem.
   notifyCleanerOfBooking(adminClient, supabase, data.cleaner_id, user.id, data).catch(() => {})
 
+  // In-app bell for the cleaner.
+  const hostNames = await profileNames(adminClient, [user.id])
+  await notify(adminClient, {
+    userId: data.cleaner_id,
+    kind: 'request_received',
+    actorId: user.id,
+    data: { name: hostNames.get(user.id) ?? '', date: data.scheduled_date, time: data.scheduled_start.slice(0, 5) },
+    href: '/cleaner/requests',
+  })
+
   revalidatePath("/bookings")
   return { success: true }
 }
@@ -356,6 +367,7 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
   if (booking.status !== "pending" && booking.status !== "accepted") {
     return { error: "This booking can no longer be cancelled." }
   }
+  const wasAccepted = booking.status === "accepted"
 
   const { error } = await supabase
     .from("bookings")
@@ -381,6 +393,19 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
     )
   }
 
+  // The cleaner finds out in their bell (a cancelled request vs a cancelled clean read differently).
+  const notifyAdmin = createAdminClient()
+  const hostNames = await profileNames(notifyAdmin, [user.id])
+  await notify(notifyAdmin, {
+    userId: booking.cleaner_id,
+    kind: wasAccepted ? 'booking_cancelled_by_host' : 'request_cancelled_by_host',
+    actorId: user.id,
+    bookingId,
+    data: { name: hostNames.get(user.id) ?? '', date: booking.scheduled_date },
+    href: '/cleaner/dashboard',
+    once: true,
+  })
+
   revalidatePath("/bookings")
   return { success: true }
 }
@@ -394,12 +419,33 @@ export async function acknowledgeAvailabilityNotice(bookingId: string): Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("cleaner_id, scheduled_date")
+    .eq("id", bookingId)
+    .eq("customer_id", user.id)
+    .maybeSingle<{ cleaner_id: string; scheduled_date: string }>()
+
   const { error } = await supabase
     .from("bookings")
     .update({ availability_notice: null, availability_notice_at: null })
     .eq("id", bookingId)
     .eq("customer_id", user.id)
   if (error) return { error: error.message }
+
+  // Tell the cleaner the host still wants it, so they can adjust the time and accept.
+  if (booking) {
+    const admin = createAdminClient()
+    const names = await profileNames(admin, [user.id])
+    await notify(admin, {
+      userId: booking.cleaner_id,
+      kind: 'host_kept_request',
+      actorId: user.id,
+      bookingId,
+      data: { name: names.get(user.id) ?? '', date: booking.scheduled_date },
+      href: '/cleaner/requests',
+    })
+  }
 
   revalidatePath("/bookings")
   revalidatePath("/home")
@@ -537,6 +583,18 @@ export async function rateCleaner(bookingId: string, score: number): Promise<Act
     )
 
   if (error) return { error: error.message }
+
+  const admin = createAdminClient()
+  const names = await profileNames(admin, [user.id])
+  await notify(admin, {
+    userId: booking.cleaner_id,
+    kind: 'rating_received',
+    actorId: user.id,
+    bookingId,
+    data: { name: names.get(user.id) ?? '', score },
+    href: '/cleaner/preview',
+    once: true,
+  })
 
   revalidatePath("/bookings")
   return { success: true }

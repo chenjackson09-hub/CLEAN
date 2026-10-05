@@ -4,6 +4,7 @@ import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
 import { sendApplicationApproved, sendApplicationRejected, sendApplicationNeedsInfo } from '@/lib/resend'
+import { notify } from '@/lib/notifications'
 
 type ActionResult = { error?: string }
 
@@ -90,6 +91,14 @@ export async function updateApplicationStatus(
   // Notify the cleaner of the decision — fire and forget, never block the action.
   notifyApplicationDecision(admin, cleanerId, status, notes).catch(() => {})
 
+  if (status === 'approved' || status === 'rejected') {
+    await notify(admin, {
+      userId: cleanerId,
+      kind: status === 'approved' ? 'account_approved' : 'account_rejected',
+      href: '/cleaner/dashboard',
+    })
+  }
+
   revalidatePath('/admin/applications')
   return {}
 }
@@ -146,6 +155,11 @@ export async function updateCustomerApprovalStatus(
   if (notes !== undefined) update.admin_notes = notes
   const { error } = await admin.from('customers').update(update).eq('id', customerId)
   if (error) return { error: error.message }
+  await notify(admin, {
+    userId: customerId,
+    kind: status === 'approved' ? 'account_approved' : 'account_rejected',
+    href: '/browse',
+  })
   revalidatePath('/admin/applications')
   revalidatePath('/admin/customers')
   return {}

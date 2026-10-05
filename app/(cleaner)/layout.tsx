@@ -41,6 +41,7 @@ export default async function CleanerLayout({
     <div className="min-h-screen bg-gray-50">
       <NavLinks
         signOut={signOut}
+        userId={user.id}
         userName={profile.full_name ?? user.email ?? ""}
         avatarUrl={profile.avatar_url}
         pendingCount={pendingCount ?? 0}
