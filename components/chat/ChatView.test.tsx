@@ -85,6 +85,20 @@ describe('ChatView', () => {
     expect(screen.getByText('Matched host')).toBeInTheDocument()
   })
 
+  it('hides the booking summaries with the header switch (dates stay), and remembers the choice', async () => {
+    localStorage.clear()
+    renderChat()
+    expect(screen.getByText(/Upcoming Clean/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Hide booking summaries' }))
+    expect(screen.queryByText(/Upcoming Clean/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Clean Completed/)).not.toBeInTheDocument()
+    expect(screen.getByText('Entry code?')).toBeInTheDocument()
+    expect(screen.getAllByText(/^—.*—$/).length).toBeGreaterThan(0) // the message's day divider stays
+    expect(localStorage.getItem('chatHideBookings')).toBe('1')
+    await userEvent.click(screen.getByRole('button', { name: 'Show booking summaries' }))
+    expect(screen.getByText(/Upcoming Clean/)).toBeInTheDocument()
+  })
+
   it('sends a message, clears the input, and ignores empty submits', async () => {
     mockSend.mockImplementation(async (_c: string, body: string, clientId: string) => ({
       message: { id: 'm3', sender_id: 'host-1', body, created_at: '2026-06-14T13:00:00Z', client_id: clientId },
