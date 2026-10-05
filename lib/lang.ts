@@ -102,7 +102,6 @@ export const translations = {
     req_back_requests: "← Back to requests",
     req_back_dashboard: "← Back to dashboard",
     // Availability
-    avail_title: "Availability",
     avail_legend_available: "Free to work",
     avail_legend_booked: "Booked",
     avail_legend_none: "Unavailable",
@@ -377,7 +376,6 @@ export const translations = {
     req_back_requests: "→ חזרה לבקשות",
     req_back_dashboard: "→ חזרה ללוח הבקרה",
     // Availability
-    avail_title: "זמינות",
     avail_legend_available: "פנוי לעבודה",
     avail_legend_booked: "מוזמן",
     avail_legend_none: "לא זמין",

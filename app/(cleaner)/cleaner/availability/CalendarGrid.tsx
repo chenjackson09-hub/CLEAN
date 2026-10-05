@@ -426,30 +426,33 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
 
   return (
     <>
+      {/* The month fills the screen: only the grid flexes, so the whole month and
+          the key are visible without scrolling. */}
+      <div className="flex flex-col flex-1 min-h-0">
       {/* Month control */}
-      <div className="flex items-center justify-center gap-2 px-4 py-3 sticky top-0 z-10">
+      <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-1.5">
         <button
           onClick={prevMonth}
-          className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-lg font-bold flex items-center justify-center"
+          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-lg font-bold flex items-center justify-center"
         >
           ‹
         </button>
-        <h2 className="text-lg font-bold text-gray-900 min-w-[150px] text-center">
+        <h2 className="text-base font-bold text-gray-900 min-w-[150px] text-center">
           {t(MONTH_KEYS[viewDate.getMonth()])} {viewDate.getFullYear()}
         </h2>
         <button
           onClick={nextMonth}
-          className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-lg font-bold flex items-center justify-center"
+          className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-lg font-bold flex items-center justify-center"
         >
           ›
         </button>
       </div>
 
       {/* Day headers */}
-      <div className="px-3 pt-2">
-        <div className="grid grid-cols-7 gap-1">
+      <div className="shrink-0 px-2">
+        <div className="grid grid-cols-7 gap-1.5">
           {WEEK_DAY_KEYS.map((key) => (
-            <div key={key} className="text-center text-sm font-bold text-gray-500 py-1">
+            <div key={key} className="text-center text-xs font-bold text-gray-500 py-0.5">
               {t(key)}
             </div>
           ))}
@@ -457,9 +460,12 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
       </div>
 
       {/* Calendar rows */}
-      <div className="p-3 space-y-2">
+      <div
+        className="flex-1 min-h-0 grid gap-1.5 p-2"
+        style={{ gridTemplateRows: `repeat(${rows.length}, minmax(0, 1fr))` }}
+      >
         {rows.map((row, ri) => (
-          <div key={ri} className="grid grid-cols-7 gap-2">
+          <div key={ri} className="grid grid-cols-7 gap-1.5 min-h-0">
             {row.map((cell) => {
               const day = cell.date;
               const dateStr = toLocalDateStr(day);
@@ -470,7 +476,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                   <button
                     key={dateStr}
                     onClick={() => setViewDate(new Date(day.getFullYear(), day.getMonth(), 1))}
-                    className="flex flex-col items-center p-3 min-h-[90px] rounded-xl shadow-md transition-opacity opacity-30 bg-gray-50 hover:opacity-60"
+                    className="flex flex-col items-center py-1.5 min-h-0 overflow-hidden rounded-xl shadow-md transition-opacity opacity-30 bg-gray-50 hover:opacity-60"
                   >
                     <span className="text-sm font-bold w-6 h-6 flex items-center justify-center text-gray-400">
                       {day.getDate()}
@@ -498,8 +504,9 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
               return (
                 <button
                   key={dateStr}
+                  data-date={dateStr}
                   onClick={() => openPanel(day)}
-                  className={`flex flex-col items-center px-1 py-2 min-h-[90px] rounded-xl shadow-md transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
+                  className={`flex flex-col items-center px-0.5 py-1.5 min-h-0 overflow-hidden rounded-xl shadow-md transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
                 >
                   <span className="text-sm font-bold w-6 h-6 flex items-center justify-center text-gray-900">
                     {day.getDate()}
@@ -525,7 +532,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
       </div>
 
       {/* Color legend */}
-      <div className="flex items-center justify-center gap-4 px-4 pt-1 pb-4 flex-wrap text-xs text-gray-500">
+      <div className="shrink-0 flex items-center justify-center gap-x-3 gap-y-1 px-2 py-1.5 flex-wrap text-[11px] text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-green-300" /> {t("avail_legend_booked")}
         </span>
@@ -538,6 +545,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-gray-100 border border-gray-300" /> {t("avail_legend_none")}
         </span>
+      </div>
       </div>
 
       {/* Day detail panel */}

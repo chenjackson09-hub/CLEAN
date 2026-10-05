@@ -3,7 +3,6 @@ import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import CalendarGrid from "./CalendarGrid";
-import AvailabilityHeader from "./AvailabilityHeader";
 import WelcomeBubble from "./WelcomeBubble";
 import { declineExpiredRequests } from "@/lib/expireRequests";
 import type { CleanerAvailability, CleanerWeeklyAvailability, BookingWithCustomer } from "@/types/database";
@@ -72,14 +71,16 @@ export default async function AvailabilityPage() {
   const firstName = (profile?.full_name ?? "").trim().split(" ")[0] ?? "";
 
   return (
-    <div className="-mt-2 -mx-4 px-0 md:mx-0 flex flex-col min-h-screen">
-      <AvailabilityHeader />
+    // A fixed-height column (the viewport minus the header), so the whole month and
+    // its key fit on screen with no scrolling.
+    <div className="-mx-2 md:mx-0 flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+      <div className="shrink-0">
+        <Suspense fallback={null}>
+          <WelcomeBubble name={firstName} />
+        </Suspense>
+      </div>
 
-      <Suspense fallback={null}>
-        <WelcomeBubble name={firstName} />
-      </Suspense>
-
-      <div className="flex flex-col flex-1 w-full md:w-[45vw] md:mx-auto px-0 md:px-0">
+      <div className="flex flex-col flex-1 min-h-0 w-full md:w-[45vw] md:mx-auto">
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />
       </div>
     </div>

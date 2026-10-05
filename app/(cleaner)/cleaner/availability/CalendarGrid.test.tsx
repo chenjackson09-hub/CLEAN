@@ -36,8 +36,7 @@ beforeEach(() => {
 })
 
 const openDay = async (n: number) => {
-  // the day cell is the button whose text starts with the day number
-  const cell = screen.getAllByRole('button').find((b) => b.textContent?.startsWith(String(n)) && b.className.includes('min-h-[90px]'))!
+  const cell = document.querySelector(`[data-date="2026-10-${String(n).padStart(2, '0')}"]`) as HTMLElement
   await userEvent.click(cell)
 }
 
@@ -121,6 +120,17 @@ describe('CalendarGrid slot editing', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
     await waitFor(() => expect(mockDelete).toHaveBeenCalledWith('s1'))
+  })
+
+  it('lays the month out to fit the screen: rows share the height, no fixed 90px cells', () => {
+    render(<CalendarGrid slots={[]} weeklySlots={[]} bookings={[]} pendingBookings={[]} />)
+    const cell = document.querySelector('[data-date="2026-10-15"]') as HTMLElement
+    expect(cell.className).toContain('min-h-0')
+    expect(cell.className).not.toContain('min-h-[90px]')
+    const grid = cell.parentElement!.parentElement as HTMLElement
+    expect(grid.style.gridTemplateRows).toMatch(/repeat\(5, minmax\(0, 1fr\)\)/)
+    // the key is part of the same screen
+    expect(screen.getByText('Free to work')).toBeInTheDocument()
   })
 
   it('has no red delete X on the card any more', async () => {
