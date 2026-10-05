@@ -80,10 +80,10 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
   const later = confirmed.filter(b => daysBetween(todayStr, b.scheduled_date) > 1)
 
   return (
-    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('home.greeting', { name: firstName })}</h1>
+    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4 flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4 shrink-0">{t('home.greeting', { name: firstName })}</h1>
 
-      <ScheduleBox title={t('home.confirmed')} count={later.length} empty={t('home.noConfirmed')}>
+      <ScheduleBox maxH="max-h-[18vh]" title={t('home.confirmed')} count={later.length} empty={t('home.noConfirmed')}>
         {later.map(b => (
           <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} title={titleOf(b)} subtitle={b.scheduled_start.slice(0, 5)} />
         ))}
@@ -102,7 +102,7 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
         ))}
       </NextUpStrip>
 
-      <ScheduleBox title={t('home.pending')} count={pending.length} empty={t('home.noPending')}>
+      <ScheduleBox maxH="max-h-[12vh]" title={t('home.pending')} count={pending.length} empty={t('home.noPending')}>
         {pending.map(b => {
           const requested =
             b.daysAgo <= 0 ? t('home.requestedToday') : b.daysAgo === 1 ? t('home.requestedYesterday') : t('home.requestedDaysAgo', { n: String(b.daysAgo) })
@@ -120,7 +120,7 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
         })}
       </ScheduleBox>
 
-      <ScheduleBox title={t('home.past')} count={past.length} empty={t('home.noPast')}>
+      <ScheduleBox fill title={t('home.past')} count={past.length} empty={t('home.noPast')}>
         {past.map(b => (
           <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} faded title={b.cleaner_name} subtitle={areaOf(b)} />
         ))}

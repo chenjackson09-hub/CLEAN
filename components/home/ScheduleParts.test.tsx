@@ -36,8 +36,20 @@ describe('ScheduleBox', () => {
     )
     const scroller = container.querySelector('.overflow-y-auto')
     expect(scroller).not.toBeNull()
-    expect(scroller!.className).toMatch(/max-h-\[26vh\]/)
+    expect(scroller!.className).toMatch(/max-h-\[20vh\]/)
     expect(screen.getByText('3')).toBeInTheDocument()
+  })
+
+  it('the fill variant takes the remaining screen height instead of a fixed cap, and still scrolls inside', () => {
+    const { container } = render(
+      <ScheduleBox fill title="Past cleans" count={3} empty="none">
+        <div>a</div>
+      </ScheduleBox>,
+    )
+    const scroller = container.querySelector('.overflow-y-auto')!
+    expect(scroller.className).toContain('min-h-0')
+    expect(scroller.className).not.toMatch(/max-h-/)
+    expect(container.querySelector('section')!.className).toContain('flex-col')
   })
 
   it('shows the empty message when there is nothing', () => {

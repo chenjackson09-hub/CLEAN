@@ -25,7 +25,7 @@ export default function DashboardGreeting({ name }: { name: string }) {
         : t("dash_good_evening");
 
   return (
-    <div className="pt-4 mb-4">
+    <div className="pt-4 mb-4 shrink-0">
       <p className="text-base text-gray-400">{greetingWord ? `${greetingWord},` : greetingWord}</p>
       <h1 className="text-2xl font-bold text-black mt-0.5 truncate">{name}</h1>
     </div>

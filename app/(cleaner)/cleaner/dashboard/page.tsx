@@ -156,7 +156,9 @@ export default async function CleanerDashboardPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    // A fixed-height column (the viewport minus the header) so only the Past
+    // cleans box flexes and scrolls — the page itself doesn't scroll.
+    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
       <RealtimeBookings cleanerId={user.id} />
       <DashboardLists
         name={profile?.full_name ?? user.email ?? ""}

@@ -84,26 +84,33 @@ export function ScheduleRow({
 }
 
 // A titled box that scrolls inside itself, so a long list never pushes the next
-// section off screen. Only grows to its content when there's little to show.
+// section off screen. By default it's capped (`maxH`, ~20% of the screen) and
+// shrinks to its content when short. With `fill` it's the flexible one: it takes
+// whatever height the page has left (the page is a fixed-height column) down to
+// the bottom of the screen, never grows past its content, and scrolls inside.
 export function ScheduleBox({
   title,
   count,
   empty,
+  fill = false,
+  maxH = "max-h-[20vh]",
   children,
 }: {
   title: string;
   count: number;
   empty: string;
+  fill?: boolean;
+  maxH?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="mb-4">
-      <h2 className="flex items-center gap-2 px-1 mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+    <section className={`mb-4 ${fill ? "flex flex-col min-h-0" : "shrink-0"}`}>
+      <h2 className="shrink-0 flex items-center gap-2 px-1 mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
         {title}
         {count > 0 && <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] text-gray-600 normal-case">{count}</span>}
       </h2>
       {count > 0 ? (
-        <div className="max-h-[26vh] overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-sm divide-y divide-gray-100">
+        <div className={`${fill ? "min-h-0" : maxH} overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-sm divide-y divide-gray-100`}>
           {children}
         </div>
       ) : (
@@ -118,7 +125,7 @@ export function ScheduleBox({
 export function NextUpStrip({ title, count, children }: { title: string; count: number; children: ReactNode }) {
   if (count === 0) return null;
   return (
-    <section className="mb-4">
+    <section className="mb-4 shrink-0">
       <h2 className="px-1 mb-1.5 text-xs font-semibold text-blue-700 uppercase tracking-wide">{title}</h2>
       <div className="rounded-2xl border border-blue-200 bg-blue-50 divide-y divide-blue-100">{children}</div>
     </section>

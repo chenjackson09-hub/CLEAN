@@ -49,7 +49,7 @@ export default function DashboardLists({
     <>
       <DashboardGreeting name={name} />
 
-      <div className="relative mb-5">
+      <div className="relative mb-5 shrink-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-5 h-5 absolute top-1/2 -translate-y-1/2 start-3.5 text-gray-400 pointer-events-none"
@@ -86,7 +86,7 @@ export default function DashboardLists({
         ))}
       </NextUpStrip>
 
-      <ScheduleBox title={t("dash_past")} count={filteredPast.length} empty={query ? noResults : t("dash_no_past")}>
+      <ScheduleBox fill title={t("dash_past")} count={filteredPast.length} empty={query ? noResults : t("dash_no_past")}>
         {filteredPast.map((b) => (
           <PastCleanRow key={b.id} booking={b} todayStr={todayStr} hourlyRate={hourlyRate} />
         ))}
