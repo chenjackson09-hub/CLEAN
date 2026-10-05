@@ -80,7 +80,7 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
   const later = confirmed.filter(b => daysBetween(todayStr, b.scheduled_date) > 1)
 
   return (
-    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-2">
+    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('home.greeting', { name: firstName })}</h1>
 
       <ScheduleBox title={t('home.confirmed')} count={later.length} empty={t('home.noConfirmed')}>
