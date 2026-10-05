@@ -46,3 +46,8 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
   notFound: jest.fn(),
 }))
+
+// lib/resend.ts builds `new Resend(process.env.RESEND_API_KEY)` at import time and throws when
+// the key is empty (as in a dev .env.local), which took down every suite importing the
+// booking/chat/profile component chain. Tests never send mail, so any non-empty value works.
+if (!process.env.RESEND_API_KEY) process.env.RESEND_API_KEY = "re_test_dummy_key"

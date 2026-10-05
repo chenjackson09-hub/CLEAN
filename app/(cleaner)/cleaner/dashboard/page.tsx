@@ -3,7 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import RealtimeBookings from "./RealtimeBookings";
-import DashboardGreeting from "./DashboardGreeting";
 import DashboardLists from "./DashboardLists";
 import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
@@ -159,9 +158,13 @@ export default async function CleanerDashboardPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <RealtimeBookings cleanerId={user.id} />
-      <DashboardGreeting name={profile?.full_name ?? user.email ?? ""} />
-
-      <DashboardLists upcoming={upcomingWithHome} past={pastWithHome} hourlyRate={hourlyRate} />
+      <DashboardLists
+        name={profile?.full_name ?? user.email ?? ""}
+        todayStr={todayStr}
+        upcoming={upcomingWithHome}
+        past={pastWithHome}
+        hourlyRate={hourlyRate}
+      />
     </div>
   );
 }

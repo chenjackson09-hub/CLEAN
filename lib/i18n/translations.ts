@@ -298,6 +298,7 @@ const translations = {
     home: {
       greeting: 'Hello, {name}',
       confirmed: 'Confirmed',
+      todayTomorrow: 'Today & tomorrow',
       pending: 'Pending',
       past: 'Past cleans',
       noConfirmed: 'No confirmed cleans yet.',
@@ -307,12 +308,6 @@ const translations = {
       requestedToday: 'requested today',
       requestedYesterday: 'requested yesterday',
       requestedDaysAgo: 'requested {n} days ago',
-      badgeConfirmed: 'Confirmed',
-      badgePending: 'Pending',
-      badgeDone: 'Done',
-      today: 'today',
-      tomorrow: 'tomorrow',
-      inDays: 'in {n} days',
     },
     scheduleCard: {
       bookedWith: 'Booked with {name}',
@@ -1132,6 +1127,7 @@ const translations = {
     home: {
       greeting: 'שלום, {name}',
       confirmed: 'מאושרים',
+      todayTomorrow: 'היום ומחר',
       pending: 'ממתינים',
       past: 'ניקיונות קודמים',
       noConfirmed: 'אין ניקיונות מאושרים עדיין.',
@@ -1141,12 +1137,6 @@ const translations = {
       requestedToday: 'התבקש היום',
       requestedYesterday: 'התבקש אתמול',
       requestedDaysAgo: 'התבקש לפני {n} ימים',
-      badgeConfirmed: 'מאושר',
-      badgePending: 'ממתין',
-      badgeDone: 'הושלם',
-      today: 'היום',
-      tomorrow: 'מחר',
-      inDays: 'בעוד {n} ימים',
     },
     scheduleCard: {
       bookedWith: 'הוזמן עם {name}',

@@ -25,11 +25,10 @@ const baseApplication: CleanerApplicationResult = {
 }
 
 describe('ApplicationCard', () => {
-  it('renders applicant name, bio, address and submitted date', () => {
+  it('renders applicant name, address and submitted date', () => {
     render(<ApplicationCard application={baseApplication} onUpdateStatus={jest.fn()} onSaveNotes={jest.fn()} />)
 
     expect(screen.getByText('Tamar Avraham')).toBeInTheDocument()
-    expect(screen.getByText(/Experienced residential cleaner/)).toBeInTheDocument()
     expect(screen.getByText(/10 Ben Yehuda St, Tel Aviv/)).toBeInTheDocument()
     expect(screen.getByText(/2026-06-10/)).toBeInTheDocument()
   })

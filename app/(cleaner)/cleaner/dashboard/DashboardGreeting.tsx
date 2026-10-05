@@ -8,7 +8,7 @@ import { useLang } from "@/context/LangContext";
 // dashboard's DashboardGreeting.tsx. The name itself is known server-side and
 // renders immediately; only the greeting word waits for mount, defaulting to
 // a non-breaking space so the layout doesn't jump once it resolves.
-export default function DashboardGreeting({ name }: { name: string }) {
+export default function DashboardGreeting({ name, trailing }: { name: string; trailing?: React.ReactNode }) {
   const { t } = useLang();
   const [now, setNow] = useState<Date | null>(null);
 
@@ -25,9 +25,12 @@ export default function DashboardGreeting({ name }: { name: string }) {
         : t("dash_good_evening");
 
   return (
-    <div className="mb-6">
-      <p className="text-lg text-gray-400">{greetingWord}</p>
-      <h1 className="text-3xl font-bold text-black mt-0.5">{name}</h1>
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-base text-gray-400">{greetingWord}</p>
+        <h1 className="text-2xl font-bold text-black mt-0.5 truncate">{name}</h1>
+      </div>
+      {trailing}
     </div>
   );
 }

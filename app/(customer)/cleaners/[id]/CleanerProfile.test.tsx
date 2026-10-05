@@ -29,8 +29,9 @@ describe('CleanerProfile', () => {
 
   it('renders the hourly rate, experience, distance and area', () => {
     render(<CleanerProfile cleaner={cleaner} />)
-    // The rate shows in both the booking form and the stats block.
-    expect(screen.getAllByText('₪80/hr').length).toBeGreaterThan(0)
+    // The price badge: the amount and the "/hr" unit are separate lines.
+    expect(screen.getByText('₪80')).toBeInTheDocument()
+    expect(screen.getByText('/hr')).toBeInTheDocument()
     expect(screen.getByText(/5 years/i)).toBeInTheDocument()
     expect(screen.getByText(/2\.1 km/i)).toBeInTheDocument()
     expect(screen.getByText(/Tel Aviv/i)).toBeInTheDocument()
@@ -49,9 +50,15 @@ describe('CleanerProfile', () => {
     expect(screen.getByText('HE')).toBeInTheDocument()
   })
 
-  it('renders a Request Booking button', () => {
-    render(<CleanerProfile cleaner={cleaner} />)
+  it('renders a Request Booking button when arriving from a dated search', () => {
+    render(<CleanerProfile cleaner={cleaner} presetDate="2026-06-15" />)
     expect(screen.getByRole('button', { name: /request booking/i })).toBeInTheDocument()
+  })
+
+  it('without a dated search shows a "find cleaners" prompt instead of the booking form', () => {
+    render(<CleanerProfile cleaner={cleaner} />)
+    expect(screen.queryByRole('button', { name: /request booking/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /find cleaners/i })).toBeInTheDocument()
   })
 
   it('does not render a back to search button — the nav bar\'s Schedule link is the way back', () => {
