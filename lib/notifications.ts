@@ -8,7 +8,9 @@ export type NotificationKind =
   | 'request_declined' // host
   | 'request_expired' // host: the cleaner never answered in 24h
   | 'request_cancelled_by_host' // cleaner: a pending request was cancelled
-  | 'request_cancelled_by_host' // cleaner: a pending request was cancelled
+  | 'request_expiring' // cleaner: a pending request is about to lapse
+  | 'clean_tomorrow' // either: reminder the day before a matched clean
+  | 'chat_message' // either: new chat message(s), grouped per conversation
   | 'request_taken' // cleaner: the host got matched with someone else
   | 'request_cleaner_unavailable' // host: cleaner deleted the slot it relied on
   | 'availability_changed' // host: cleaner changed their hours — still relevant?
@@ -68,5 +70,35 @@ export async function profileNames(admin: SupabaseClient, ids: string[]): Promis
     return new Map((data ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? '']))
   } catch {
     return new Map()
+  }
+}
+
+// A new chat message. Grouped per conversation: while the recipient hasn't read
+// the earlier one, it is replaced by a single entry with a running count ("sent
+// you 3 messages") instead of flooding the bell. Best-effort, never throws.
+export async function notifyChatMessage(
+  admin: SupabaseClient,
+  input: { recipientId: string; senderId: string; conversationId: string; name: string; href: string },
+): Promise<void> {
+  try {
+    const { data: existing } = await admin
+      .from('notifications')
+      .select('id, data')
+      .eq('user_id', input.recipientId)
+      .eq('kind', 'chat_message')
+      .is('read_at', null)
+      .contains('data', { conversation: input.conversationId })
+      .limit(1)
+    const previous = Number((existing?.[0]?.data as { count?: number } | undefined)?.count ?? 0)
+    if (existing && existing.length > 0) await admin.from('notifications').delete().eq('id', existing[0].id)
+    await notify(admin, {
+      userId: input.recipientId,
+      kind: 'chat_message',
+      actorId: input.senderId,
+      data: { name: input.name, conversation: input.conversationId, count: previous + 1 },
+      href: input.href,
+    })
+  } catch (e) {
+    console.error('notifyChatMessage: failed', e)
   }
 }

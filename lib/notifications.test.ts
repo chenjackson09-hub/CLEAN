@@ -1,4 +1,4 @@
-import { notify, profileNames } from './notifications'
+import { notify, notifyChatMessage, profileNames } from './notifications'
 
 function fakeAdmin(result: { error: { message: string } | null } = { error: null }, profiles: unknown[] = []) {
   const upsert = jest.fn(() => Promise.resolve(result))
@@ -45,5 +45,33 @@ describe('profileNames', () => {
     const admin = fakeAdmin({ error: null }, [{ id: 'a', full_name: 'Noa Rosen' }])
     expect((await profileNames(admin as never, ['a', 'a', ''])).get('a')).toBe('Noa Rosen')
     expect((await profileNames(admin as never, [])).size).toBe(0)
+  })
+})
+
+describe('notifyChatMessage', () => {
+  function chatAdmin(existing: { id: string; data: { count: number } }[]) {
+    const upsert = jest.fn(() => Promise.resolve({ error: null }))
+    const del = jest.fn(() => ({ eq: () => Promise.resolve({}) }))
+    const chain: Record<string, unknown> = {}
+    for (const m of ['select', 'eq', 'is', 'contains']) chain[m] = () => chain
+    chain.limit = () => Promise.resolve({ data: existing })
+    return { upsert, del, admin: { from: () => ({ ...chain, upsert, delete: del }) } }
+  }
+  const input = { recipientId: 'host', senderId: 'cl', conversationId: 'c1', name: 'Noa R.', href: '/chat/cl' }
+
+  it('creates a first entry with count 1', async () => {
+    const { admin, upsert, del } = chatAdmin([])
+    await notifyChatMessage(admin as never, input)
+    expect(del).not.toHaveBeenCalled()
+    const [rows] = upsert.mock.calls[0] as unknown as [Record<string, unknown>[]]
+    expect(rows[0]).toMatchObject({ user_id: 'host', kind: 'chat_message', data: { conversation: 'c1', count: 1 }, dedupe_key: null })
+  })
+
+  it('replaces an unread entry with a running count instead of adding another', async () => {
+    const { admin, upsert, del } = chatAdmin([{ id: 'old', data: { count: 2 } }])
+    await notifyChatMessage(admin as never, input)
+    expect(del).toHaveBeenCalled()
+    const [rows] = upsert.mock.calls[0] as unknown as [Record<string, unknown>[]]
+    expect(rows[0]).toMatchObject({ data: { count: 3 } })
   })
 })

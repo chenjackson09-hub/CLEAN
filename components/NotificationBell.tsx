@@ -100,6 +100,11 @@ export default function NotificationBell({
     void load();
   }, [load]);
 
+  const refreshCount = useCallback(async () => {
+    const { count } = await createClient().from("notifications").select("id", { count: "exact", head: true }).is("read_at", null);
+    setUnread(count ?? 0);
+  }, []);
+
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -109,15 +114,35 @@ export default function NotificationBell({
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
         (payload) => {
           const n = payload.new as Item;
-          setItems((prev) => (prev.some((i) => i.id === n.id) ? prev : [n, ...prev]));
-          if (!n.read_at) setUnread((u) => u + 1);
+          setItems((prev) => {
+            if (prev.some((i) => i.id === n.id)) return prev;
+            // A grouped chat entry replaces the earlier one for the same conversation.
+            const rest =
+              n.kind === "chat_message"
+                ? prev.filter((i) => !(i.kind === "chat_message" && !i.read_at && i.data?.conversation === n.data?.conversation))
+                : prev;
+            return [n, ...rest];
+          });
+          // A grouped chat entry may replace an unread one, so recount; others just add one.
+          if (n.kind === "chat_message") void refreshCount();
+          else if (!n.read_at) setUnread((u) => u + 1);
+        }
+      )
+      // Rows read elsewhere (e.g. opening a chat marks its message entry read).
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const n = payload.new as Item;
+          setItems((prev) => prev.map((i) => (i.id === n.id ? { ...i, read_at: n.read_at } : i)));
+          void refreshCount();
         }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, refreshCount]);
 
   async function markAllRead() {
     const now = new Date().toISOString();

@@ -147,6 +147,15 @@ export default function ChatView({
   const stickToBottom = useRef(true);
 
   useEffect(() => setMounted(true), []);
+  // Being in the chat means its message notification has been seen.
+  useEffect(() => {
+    void createClient()
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("kind", "chat_message")
+      .is("read_at", null)
+      .contains("data", { conversation: conversationId });
+  }, [conversationId]);
   useEffect(() => {
     try {
       setHideDates(localStorage.getItem("chatHideDates") === "1");

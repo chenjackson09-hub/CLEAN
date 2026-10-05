@@ -5,6 +5,7 @@ import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import CustomerNav from "./CustomerNav";
 import RealtimeCustomerBookings from "./RealtimeCustomerBookings";
 import HelpWidget from "@/components/HelpWidget";
+import { sendReminders } from "@/lib/reminders";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()])
@@ -21,6 +22,8 @@ export default async function CustomerLayout({ children }: { children: React.Rea
   // straight to the exact profile a customer sees, so this defense-in-depth check
   // (mirroring admin/layout.tsx's own) has to allow that role through too.
   if (!profile || (profile.role !== "customer" && profile.role !== "admin")) redirect("/login")
+
+  if (profile.role === "customer") await sendReminders(user.id, "host")
 
   // Count bookings a cleaner accepted since the customer last opened /bookings,
   // to show a red badge on the Bookings nav item (cleared on visit).

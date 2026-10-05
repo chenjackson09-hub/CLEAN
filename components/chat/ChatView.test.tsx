@@ -10,7 +10,10 @@ jest.mock('@/lib/actions/chat', () => ({
 }))
 jest.mock('@/lib/supabase/client', () => {
   const channel = { on: () => channel, subscribe: () => channel }
-  return { createClient: () => ({ channel: () => channel, removeChannel: jest.fn() }) }
+  const q: Record<string, unknown> = {}
+  for (const m of ['update', 'eq', 'is', 'contains']) q[m] = () => q
+  q.then = (r: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(r)
+  return { createClient: () => ({ channel: () => channel, removeChannel: jest.fn(), from: () => q }) }
 })
 
 const upcoming: ChatBookingCard = {

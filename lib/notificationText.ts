@@ -8,7 +8,7 @@ type Lang = 'en' | 'he'
 // One short sentence per kind. {name} is the other person (hosts see cleaners as
 // "First L."), {date} a localized "17 June", {time} "HH:MM", {times} the new
 // availability, {score} the star rating. Gender-neutral Hebrew on purpose.
-const TEXT: Record<NotificationKind, Record<Lang, string>> = {
+const TEXT: Record<NotificationKind | 'chat_messages', Record<Lang, string>> = {
   request_received: { en: '{name} requested a clean on {date} at {time}', he: '{name} ביקש/ה ניקיון ב-{date} בשעה {time}' },
   request_accepted: { en: '{name} accepted your request for {date}', he: '{name} אישר/ה את הבקשה שלך ל-{date}' },
   request_declined: { en: '{name} declined your request for {date}', he: '{name} דחה/תה את הבקשה שלך ל-{date}' },
@@ -22,12 +22,17 @@ const TEXT: Record<NotificationKind, Record<Lang, string>> = {
   booking_cancelled_by_cleaner: { en: '{name} cancelled the clean on {date}', he: '{name} ביטל/ה את הניקיון ב-{date}' },
   clean_completed: { en: 'Your clean with {name} is complete — tap to rate', he: 'הניקיון עם {name} הושלם — הקישו כדי לדרג' },
   rating_received: { en: '{name} rated you {score}★', he: '{name} דירג/ה אותך {score}★' },
+  request_expiring: { en: '{name}’s request for {date} is about to expire — answer it before it closes', he: 'הבקשה של {name} ל-{date} עומדת לפוג — כדאי להשיב לפני שהיא נסגרת' },
+  clean_tomorrow: { en: 'Reminder: your clean with {name} is tomorrow at {time}', he: 'תזכורת: הניקיון שלך עם {name} מחר בשעה {time}' },
+  chat_message: { en: '{name} sent you a message', he: '{name} שלח/ה לך הודעה' },
+  chat_messages: { en: '{name} sent you {count} messages', he: '{name} שלח/ה לך {count} הודעות' },
   account_approved: { en: 'You’re approved — welcome to Clean!', he: 'אושרת — ברוכים הבאים ל-Clean!' },
   account_rejected: { en: 'Your account wasn’t approved', he: 'החשבון שלך לא אושר' },
 }
 
 export function describeNotification(kind: string, data: NotificationData, lang: Lang): string {
-  const template = TEXT[kind as NotificationKind]?.[lang]
+  const key = kind === 'chat_message' && Number(data.count) > 1 ? 'chat_messages' : kind
+  const template = TEXT[key as NotificationKind | 'chat_messages']?.[lang]
   if (!template) return ''
   const date = typeof data.date === 'string' && data.date ? formatBookingDate(data.date, lang) : ''
   const values: Record<string, string> = {
@@ -36,6 +41,7 @@ export function describeNotification(kind: string, data: NotificationData, lang:
     time: String(data.time ?? ''),
     times: String(data.times ?? ''),
     score: String(data.score ?? ''),
+    count: String(data.count ?? ''),
   }
   return Object.entries(values).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), template)
 }

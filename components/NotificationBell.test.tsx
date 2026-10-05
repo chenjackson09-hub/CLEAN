@@ -31,6 +31,7 @@ function query(source: typeof rows) {
 }
 const updates: { patch: Record<string, unknown>; filter: string }[] = []
 let insertHandler: ((p: { new: unknown }) => void) | null = null
+let updateHandler: ((p: { new: unknown }) => void) | null = null
 
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
@@ -43,7 +44,7 @@ jest.mock('@/lib/supabase/client', () => ({
       }),
     }),
     channel: () => {
-      const ch = { on: (_e: string, _f: unknown, cb: (p: { new: unknown }) => void) => { insertHandler = cb; return ch }, subscribe: () => ch }
+      const ch = { on: (_e: string, f: { event: string }, cb: (p: { new: unknown }) => void) => { if (f.event === 'UPDATE') updateHandler = cb; else insertHandler = cb; return ch }, subscribe: () => ch }
       return ch
     },
     removeChannel: jest.fn(),

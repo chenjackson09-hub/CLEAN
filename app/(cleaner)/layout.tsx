@@ -3,6 +3,7 @@ import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { signOut } from "../(auth)/actions";
 import { declineExpiredRequests } from "@/lib/expireRequests";
+import { sendReminders } from "@/lib/reminders";
 import NavLinks from "./NavLinks";
 import { StatusBadge } from "./StatusBadge";
 import HelpWidget from "@/components/HelpWidget";
@@ -20,6 +21,7 @@ export default async function CleanerLayout({
 
   // Resolve any requests that expired without a response before counting.
   await declineExpiredRequests(user.id);
+  await sendReminders(user.id, "cleaner");
 
   const [{ data: profile }, { count: pendingCount }] = await Promise.all([
     supabase

@@ -38,3 +38,14 @@ describe('relativeTime', () => {
     expect(relativeTime('2026-10-01T12:00:00Z', now, 'en')).toBe('4d')
   })
 })
+
+describe('chat and reminder notifications', () => {
+  it('groups chat messages into a count', () => {
+    expect(describeNotification('chat_message', { name: 'Noa R.', count: 1 }, 'en')).toBe('Noa R. sent you a message')
+    expect(describeNotification('chat_message', { name: 'Noa R.', count: 3 }, 'en')).toBe('Noa R. sent you 3 messages')
+  })
+  it('describes the clean-tomorrow and expiring reminders', () => {
+    expect(describeNotification('clean_tomorrow', { name: 'Noa R.', time: '09:00' }, 'en')).toBe('Reminder: your clean with Noa R. is tomorrow at 09:00')
+    expect(describeNotification('request_expiring', { name: 'Host One', date: '2026-10-20' }, 'en')).toContain('about to expire')
+  })
+})
