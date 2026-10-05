@@ -37,6 +37,8 @@ const STRINGS = {
     empty: "You're matched! Say hello.",
     failed: "Not sent. Tap to retry.",
     sending: "Sending…",
+    showDates: "Show dates",
+    hideDates: "Hide dates",
     expand: "Show details",
     collapse: "Hide details",
   },
@@ -58,6 +60,8 @@ const STRINGS = {
     empty: "יש התאמה! אפשר להגיד שלום.",
     failed: "לא נשלחה. הקישו לניסיון חוזר.",
     sending: "שולח…",
+    showDates: "הצגת תאריכים",
+    hideDates: "הסתרת תאריכים",
     expand: "הצגת פרטים",
     collapse: "הסתרת פרטים",
   },
@@ -136,11 +140,29 @@ export default function ChatView({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [draft, setDraft] = useState("");
   const [mounted, setMounted] = useState(false);
+  // A per-viewer preference: hide the date dividers so the thread reads like a plain conversation.
+  const [hideDates, setHideDates] = useState(false);
   const [loadingOlder, startLoadingOlder] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    try {
+      setHideDates(localStorage.getItem("chatHideDates") === "1");
+    } catch {
+      /* storage unavailable — keep the default */
+    }
+  }, []);
+  const toggleDates = () =>
+    setHideDates((prev) => {
+      try {
+        localStorage.setItem("chatHideDates", prev ? "0" : "1");
+      } catch {
+        /* ignore */
+      }
+      return !prev;
+    });
 
   // Server re-renders (router.refresh after a booking change / reconnect)
   // hand us fresh rows; merge them in rather than replacing local state.
@@ -273,6 +295,22 @@ export default function ChatView({
           <p className="font-semibold text-gray-900 truncate">{other.displayName}</p>
           <p className="text-sm text-green-700">{subtitle}</p>
         </div>
+        <button
+          type="button"
+          onClick={toggleDates}
+          aria-pressed={hideDates}
+          aria-label={hideDates ? s.showDates : s.hideDates}
+          title={hideDates ? s.showDates : s.hideDates}
+          className={`ms-auto shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+            hideDates ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="9" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
+            {hideDates && <path strokeLinecap="round" d="M5 5l14 14" />}
+          </svg>
+        </button>
       </header>
 
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 [&>*]:shrink-0">
@@ -289,6 +327,7 @@ export default function ChatView({
         {timeline.length === 0 && <p className="text-center text-sm text-gray-400 my-auto">{s.empty}</p>}
         {timeline.map((item) => {
           if (item.kind === "divider") {
+            if (hideDates) return null;
             return (
               <p key={item.key} className="text-center text-xs text-gray-400 my-1">
                 — {formatDividerLabel(item.date, now, lang)} —

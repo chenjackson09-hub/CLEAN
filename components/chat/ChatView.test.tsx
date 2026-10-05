@@ -82,6 +82,18 @@ describe('ChatView', () => {
     expect(screen.getByText('Matched host')).toBeInTheDocument()
   })
 
+  it('hides the date dividers with the header switch, and remembers the choice', async () => {
+    localStorage.clear()
+    renderChat()
+    expect(screen.getAllByText(/^—.*—$/).length).toBeGreaterThan(0)
+    await userEvent.click(screen.getByRole('button', { name: 'Hide dates' }))
+    expect(screen.queryAllByText(/^—.*—$/)).toHaveLength(0)
+    expect(screen.getByText('Entry code?')).toBeInTheDocument()
+    expect(localStorage.getItem('chatHideDates')).toBe('1')
+    await userEvent.click(screen.getByRole('button', { name: 'Show dates' }))
+    expect(screen.getAllByText(/^—.*—$/).length).toBeGreaterThan(0)
+  })
+
   it('sends a message, clears the input, and ignores empty submits', async () => {
     mockSend.mockImplementation(async (_c: string, body: string, clientId: string) => ({
       message: { id: 'm3', sender_id: 'host-1', body, created_at: '2026-06-14T13:00:00Z', client_id: clientId },
