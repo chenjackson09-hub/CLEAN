@@ -85,16 +85,18 @@ describe('ChatView', () => {
     expect(screen.getByText('Matched host')).toBeInTheDocument()
   })
 
-  it('hides the date dividers with the header switch, and remembers the choice', async () => {
+  it('hides the booking summaries with the header switch (dates stay), and remembers the choice', async () => {
     localStorage.clear()
     renderChat()
-    expect(screen.getAllByText(/^—.*—$/).length).toBeGreaterThan(0)
-    await userEvent.click(screen.getByRole('button', { name: 'Hide dates' }))
-    expect(screen.queryAllByText(/^—.*—$/)).toHaveLength(0)
+    expect(screen.getByText(/Upcoming Clean/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Hide booking summaries' }))
+    expect(screen.queryByText(/Upcoming Clean/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Clean Completed/)).not.toBeInTheDocument()
     expect(screen.getByText('Entry code?')).toBeInTheDocument()
-    expect(localStorage.getItem('chatHideDates')).toBe('1')
-    await userEvent.click(screen.getByRole('button', { name: 'Show dates' }))
-    expect(screen.getAllByText(/^—.*—$/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/^—.*—$/).length).toBeGreaterThan(0) // the message's day divider stays
+    expect(localStorage.getItem('chatHideBookings')).toBe('1')
+    await userEvent.click(screen.getByRole('button', { name: 'Show booking summaries' }))
+    expect(screen.getByText(/Upcoming Clean/)).toBeInTheDocument()
   })
 
   it('sends a message, clears the input, and ignores empty submits', async () => {

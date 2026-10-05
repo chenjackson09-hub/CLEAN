@@ -37,8 +37,8 @@ const STRINGS = {
     empty: "You're matched! Say hello.",
     failed: "Not sent. Tap to retry.",
     sending: "Sending…",
-    showDates: "Show dates",
-    hideDates: "Hide dates",
+    showBookings: "Show booking summaries",
+    hideBookings: "Hide booking summaries",
     expand: "Show details",
     collapse: "Hide details",
   },
@@ -60,8 +60,8 @@ const STRINGS = {
     empty: "יש התאמה! אפשר להגיד שלום.",
     failed: "לא נשלחה. הקישו לניסיון חוזר.",
     sending: "שולח…",
-    showDates: "הצגת תאריכים",
-    hideDates: "הסתרת תאריכים",
+    showBookings: "הצגת סיכומי הזמנות",
+    hideBookings: "הסתרת סיכומי הזמנות",
     expand: "הצגת פרטים",
     collapse: "הסתרת פרטים",
   },
@@ -140,8 +140,8 @@ export default function ChatView({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [draft, setDraft] = useState("");
   const [mounted, setMounted] = useState(false);
-  // A per-viewer preference: hide the date dividers so the thread reads like a plain conversation.
-  const [hideDates, setHideDates] = useState(false);
+  // A per-viewer preference: hide the small booking summaries so the thread reads like a plain conversation.
+  const [hideBookings, setHideBookings] = useState(false);
   const [loadingOlder, startLoadingOlder] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
@@ -158,15 +158,15 @@ export default function ChatView({
   }, [conversationId]);
   useEffect(() => {
     try {
-      setHideDates(localStorage.getItem("chatHideDates") === "1");
+      setHideBookings(localStorage.getItem("chatHideBookings") === "1");
     } catch {
       /* storage unavailable — keep the default */
     }
   }, []);
-  const toggleDates = () =>
-    setHideDates((prev) => {
+  const toggleBookings = () =>
+    setHideBookings((prev) => {
       try {
-        localStorage.setItem("chatHideDates", prev ? "0" : "1");
+        localStorage.setItem("chatHideBookings", prev ? "0" : "1");
       } catch {
         /* ignore */
       }
@@ -220,7 +220,14 @@ export default function ChatView({
     };
   }, [conversationId, currentUserId, currentUserRole, router]);
 
-  const timeline = useMemo(() => buildTimeline(messages, cards, mounted), [messages, cards, mounted]);
+  const fullTimeline = useMemo(() => buildTimeline(messages, cards, mounted), [messages, cards, mounted]);
+  // Without the booking summaries, a date divider that only introduced a summary
+  // would be left hanging — keep a divider only when a message follows it.
+  const timeline = useMemo(() => {
+    if (!hideBookings) return fullTimeline;
+    const withoutCards = fullTimeline.filter((i) => i.kind !== "card");
+    return withoutCards.filter((item, idx) => item.kind !== "divider" || withoutCards[idx + 1]?.kind === "message");
+  }, [fullTimeline, hideBookings]);
 
   // Keep the newest message in view unless the reader scrolled up.
   useLayoutEffect(() => {
@@ -306,18 +313,18 @@ export default function ChatView({
         </div>
         <button
           type="button"
-          onClick={toggleDates}
-          aria-pressed={hideDates}
-          aria-label={hideDates ? s.showDates : s.hideDates}
-          title={hideDates ? s.showDates : s.hideDates}
+          onClick={toggleBookings}
+          aria-pressed={hideBookings}
+          aria-label={hideBookings ? s.showBookings : s.hideBookings}
+          title={hideBookings ? s.showBookings : s.hideBookings}
           className={`ms-auto shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-            hideDates ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            hideBookings ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="12" cy="12" r="9" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
-            {hideDates && <path strokeLinecap="round" d="M5 5l14 14" />}
+            <rect x="4" y="5" width="16" height="15" rx="2" />
+            <path strokeLinecap="round" d="M4 10h16M8 3v4M16 3v4" />
+            {hideBookings && <path strokeLinecap="round" d="M3 3l18 18" />}
           </svg>
         </button>
       </header>
@@ -336,7 +343,6 @@ export default function ChatView({
         {timeline.length === 0 && <p className="text-center text-sm text-gray-400 my-auto">{s.empty}</p>}
         {timeline.map((item) => {
           if (item.kind === "divider") {
-            if (hideDates) return null;
             return (
               <p key={item.key} className="text-center text-xs text-gray-400 my-1">
                 — {formatDividerLabel(item.date, now, lang)} —
