@@ -37,8 +37,6 @@ const STRINGS = {
     empty: "You're matched! Say hello.",
     failed: "Not sent. Tap to retry.",
     sending: "Sending…",
-    showBookings: "Show booking summaries",
-    hideBookings: "Hide booking summaries",
     expand: "Show details",
     collapse: "Hide details",
   },
@@ -60,8 +58,6 @@ const STRINGS = {
     empty: "יש התאמה! אפשר להגיד שלום.",
     failed: "לא נשלחה. הקישו לניסיון חוזר.",
     sending: "שולח…",
-    showBookings: "הצגת סיכומי הזמנות",
-    hideBookings: "הסתרת סיכומי הזמנות",
     expand: "הצגת פרטים",
     collapse: "הסתרת פרטים",
   },
@@ -140,8 +136,6 @@ export default function ChatView({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [draft, setDraft] = useState("");
   const [mounted, setMounted] = useState(false);
-  // A per-viewer preference: hide the small booking summaries so the thread reads like a plain conversation.
-  const [hideBookings, setHideBookings] = useState(false);
   const [loadingOlder, startLoadingOlder] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
@@ -156,22 +150,6 @@ export default function ChatView({
       .is("read_at", null)
       .contains("data", { conversation: conversationId });
   }, [conversationId]);
-  useEffect(() => {
-    try {
-      setHideBookings(localStorage.getItem("chatHideBookings") === "1");
-    } catch {
-      /* storage unavailable — keep the default */
-    }
-  }, []);
-  const toggleBookings = () =>
-    setHideBookings((prev) => {
-      try {
-        localStorage.setItem("chatHideBookings", prev ? "0" : "1");
-      } catch {
-        /* ignore */
-      }
-      return !prev;
-    });
 
   // Server re-renders (router.refresh after a booking change / reconnect)
   // hand us fresh rows; merge them in rather than replacing local state.
@@ -220,14 +198,7 @@ export default function ChatView({
     };
   }, [conversationId, currentUserId, currentUserRole, router]);
 
-  const fullTimeline = useMemo(() => buildTimeline(messages, cards, mounted), [messages, cards, mounted]);
-  // Without the booking summaries, a date divider that only introduced a summary
-  // would be left hanging — keep a divider only when a message follows it.
-  const timeline = useMemo(() => {
-    if (!hideBookings) return fullTimeline;
-    const withoutCards = fullTimeline.filter((i) => i.kind !== "card");
-    return withoutCards.filter((item, idx) => item.kind !== "divider" || withoutCards[idx + 1]?.kind === "message");
-  }, [fullTimeline, hideBookings]);
+  const timeline = useMemo(() => buildTimeline(messages, cards, mounted), [messages, cards, mounted]);
 
   // Keep the newest message in view unless the reader scrolled up.
   useLayoutEffect(() => {
@@ -311,22 +282,6 @@ export default function ChatView({
           <p className="font-semibold text-gray-900 truncate">{other.displayName}</p>
           <p className="text-sm text-green-700">{subtitle}</p>
         </div>
-        <button
-          type="button"
-          onClick={toggleBookings}
-          aria-pressed={hideBookings}
-          aria-label={hideBookings ? s.showBookings : s.hideBookings}
-          title={hideBookings ? s.showBookings : s.hideBookings}
-          className={`ms-auto shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-            hideBookings ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <rect x="4" y="5" width="16" height="15" rx="2" />
-            <path strokeLinecap="round" d="M4 10h16M8 3v4M16 3v4" />
-            {hideBookings && <path strokeLinecap="round" d="M3 3l18 18" />}
-          </svg>
-        </button>
       </header>
 
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 [&>*]:shrink-0">
