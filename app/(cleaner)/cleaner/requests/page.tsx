@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import RequestGroupRow, { type RequestGroup } from "./RequestGroupRow";
@@ -49,9 +50,16 @@ export default async function RequestsPage() {
 
   if (!pending || pending.length === 0) {
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+      <div className="max-w-md mx-auto pt-24 flex flex-col items-center text-center px-4">
         <div className="text-5xl mb-4">📬</div>
-        <p className="text-lg">{t(lang, "req_empty")}</p>
+        <p className="text-lg font-semibold text-gray-800">{t(lang, "req_empty")}</p>
+        <p className="mt-1 text-base text-gray-500">{t(lang, "req_empty_hint")}</p>
+        <Link
+          href="/cleaner/availability"
+          className="mt-5 inline-flex items-center rounded-full bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 transition-colors"
+        >
+          {t(lang, "req_empty_cta")}
+        </Link>
       </div>
     );
   }

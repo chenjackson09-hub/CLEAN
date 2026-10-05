@@ -57,7 +57,9 @@ export const translations = {
     dash_when_in: "In",
     dash_when_days: "days",
     // Requests
-    req_empty: "No booking requests yet.",
+    req_empty: "No requests at the moment.",
+    req_empty_hint: "Open more time slots to maximize your job opportunities.",
+    req_empty_cta: "Open time slots",
     req_title: "Requests",
     req_subtitle: "Respond to pending requests within 24 hours.",
     req_awaiting: "Awaiting response",
@@ -330,7 +332,9 @@ export const translations = {
     dash_when_in: "בעוד",
     dash_when_days: "ימים",
     // Requests
-    req_empty: "אין בקשות הזמנה עדיין.",
+    req_empty: "אין בקשות כרגע.",
+    req_empty_hint: "פתחו עוד משבצות זמן כדי למקסם את הזדמנויות העבודה שלכם.",
+    req_empty_cta: "פתיחת משבצות זמן",
     req_title: "בקשות",
     req_subtitle: "הגב לבקשות ממתינות תוך 24 שעות.",
     req_awaiting: "ממתין לתשובה",
