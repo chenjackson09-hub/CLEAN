@@ -46,6 +46,19 @@ describe('HelpWidget dragging', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
+  it('hides the bubble while the contact panel is open (the panel has its own close) and brings it back after', () => {
+    render(<HelpWidget />)
+    fireEvent.pointerDown(bubble(), { clientX: 10, clientY: 10, pointerId: 1 })
+    fireEvent.pointerUp(bubble(), { clientX: 10, clientY: 10, pointerId: 1 })
+    fireEvent.click(bubble())
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Need help?' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('button', { name: 'Need help?' })).toBeInTheDocument()
+  })
+
   it('never sits under the header when dragged to the very top', () => {
     render(<HelpWidget />)
     fireEvent.pointerDown(bubble(), { clientX: 300, clientY: 600, pointerId: 1 })

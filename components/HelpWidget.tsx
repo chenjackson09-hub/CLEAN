@@ -107,7 +107,6 @@ export default function HelpWidget() {
 
   function toggle() {
     if (suppressClick.current) return;
-    if (open) return reset();
     const r = btnRef.current?.getBoundingClientRect();
     if (r) setAnchor({ x: r.left, y: r.top });
     setOpen(true);
@@ -238,29 +237,25 @@ export default function HelpWidget() {
         </div>
       )}
 
-      <button
-        type="button"
-        ref={btnRef}
-        onClick={toggle}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        style={pos ? { left: pos.x, top: pos.y, touchAction: "none" } : { touchAction: "none" }}
-        aria-label={t.open}
-        aria-expanded={open}
-        className={`fixed z-30 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700 active:scale-95 active:cursor-grabbing print:hidden ${pos ? "" : "bottom-4 end-4"}`}
-      >
-        {open ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
+      {/* While the contact panel is open the bubble is hidden — the panel has its own close (X). */}
+      {!open && (
+        <button
+          type="button"
+          ref={btnRef}
+          onClick={toggle}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          style={pos ? { left: pos.x, top: pos.y, touchAction: "none" } : { touchAction: "none" }}
+          aria-label={t.open}
+          className={`fixed z-30 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700 active:scale-95 active:cursor-grabbing print:hidden ${pos ? "" : "bottom-4 end-4"}`}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-        )}
-      </button>
+        </button>
+      )}
     </>
   );
 }
