@@ -162,17 +162,6 @@ export function BookingDetailModal({
             <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
           </div>
 
-          {booking.status === 'accepted' && booking.cleaner_phone && (
-            <div className="bg-green-50 border border-green-100 rounded-xl px-5 py-4">
-              <p className="text-sm text-green-600 uppercase tracking-wide mb-1">{t('bookingCard.contact.phone')}</p>
-              <a
-                href={`tel:${booking.cleaner_phone}`}
-                className="text-lg font-semibold text-green-800 hover:underline"
-              >
-                {booking.cleaner_phone}
-              </a>
-            </div>
-          )}
 
           {booking.status === 'completed' && (
             <div className="border-t border-gray-100 pt-5">

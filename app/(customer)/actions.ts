@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
-import { restoreAvailability } from "@/lib/availability"
+import { restoreAvailability, restoreSlot } from "@/lib/availability"
 import { sendNewBookingRequest } from "@/lib/resend"
 import { notify, profileNames } from "@/lib/notifications"
 
@@ -384,13 +384,19 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
   if (booking.status === "accepted") {
     const bookedStart = timeToMinutes(booking.scheduled_start)
     const bookedEnd = bookedStart + booking.duration_hours * 60
-    await restoreAvailability(
-      createAdminClient(),
-      booking.cleaner_id,
-      booking.scheduled_date,
-      bookedStart,
-      bookedEnd,
-    )
+    const restoreClient = createAdminClient()
+    // Put back the whole slot this booking consumed on accept (recorded by
+    // migration 0035); older bookings only had the booked window carved out.
+    const { data: slotRow } = await restoreClient
+      .from("bookings")
+      .select("slot_start, slot_end")
+      .eq("id", bookingId)
+      .maybeSingle<{ slot_start: string | null; slot_end: string | null }>()
+    if (slotRow?.slot_start && slotRow.slot_end) {
+      await restoreSlot(restoreClient, booking.cleaner_id, booking.scheduled_date, slotRow.slot_start, slotRow.slot_end)
+    } else {
+      await restoreAvailability(restoreClient, booking.cleaner_id, booking.scheduled_date, bookedStart, bookedEnd)
+    }
   }
 
   // The cleaner finds out in their bell (a cancelled request vs a cancelled clean read differently).

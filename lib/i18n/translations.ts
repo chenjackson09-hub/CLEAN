@@ -355,11 +355,6 @@ const translations = {
         completed: 'Completed',
         cancelled: 'Cancelled',
       },
-      contact: {
-        title: 'Contact Info',
-        phone: 'Phone',
-        email: 'Email',
-      },
       detail: {
         date: 'Date',
         time: 'Time',
@@ -1183,11 +1178,6 @@ const translations = {
         declined: 'נדחה',
         completed: 'הושלם',
         cancelled: 'בוטל',
-      },
-      contact: {
-        title: 'פרטי קשר',
-        phone: 'טלפון',
-        email: 'אימייל',
       },
       detail: {
         date: 'תאריך',

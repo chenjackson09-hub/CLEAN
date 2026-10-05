@@ -21,7 +21,7 @@ function matchesSearch(booking: BookingWithCustomer, query: string): boolean {
 }
 
 // Greeting, the search bar under the name, then three zones in this order: Upcoming (its own scrolling box),
-// a highlighted Today & tomorrow strip, and Past (its own scrolling box).
+// a highlighted Today & tomorrow strip, and Past (its own scrolling box, held to two rows).
 // Today/tomorrow cleans live only in the strip so nothing shows twice.
 export default function DashboardLists({
   name,
@@ -71,6 +71,7 @@ export default function DashboardLists({
       </div>
 
       <ScheduleBox
+        fill
         title={t("dash_upcoming")}
         count={later.length}
         empty={query ? noResults : t("dash_no_upcoming")}
@@ -80,17 +81,21 @@ export default function DashboardLists({
         ))}
       </ScheduleBox>
 
-      <NextUpStrip title={t("dash_today_tomorrow")} count={nextUp.length}>
-        {nextUp.map((b) => (
-          <UpcomingCleanRow key={b.id} booking={b} todayStr={todayStr} daysUntil={b.daysUntil} hourlyRate={hourlyRate} inStrip />
-        ))}
-      </NextUpStrip>
+      {/* The strip and Past cleans sit together at the bottom of the screen. Past
+          is secondary information, so it's held to two rows. */}
+      <div className="mt-auto shrink-0">
+        <NextUpStrip title={t("dash_today_tomorrow")} count={nextUp.length}>
+          {nextUp.map((b) => (
+            <UpcomingCleanRow key={b.id} booking={b} todayStr={todayStr} daysUntil={b.daysUntil} hourlyRate={hourlyRate} inStrip />
+          ))}
+        </NextUpStrip>
 
-      <ScheduleBox fill title={t("dash_past")} count={filteredPast.length} empty={query ? noResults : t("dash_no_past")}>
-        {filteredPast.map((b) => (
-          <PastCleanRow key={b.id} booking={b} todayStr={todayStr} hourlyRate={hourlyRate} />
-        ))}
-      </ScheduleBox>
+        <ScheduleBox maxH="max-h-[9.4rem]" title={t("dash_past")} count={filteredPast.length} empty={query ? noResults : t("dash_no_past")}>
+          {filteredPast.map((b) => (
+            <PastCleanRow key={b.id} booking={b} todayStr={todayStr} hourlyRate={hourlyRate} />
+          ))}
+        </ScheduleBox>
+      </div>
     </>
   );
 }

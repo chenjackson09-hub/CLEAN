@@ -1,19 +1,10 @@
 import { getCurrentUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
-import type { Profile, Booking, Customer } from "@/types/database";
+import type { Profile, Customer } from "@/types/database";
 import BackLink from "./BackLink";
-import DateCube from "./DateCube";
 import HostProfileCard from "@/components/HostProfileCard";
 import type { ReviewItem } from "@/components/HostProfileReviews";
-
-const STATUS_STYLES: Record<string, string> = {
-  pending:   "bg-yellow-100 text-yellow-700",
-  accepted:  "bg-green-100 text-green-700",
-  declined:  "bg-red-100 text-red-700",
-  completed: "bg-blue-100 text-blue-700",
-  cancelled: "bg-gray-100 text-gray-500",
-};
 
 export default async function CustomerProfilePage({
   params,
@@ -46,12 +37,11 @@ export default async function CustomerProfilePage({
       .single<Customer>(),
     supabase
       .from("bookings")
-      .select("*")
+      .select("id")
       .eq("cleaner_id", user.id)
       .eq("customer_id", id)
-      .order("scheduled_date", { ascending: false })
-      .order("scheduled_start", { ascending: false })
-      .returns<Booking[]>(),
+      .limit(1)
+      .returns<{ id: string }[]>(),
     // "Reviews from cleaners" — every cleaner's rating of this host that
     // includes a free-text review (see migration 0028), not just this
     // cleaner's own. Uses the admin client since RLS ("Participants read
@@ -85,49 +75,6 @@ export default async function CustomerProfilePage({
         customer={customer}
         reviews={reviews}
       />
-
-      {/* Booking history */}
-      <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mt-2">
-        Booking history
-      </h2>
-
-      {!bookings || bookings.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md py-10 text-center text-gray-400">
-          No bookings with this customer yet.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {bookings.map((b) => (
-            <div key={b.id} className="bg-white rounded-2xl shadow-md p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-start gap-4 min-w-0">
-                  <DateCube date={b.scheduled_date} />
-                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600 min-w-0">
-                <div>
-                  <p className="text-gray-400 uppercase tracking-wide text-xs mb-0.5">Time</p>
-                  <p className="font-medium">{b.scheduled_start.slice(0, 5)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 uppercase tracking-wide text-xs mb-0.5">Duration</p>
-                  <p className="font-medium">{b.duration_hours}h</p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-gray-400 uppercase tracking-wide text-xs mb-0.5">Location</p>
-                  <p className="font-medium break-words">{b.address}</p>
-                </div>
-              </div>
-                </div>
-                <span className={`text-sm font-medium px-3 py-1 rounded-full ${STATUS_STYLES[b.status]}`}>
-                  {b.status}
-                </span>
-              </div>
-              {b.notes && (
-                <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mt-2">{b.notes}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

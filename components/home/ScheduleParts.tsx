@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { isSameWeek, weekdayOf } from "@/lib/dateMath";
+import { MONTHS_SHORT, WEEKDAYS_SHORT } from "@/lib/dateLabels";
 
 // Shared building blocks for the host and cleaner home screens: a compact date
 // chip, a row, a scrolling box and a "today & tomorrow" strip. i18n-agnostic
@@ -9,15 +10,6 @@ import { isSameWeek, weekdayOf } from "@/lib/dateMath";
 // a plain `lang`.
 
 export type ChipLang = "en" | "he";
-
-const WEEKDAYS: Record<ChipLang, string[]> = {
-  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  he: ["יום א׳", "יום ב׳", "יום ג׳", "יום ד׳", "יום ה׳", "יום ו׳", "שבת"],
-};
-const MONTHS: Record<ChipLang, string[]> = {
-  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  he: ["ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני", "יולי", "אוג׳", "ספט׳", "אוק׳", "נוב׳", "דצמ׳"],
-};
 
 // Day number big, with a tiny label above it: the weekday when the date is in
 // the same week as today ("Wed 8"), otherwise the month ("16 Sep"). Pure string
@@ -31,13 +23,22 @@ export function DateChip({
   dateStr: string;
   todayStr: string;
   lang: ChipLang;
-  tone?: "default" | "accent" | "amber";
+  tone?: "default" | "active" | "accent" | "amber";
 }) {
   const [, m, d] = dateStr.split("-").map(Number);
-  const label = isSameWeek(dateStr, todayStr) ? WEEKDAYS[lang][weekdayOf(dateStr)] : MONTHS[lang][m - 1];
+  const label = isSameWeek(dateStr, todayStr) ? WEEKDAYS_SHORT[lang][weekdayOf(dateStr)] : MONTHS_SHORT[lang][m - 1];
+  // "active" = a clean that is still ahead of us: a darker grey than the faded
+  // light-grey chip used for past cleans.
   const toneClass =
-    tone === "accent" ? "bg-blue-600 text-white" : tone === "amber" ? "bg-amber-100 text-amber-900" : "bg-gray-100 text-gray-900";
-  const labelClass = tone === "accent" ? "text-white/80" : tone === "amber" ? "text-amber-700" : "text-gray-500";
+    tone === "accent"
+      ? "bg-blue-600 text-white"
+      : tone === "amber"
+        ? "bg-amber-100 text-amber-900"
+        : tone === "active"
+          ? "bg-gray-300 text-gray-900"
+          : "bg-gray-100 text-gray-900";
+  const labelClass =
+    tone === "accent" ? "text-white/80" : tone === "amber" ? "text-amber-700" : tone === "active" ? "text-gray-600" : "text-gray-500";
   return (
     <div className={`w-12 shrink-0 rounded-xl py-1.5 text-center leading-none ${toneClass}`}>
       <div className={`text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap ${labelClass}`}>{label}</div>
@@ -65,7 +66,7 @@ export function ScheduleRow({
   title: string;
   subtitle?: ReactNode;
   trailing?: ReactNode;
-  chipTone?: "default" | "accent" | "amber";
+  chipTone?: "default" | "active" | "accent" | "amber";
   faded?: boolean;
   onClick?: () => void;
 }) {

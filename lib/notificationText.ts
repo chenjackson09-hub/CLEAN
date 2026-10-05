@@ -15,7 +15,6 @@ const TEXT: Record<NotificationKind, Record<Lang, string>> = {
   request_expired: { en: '{name} didn’t respond to your request for {date}', he: '{name} לא הגיב/ה לבקשה שלך ל-{date}' },
   request_cancelled_by_host: { en: '{name} cancelled their request for {date}', he: '{name} ביטל/ה את הבקשה ל-{date}' },
   request_taken: { en: '{name}’s request for {date} was closed — they were matched with another cleaner', he: 'הבקשה של {name} ל-{date} נסגרה — הם הותאמו למנקה אחר/ת' },
-  request_updated: { en: '{name} updated your request for {date}', he: '{name} עדכן/ה את הבקשה שלך ל-{date}' },
   request_cleaner_unavailable: { en: '{name} is no longer available on {date} — your request was cancelled', he: '{name} כבר לא זמין/ה ב-{date} — הבקשה שלך בוטלה' },
   availability_changed: { en: '{name} changed their available times to {times} — is your request for {date} still relevant?', he: 'השעות של {name} השתנו ל-{times} — האם הבקשה שלך ל-{date} עדיין רלוונטית?' },
   host_kept_request: { en: '{name} confirmed their request for {date} is still relevant', he: '{name} אישר/ה שהבקשה ל-{date} עדיין רלוונטית' },

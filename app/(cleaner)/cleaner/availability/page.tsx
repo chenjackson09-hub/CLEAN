@@ -49,7 +49,7 @@ export default async function AvailabilityPage() {
       .returns<CleanerAvailability[]>(),
     admin
       .from("bookings")
-      .select("*, profiles!customer_id(full_name, phone, avatar_url)")
+      .select("*, profiles!customer_id(full_name, avatar_url)")
       .eq("cleaner_id", user.id)
       .eq("status", "accepted")
       .gte("scheduled_date", from)
@@ -59,7 +59,7 @@ export default async function AvailabilityPage() {
       .returns<BookingWithCustomer[]>(),
     admin
       .from("bookings")
-      .select("*, profiles!customer_id(full_name, phone, avatar_url)")
+      .select("*, profiles!customer_id(full_name, avatar_url)")
       .eq("cleaner_id", user.id)
       .eq("status", "pending")
       .gte("scheduled_date", from)

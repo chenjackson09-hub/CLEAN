@@ -55,6 +55,49 @@ describe('cleaner home', () => {
     expect(screen.getAllByText('Today Person')).toHaveLength(1)
   })
 
+  it('says how far away each upcoming clean is: in N days within a week, then next week / in two weeks', () => {
+    render(
+      <DashboardLists
+        {...base}
+        upcoming={[
+          b({ id: 'a', daysUntil: 3, scheduled_date: '2026-10-08', profiles: { full_name: 'A' } }) as never,
+          b({ id: 'b', daysUntil: 9, scheduled_date: '2026-10-14', profiles: { full_name: 'B' } }) as never,
+          b({ id: 'c', daysUntil: 15, scheduled_date: '2026-10-20', profiles: { full_name: 'C' } }) as never,
+        ]}
+      />,
+    )
+    expect(screen.getByText('in 3 days')).toBeInTheDocument()
+    expect(screen.getByText('next week')).toBeInTheDocument()
+    expect(screen.getByText('in two weeks')).toBeInTheDocument()
+  })
+
+  it('upcoming date chips are the darker grey; past ones stay light', () => {
+    render(
+      <DashboardLists
+        {...base}
+        upcoming={[b({ id: 'u1', daysUntil: 9, profiles: { full_name: 'Up' } }) as never]}
+        past={[b({ id: 'p1', scheduled_date: '2026-09-16', status: 'completed', profiles: { full_name: 'Past' } }) as never]}
+      />,
+    )
+    expect(screen.getByText('Up').closest('div.flex')!.querySelector('.bg-gray-300')).not.toBeNull()
+    expect(screen.getByText('Past').closest('div.flex')!.querySelector('.bg-gray-300')).toBeNull()
+  })
+
+  it('holds Past cleans to two rows at the bottom of the screen, with the strip just above it', () => {
+    render(
+      <DashboardLists
+        {...base}
+        upcoming={[b({ id: 'u0', daysUntil: 0, scheduled_date: '2026-10-05', profiles: { full_name: 'Today Person' } }) as never]}
+        past={[b({ id: 'p1', scheduled_date: '2026-09-16', status: 'completed', profiles: { full_name: 'Past' } }) as never]}
+      />,
+    )
+    const bottom = screen.getByText('Today & tomorrow').closest('section')!.parentElement!
+    expect(bottom.className).toContain('mt-auto')
+    const past = screen.getByText(/^Past cleans/).closest('section')!
+    expect(bottom.contains(past)).toBe(true)
+    expect(past.querySelector('.overflow-y-auto')!.className).toContain('max-h-[9.4rem]')
+  })
+
   it('hides the strip when nothing is today or tomorrow', () => {
     render(<DashboardLists {...base} upcoming={[b({ id: 'u3', daysUntil: 15 }) as never]} />)
     expect(screen.queryByText('Today & tomorrow')).not.toBeInTheDocument()

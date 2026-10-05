@@ -21,6 +21,13 @@ describe('DateChip', () => {
     expect(screen.getByText('Oct')).toBeInTheDocument()
   })
 
+  it('an upcoming ("active") chip is a darker grey than the default/past one', () => {
+    const { container, rerender } = render(<DateChip dateStr="2026-10-20" todayStr={TODAY} lang="en" tone="active" />)
+    expect(container.firstElementChild!.className).toContain('bg-gray-300')
+    rerender(<DateChip dateStr="2026-10-20" todayStr={TODAY} lang="en" />)
+    expect(container.firstElementChild!.className).toContain('bg-gray-100')
+  })
+
   it('speaks Hebrew', () => {
     render(<DateChip dateStr="2026-10-07" todayStr={TODAY} lang="he" />)
     expect(screen.getByText('יום ד׳')).toBeInTheDocument()

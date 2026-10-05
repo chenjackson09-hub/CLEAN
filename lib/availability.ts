@@ -57,3 +57,37 @@ export async function restoreAvailability(
     end_time: minutesToTime(end),
   });
 }
+
+export type ConsumedSlot = { id: string; start_time: string; end_time: string };
+
+// The cleaner's specific-date slot that contains a booking's start time (null
+// when the booking sits in no date slot, e.g. only a recurring weekly one).
+export async function findSlotForBooking(
+  client: SupabaseClient,
+  cleanerId: string,
+  date: string,
+  bookedStart: number,
+): Promise<ConsumedSlot | null> {
+  const { data: slots } = await client
+    .from("cleaner_availability")
+    .select("id, start_time, end_time")
+    .eq("cleaner_id", cleanerId)
+    .eq("date", date);
+  return (
+    (slots ?? []).find(
+      (s) => timeToMinutes(s.start_time) <= bookedStart && bookedStart < timeToMinutes(s.end_time),
+    ) ?? null
+  );
+}
+
+// Puts a consumed slot back exactly as it was (merging with any adjacent slot,
+// like restoreAvailability does).
+export async function restoreSlot(
+  client: SupabaseClient,
+  cleanerId: string,
+  date: string,
+  slotStart: string,
+  slotEnd: string,
+) {
+  await restoreAvailability(client, cleanerId, date, timeToMinutes(slotStart), timeToMinutes(slotEnd));
+}

@@ -67,7 +67,7 @@ describe('BookingCard', () => {
     expect(screen.queryByText('Updated by cleaner')).not.toBeInTheDocument()
   })
 
-  it('shows cleaner contact info for accepted bookings', () => {
+  it('never shows the cleaner\'s phone or email — the chat is the way to reach them', () => {
     render(<BookingCard booking={{
       ...baseBooking,
       status: 'accepted',
@@ -75,18 +75,8 @@ describe('BookingCard', () => {
       cleaner_phone: '050-222-1111',
     }} />)
 
-    expect(screen.getByText('Contact Info')).toBeInTheDocument()
-    expect(screen.getByText(/050-222-1111/)).toBeInTheDocument()
-    expect(screen.getByText(/sarah.m@example.com/)).toBeInTheDocument()
-  })
-
-  it('does not show contact info for pending bookings', () => {
-    render(<BookingCard booking={{
-      ...baseBooking,
-      cleaner_email: 'sarah.m@example.com',
-      cleaner_phone: '050-222-1111',
-    }} />)
-
     expect(screen.queryByText('Contact Info')).not.toBeInTheDocument()
+    expect(screen.queryByText(/050-222-1111/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/sarah.m@example.com/)).not.toBeInTheDocument()
   })
 })

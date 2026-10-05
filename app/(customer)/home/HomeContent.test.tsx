@@ -72,6 +72,37 @@ describe('HomeContent', () => {
     expect(screen.getAllByText('Noa R.')).toHaveLength(1)
   })
 
+  it('tells the host how far away each confirmed clean is', () => {
+    render(
+      <HomeContent
+        {...props}
+        confirmed={[
+          booking({ id: 'a', cleaner_name: 'A', scheduled_date: '2026-10-08' }), // 3 days
+          booking({ id: 'b', cleaner_name: 'B', scheduled_date: '2026-10-14' }), // 9 days
+          booking({ id: 'c', cleaner_name: 'C', scheduled_date: '2026-10-20' }), // 15 days
+        ]}
+      />,
+    )
+    expect(screen.getByText('in 3 days')).toBeInTheDocument()
+    expect(screen.getByText('next week')).toBeInTheDocument()
+    expect(screen.getByText('in two weeks')).toBeInTheDocument()
+  })
+
+  it('keeps Past cleans to two rows at the bottom, and confirmed chips darker than past ones', () => {
+    render(
+      <HomeContent
+        {...props}
+        confirmed={[booking({ id: 'a', cleaner_name: 'Upcoming One', scheduled_date: '2026-10-20' })]}
+        past={[booking({ id: 'p', cleaner_name: 'Old One', status: 'completed', scheduled_date: '2026-09-02' })]}
+      />,
+    )
+    const past = screen.getByText('Past cleans').closest('section')!
+    expect(past.querySelector('.overflow-y-auto')!.className).toContain('max-h-[9.4rem]')
+    expect(past.parentElement!.className).toContain('mt-auto')
+    expect(screen.getByText('Upcoming One').closest('div.flex')!.querySelector('.bg-gray-300')).not.toBeNull()
+    expect(screen.getByText('Old One').closest('div.flex')!.querySelector('.bg-gray-300')).toBeNull()
+  })
+
   it('shows the weekday on the chip for a clean later this week', () => {
     render(<HomeContent {...props} confirmed={[booking({ id: 'w', cleaner_name: 'Dan K.', scheduled_date: '2026-10-08' })]} />)
     expect(screen.getByText('Thu')).toBeInTheDocument()

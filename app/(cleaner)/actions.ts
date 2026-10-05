@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { geocodeAddress } from "@/lib/geocode";
-import { restoreAvailability } from "@/lib/availability";
+import { findSlotForBooking, restoreAvailability, restoreSlot } from "@/lib/availability";
 import { ensureBookingInConversation } from "@/lib/chat";
 import { findAffectedRequests, formatSlotTimes } from "@/lib/availabilityImpact";
 import { notify, profileNames } from "@/lib/notifications";
@@ -689,7 +689,24 @@ export async function respondToBooking(
   // On approval, remove the booked time from the cleaner's availability so the
   // remaining hours stay open (e.g. 08:00–12:00 booked 08:00–10:00 → 10:00–12:00).
   if (response === "accepted") {
-    await carveAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
+    // The whole slot that holds this booking is now taken — a booking only has a
+    // start and an estimated length, so whatever is left of the slot is not
+    // "free time" (the cleaner adds another slot if they really are free). The
+    // slot's range is remembered on the booking so a cancellation can put it
+    // back. If that can't be recorded (migration 0035 not applied yet) fall back
+    // to the old carve-out, so availability is never left bookable by mistake.
+    const takenSlot = await findSlotForBooking(supabase, user.id, booking.scheduled_date, bookedStart);
+    if (takenSlot) {
+      const { error: slotErr } = await supabase
+        .from("bookings")
+        .update({ slot_start: takenSlot.start_time, slot_end: takenSlot.end_time })
+        .eq("id", bookingId);
+      if (slotErr) {
+        await carveAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
+      } else {
+        await supabase.from("cleaner_availability").delete().eq("id", takenSlot.id);
+      }
+    }
 
     // The customer typically fans the same need out to several cleaners (and
     // may have requested other days too). Now that one cleaner has accepted,
@@ -775,206 +792,12 @@ export async function respondToBooking(
 
   // Note: intentionally NOT calling revalidatePath here at all. Any revalidatePath
   // inside a Server Action forces the *current* route (/cleaner/requests) to refetch
-  // and re-render — which unmounts the just-answered card and slams the confirmation
-  // modal shut (it shows the customer's phone on accept) before the cleaner can read
-  // it. Instead RequestCard.handleClose() calls router.refresh() once the cleaner
-  // dismisses the modal, which both drops the answered card and invalidates the
-  // client Router Cache so /cleaner/availability re-fetches fresh on next navigation.
+  // and re-render — which unmounts the just-answered row and slams the "accepted —
+  // open chat" panel shut before the cleaner can use it. Instead
+  // RequestGroupRow.close() calls router.refresh() once the cleaner dismisses it,
+  // which both drops the answered request and invalidates the client Router Cache
+  // so /cleaner/availability re-fetches fresh on next navigation.
   // The dashboard self-updates via its RealtimeBookings subscription.
-  return { success: true };
-}
-
-// Lets a cleaner edit a booking she owns — change the start time / duration and
-// append a note — while it's still actionable (a pending request or an accepted
-// clean). The customer can't change these; the edit only flips the
-// `cleaner_modified` flag so the customer sees their booking was updated.
-//
-// For an accepted clean the original time was carved out of availability on
-// accept, so we restore that range first, re-validate the new range against the
-// (now reopened) availability and other accepted bookings, then carve the new
-// range — rolling the restore back if the new time doesn't fit. Pending requests
-// never carved time, so they're only validated, not re-carved.
-export async function editBooking(
-  bookingId: string,
-  input: {
-    scheduled_start: string;
-    duration_hours: number;
-    scheduled_date?: string;
-    appendNote?: string;
-    // Whether to keep the customer's "Not sure" duration marker. The cleaner can
-    // tick a box in the edit form to leave it flagged; otherwise saving a
-    // concrete duration resolves it.
-    duration_flexible?: boolean;
-    // When the new time falls outside the cleaner's marked availability we don't
-    // hard-block — we warn and let her confirm. `force` is the confirmed retry
-    // that skips that availability check (overlapping an already-accepted clean
-    // stays a hard block regardless).
-    force?: boolean;
-  }
-) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated." };
-
-  const duration = Number(input.duration_hours);
-  if (!Number.isFinite(duration) || duration < 1 || duration > 8) {
-    return { error: "Invalid duration." };
-  }
-  if (!/^\d{2}:\d{2}/.test(input.scheduled_start)) {
-    return { error: "Invalid start time." };
-  }
-  if (input.scheduled_date && !/^\d{4}-\d{2}-\d{2}$/.test(input.scheduled_date)) {
-    return { error: "Invalid date." };
-  }
-
-  const { data: booking, error: fetchErr } = await supabase
-    .from("bookings")
-    .select("status, scheduled_date, scheduled_start, duration_hours, notes, customer_id")
-    .eq("id", bookingId)
-    .eq("cleaner_id", user.id)
-    .single();
-
-  if (fetchErr || !booking) return { error: "Booking not found." };
-  if (booking.status !== "pending" && booking.status !== "accepted") {
-    return { error: "This booking can no longer be edited." };
-  }
-
-  // Respect the customer's max-hours preference: the cleaner can't edit a request
-  // to a longer duration than the customer is willing to pay for. Read with the
-  // admin client — RLS hides another user's `customers` row from the cleaner's
-  // session (so a session read would return null and silently skip the check).
-  const { data: customerPref } = await createAdminClient()
-    .from("customers")
-    .select("max_hours")
-    .eq("id", booking.customer_id)
-    .single();
-  if (customerPref?.max_hours != null && duration > customerPref.max_hours) {
-    return {
-      error: `This customer will pay for at most ${customerPref.max_hours} hours per clean.`,
-    };
-  }
-
-  // The booking can be moved to a different day; fall back to its current date.
-  const oldDate = booking.scheduled_date;
-  const newDate = input.scheduled_date ?? oldDate;
-
-  const newStart = timeToMinutes(input.scheduled_start);
-  const newEnd = newStart + duration * 60;
-  const oldStart = timeToMinutes(booking.scheduled_start);
-  const oldEnd = oldStart + booking.duration_hours * 60;
-  const isAccepted = booking.status === "accepted";
-
-  // An accepted clean's original slot was carved out on accept — reopen it (on
-  // the original date) so the new time can reuse those hours when validating.
-  if (isAccepted) {
-    await restoreAvailability(supabase, user.id, oldDate, oldStart, oldEnd);
-  }
-
-  // The new time must still fall inside the cleaner's availability (weekly or
-  // specific-date) and must not collide with another accepted booking — all
-  // checked against the *new* date.
-  const dayOfWeek = new Date(newDate + "T12:00:00").getDay();
-  const [{ data: dateSlots }, { data: weeklySlots }, { data: acceptedBookings }] =
-    await Promise.all([
-      supabase
-        .from("cleaner_availability")
-        .select("start_time, end_time")
-        .eq("cleaner_id", user.id)
-        .eq("date", newDate),
-      supabase
-        .from("cleaner_weekly_availability")
-        .select("start_time, end_time")
-        .eq("cleaner_id", user.id)
-        .eq("day_of_week", dayOfWeek),
-      supabase
-        .from("bookings")
-        .select("scheduled_start, duration_hours")
-        .eq("cleaner_id", user.id)
-        .eq("scheduled_date", newDate)
-        .eq("status", "accepted")
-        .neq("id", bookingId),
-    ]);
-
-  const slots = [...(dateSlots ?? []), ...(weeklySlots ?? [])];
-  const fitsAvailability = slots.some(
-    (s) => timeToMinutes(s.start_time) <= newStart && timeToMinutes(s.end_time) >= newEnd
-  );
-  const overlapsAccepted = (acceptedBookings ?? []).some((b) => {
-    const s = timeToMinutes(b.scheduled_start);
-    const e = s + b.duration_hours * 60;
-    return newStart < e && newEnd > s;
-  });
-
-  // Re-carve the originally restored slot (on the old date) — used to roll the
-  // accepted clean's availability back to its pre-edit state on a rejected edit.
-  const rollback = async () => {
-    if (isAccepted) {
-      await carveAvailability(supabase, user.id, oldDate, oldStart, oldEnd);
-    }
-  };
-
-  // Overlapping another accepted clean is a genuine double-booking — always hard-block.
-  if (overlapsAccepted) {
-    await rollback();
-    return { error: "That time overlaps another clean you've accepted." };
-  }
-
-  // Outside marked availability is a soft warning: ask the cleaner to confirm
-  // rather than blocking. We leave state unchanged (re-carve the restored slot)
-  // and let the client retry with `force`.
-  if (!fitsAvailability && !input.force) {
-    await rollback();
-    return { needsConfirm: true as const };
-  }
-
-  if (isAccepted) {
-    // Carve the new time out of the new date's availability.
-    await carveAvailability(supabase, user.id, newDate, newStart, newEnd);
-  }
-
-  const addition = input.appendNote?.trim();
-  const notes = addition
-    ? booking.notes
-      ? `${booking.notes}\n${addition}`
-      : addition
-    : booking.notes;
-
-  const { error } = await supabase
-    .from("bookings")
-    .update({
-      scheduled_date: newDate,
-      scheduled_start: input.scheduled_start,
-      duration_hours: duration,
-      // Keep the "Not sure" marker only if the cleaner left the box ticked;
-      // otherwise the concrete duration she picked resolves it.
-      duration_flexible: input.duration_flexible ?? false,
-      notes,
-      cleaner_modified: true,
-    })
-    .eq("id", bookingId)
-    .eq("cleaner_id", user.id);
-
-  if (error) return { error: error.message };
-
-  {
-    const notifyAdmin = createAdminClient();
-    const names = await profileNames(notifyAdmin, [user.id]);
-    await notify(notifyAdmin, {
-      userId: booking.customer_id,
-      kind: "request_updated",
-      actorId: user.id,
-      bookingId,
-      data: { name: shortName(names.get(user.id) ?? ""), date: newDate },
-      href: "/bookings",
-    });
-  }
-
-  revalidatePath("/cleaner/dashboard");
-  revalidatePath("/cleaner/requests");
-  revalidatePath("/cleaner/availability");
-  revalidatePath("/bookings");
   return { success: true };
 }
 
@@ -1060,7 +883,18 @@ export async function cancelClean(bookingId: string) {
   // Reopen the slot the booking occupied (it was carved out on accept).
   const bookedStart = timeToMinutes(booking.scheduled_start);
   const bookedEnd = bookedStart + booking.duration_hours * 60;
-  await restoreAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
+  // Put back the slot this booking consumed (bookings accepted before
+  // migration 0035 have no recorded slot and keep restoring just the booked window).
+  const { data: slotRow } = await createAdminClient()
+    .from("bookings")
+    .select("slot_start, slot_end")
+    .eq("id", bookingId)
+    .maybeSingle<{ slot_start: string | null; slot_end: string | null }>();
+  if (slotRow?.slot_start && slotRow.slot_end) {
+    await restoreSlot(supabase, user.id, booking.scheduled_date, slotRow.slot_start, slotRow.slot_end);
+  } else {
+    await restoreAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
+  }
 
   {
     const notifyAdmin = createAdminClient();

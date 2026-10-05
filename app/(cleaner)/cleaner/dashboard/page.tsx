@@ -43,7 +43,7 @@ export default async function CleanerDashboardPage() {
       // dropped below so only genuinely upcoming cleans remain.
       admin
         .from("bookings")
-        .select("*, profiles!customer_id(full_name, phone, avatar_url)")
+        .select("*, profiles!customer_id(full_name, avatar_url)")
         .eq("cleaner_id", user.id)
         .eq("status", "accepted")
         .gte("scheduled_date", todayStr)
@@ -55,7 +55,7 @@ export default async function CleanerDashboardPage() {
       // are dropped below so only cleans whose start time has passed remain.
       admin
         .from("bookings")
-        .select("*, profiles!customer_id(full_name, phone, avatar_url)")
+        .select("*, profiles!customer_id(full_name, avatar_url)")
         .eq("cleaner_id", user.id)
         .in("status", ["accepted", "completed"])
         .lte("scheduled_date", todayStr)

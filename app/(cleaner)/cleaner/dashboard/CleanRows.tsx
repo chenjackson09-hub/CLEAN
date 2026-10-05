@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { completeBooking } from "../../actions";
 import { useLang } from "@/context/LangContext";
 import { extractArea } from "@/lib/bookingArea";
+import { countdownLabel } from "@/lib/countdown";
 import { ScheduleRow } from "@/components/home/ScheduleParts";
 import type { BookingWithCustomer } from "@/types/database";
 import CleanDetailModal from "./CleanDetailModal";
@@ -47,13 +48,20 @@ export function UpcomingCleanRow({
         dateStr={booking.scheduled_date}
         todayStr={todayStr}
         lang={lang}
-        chipTone={inStrip ? "accent" : "default"}
+        chipTone={inStrip ? "accent" : "active"}
         title={booking.profiles?.full_name ?? t("req_customer")}
         subtitle={inStrip ? `${day} · ${detail}` : detail}
         trailing={
-          booking.duration_flexible ? (
-            <span className="text-[11px] font-semibold text-red-600">{t("req_duration_not_sure")}</span>
-          ) : undefined
+          <div className="text-end">
+            {!inStrip && (
+              <span className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 whitespace-nowrap">
+                {countdownLabel(daysUntil, lang)}
+              </span>
+            )}
+            {booking.duration_flexible && (
+              <p className="mt-0.5 text-[11px] font-semibold text-red-600">{t("req_duration_not_sure")}</p>
+            )}
+          </div>
         }
         onClick={() => setOpen(true)}
       />

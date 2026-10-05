@@ -5,6 +5,7 @@ import { BookingDetailModal } from '@/app/(customer)/bookings/BookingDetailModal
 import { NextUpStrip, ScheduleBox, ScheduleRow } from '@/components/home/ScheduleParts'
 import { extractArea } from '@/lib/bookingArea'
 import { daysBetween } from '@/lib/dateMath'
+import { countdownLabel } from '@/lib/countdown'
 import type { BookingResult } from '@/lib/types/booking'
 
 type PendingBooking = BookingResult & { daysAgo: number }
@@ -28,14 +29,16 @@ function HomeBookingRow({
   chipTone,
   faded,
   badge,
+  countdown,
 }: {
   booking: BookingResult
   todayStr: string
   title: string
   subtitle: string
-  chipTone?: 'default' | 'accent' | 'amber'
+  chipTone?: 'default' | 'active' | 'accent' | 'amber'
   faded?: boolean
   badge?: { text: string; className: string }
+  countdown?: string
 }) {
   const { lang } = useLanguage()
   const [open, setOpen] = useState(false)
@@ -52,6 +55,8 @@ function HomeBookingRow({
         trailing={
           badge ? (
             <span className={`text-[11px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${badge.className}`}>{badge.text}</span>
+          ) : countdown ? (
+            <span className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 whitespace-nowrap">{countdown}</span>
           ) : undefined
         }
         onClick={() => setOpen(true)}
@@ -65,7 +70,7 @@ function HomeBookingRow({
 // tomorrow strip, Pending requests, and Past cleans (its own scrolling box).
 // Today/tomorrow confirmed cleans live only in the strip so nothing shows twice.
 export function HomeContent({ firstName, todayStr, confirmed, pending, past }: Props) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
 
   // The cleaner's own area (e.g. "Beit Hillel"), not this booking's clean
   // address (the host's own place) — the point of showing a location is
@@ -83,48 +88,60 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
     <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4 flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
       <h1 className="text-2xl font-bold text-gray-900 mb-4 shrink-0">{t('home.greeting', { name: firstName })}</h1>
 
-      <ScheduleBox maxH="max-h-[18vh]" title={t('home.confirmed')} count={later.length} empty={t('home.noConfirmed')}>
+      <ScheduleBox fill title={t('home.confirmed')} count={later.length} empty={t('home.noConfirmed')}>
         {later.map(b => (
-          <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} title={titleOf(b)} subtitle={b.scheduled_start.slice(0, 5)} />
-        ))}
-      </ScheduleBox>
-
-      <NextUpStrip title={t('home.todayTomorrow')} count={nextUp.length}>
-        {nextUp.map(b => (
           <HomeBookingRow
             key={b.id}
             booking={b}
             todayStr={todayStr}
-            chipTone="accent"
+            chipTone="active"
             title={titleOf(b)}
-            subtitle={`${daysBetween(todayStr, b.scheduled_date) <= 0 ? t('scheduleCard.today') : t('scheduleCard.tomorrow')} · ${b.scheduled_start.slice(0, 5)}`}
+            subtitle={b.scheduled_start.slice(0, 5)}
+            countdown={countdownLabel(daysBetween(todayStr, b.scheduled_date), lang)}
           />
         ))}
-      </NextUpStrip>
+      </ScheduleBox>
 
-      <ScheduleBox maxH="max-h-[12vh]" title={t('home.pending')} count={pending.length} empty={t('home.noPending')}>
-        {pending.map(b => {
-          const requested =
-            b.daysAgo <= 0 ? t('home.requestedToday') : b.daysAgo === 1 ? t('home.requestedYesterday') : t('home.requestedDaysAgo', { n: String(b.daysAgo) })
-          return (
+      {/* Strip, Pending and Past sit together at the bottom of the screen; Past
+          is secondary information, so it's held to two rows. */}
+      <div className="mt-auto shrink-0">
+        <NextUpStrip title={t('home.todayTomorrow')} count={nextUp.length}>
+          {nextUp.map(b => (
             <HomeBookingRow
               key={b.id}
               booking={b}
               todayStr={todayStr}
-              chipTone="amber"
-              title={t('home.awaitingResponse')}
-              subtitle={b.availability_notice ? `${requested} · ${t('bookingCard.noticeBadge')}` : requested}
-              badge={b.availability_notice ? { text: '!', className: 'bg-amber-300 text-amber-950 w-6 h-6 !p-0 flex items-center justify-center' } : undefined}
+              chipTone="accent"
+              title={titleOf(b)}
+              subtitle={`${daysBetween(todayStr, b.scheduled_date) <= 0 ? t('scheduleCard.today') : t('scheduleCard.tomorrow')} · ${b.scheduled_start.slice(0, 5)}`}
             />
-          )
-        })}
-      </ScheduleBox>
+          ))}
+        </NextUpStrip>
 
-      <ScheduleBox fill title={t('home.past')} count={past.length} empty={t('home.noPast')}>
-        {past.map(b => (
-          <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} faded title={b.cleaner_name} subtitle={areaOf(b)} />
-        ))}
-      </ScheduleBox>
+        <ScheduleBox maxH="max-h-[12vh]" title={t('home.pending')} count={pending.length} empty={t('home.noPending')}>
+          {pending.map(b => {
+            const requested =
+              b.daysAgo <= 0 ? t('home.requestedToday') : b.daysAgo === 1 ? t('home.requestedYesterday') : t('home.requestedDaysAgo', { n: String(b.daysAgo) })
+            return (
+              <HomeBookingRow
+                key={b.id}
+                booking={b}
+                todayStr={todayStr}
+                chipTone="amber"
+                title={t('home.awaitingResponse')}
+                subtitle={b.availability_notice ? `${requested} · ${t('bookingCard.noticeBadge')}` : requested}
+                badge={b.availability_notice ? { text: '!', className: 'bg-amber-300 text-amber-950 w-6 h-6 !p-0 flex items-center justify-center' } : undefined}
+              />
+            )
+          })}
+        </ScheduleBox>
+
+        <ScheduleBox maxH="max-h-[9.4rem]" title={t('home.past')} count={past.length} empty={t('home.noPast')}>
+          {past.map(b => (
+            <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} faded title={b.cleaner_name} subtitle={areaOf(b)} />
+          ))}
+        </ScheduleBox>
+      </div>
     </div>
   )
 }

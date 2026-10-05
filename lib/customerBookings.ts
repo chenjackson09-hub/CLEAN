@@ -53,7 +53,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
   const admin = createAdminClient()
   const [{ data: cleanerProfiles }, { data: cleanerRows }] = cleanerIds.length > 0
     ? await Promise.all([
-        admin.from('profiles').select('id, full_name, avatar_url, phone').in('id', cleanerIds),
+        admin.from('profiles').select('id, full_name, avatar_url').in('id', cleanerIds),
         admin.from('cleaners').select('id, hourly_rate, address').in('id', cleanerIds),
       ])
     : [{ data: [] }, { data: [] }]
@@ -72,7 +72,6 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       cleaner_id: b.cleaner_id,
       cleaner_name: cleaner?.full_name ?? 'Cleaner',
       cleaner_avatar_url: cleaner?.avatar_url ?? null,
-      cleaner_phone: cleaner?.phone ?? undefined,
       service_type: b.service_type as 'residential' | 'commercial',
       scheduled_date: b.scheduled_date,
       scheduled_start: b.scheduled_start,

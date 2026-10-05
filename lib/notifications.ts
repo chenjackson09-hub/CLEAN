@@ -10,7 +10,6 @@ export type NotificationKind =
   | 'request_cancelled_by_host' // cleaner: a pending request was cancelled
   | 'request_cancelled_by_host' // cleaner: a pending request was cancelled
   | 'request_taken' // cleaner: the host got matched with someone else
-  | 'request_updated' // host: the cleaner changed the request's time/length/note
   | 'request_cleaner_unavailable' // host: cleaner deleted the slot it relied on
   | 'availability_changed' // host: cleaner changed their hours — still relevant?
   | 'host_kept_request' // cleaner: host answered ✓ to the changed-hours notice

@@ -174,17 +174,6 @@ export default function CleanDetailModal({
             </div>
           )}
 
-          {booking.profiles?.phone && (
-            <div className="bg-green-100 rounded-xl px-5 py-4">
-              <p className="text-sm text-green-600 uppercase tracking-wide mb-1">{t("req_customer_phone")}</p>
-              <a
-                href={`tel:${booking.profiles.phone}`}
-                className="text-lg font-semibold text-green-800 hover:underline"
-              >
-                {booking.profiles.phone}
-              </a>
-            </div>
-          )}
 
           {booking.status === "completed" && (
             <div className="border-t border-gray-100 pt-5">

@@ -80,11 +80,13 @@ const STRINGS = {
   },
 } as const;
 
+// Titles are the bold part; answers are plain text a notch larger — so the eye
+// reads "what is this" first and the value second, instead of a wall of bold.
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-gray-400 uppercase tracking-wide text-xs mb-1">{label}</p>
-      <div className="text-base font-semibold text-gray-900">{children}</div>
+      <p className="text-sm font-bold text-gray-900 mb-0.5">{label}</p>
+      <div className="text-base font-normal text-gray-700">{children}</div>
     </div>
   );
 }
@@ -117,21 +119,21 @@ export default function BookingRequestSummary({
   );
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-2 gap-5">
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Row label={s.date}>{dateFormatted}</Row>
         <Row label={s.startTime}>{data.scheduledStart.slice(0, 5)}</Row>
       </div>
 
       <div>
         <Row label={s.duration}>{s.durationValue(data.durationHours)}</Row>
-        <p className="text-xs text-gray-500 mt-1">{s.durationHelp}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{s.durationHelp}</p>
       </div>
 
       {(homeLine || homeDetails) && (
         <Row label={s.yourHome}>
           {homeLine && <p>{homeLine}</p>}
-          {homeDetails && <p className="text-sm font-normal text-gray-500 mt-0.5">{homeDetails}</p>}
+          {homeDetails && <p className="text-sm text-gray-500">{homeDetails}</p>}
         </Row>
       )}
 
@@ -143,16 +145,16 @@ export default function BookingRequestSummary({
 
       {extraLabels.length > 0 && (
         <Row label={s.extras}>
-          <p className="font-normal">{extraLabels.join(" · ")}</p>
+          <p>{extraLabels.join(" · ")}</p>
         </Row>
       )}
 
       {data.petsLabel && (
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-2 gap-4">
           <Row label={s.pets}>
             <p>{data.petsLabel}</p>
             {data.petsPresent != null && (
-              <p className="text-sm font-normal text-gray-500 mt-0.5">
+              <p className="text-sm text-gray-500">
                 {data.petsPresent ? s.petsWillBeHome : s.petsAway}
               </p>
             )}
@@ -169,16 +171,16 @@ export default function BookingRequestSummary({
 
       {data.notes && (
         <Row label={s.note(cleanerName)}>
-          <p className="font-normal text-gray-700 bg-gray-50 rounded-xl px-4 py-3 whitespace-pre-line">{data.notes}</p>
+          <p className="text-gray-700 bg-gray-50 rounded-xl px-3 py-2.5 whitespace-pre-line">{data.notes}</p>
         </Row>
       )}
 
       {data.hourlyRate != null && (
-        <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">{s.estimatedTotal}</span>
+        <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
+          <span className="text-sm font-bold text-gray-900">{s.estimatedTotal}</span>
           <div className="text-end">
             <p className="text-xs text-gray-500">{s.priceBreakdown(data.durationHours, data.hourlyRate)}</p>
-            <p className="text-xl font-bold text-gray-900">₪{data.durationHours * data.hourlyRate}</p>
+            <p className="text-lg font-normal text-gray-900">₪{data.durationHours * data.hourlyRate}</p>
           </div>
         </div>
       )}
