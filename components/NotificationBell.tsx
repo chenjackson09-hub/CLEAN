@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { describeNotification, relativeTime, type NotificationData } from "@/lib/notificationText";
@@ -15,12 +15,19 @@ type Item = {
   created_at: string;
 };
 
-const PAGE = 30;
+const PAGE = 20;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const COLUMNS = "id, kind, data, href, read_at, created_at";
 
 const STRINGS = {
-  en: { title: "Notifications", markAll: "Mark all as read", empty: "You're all caught up.", bell: "Notifications" },
-  he: { title: "התראות", markAll: "סימון הכל כנקרא", empty: "אין התראות חדשות.", bell: "התראות" },
+  en: {
+    title: "Notifications", markAll: "Mark all as read", empty: "You're all caught up.", emptyUnread: "No unread notifications.",
+    bell: "Notifications", all: "All", unread: "Unread", fresh: "New", earlier: "Earlier", loading: "Loading…",
+  },
+  he: {
+    title: "התראות", markAll: "סימון הכל כנקרא", empty: "אין התראות חדשות.", emptyUnread: "אין התראות שלא נקראו.",
+    bell: "התראות", all: "הכל", unread: "שלא נקראו", fresh: "חדשות", earlier: "קודמות", loading: "טוען…",
+  },
 } as const;
 
 // Facebook-style bell for the header: an unread count on the icon and a
@@ -43,19 +50,57 @@ export default function NotificationBell({
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [unread, setUnread] = useState(0);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // Guards against a slow earlier fetch landing after the filter changed.
+  const requestId = useRef(0);
+
+  const fetchPage = useCallback(async (f: "all" | "unread", before?: string) => {
+    let q = createClient().from("notifications").select(COLUMNS).order("created_at", { ascending: false }).limit(PAGE + 1);
+    if (f === "unread") q = q.is("read_at", null);
+    if (before) q = q.lt("created_at", before);
+    const { data } = await q;
+    const rows = (data ?? []) as Item[];
+    return { rows: rows.slice(0, PAGE), more: rows.length > PAGE };
+  }, []);
 
   const load = useCallback(async () => {
-    const supabase = createClient();
-    const [{ data }, { count }] = await Promise.all([
-      supabase.from("notifications").select(COLUMNS).order("created_at", { ascending: false }).limit(PAGE),
-      supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+    const id = ++requestId.current;
+    const [page, { count }] = await Promise.all([
+      fetchPage(filter),
+      createClient().from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
     ]);
-    setItems((data ?? []) as Item[]);
+    if (id !== requestId.current) return;
+    setItems(page.rows);
+    setHasMore(page.more);
     setUnread(count ?? 0);
-  }, []);
+  }, [fetchPage, filter]);
+
+  // Older history loads as the list is scrolled near its end (no page cap — it
+  // keeps going back through everything the user ever received).
+  async function loadMore() {
+    if (loadingMore || !hasMore || items.length === 0) return;
+    const id = requestId.current;
+    setLoadingMore(true);
+    const page = await fetchPage(filter, items[items.length - 1].created_at);
+    if (id === requestId.current) {
+      setItems((prev) => [...prev, ...page.rows.filter((r) => !prev.some((p) => p.id === r.id))]);
+      setHasMore(page.more);
+    }
+    setLoadingMore(false);
+  }
+
+  function onScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) void loadMore();
+  }
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel(`notifications-${userId}`)
@@ -64,7 +109,7 @@ export default function NotificationBell({
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
         (payload) => {
           const n = payload.new as Item;
-          setItems((prev) => (prev.some((i) => i.id === n.id) ? prev : [n, ...prev].slice(0, PAGE)));
+          setItems((prev) => (prev.some((i) => i.id === n.id) ? prev : [n, ...prev]));
           if (!n.read_at) setUnread((u) => u + 1);
         }
       )
@@ -72,7 +117,7 @@ export default function NotificationBell({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, load]);
+  }, [userId]);
 
   async function markAllRead() {
     const now = new Date().toISOString();
@@ -134,35 +179,62 @@ export default function NotificationBell({
                 {s.markAll}
               </button>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto">
+            <div className="flex gap-2 px-4 pt-2 pb-1">
+              {(["all", "unread"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFilter(f)}
+                  aria-pressed={filter === f}
+                  className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                    filter === f ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {f === "all" ? s.all : s.unread}
+                </button>
+              ))}
+            </div>
+            <div onScroll={onScroll} className="max-h-[70vh] overflow-y-auto overscroll-contain">
               {items.length === 0 ? (
-                <p className="px-4 py-8 text-center text-sm text-gray-400">{s.empty}</p>
+                <p className="px-4 py-8 text-center text-sm text-gray-400">{filter === "unread" ? s.emptyUnread : s.empty}</p>
               ) : (
-                <ul className="divide-y divide-gray-50">
-                  {items.map((item) => {
-                    const text = describeNotification(item.kind, item.data ?? {}, lang);
-                    if (!text) return null;
-                    const unreadItem = !item.read_at;
-                    return (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          onClick={() => openItem(item)}
-                          className={`w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50 ${unreadItem ? "bg-blue-50/60" : ""}`}
-                        >
-                          <span className="min-w-0 flex-1">
-                            <span className={`block text-sm ${unreadItem ? "font-semibold text-gray-900" : "text-gray-700"}`}>{text}</span>
-                            <span className={`block text-xs mt-0.5 ${unreadItem ? "text-blue-600" : "text-gray-400"}`}>
-                              {relativeTime(item.created_at, now, lang)}
-                            </span>
-                          </span>
-                          {unreadItem && <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" aria-hidden />}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                [
+                  { key: "new", title: s.fresh, rows: items.filter((i) => now.getTime() - new Date(i.created_at).getTime() < DAY_MS) },
+                  { key: "earlier", title: s.earlier, rows: items.filter((i) => now.getTime() - new Date(i.created_at).getTime() >= DAY_MS) },
+                ].map(
+                  (section) =>
+                    section.rows.length > 0 && (
+                      <section key={section.key}>
+                        <h3 className="px-4 pt-3 pb-1 text-base font-bold text-gray-900">{section.title}</h3>
+                        <ul>
+                          {section.rows.map((item) => {
+                            const text = describeNotification(item.kind, item.data ?? {}, lang);
+                            if (!text) return null;
+                            const unreadItem = !item.read_at;
+                            return (
+                              <li key={item.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => openItem(item)}
+                                  className={`w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50 ${unreadItem ? "bg-blue-50/60" : ""}`}
+                                >
+                                  <span className="min-w-0 flex-1">
+                                    <span className={`block text-sm ${unreadItem ? "font-semibold text-gray-900" : "text-gray-700"}`}>{text}</span>
+                                    <span className={`block text-xs mt-0.5 ${unreadItem ? "text-blue-600" : "text-gray-400"}`}>
+                                      {relativeTime(item.created_at, now, lang)}
+                                    </span>
+                                  </span>
+                                  {unreadItem && <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" aria-hidden />}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </section>
+                    )
+                )
               )}
+              {loadingMore && <p className="px-4 py-3 text-center text-xs text-gray-400">{s.loading}</p>}
             </div>
           </div>
         </>
