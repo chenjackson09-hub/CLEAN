@@ -20,7 +20,7 @@ function ageFromBirthdate(birthdate: string | null | undefined): number | null {
   return age
 }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, cleanGroupColor, bookingDisabled = false, completionPct, missingSummary, editHref }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, bookingDisabled = false, completionPct, missingSummary, editHref }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
@@ -33,7 +33,6 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   // "Add a clean" (migration 0031) — carried through from the browse "View
   // Profile" link's query params when reached mid-flow. See BookingRequestForm.
   cleanGroupId?: string
-  cleanGroupColor?: string
   // Preview override — the cleaner's own preview reuses this exact shell, but
   // shows no booking section at all (a cleaner booking themselves makes no
   // sense — see showBooking below). The customer page never sets this, so its
@@ -265,7 +264,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                   </span>
                 ))}
               </div>
-              <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} cleanGroupId={cleanGroupId} cleanGroupColor={cleanGroupColor} />
+              <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} cleanGroupId={cleanGroupId} />
             </div>
           ) : (
             <div className="bg-white shadow-sm rounded-2xl p-6 text-center">

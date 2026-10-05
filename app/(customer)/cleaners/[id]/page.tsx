@@ -7,7 +7,7 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
   params: { id: string }
-  searchParams: { date?: string; location?: string; duration?: string; from?: string; to?: string; cleanGroup?: string; cleanColor?: string }
+  searchParams: { date?: string; location?: string; duration?: string; from?: string; to?: string; cleanGroup?: string }
 }
 
 export default async function CleanerProfilePage({ params, searchParams }: Props) {
@@ -98,7 +98,6 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
         presetAvailFrom={searchParams.from}
         presetAvailTo={searchParams.to}
         cleanGroupId={searchParams.cleanGroup}
-        cleanGroupColor={searchParams.cleanColor}
       />
     </div>
   )

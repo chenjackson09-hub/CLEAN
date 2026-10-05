@@ -41,7 +41,6 @@ export function BookingRequestForm({
   presetAddress,
   presetDuration,
   cleanGroupId,
-  cleanGroupColor,
   defaultOpen = false,
   onCancel,
 }: {
@@ -57,7 +56,6 @@ export function BookingRequestForm({
   // candidate days the host marked for one need. Threaded straight through to
   // createBooking; nothing here needs to know more than "tag it."
   cleanGroupId?: string
-  cleanGroupColor?: string
   // When embedded (e.g. in the browse "Schedule a clean" modal) the form
   // starts expanded and Cancel is delegated to the host (closes the modal)
   // instead of collapsing back to the inline button state.
@@ -183,7 +181,6 @@ export function BookingRequestForm({
       pets_present: hasPets ? petsPresent : undefined,
       host_present: hostPresent,
       clean_group_id: cleanGroupId,
-      clean_group_color: cleanGroupColor,
     })
     setLoading(false)
     if (result?.error) {
@@ -266,7 +263,6 @@ export function BookingRequestForm({
     <form onSubmit={handleSubmit} className="pt-4 border-t border-gray-100 flex flex-col gap-5">
       <div>
         <div className="flex items-center gap-2">
-          {cleanGroupColor && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cleanGroupColor }} />}
           <h2 className="font-bold text-lg text-gray-900">{t('bookingRequestForm.headingDraft')}</h2>
         </div>
         <p className="text-sm text-gray-500 mt-0.5">

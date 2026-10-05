@@ -725,7 +725,7 @@ export async function respondToBooking(
       .neq("id", bookingId);
     siblingQuery = booking.clean_group_id
       ? siblingQuery.eq("clean_group_id", booking.clean_group_id)
-      : siblingQuery.eq("customer_id", booking.customer_id);
+      : siblingQuery.eq("customer_id", booking.customer_id).eq("scheduled_date", booking.scheduled_date);
     const { data: siblings } = await siblingQuery;
 
     if (booking.clean_group_id) {
@@ -741,15 +741,16 @@ export async function respondToBooking(
         .eq("status", "pending")
         .neq("id", bookingId);
     } else {
-      // Ungrouped request (the normal single-request flow, and every booking
-      // made before migration 0031): a customer selecting several dates/
-      // cleaners in one browse search still represents one need, so
-      // accepting any one of them resolves all of them — this is deliberate,
-      // confirmed product behavior, not a bug.
+      // Ungrouped request (a single specific day): the host may have asked
+      // several cleaners for that one day, so accepting any one resolves the
+      // others for the SAME day. Requests for other days are separate cleans
+      // now — "flexible days" (a frame, above) is how a host says "any of
+      // these days", so an ungrouped request never cancels another day.
       await admin
         .from("bookings")
         .update({ status: "cancelled", responded_at: new Date().toISOString() })
         .eq("customer_id", booking.customer_id)
+        .eq("scheduled_date", booking.scheduled_date)
         .eq("status", "pending")
         .neq("id", bookingId);
     }

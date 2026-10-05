@@ -14,7 +14,7 @@ function shortenName(fullName: string): string {
   return `${parts.slice(0, -1).join(' ')} ${last.charAt(0).toUpperCase()}.`
 }
 
-export function CleanerCard({ cleaner, date, location, duration, availFrom, availTo, cleanGroupId, cleanGroupColor }: { cleaner: CleanerResult; date?: string; location?: string; duration?: number; availFrom?: string; availTo?: string; cleanGroupId?: string; cleanGroupColor?: string }) {
+export function CleanerCard({ cleaner, date, location, cleanGroupId, onModalClosed }: { cleaner: CleanerResult; date?: string; location?: string; cleanGroupId?: string; onModalClosed?: () => void }) {
   const { t } = useLanguage()
   const [scheduling, setScheduling] = useState(false)
   const initial = cleaner.full_name.charAt(0).toUpperCase()
@@ -27,11 +27,7 @@ export function CleanerCard({ cleaner, date, location, duration, availFrom, avai
   const params = new URLSearchParams()
   if (date) params.set('date', date)
   if (location) params.set('location', location)
-  if (duration) params.set('duration', String(duration))
-  if (availFrom) params.set('from', availFrom)
-  if (availTo) params.set('to', availTo)
   if (cleanGroupId) params.set('cleanGroup', cleanGroupId)
-  if (cleanGroupColor) params.set('cleanColor', cleanGroupColor)
   const qs = params.toString()
   const href = qs ? `/cleaners/${cleaner.id}?${qs}` : `/cleaners/${cleaner.id}`
 
@@ -145,12 +141,12 @@ export function CleanerCard({ cleaner, date, location, duration, availFrom, avai
           cleaner={cleaner}
           date={date}
           location={location}
-          duration={duration}
-          availFrom={availFrom}
-          availTo={availTo}
           cleanGroupId={cleanGroupId}
-          cleanGroupColor={cleanGroupColor}
-          onClose={() => setScheduling(false)}
+          onClose={() => {
+            setScheduling(false)
+            // A request may have just been sent — let the page refresh what it shows.
+            onModalClosed?.()
+          }}
         />
       )}
     </div>

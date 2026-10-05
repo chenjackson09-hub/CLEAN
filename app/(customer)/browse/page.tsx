@@ -1,49 +1,23 @@
-import { Suspense } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUser } from '@/lib/supabase/server'
-import { CalendarPicker } from './CalendarPicker'
-import { BrowseResults } from './BrowseResults'
-import { BrowseFilters } from './BrowseFilters'
-import { BrowseTitle } from './BrowseTitle'
+import { HostCalendar } from './HostCalendar'
 import { WaitlistNotice } from './WaitlistNotice'
-import { parseCleans, allCleanDates, resolveFocusedDate } from './cleanGroups'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
 import { extractArea } from '@/lib/bookingArea'
-import type { CleanerResult, DateGroup } from '@/lib/types/cleaner'
-
-type Props = {
-  searchParams: {
-    // "Add a clean" (migration 0031) — `cleans` is a JSON-encoded array of
-    // {id, color, dates[]} candidate-day groups (see cleanGroups.ts); `focus`
-    // is which single day's cleaner list is shown below the calendar.
-    cleans?: string; focus?: string; sort?: string; from?: string; to?: string; duration?: string
-  }
-}
-
-function toMin(t: string): number {
-  const [h, m] = t.slice(0, 5).split(':').map(Number)
-  return h * 60 + m
-}
+import type { CleanerResult } from '@/lib/types/cleaner'
+import type { DayAvailEntry, HostBooking, HostBookingStatus } from '@/lib/hostCalendar'
 
 function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default async function BrowsePage({ searchParams }: Props) {
-  const { sort, from, to, duration } = searchParams
-  const cleans = parseCleans(searchParams.cleans)
-  const selectedDates = allCleanDates(cleans)
-  const hasDates = selectedDates.length > 0
-  const focusedDate = resolveFocusedDate(cleans, searchParams.focus)
-
-  // A concrete duration from the search filter locks the booking form's duration
-  // field. The "Not sure" option (duration === 'any') or no filter leaves it
-  // editable, so presetDuration stays undefined.
-  const parsedDuration = duration && duration !== 'any' ? parseInt(duration) : NaN
-  const presetDuration = Number.isFinite(parsedDuration) ? parsedDuration : undefined
-
+// The host's schedule: one calendar showing, per day, the host's own booked
+// cleans and requests plus how many cleaners are free, with a sheet per day to
+// see who's booked / asked / free and to send requests. This page only gathers
+// the data; HostCalendar owns the interaction.
+export default async function BrowsePage() {
   const admin = createAdminClient()
 
   // The customer's location comes from their profile, not a search field — we
@@ -78,53 +52,73 @@ export default async function BrowsePage({ searchParams }: Props) {
     )
   }
 
-  // For the calendar's clean-legend chips: the live status of any booking
-  // already sent for one of the marked days, so a host can tell a released
-  // (sibling-cancelled) or matched day apart from one still just "marked".
-  // Scoped to this customer even though clean_group_id is already
-  // unguessable (a random uuid) — belt and suspenders.
-  const cleanGroupIds = cleans.map(g => g.id)
-  const { data: groupBookingRows } = user && cleanGroupIds.length > 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayStr = ymd(today)
+
+  // ── The host's own bookings (pending / accepted / past), for the day markers ──
+  const since = new Date(today)
+  since.setDate(since.getDate() - 60)
+  const { data: bookingRows } = user
     ? await admin
         .from('bookings')
-        .select('scheduled_date, status')
-        .in('clean_group_id', cleanGroupIds)
+        .select('id, cleaner_id, scheduled_date, scheduled_start, duration_hours, status, response_deadline, clean_group_id')
         .eq('customer_id', user.id)
-        .returns<{ scheduled_date: string; status: string }[]>()
+        .gte('scheduled_date', ymd(since))
+        .order('scheduled_date')
+        .limit(400)
+        .returns<{
+          id: string; cleaner_id: string; scheduled_date: string; scheduled_start: string; duration_hours: number
+          status: HostBookingStatus; response_deadline: string; clean_group_id: string | null
+        }[]>()
     : { data: null }
-  const bookingStatusByDate: Record<string, 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed'> = {}
-  for (const row of groupBookingRows ?? []) {
-    bookingStatusByDate[row.scheduled_date] = row.status as typeof bookingStatusByDate[string]
-  }
+  // The block a booking consumed (migration 0035) is read on its own so a not-yet-
+  // applied migration can never take the calendar down — it just shows start times.
+  const { data: slotRows } = user
+    ? await admin
+        .from('bookings')
+        .select('id, slot_start, slot_end')
+        .eq('customer_id', user.id)
+        .gte('scheduled_date', ymd(since))
+        .returns<{ id: string; slot_start: string | null; slot_end: string | null }[]>()
+    : { data: null }
+  const slotById = new Map((slotRows ?? []).map(r => [r.id, r]))
+  const bookingCleanerIds = Array.from(new Set((bookingRows ?? []).map(b => b.cleaner_id)))
+  const { data: bookingCleanerProfiles } = bookingCleanerIds.length
+    ? await admin.from('profiles').select('id, full_name').in('id', bookingCleanerIds)
+    : { data: [] as { id: string; full_name: string | null }[] }
+  const bookingNameById = new Map((bookingCleanerProfiles ?? []).map(p => [p.id, p.full_name ?? 'Cleaner']))
+  const now = Date.now()
+  const myBookings: HostBooking[] = (bookingRows ?? []).map(b => ({
+    id: b.id,
+    date: b.scheduled_date,
+    start: b.scheduled_start.slice(0, 5),
+    durationHours: b.duration_hours,
+    // A pending request past its 24h deadline is effectively declined.
+    status: b.status === 'pending' && new Date(b.response_deadline).getTime() < now ? 'declined' : b.status,
+    cleanerId: b.cleaner_id,
+    cleanerName: bookingNameById.get(b.cleaner_id) ?? 'Cleaner',
+    groupId: b.clean_group_id,
+    slotStart: slotById.get(b.id)?.slot_start ?? null,
+    slotEnd: slotById.get(b.id)?.slot_end ?? null,
+  }))
 
   const locationQuery = customer?.address?.trim() ?? ''
   // The customer has a usable location when they've saved an address.
   const hasLocation = !!locationQuery
 
-  let groups: DateGroup[] | null = null
+  let cleaners: CleanerResult[] = []
+  const dayAvail: Record<string, DayAvailEntry[]> = {}
   // True when the saved address can't be resolved to coordinates — distinct from
   // "resolved fine but no cleaner covers it".
   let locationError = false
-  // Per-date "heat" for the calendar: how many in-range cleaners have any
-  // availability that day, bucketed high/medium/low. Built whenever we know the
-  // customer's location — even before any dates are picked — so the calendar
-  // reflects real, in-range coverage instead of a static weekday guess.
-  const dateHeat: Record<string, 'high' | 'medium' | 'low'> = {}
 
   if (hasLocation) {
-    // Calendar heat window: today through ~4 months out. Weekly availability
-    // repeats by weekday so it needs no date range; only specific-date rows are
-    // range-bounded. Extend the upper bound to cover any far-future selected
-    // date so the day-group query below still sees its rows.
+    // Window: today through ~4 months out. Weekly availability repeats by weekday
+    // so it needs no date range; only specific-date rows are range-bounded.
     const HEAT_DAYS = 120
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const heatStart = ymd(today)
-    const heatEndDate = new Date(today)
-    heatEndDate.setDate(heatEndDate.getDate() + HEAT_DAYS)
-    const heatEnd = ymd(heatEndDate)
-    const maxSelected = selectedDates.length ? [...selectedDates].sort().at(-1)! : heatStart
-    const datedUpper = maxSelected > heatEnd ? maxSelected : heatEnd
+    const end = new Date(today)
+    end.setDate(end.getDate() + HEAT_DAYS)
 
     // Use admin client so RLS doesn't block reading availability or cleaners.
     const [{ data: weeklyRows }, { data: cleanerRows }] = await Promise.all([
@@ -139,34 +133,18 @@ export default async function BrowsePage({ searchParams }: Props) {
         .limit(500),
     ])
 
-    const weekly = weeklyRows ?? []
     let base = cleanerRows ?? []
-
-    // Availability range the customer is free in (the dual-thumb slider). When
-    // set, a cleaner matches a day if their availability overlaps this range by a
-    // long enough *continuous* block — see the day-group filter below.
-    const rangeFrom = from ? toMin(from) : null
-    const rangeTo = to ? toMin(to) : null
-    const hasRange = rangeFrom !== null && rangeTo !== null && rangeTo > rangeFrom
-
-    // Neither of the cleaner's own min_hours/max_hours filters browse results
-    // anymore — both are informational only, shown on the cleaner's profile as
-    // their stated standard. See migration 0013.
-    const reqDuration = duration && duration !== 'any' ? parseInt(duration) : null
 
     // Location filter: keep only cleaners whose service radius covers the
     // customer's location. A cleaner with no saved location can't be shown to
-    // cover it, so they're excluded once a location is being searched. Distance
-    // is the same regardless of date, so we compute it once here.
+    // cover it, so they're excluded. Prefer the coords saved with the profile
+    // address; geocode only as a fallback (e.g. a row saved before geocoding ran).
     const distanceById = new Map<string, number>()
-    // Prefer the coords saved with the profile address; geocode only as a
-    // fallback (e.g. an older row saved before geocoding ran).
     const customerLoc =
       customer?.lat != null && customer?.lng != null
         ? { lat: customer.lat, lng: customer.lng }
         : await geocodeAddress(locationQuery)
     if (!customerLoc) {
-      // Address couldn't be resolved — we can't guarantee any match.
       base = []
       locationError = true
     } else {
@@ -182,168 +160,97 @@ export default async function BrowsePage({ searchParams }: Props) {
     }
     const inRange = new Set(base.map(c => c.id))
 
-    // Specific-date availability, scoped to the in-range cleaners and the heat
-    // window (fetched after the distance filter so the range query stays small).
-    const { data: dateRows } = inRange.size
-      ? await admin
+    if (inRange.size > 0) {
+      const ids = Array.from(inRange)
+      const [{ data: dateRows }, { data: profileRows }] = await Promise.all([
+        admin
           .from('cleaner_availability')
           .select('cleaner_id, date, start_time, end_time')
-          .in('cleaner_id', Array.from(inRange))
-          .gte('date', heatStart)
-          .lte('date', datedUpper)
-          .limit(5000)
-      : { data: [] as { cleaner_id: string; date: string; start_time: string; end_time: string }[] }
-    const dated = dateRows ?? []
+          .in('cleaner_id', ids)
+          .gte('date', todayStr)
+          .lte('date', ymd(end))
+          .limit(5000),
+        admin.from('profiles').select('id, full_name, avatar_url').in('id', ids),
+      ])
+      const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
 
-    // Availability lookups, keyed for per-date grouping.
-    // cleaner_id → day_of_week → [{start, end}]
-    const weeklyMap = new Map<string, Map<number, Array<{ start: string; end: string }>>>()
-    for (const row of weekly) {
-      if (!weeklyMap.has(row.cleaner_id)) weeklyMap.set(row.cleaner_id, new Map())
-      const m = weeklyMap.get(row.cleaner_id)!
-      if (!m.has(row.day_of_week)) m.set(row.day_of_week, [])
-      m.get(row.day_of_week)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
-    }
-    // cleaner_id → date → [{start, end}]
-    const dateMap = new Map<string, Map<string, Array<{ start: string; end: string }>>>()
-    for (const row of dated) {
-      if (!dateMap.has(row.cleaner_id)) dateMap.set(row.cleaner_id, new Map())
-      const m = dateMap.get(row.cleaner_id)!
-      if (!m.has(row.date)) m.set(row.date, [])
-      m.get(row.date)!.push({ start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) })
-    }
+      // Every in-range cleaner once (nearest first); a day's list just points at them.
+      cleaners = sortCleaners(
+        base.map(c => {
+          const p = profileMap.get(c.id)
+          return {
+            id: c.id,
+            full_name: p?.full_name ?? 'Cleaner',
+            avatar_url: p?.avatar_url ?? null,
+            bio: c.bio ?? '',
+            service_types: (c.service_types ?? []) as string[],
+            hourly_rate: c.hourly_rate ?? 0,
+            years_experience: c.years_experience ?? 0,
+            languages: (c.languages ?? []) as string[],
+            area: extractArea((c as { address?: string | null }).address ?? '') ?? undefined,
+            distance_km: distanceById.get(c.id) ?? 0,
+            rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
+            rating_count: (c as { rating_count?: number }).rating_count ?? 0,
+            min_hours: (c as { min_hours?: number | null }).min_hours ?? null,
+            max_hours: (c as { max_hours?: number | null }).max_hours ?? null,
+          } satisfies CleanerResult
+        }),
+        'distance_asc',
+      )
 
-    // Calendar heat: per day in the window, count in-range cleaners with ANY
-    // availability (weekly OR specific-date) and bucket by share of the in-range
-    // pool. Deliberately ignores the time/duration/type refinements — it's a
-    // coarse "how many cleaners near you are around that day" signal. When the
-    // location resolved but no cleaner covers it, every day reads 'low'.
-    if (!locationError) {
-      // In-range cleaners that have a weekly slot, grouped by weekday.
-      const weeklyByDow = new Map<number, Set<string>>()
-      for (const row of weekly) {
+      // cleaner → weekday / date → slots
+      const weeklyMap = new Map<string, Map<number, { start: string; end: string }[]>>()
+      for (const row of weeklyRows ?? []) {
         if (!inRange.has(row.cleaner_id)) continue
-        if (!weeklyByDow.has(row.day_of_week)) weeklyByDow.set(row.day_of_week, new Set())
-        weeklyByDow.get(row.day_of_week)!.add(row.cleaner_id)
+        const m = weeklyMap.get(row.cleaner_id) ?? new Map()
+        m.set(row.day_of_week, [...(m.get(row.day_of_week) ?? []), { start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) }])
+        weeklyMap.set(row.cleaner_id, m)
       }
-      // In-range cleaners with a specific-date slot, grouped by date (dated rows
-      // are already scoped to in-range cleaners by the query above).
-      const datedByDate = new Map<string, Set<string>>()
-      for (const row of dated) {
-        if (!datedByDate.has(row.date)) datedByDate.set(row.date, new Set())
-        datedByDate.get(row.date)!.add(row.cleaner_id)
+      const dateMap = new Map<string, Map<string, { start: string; end: string }[]>>()
+      for (const row of dateRows ?? []) {
+        const m = dateMap.get(row.cleaner_id) ?? new Map()
+        m.set(row.date, [...(m.get(row.date) ?? []), { start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) }])
+        dateMap.set(row.cleaner_id, m)
       }
-      const total = inRange.size
+
       for (let i = 0; i <= HEAT_DAYS; i++) {
         const d = new Date(today)
         d.setDate(d.getDate() + i)
         const ds = ymd(d)
-        const ids = new Set(weeklyByDow.get(d.getDay()) ?? [])
-        ;(datedByDate.get(ds) ?? new Set<string>()).forEach(id => ids.add(id))
-        const ratio = total > 0 ? ids.size / total : 0
-        dateHeat[ds] = ids.size === 0 ? 'low' : ratio >= 0.66 ? 'high' : 'medium'
+        const entries: DayAvailEntry[] = []
+        for (const c of cleaners) {
+          const raw = [...(weeklyMap.get(c.id)?.get(d.getDay()) ?? []), ...(dateMap.get(c.id)?.get(ds) ?? [])]
+          if (raw.length === 0) continue
+          // De-dup (weekly + specific-date can overlap) and sort for a stable label.
+          const seen = new Set<string>()
+          const slots = raw
+            .filter(s => {
+              const k = `${s.start}-${s.end}`
+              if (seen.has(k)) return false
+              seen.add(k)
+              return true
+            })
+            .sort((a, b) => a.start.localeCompare(b.start))
+          entries.push({ id: c.id, slots })
+        }
+        if (entries.length > 0) dayAvail[ds] = entries
       }
-    }
-
-    if (hasDates) {
-      // Build a CleanerResult for every candidate so each date group can reuse it.
-      const ids = Array.from(inRange)
-      const { data: profileRows } = ids.length
-        ? await admin.from('profiles').select('id, full_name, avatar_url').in('id', ids)
-        : { data: [] as { id: string; full_name: string | null; avatar_url: string | null }[] }
-      const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
-
-      const resultById = new Map<string, CleanerResult>()
-      for (const c of base) {
-        const p = profileMap.get(c.id)
-        resultById.set(c.id, {
-          id: c.id,
-          full_name: p?.full_name ?? 'Cleaner',
-          avatar_url: p?.avatar_url ?? null,
-          bio: c.bio ?? '',
-          service_types: (c.service_types ?? []) as string[],
-          hourly_rate: c.hourly_rate ?? 0,
-          years_experience: c.years_experience ?? 0,
-          languages: (c.languages ?? []) as string[],
-          area: extractArea((c as { address?: string | null }).address ?? '') ?? undefined,
-          distance_km: distanceById.get(c.id) ?? 0,
-          rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
-          rating_count: (c as { rating_count?: number }).rating_count ?? 0,
-          min_hours: (c as { min_hours?: number | null }).min_hours ?? null,
-          max_hours: (c as { max_hours?: number | null }).max_hours ?? null,
-        } satisfies CleanerResult)
-      }
-
-      // Default to nearest-first within each day; honor an explicit sort instead.
-      const sortKey = sort || 'distance_asc'
-
-      // One group per selected date, earliest (closest) date first. A cleaner
-      // appears under a date if they have a specific-date or weekly slot for that
-      // day that covers the requested window.
-      groups = [...selectedDates].sort().map(dateStr => {
-        const dow = new Date(dateStr + 'T00:00:00').getDay()
-        const dayCleaners = base
-          .map(c => {
-            const slots = [
-              ...(weeklyMap.get(c.id)?.get(dow) ?? []),
-              ...(dateMap.get(c.id)?.get(dateStr) ?? []),
-            ]
-            return { c, slots }
-          })
-          .filter(({ c, slots }) => {
-            if (slots.length === 0) return false
-            if (!hasRange || rangeFrom === null || rangeTo === null) return true
-            // Longest *continuous* overlap (minutes) between the customer's range
-            // and any single availability slot — a clean can't span a gap, so we
-            // take the best single block, not the summed total.
-            const bestOverlap = Math.max(
-              0,
-              ...slots.map(s => Math.min(toMin(s.end), rangeTo) - Math.max(toMin(s.start), rangeFrom)),
-            )
-            if (bestOverlap <= 0) return false
-            // The overlap must fit the customer's chosen duration, if any —
-            // min_hours is informational only and no longer required here.
-            const requiredMin = (reqDuration ?? 0) * 60
-            return bestOverlap >= requiredMin
-          })
-          .map(({ c, slots }) => {
-            // De-dup (weekly + specific-date can overlap) and sort for a stable
-            // availability label on the card, shown for this specific date.
-            const seen = new Set<string>()
-            const availability = slots
-              .filter(s => {
-                const k = `${s.start}-${s.end}`
-                if (seen.has(k)) return false
-                seen.add(k)
-                return true
-              })
-              .sort((a, b) => a.start.localeCompare(b.start))
-            return { ...resultById.get(c.id)!, availability }
-          })
-        return { date: dateStr, cleaners: sortCleaners(dayCleaners, sortKey) }
-      })
     }
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <BrowseTitle />
-
-      {/* On desktop the filters/sorting sit to the left of a compact calendar;
-          on mobile they stack (calendar first, then filters) as before. */}
-      <div className="mb-4 lg:flex lg:items-start lg:gap-4">
-        <div className="lg:order-1 lg:w-96 lg:shrink-0">
-          <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 h-72 animate-pulse mb-4" />}>
-            <CalendarPicker dateHeat={dateHeat} bookingStatusByDate={bookingStatusByDate} />
-          </Suspense>
-        </div>
-
-        <div className="lg:order-2 lg:flex-1 lg:min-w-0">
-          <BrowseFilters cleans={searchParams.cleans} focus={searchParams.focus} sort={sort} from={from} to={to} duration={duration} />
-        </div>
-      </div>
-
-      <BrowseResults hasDates={hasDates} hasLocation={hasLocation} locationError={locationError} location={locationQuery} duration={presetDuration} availFrom={from} availTo={to} groups={groups} cleans={cleans} focusedDate={focusedDate} />
+    // A fixed-height column (the viewport minus the header) so the whole month,
+    // its key and the controls fit on screen with no scrolling.
+    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+      <HostCalendar
+        todayStr={todayStr}
+        hasLocation={hasLocation}
+        locationError={locationError}
+        location={locationQuery}
+        cleaners={cleaners}
+        dayAvail={dayAvail}
+        bookings={myBookings}
+      />
     </div>
   )
 }

@@ -47,14 +47,13 @@ describe('CleanerCard', () => {
     links.forEach(link => expect(link).toHaveAttribute('href', '/cleaners/abc-123'))
   })
 
-  it('carries date, location and duration into the View Profile link', () => {
-    render(<CleanerCard cleaner={baseCleaner} date="2026-06-15" location="Tel Aviv" duration={3} />)
+  it('carries date and location into the View Profile link', () => {
+    render(<CleanerCard cleaner={baseCleaner} date="2026-06-15" location="Tel Aviv" />)
     const links = screen.getAllByRole('link', { name: /view profile/i })
     links.forEach(link => {
       const href = link.getAttribute('href') ?? ''
       expect(href).toContain('/cleaners/abc-123?')
       expect(href).toContain('date=2026-06-15')
-      expect(href).toContain('duration=3')
     })
   })
 
