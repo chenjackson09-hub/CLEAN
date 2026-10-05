@@ -77,7 +77,15 @@ describe('cleaner home', () => {
     expect(screen.getByText('Already Done').closest('.opacity-60')).not.toBeNull()
   })
 
-  it('search is hidden until the icon is tapped, then filters by name or location', async () => {
+  it('greets with a comma and puts the search bar right under the name', () => {
+    render(<DashboardLists {...base} />)
+    const name = screen.getByRole('heading', { level: 1, name: 'Chen Jackson' })
+    expect(name.previousElementSibling?.textContent).toMatch(/^Good (morning|afternoon|evening),$/)
+    const search = screen.getByRole('searchbox', { name: 'Search by name or location...' })
+    expect(name.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('search is always visible and filters by name or location', async () => {
     render(
       <DashboardLists
         {...base}
@@ -87,10 +95,7 @@ describe('cleaner home', () => {
         ]}
       />,
     )
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Search by name or location...' }))
-    const box = screen.getByRole('searchbox')
-    await userEvent.type(box, 'haifa')
+    await userEvent.type(screen.getByRole('searchbox'), 'haifa')
     expect(screen.getByText('Dana Levi')).toBeInTheDocument()
     expect(screen.queryByText('Roni Tyroler')).not.toBeInTheDocument()
   })
