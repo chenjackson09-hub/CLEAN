@@ -26,13 +26,13 @@ describe('RequestGroupRow', () => {
     render(<RequestGroupRow group={group([bk('a', '2026-10-15'), bk('b', '2026-10-16')])} />)
     expect(screen.getAllByText('Host One')).toHaveLength(1)
     expect(screen.getByText('Thu 15 Oct · Fri 16 Oct')).toBeInTheDocument()
-    expect(screen.getByText('2 days')).toBeInTheDocument()
+    expect(screen.getByText('2 options')).toBeInTheDocument()
   })
 
   it('a single request reads as date · time · hours', () => {
     render(<RequestGroupRow group={group([bk('a', '2026-10-15')])} />)
     expect(screen.getByText('Thu 15 Oct · 09:00 · 4h')).toBeInTheDocument()
-    expect(screen.queryByText(/days$/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/options$/)).not.toBeInTheDocument()
   })
 
   it('accepting is one tap (no second "accept this request?"), then offers the chat instead of a phone number', async () => {
@@ -57,13 +57,13 @@ describe('RequestGroupRow', () => {
     render(<RequestGroupRow group={group([bk('a', '2026-10-15'), bk('b', '2026-10-16', { scheduled_start: '14:00:00' })])} />)
     await userEvent.click(screen.getByRole('button', { name: /Host One/ }))
 
-    const dialogDays = screen.getByText('Requested days').parentElement!
+    const dialogDays = screen.getByText('Options').parentElement!
     await userEvent.click(within(dialogDays).getByRole('button', { name: /Fri 16 Oct · 14:00/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
     await waitFor(() => expect(mockRespond).toHaveBeenCalledWith('b', 'accepted'))
 
     // title weight vs answer weight in the shared summary
-    expect(screen.queryByText('Requested days')).not.toBeInTheDocument() // replaced by the accepted panel
+    expect(screen.queryByText('Options')).not.toBeInTheDocument() // replaced by the accepted panel
   })
 
   it('declining asks to confirm, and the remaining days stay when one is declined', async () => {
