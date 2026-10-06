@@ -179,6 +179,13 @@ export interface Booking {
   // True once the cleaner has dismissed this booking's cancellation from the
   // dashboard "Updates" section (or cancelled it herself). See migration 0003.
   cleaner_ack_cancelled: boolean;
+  // Cancellation record (migration 0036): who cancelled, when, why, and what the
+  // booking was before. Null on bookings that were never cancelled.
+  cancelled_by?: "host" | "cleaner" | null;
+  cancelled_at?: string | null;
+  cancellation_reason?: string | null;
+  cancellation_message?: string | null;
+  cancelled_from_status?: "pending" | "accepted" | null;
   // True once the cleaner has edited this booking (start time / duration / note)
   // after it was created. Drives the customer's "modified by the cleaner"
   // indicator on /bookings. See migration 0005.

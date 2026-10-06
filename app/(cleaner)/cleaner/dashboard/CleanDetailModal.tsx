@@ -8,6 +8,8 @@ import Image from "next/image";
 import { useLang } from "@/context/LangContext";
 import { cancelClean, rateCustomer } from "../../actions";
 import { StarRatingInput } from "@/components/StarRating";
+import CancelCleaningSheet from "@/components/CancelCleaningSheet";
+import { reasonLabel } from "@/lib/cancellation";
 import BookingRequestSummary from "@/components/BookingRequestSummary";
 import { buildBookingSummaryData } from "@/lib/bookingSummary";
 import type { BookingWithCustomer } from "@/types/database";
@@ -24,8 +26,6 @@ export default function CleanDetailModal({
   const { t, lang } = useLang();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
 
   const summaryData = buildBookingSummaryData(booking, booking.home_info, hourlyRate);
 
@@ -71,21 +71,6 @@ export default function CleanDetailModal({
         return;
       }
       setReviewSaved(true);
-      router.refresh();
-    });
-  }
-
-  function handleCancel() {
-    setError(null);
-    startTransition(async () => {
-      const res = await cancelClean(booking.id);
-      if (res?.error) {
-        // Surface the real reason (DB/RLS message or guard) instead of a generic
-        // string, so failures are diagnosable rather than silently opaque.
-        setError(res.error || t("req_cancel_error"));
-        return;
-      }
-      onClose();
       router.refresh();
     });
   }
@@ -151,6 +136,23 @@ export default function CleanDetailModal({
 
         {/* Details */}
         <div className="px-8 py-6 space-y-5">
+          {booking.status === "cancelled" && booking.cancelled_by && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 space-y-1.5">
+              <p className="text-sm font-semibold text-gray-800">
+                {booking.cancelled_by === "cleaner"
+                  ? t("req_cancelled_by_you")
+                  : t("req_cancelled_by_host").replace("{name}", booking.profiles?.full_name ?? t("req_customer"))}
+              </p>
+              {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang) && (
+                <p className="text-sm text-gray-600">
+                  {t("req_cancelled_reason")}: {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang)}
+                </p>
+              )}
+              {booking.cancellation_message && (
+                <p className="text-sm italic text-gray-600 whitespace-pre-wrap break-words">“{booking.cancellation_message}”</p>
+              )}
+            </div>
+          )}
           <BookingRequestSummary
             data={summaryData}
             cleanerName={booking.profiles?.full_name ?? t("req_customer")}
@@ -221,38 +223,32 @@ export default function CleanDetailModal({
         </div>
 
         {cancellable && (
-          <div className="px-8 pb-8 space-y-3">
-            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-
-            {confirming ? (
-              <>
-                <p className="text-sm text-gray-600 text-center">{t("req_cancel_confirm")}</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setConfirming(false)}
-                    disabled={pending}
-                    className="flex-1 bg-gray-100 text-gray-700 rounded-xl py-4 text-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
-                  >
-                    {t("req_cancel_no")}
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    disabled={pending}
-                    className="flex-1 bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
-                  >
-                    {pending ? t("req_cancelling") : t("req_cancel_yes")}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <button
-                onClick={() => setConfirming(true)}
-                className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
-              >
-                {t("req_cancel")}
-              </button>
-            )}
+          <div className="px-8 pb-8">
+            <button
+              onClick={() => setConfirming(true)}
+              className="w-full bg-red-600 text-white rounded-xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
+            >
+              {t("req_cancel")}
+            </button>
           </div>
+        )}
+        {confirming && (
+          <CancelCleaningSheet
+            lang={lang}
+            role="cleaner"
+            date={booking.scheduled_date}
+            start={booking.scheduled_start}
+            durationHours={booking.duration_hours}
+            hourlyRate={hourlyRate}
+            otherName={booking.profiles?.full_name ?? ""}
+            onConfirm={(input) => cancelClean(booking.id, input)}
+            onClose={() => setConfirming(false)}
+            onDone={() => {
+              setConfirming(false);
+              onClose();
+              router.refresh();
+            }}
+          />
         )}
       </div>
     </div>,

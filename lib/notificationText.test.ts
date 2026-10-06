@@ -49,3 +49,21 @@ describe('chat and reminder notifications', () => {
     expect(describeNotification('request_expiring', { name: 'Host One', date: '2026-10-20' }, 'en')).toContain('about to expire')
   })
 })
+
+describe('cancellation notifications', () => {
+  it('tells the cleaner a host cancelled and that their time is open again', () => {
+    expect(describeNotification('booking_cancelled_by_host', { name: 'Chen Jackson', date: '2026-10-13', time: '10:00' }, 'en')).toBe(
+      'Chen Jackson cancelled the cleaning scheduled for 13 October at 10:00. Your availability for this time has been reopened.',
+    )
+  })
+  it('tells the host the cleaner cancelled and points at finding another', () => {
+    expect(describeNotification('booking_cancelled_by_cleaner', { name: 'Maya L.', date: '2026-10-13', time: '10:00' }, 'en')).toBe(
+      'Maya L. had to cancel your cleaning on 13 October at 10:00. Tap to find another cleaner.',
+    )
+  })
+  it('still reads fine for older notifications without a time', () => {
+    expect(describeNotification('booking_cancelled_by_cleaner', { name: 'Maya L.', date: '2026-10-13' }, 'en')).toBe(
+      'Maya L. had to cancel your cleaning on 13 October. Tap to find another cleaner.',
+    )
+  })
+})

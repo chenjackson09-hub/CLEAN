@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { DaySheet } from './DaySheet'
-import { bookedHours, buildDayModel, openFrameDates, type DayAvailEntry, type HostBooking } from '@/lib/hostCalendar'
+import { bookedHours, buildDayModel, openFrameDates, type DayAvailEntry, type HostBooking, type RebookInfo } from '@/lib/hostCalendar'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
@@ -17,6 +17,8 @@ type Props = {
   dayAvail: Record<string, DayAvailEntry[]>
   // the host's own bookings and requests
   bookings: HostBooking[]
+  // "Find another cleaner": a cancelled request reopened on its day.
+  rebook?: RebookInfo
 }
 
 function ds(y: number, m: number, d: number) {
@@ -28,17 +30,20 @@ function ds(y: number, m: number, d: number) {
 // Tapping a day opens a sheet to see who is booked/asked/free and to ask someone.
 // "Flexible days" lets the host mark several days for ONE clean: requests sent
 // from there share a frame, so when one is accepted the rest cancel on their own.
-export function HostCalendar({ todayStr, hasLocation, locationError, location, cleaners, dayAvail, bookings }: Props) {
+export function HostCalendar({ todayStr, hasLocation, locationError, location, cleaners, dayAvail, bookings, rebook }: Props) {
   const router = useRouter()
   const { t, messages } = useLanguage()
+  const liveRebook = rebook && rebook.date >= todayStr ? rebook : undefined
   const [view, setView] = useState(() => {
-    const [y, m] = todayStr.split('-').map(Number)
+    const [y, m] = (liveRebook?.date ?? todayStr).split('-').map(Number)
     return { y, m: m - 1 }
   })
   const [frameMode, setFrameMode] = useState(false)
   const [frameDays, setFrameDays] = useState<string[]>([])
   const [frameId, setFrameId] = useState<string | undefined>(undefined)
-  const [sheet, setSheet] = useState<{ days: string[]; active: string } | null>(null)
+  const [sheet, setSheet] = useState<{ days: string[]; active: string } | null>(() =>
+    liveRebook ? { days: [liveRebook.date], active: liveRebook.date } : null,
+  )
 
   const cleanersById = useMemo(() => new Map(cleaners.map((c) => [c.id, c])), [cleaners])
   const outlined = useMemo(() => {
@@ -81,8 +86,10 @@ export function HostCalendar({ todayStr, hasLocation, locationError, location, c
 
   function closeSheet() {
     setSheet(null)
-    // A request may have just been sent — refresh what the calendar shows.
-    router.refresh()
+    // A request may have just been sent — refresh what the calendar shows. When
+    // re-requesting a cancelled clean, also drop ?rebook so the details aren't reused.
+    if (liveRebook) router.replace('/browse')
+    else router.refresh()
   }
 
   const needsAddress = locationError || !hasLocation
@@ -211,6 +218,7 @@ export function HostCalendar({ todayStr, hasLocation, locationError, location, c
           location={location}
           cleanersById={cleanersById}
           frameId={frameMode ? frameId : undefined}
+          rebook={liveRebook}
           onPick={(day) => setSheet({ days: sheet.days, active: day })}
           onClose={closeSheet}
           onRequestSent={() => router.refresh()}

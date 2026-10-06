@@ -31,6 +31,17 @@ const TIME_OPTIONS = Array.from({ length: (END_HOUR - START_HOUR) * 2 + 1 }, (_,
   return `${String(h).padStart(2, '0')}:${m}`
 })
 
+// Details carried over from an earlier request (e.g. a cancelled one being
+// re-requested with another cleaner). Everything is still editable.
+export type RequestPrefill = {
+  startTime?: string
+  notes?: string
+  cleaningType?: 'regular' | 'deep'
+  extras?: string[]
+  petsPresent?: boolean | null
+  hostPresent?: boolean | null
+}
+
 const EXTRA_KEYS = ['oven', 'linens', 'windows', 'fridge', 'laundry', 'outdoor'] as const
 
 export function BookingRequestForm({
@@ -41,6 +52,7 @@ export function BookingRequestForm({
   presetAddress,
   presetDuration,
   cleanGroupId,
+  prefill,
   defaultOpen = false,
   onCancel,
 }: {
@@ -56,6 +68,7 @@ export function BookingRequestForm({
   // candidate days the host marked for one need. Threaded straight through to
   // createBooking; nothing here needs to know more than "tag it."
   cleanGroupId?: string
+  prefill?: RequestPrefill
   // When embedded (e.g. in the browse "Schedule a clean" modal) the form
   // starts expanded and Cancel is delegated to the host (closes the modal)
   // instead of collapsing back to the inline button state.
@@ -69,19 +82,19 @@ export function BookingRequestForm({
   const [error, setError] = useState<string | null>(null)
 
   const [date, setDate] = useState(presetDate ?? '')
-  const [startTime, setStartTime] = useState('09:00')
+  const [startTime, setStartTime] = useState(prefill?.startTime ?? '09:00')
   const [duration, setDuration] = useState(
     presetDuration != null && presetDuration >= 1 && presetDuration <= 8 ? presetDuration : 3
   )
   const [address, setAddress] = useState('')
   const [street, setStreet] = useState('')
-  const [notes, setNotes] = useState('')
-  const [cleaningType, setCleaningType] = useState<'regular' | 'deep'>('regular')
-  const [extras, setExtras] = useState<string[]>([])
+  const [notes, setNotes] = useState(prefill?.notes ?? '')
+  const [cleaningType, setCleaningType] = useState<'regular' | 'deep'>(prefill?.cleaningType ?? 'regular')
+  const [extras, setExtras] = useState<string[]>(prefill?.extras ?? [])
   const [addingExtra, setAddingExtra] = useState(false)
   const [customExtra, setCustomExtra] = useState('')
-  const [petsPresent, setPetsPresent] = useState(true)
-  const [hostPresent, setHostPresent] = useState(true)
+  const [petsPresent, setPetsPresent] = useState(prefill?.petsPresent ?? true)
+  const [hostPresent, setHostPresent] = useState(prefill?.hostPresent ?? true)
 
   // Home/pet/cleaning-preference defaults, fetched from the host's own profile
   // once the card is opened (a plain session-scoped read of their own row —
@@ -105,13 +118,13 @@ export function BookingRequestForm({
         .single<HostDefaults>()
       if (!data) return
       setHostDefaults(data)
-      setCleaningType(data.usual_cleaning_type === 'deep' ? 'deep' : 'regular')
+      if (!prefill?.cleaningType) setCleaningType(data.usual_cleaning_type === 'deep' ? 'deep' : 'regular')
       setHomeDwelling(data.dwelling_type ?? 'house')
       const bedrooms = data.bedrooms ?? data.num_rooms
       setHomeBedrooms(bedrooms != null ? String(bedrooms) : '')
       setHomeBathrooms(data.bathrooms != null ? String(data.bathrooms) : '')
     })
-  }, [phase, hostDefaults])
+  }, [phase, hostDefaults, prefill?.cleaningType])
 
   const hasPets = (hostDefaults?.pet_types.length ?? 0) > 0
   const petsLabel = hostDefaults

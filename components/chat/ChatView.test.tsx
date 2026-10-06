@@ -129,4 +129,39 @@ describe('ChatView', () => {
     await waitFor(() => expect(mockSend).toHaveBeenCalledTimes(2))
     expect(mockSend.mock.calls[1][2]).toBe(mockSend.mock.calls[0][2])
   })
+
+  describe('cancelled cleaning', () => {
+    const cancelled: ChatBookingCard = {
+      ...upcoming, booking_id: 'b3', status: 'cancelled', scheduled_date: '2099-01-10',
+      cancelled_by: 'cleaner', cancelled_at: '2026-06-15T12:00:00Z', cancellation_reason: 'unexpected', cancellation_message: 'Something came up',
+    }
+    function renderCancelled(role: 'host' | 'cleaner') {
+      return render(
+        <ChatView
+          conversationId="conv-1" currentUserId={role === 'host' ? 'host-1' : 'cleaner-1'} currentUserRole={role}
+          other={{ id: 'x', name: 'Noa Rosen', displayName: 'Noa R.', avatarUrl: null }}
+          initialMessages={[]} initialHasMore={false} cards={[cancelled]} backHref="/chat"
+        />
+      )
+    }
+
+    it('keeps the card (greyed) and adds a permanent entry with who, when, the reason and the note', () => {
+      renderCancelled('host')
+      expect(screen.getByText(/Clean Cancelled/)).toBeInTheDocument()
+      expect(screen.getByText('Cleaning cancelled by Noa R.')).toBeInTheDocument()
+      expect(screen.getByText(/Reason: I can no longer do this job|Reason: Something unexpected happened/)).toBeInTheDocument()
+      expect(screen.getByText(/Something came up/)).toBeInTheDocument()
+    })
+
+    it('offers the host "Find another cleaner" for the same request when the cleaner cancelled', async () => {
+      renderCancelled('host')
+      expect(await screen.findByRole('link', { name: 'Find another cleaner' })).toHaveAttribute('href', '/browse?rebook=b3')
+    })
+
+    it('says "by you" to the person who cancelled, and gives the cleaner no rebook button', () => {
+      renderCancelled('cleaner')
+      expect(screen.getByText('Cleaning cancelled by you')).toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Find another cleaner' })).not.toBeInTheDocument()
+    })
+  })
 })

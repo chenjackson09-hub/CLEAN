@@ -5,6 +5,7 @@ import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { StarRatingDisplay } from '@/components/StarRating'
 import { ScheduleCleanModal } from './ScheduleCleanModal'
+import type { RequestPrefill } from '@/app/(customer)/cleaners/[id]/BookingRequestForm'
 
 // "Sarah Cohen" → "Sarah C." — shorten the surname to its first initial for privacy.
 function shortenName(fullName: string): string {
@@ -14,7 +15,7 @@ function shortenName(fullName: string): string {
   return `${parts.slice(0, -1).join(' ')} ${last.charAt(0).toUpperCase()}.`
 }
 
-export function CleanerCard({ cleaner, date, location, cleanGroupId, onModalClosed }: { cleaner: CleanerResult; date?: string; location?: string; cleanGroupId?: string; onModalClosed?: () => void }) {
+export function CleanerCard({ cleaner, date, location, cleanGroupId, duration, prefill, onModalClosed }: { cleaner: CleanerResult; date?: string; location?: string; cleanGroupId?: string; duration?: number; prefill?: RequestPrefill; onModalClosed?: () => void }) {
   const { t } = useLanguage()
   const [scheduling, setScheduling] = useState(false)
   const initial = cleaner.full_name.charAt(0).toUpperCase()
@@ -142,6 +143,8 @@ export function CleanerCard({ cleaner, date, location, cleanGroupId, onModalClos
           date={date}
           location={location}
           cleanGroupId={cleanGroupId}
+          duration={duration}
+          prefill={prefill}
           onClose={() => {
             setScheduling(false)
             // A request may have just been sent — let the page refresh what it shows.

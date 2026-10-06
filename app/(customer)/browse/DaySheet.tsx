@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { CleanerCard } from './CleanerCard'
-import { bookedHours, type DayModel, type HostBooking } from '@/lib/hostCalendar'
+import { bookedHours, type DayModel, type HostBooking, type RebookInfo } from '@/lib/hostCalendar'
 import { shortName } from '@/lib/chatFormat'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
@@ -19,6 +19,8 @@ type Props = {
   // Set in flexible-days mode: every request sent from here joins this frame, so
   // the first acceptance cancels the rest.
   frameId?: string
+  // Set when re-requesting a cancelled clean: details are carried over on its day.
+  rebook?: RebookInfo
   onPick: (day: string) => void
   onClose: () => void
   onRequestSent: () => void
@@ -26,11 +28,14 @@ type Props = {
 
 // The host's view of one day: what's booked, which requests are out, and who is
 // free to ask — the host-side twin of the cleaner's day panel.
-export function DaySheet({ days, active, model, todayStr, hasLocation, locationError, location, cleanersById, frameId, onPick, onClose, onRequestSent }: Props) {
+export function DaySheet({ days, active, model, todayStr, hasLocation, locationError, location, cleanersById, frameId, rebook, onPick, onClose, onRequestSent }: Props) {
   const { t, lang } = useLanguage()
   const locale = lang === 'he' ? 'he-IL' : 'en-GB'
   const fmt = (d: string, opts: Intl.DateTimeFormatOptions) => new Date(d + 'T12:00:00').toLocaleDateString(locale, opts)
   const past = active < todayStr
+  const rebooking = rebook && rebook.date === active ? rebook : undefined
+  // The cleaner who cancelled isn't offered again for the day they cancelled.
+  const freeList = rebooking ? model.free.filter((e) => e.id !== rebooking.cleanerId) : model.free
 
   const chatIcon = (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -98,6 +103,12 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
         )}
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+          {rebooking && (
+            <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {t('browse.rebookBanner', { name: shortName(rebooking.cleanerName) })}
+            </p>
+          )}
+
           {past && model.booked.length === 0 && model.requested.length === 0 && model.closed.length === 0 && (
             <p className="text-center text-gray-400 italic py-4">{t('browse.sheetPast')}</p>
           )}
@@ -147,7 +158,7 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
             <section>
               <h3 className="text-sm font-bold text-gray-900 mb-1.5">
                 {t('browse.sheetFree')}
-                {hasLocation && !locationError && model.free.length > 0 && <span className="ms-1.5 text-gray-400 font-normal">({model.free.length})</span>}
+                {hasLocation && !locationError && freeList.length > 0 && <span className="ms-1.5 text-gray-400 font-normal">({freeList.length})</span>}
               </h3>
               {locationError ? (
                 <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-3 py-2">
@@ -159,11 +170,11 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
                   {t('browse.enterLocation')}{' '}
                   <Link href="/profile" className="font-semibold text-blue-600 hover:underline">{t('browse.goToProfile')}</Link>
                 </p>
-              ) : model.free.length === 0 ? (
+              ) : freeList.length === 0 ? (
                 <p className="text-sm text-gray-500">{t('browse.sheetNoFree')}</p>
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {model.free.map((entry) => {
+                  {freeList.map((entry) => {
                     const cleaner = cleanersById.get(entry.id)
                     if (!cleaner) return null
                     return (
@@ -171,7 +182,9 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
                         <CleanerCard
                           cleaner={{ ...cleaner, availability: entry.slots }}
                           date={active}
-                          location={location}
+                          location={rebooking?.address ?? location}
+                          duration={rebooking?.duration}
+                          prefill={rebooking?.prefill}
                           cleanGroupId={frameId}
                           onModalClosed={onRequestSent}
                         />

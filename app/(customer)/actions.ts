@@ -4,8 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
-import { restoreAvailability, restoreSlot } from "@/lib/availability"
 import { sendNewBookingRequest } from "@/lib/resend"
+import { cancelBookingCore } from "@/lib/cancellation"
 import { notify, profileNames } from "@/lib/notifications"
 
 // Records that the customer has now seen their bookings, clearing the "newly
@@ -341,76 +341,29 @@ export async function createBooking(data: {
   return { success: true }
 }
 
-// Lets a customer cancel their own booking from the Bookings page. Only pending
-// requests and accepted (confirmed) bookings can be cancelled — past/declined/
-// already-cancelled bookings are terminal. The booking is scoped to the calling
-// customer both when reading and writing, and the "customer manages own bookings"
-// RLS policy (auth.uid() = customer_id) enforces ownership at the DB level too.
-//
-// Note: this does NOT restore the carved-out time to the cleaner's availability;
-// respondToBooking trims availability on accept, so a follow-up could re-open it.
-export async function cancelBooking(bookingId: string): Promise<ActionResult> {
+// Cancels one of the host's own bookings — a pending request (withdrawn) or a
+// confirmed clean (cancelled). All the work (guarded status change, who/when/why,
+// releasing the cleaner's time, telling the cleaner) lives in cancelBookingCore,
+// shared with the cleaner's cancelClean, so the two sides can't drift. The
+// booking is never deleted; asking twice, or from a stale screen, reports
+// "already cancelled" and changes nothing.
+export async function cancelBooking(
+  bookingId: string,
+  input?: { reason?: string | null; message?: string | null },
+): Promise<ActionResult & { alreadyCancelled?: boolean }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
-  const { data: booking, error: fetchErr } = await supabase
-    .from("bookings")
-    .select("status, cleaner_id, scheduled_date, scheduled_start, duration_hours")
-    .eq("id", bookingId)
-    .eq("customer_id", user.id)
-    .single()
-
-  if (fetchErr || !booking) return { error: "Booking not found." }
-  if (booking.status !== "pending" && booking.status !== "accepted") {
-    return { error: "This booking can no longer be cancelled." }
+  const result = await cancelBookingCore(createAdminClient(), { bookingId, actorId: user.id, input })
+  if (!result.ok) {
+    return result.code === 'already_cancelled'
+      ? { error: result.error, alreadyCancelled: true }
+      : { error: result.error }
   }
-  const wasAccepted = booking.status === "accepted"
-
-  const { error } = await supabase
-    .from("bookings")
-    .update({ status: "cancelled" })
-    .eq("id", bookingId)
-    .eq("customer_id", user.id)
-
-  if (error) return { error: error.message }
-
-  // Only accepted bookings had their time carved out of the cleaner's
-  // availability on accept; reopen that slot. Pending requests never reserved
-  // time, so there's nothing to restore. Uses the service-role client because
-  // RLS only lets the cleaner write their own cleaner_availability.
-  if (booking.status === "accepted") {
-    const bookedStart = timeToMinutes(booking.scheduled_start)
-    const bookedEnd = bookedStart + booking.duration_hours * 60
-    const restoreClient = createAdminClient()
-    // Put back the whole slot this booking consumed on accept (recorded by
-    // migration 0035); older bookings only had the booked window carved out.
-    const { data: slotRow } = await restoreClient
-      .from("bookings")
-      .select("slot_start, slot_end")
-      .eq("id", bookingId)
-      .maybeSingle<{ slot_start: string | null; slot_end: string | null }>()
-    if (slotRow?.slot_start && slotRow.slot_end) {
-      await restoreSlot(restoreClient, booking.cleaner_id, booking.scheduled_date, slotRow.slot_start, slotRow.slot_end)
-    } else {
-      await restoreAvailability(restoreClient, booking.cleaner_id, booking.scheduled_date, bookedStart, bookedEnd)
-    }
-  }
-
-  // The cleaner finds out in their bell (a cancelled request vs a cancelled clean read differently).
-  const notifyAdmin = createAdminClient()
-  const hostNames = await profileNames(notifyAdmin, [user.id])
-  await notify(notifyAdmin, {
-    userId: booking.cleaner_id,
-    kind: wasAccepted ? 'booking_cancelled_by_host' : 'request_cancelled_by_host',
-    actorId: user.id,
-    bookingId,
-    data: { name: hostNames.get(user.id) ?? '', date: booking.scheduled_date },
-    href: '/cleaner/dashboard',
-    once: true,
-  })
 
   revalidatePath("/bookings")
+  revalidatePath("/home")
   return { success: true }
 }
 

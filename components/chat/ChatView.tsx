@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useDocLang } from "./useDocLang";
+import { reasonLabel } from "@/lib/cancellation";
 import { sendMessage, loadOlderMessages } from "@/lib/actions/chat";
 import {
   buildTimeline,
@@ -28,6 +29,10 @@ const STRINGS = {
     upcoming: "Upcoming Clean",
     completed: "Clean Completed",
     cancelled: "Clean Cancelled",
+    cancelledByYou: "Cleaning cancelled by you",
+    cancelledByName: "Cleaning cancelled by {name}",
+    reasonLabel: "Reason",
+    findAnother: "Find another cleaner",
     start: "Start",
     rate: "Rate",
     location: "Location",
@@ -51,6 +56,10 @@ const STRINGS = {
     upcoming: "ניקיון קרוב",
     completed: "הניקיון הושלם",
     cancelled: "הניקיון בוטל",
+    cancelledByYou: "הניקיון בוטל על ידך",
+    cancelledByName: "הניקיון בוטל על ידי {name}",
+    reasonLabel: "סיבה",
+    findAnother: "מצאו מנקה אחר/ת",
     start: "התחלה",
     rate: "תעריף",
     location: "מיקום",
@@ -69,6 +78,11 @@ const STRINGS = {
 
 type Lang = keyof typeof STRINGS;
 
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function BookingCard({ card, lang }: { card: ChatBookingCard; lang: Lang }) {
   const s = STRINGS[lang];
   const isCompleted = card.status === "completed";
@@ -85,7 +99,11 @@ function BookingCard({ card, lang }: { card: ChatBookingCard; lang: Lang }) {
   if (card.address) rows.push([s.location, card.address]);
 
   return (
-    <div className="rounded-xl bg-[#DDE9F8] border border-[#C9DBF2] text-[#2F5DA8] overflow-hidden">
+    <div
+      className={`rounded-xl border overflow-hidden ${
+        isCancelled ? "bg-gray-100 border-gray-200 text-gray-500" : "bg-[#DDE9F8] border-[#C9DBF2] text-[#2F5DA8]"
+      }`}
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -100,14 +118,58 @@ function BookingCard({ card, lang }: { card: ChatBookingCard; lang: Lang }) {
         <span aria-hidden className="text-[10px] shrink-0">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
-        <div id={panelId} className="border-t border-[#C9DBF2] mx-3 py-2.5 text-sm flex flex-col gap-1.5">
+        <div id={panelId} className={`border-t mx-3 py-2.5 text-sm flex flex-col gap-1.5 ${isCancelled ? "border-gray-200" : "border-[#C9DBF2]"}`}>
           {rows.map(([label, value]) => (
             <div key={label} className="flex items-start justify-between gap-4">
-              <span className="text-[#2F5DA8]/80 shrink-0">{label}</span>
+              <span className={`shrink-0 ${isCancelled ? "text-gray-400" : "text-[#2F5DA8]/80"}`}>{label}</span>
               <span className="font-medium text-end break-words min-w-0">{value}</span>
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+// The permanent "cleaning cancelled" entry in the thread: who, which clean, why,
+// and their note. Quiet and neutral. When the cleaner cancelled, the host also
+// gets the way forward — "Find another cleaner" reopens the same request.
+function CancellationEvent({
+  card,
+  lang,
+  viewerRole,
+  otherName,
+  canRebook,
+}: {
+  card: ChatBookingCard;
+  lang: Lang;
+  viewerRole: "host" | "cleaner";
+  otherName: string;
+  canRebook: boolean;
+}) {
+  const s = STRINGS[lang];
+  const by = card.cancelled_by as "host" | "cleaner";
+  const title = by === viewerRole ? s.cancelledByYou : s.cancelledByName.replace("{name}", otherName);
+  const reason = reasonLabel(card.cancellation_reason, by, lang);
+  return (
+    <div className="mx-auto w-full max-w-[90%] rounded-xl border border-gray-200 bg-white/70 px-4 py-3 text-center text-sm text-gray-600">
+      <p className="font-semibold text-gray-700">{title}</p>
+      <p className="mt-0.5">
+        {formatBookingDate(card.scheduled_date, lang)} · {card.scheduled_start.slice(0, 5)}
+      </p>
+      {reason && (
+        <p className="mt-1 text-gray-500">
+          {s.reasonLabel}: {reason}
+        </p>
+      )}
+      {card.cancellation_message && <p className="mt-1 italic text-gray-500 whitespace-pre-wrap break-words">“{card.cancellation_message}”</p>}
+      {canRebook && (
+        <Link
+          href={`/browse?rebook=${card.booking_id}`}
+          className="mt-3 inline-block rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+        >
+          {s.findAnother}
+        </Link>
       )}
     </div>
   );
@@ -350,6 +412,24 @@ export default function ChatView({
             );
           }
           if (item.kind === "card") return <BookingCard key={item.key} card={item.card} lang={lang} />;
+          if (item.kind === "cancellation") {
+            return (
+              <CancellationEvent
+                key={item.key}
+                card={item.card}
+                lang={lang}
+                viewerRole={currentUserRole}
+                otherName={other.displayName}
+                // Only after mount (a local date can't hydrate-mismatch), and only while the day hasn't passed.
+                canRebook={
+                  mounted &&
+                  currentUserRole === "host" &&
+                  item.card.cancelled_by === "cleaner" &&
+                  item.card.scheduled_date >= localToday()
+                }
+              />
+            );
+          }
 
           const m = item.message;
           const mine = m.sender_id === currentUserId;

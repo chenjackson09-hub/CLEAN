@@ -87,6 +87,7 @@ export function PastCleanRow({
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const completed = status === "completed";
+  const cancelled = status === "cancelled";
 
   async function complete() {
     setLoading(true);
@@ -108,11 +109,15 @@ export function PastCleanRow({
         dateStr={booking.scheduled_date}
         todayStr={todayStr}
         lang={lang}
-        faded={completed}
+        faded={completed || cancelled}
         title={booking.profiles?.full_name ?? t("req_customer")}
         subtitle={detailLine(booking, t("req_h"))}
         trailing={
-          !completed ? (
+          cancelled ? (
+            <span className="inline-block rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-600 whitespace-nowrap">
+              {t("dash_cancelled")}
+            </span>
+          ) : !completed ? (
             <div className="text-end">
               <button
                 type="button"

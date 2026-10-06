@@ -67,6 +67,19 @@ export default async function CleanerDashboardPage() {
 
   const hourlyRate = cleanerRow?.hourly_rate ?? null;
 
+  // Cleans that were confirmed and then cancelled (by either side) stay in this
+  // cleaner's history as "Cancelled" — never as completed. Read on its own so a
+  // missing migration-0036 column just means none show.
+  const { data: cancelledRaw } = await admin
+    .from("bookings")
+    .select("*, profiles!customer_id(full_name, avatar_url)")
+    .eq("cleaner_id", user.id)
+    .eq("status", "cancelled")
+    .eq("cancelled_from_status", "accepted")
+    .order("cancelled_at", { ascending: false })
+    .limit(20)
+    .returns<BookingWithCustomer[]>();
+
   const upcomingBookings = (upcomingRaw ?? [])
     .filter((b) => startDateTime(b) >= now)
     .slice(0, 6);
@@ -89,9 +102,12 @@ export default async function CleanerDashboardPage() {
   const ratingMap = Object.fromEntries((myRatings ?? []).map((r) => [r.ratee_id, r.score]));
   const reviewMap = Object.fromEntries((myRatings ?? []).map((r) => [r.ratee_id, r.review_text]));
 
-  const pastBookings = (pastRaw ?? [])
-    .filter((b) => startDateTime(b) < now)
-    .slice(0, 20)
+  const pastBookings = [
+    ...(pastRaw ?? []).filter((b) => startDateTime(b) < now).slice(0, 20),
+    ...(cancelledRaw ?? []),
+  ]
+    .sort((a, b) => startDateTime(b).getTime() - startDateTime(a).getTime())
+    .slice(0, 30)
     .map((b) => ({
       ...b,
       my_rating: ratingMap[b.customer_id] ?? null,

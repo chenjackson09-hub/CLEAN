@@ -24,6 +24,22 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
     .eq('customer_id', userId)
   const scheduleMap = new Map((scheduleRows ?? []).map(r => [r.id as string, r]))
 
+  // Migration-0036 cancellation record, likewise isolated.
+  type CancelRow = {
+    id: string
+    cancelled_by: 'host' | 'cleaner' | null
+    cancelled_at: string | null
+    cancellation_reason: string | null
+    cancellation_message: string | null
+    cancelled_from_status: 'pending' | 'accepted' | null
+  }
+  const { data: cancelRows } = await supabase
+    .from('bookings')
+    .select('id, cancelled_by, cancelled_at, cancellation_reason, cancellation_message, cancelled_from_status')
+    .eq('customer_id', userId)
+    .eq('status', 'cancelled')
+  const cancelMap = new Map(((cancelRows ?? []) as CancelRow[]).map(r => [r.id, r]))
+
   const now = Date.now()
 
   // The customer's own ratings (rater_id = user.id), keyed by the cleaner they
@@ -93,6 +109,11 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       cleaner_address: cleanerAddressMap[b.cleaner_id] ?? null,
       status_reason: (scheduleMap.get(b.id)?.status_reason ?? null) as 'cleaner_unavailable' | null,
       availability_notice: scheduleMap.get(b.id)?.availability_notice ?? null,
+      cancelled_by: cancelMap.get(b.id)?.cancelled_by ?? null,
+      cancelled_at: cancelMap.get(b.id)?.cancelled_at ?? null,
+      cancellation_reason: cancelMap.get(b.id)?.cancellation_reason ?? null,
+      cancellation_message: cancelMap.get(b.id)?.cancellation_message ?? null,
+      cancelled_from_status: cancelMap.get(b.id)?.cancelled_from_status ?? null,
     } satisfies BookingResult
   })
 }

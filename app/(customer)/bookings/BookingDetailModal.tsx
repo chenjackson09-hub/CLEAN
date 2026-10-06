@@ -9,6 +9,8 @@ import { AvailabilityNotice } from './AvailabilityNotice'
 import { StarRatingInput } from '@/components/StarRating'
 import BookingRequestSummary from '@/components/BookingRequestSummary'
 import { buildBookingSummaryData } from '@/lib/bookingSummary'
+import CancelCleaningSheet from '@/components/CancelCleaningSheet'
+import { reasonLabel } from '@/lib/cancellation'
 import type { BookingResult } from '@/lib/types/booking'
 
 export function BookingDetailModal({
@@ -21,6 +23,7 @@ export function BookingDetailModal({
   const { t, lang } = useLanguage()
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   // Locally hide the "modified" banner the moment the customer acknowledges it,
@@ -40,6 +43,13 @@ export function BookingDetailModal({
   // Only active bookings can be cancelled — a pending request or a confirmed
   // (accepted) clean. Declined / completed / already-cancelled are terminal.
   const cancellable = booking.status === 'pending' || booking.status === 'accepted'
+  // After the cleaner cancels a confirmed clean the host still needs it done:
+  // offer to reopen the same request, while the day hasn't passed.
+  const canRebook =
+    booking.status === 'cancelled' &&
+    booking.cancelled_by === 'cleaner' &&
+    booking.cancelled_from_status === 'accepted' &&
+    booking.scheduled_date >= new Date().toLocaleDateString('en-CA')
 
   // Surface that the cleaner edited this booking after the customer requested it.
   const modified = !!booking.cleaner_modified && cancellable && !seen
@@ -135,6 +145,34 @@ export function BookingDetailModal({
           {booking.status === 'cancelled' && booking.status_reason === 'cleaner_unavailable' && (
             <p className="text-sm font-semibold text-red-600">{t('bookingCard.reasonCleanerUnavailable')}</p>
           )}
+          {booking.status === 'cancelled' && booking.cancelled_by && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 space-y-1.5">
+              <p className="text-sm font-semibold text-gray-800">
+                {booking.cancelled_by === 'host'
+                  ? t('bookingCard.cancelledByYou')
+                  : t('bookingCard.cancelledByCleaner').replace('{name}', displayName)}
+              </p>
+              {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang) && (
+                <p className="text-sm text-gray-600">
+                  {t('bookingCard.cancelledReason')}: {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang)}
+                </p>
+              )}
+              {booking.cancellation_message && (
+                <p className="text-sm italic text-gray-600 whitespace-pre-wrap break-words">“{booking.cancellation_message}”</p>
+              )}
+              {canRebook && (
+                <div className="pt-2">
+                  <p className="text-sm text-gray-600 mb-2">{t('bookingCard.findAnotherHint')}</p>
+                  <Link
+                    href={`/browse?rebook=${booking.id}`}
+                    className="inline-block rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-700"
+                  >
+                    {t('bookingCard.findAnother')}
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
           {booking.status === 'pending' && booking.availability_notice && (
             <AvailabilityNotice bookingId={booking.id} name={displayName} times={booking.availability_notice} />
           )}
@@ -204,13 +242,31 @@ export function BookingDetailModal({
               </>
             ) : (
               <button
-                onClick={() => setConfirming(true)}
+                onClick={() => (booking.status === 'accepted' ? setSheetOpen(true) : setConfirming(true))}
                 className="w-full bg-red-600 text-white rounded-2xl py-4 text-lg font-semibold hover:bg-red-700 transition-colors"
               >
-                {t('bookingCard.detail.cancel')}
+                {booking.status === 'accepted' ? t('bookingCard.detail.cancelCleaning') : t('bookingCard.detail.cancel')}
               </button>
             )}
           </div>
+        )}
+        {sheetOpen && (
+          <CancelCleaningSheet
+            lang={lang}
+            role="host"
+            date={booking.scheduled_date}
+            start={booking.scheduled_start}
+            durationHours={booking.duration_hours}
+            hourlyRate={booking.hourly_rate}
+            otherName={displayName}
+            onConfirm={(input) => cancelBooking(booking.id, input)}
+            onClose={() => setSheetOpen(false)}
+            onDone={() => {
+              setSheetOpen(false)
+              onClose()
+              router.refresh()
+            }}
+          />
         )}
       </div>
     </div>,

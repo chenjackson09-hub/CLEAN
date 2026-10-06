@@ -4,6 +4,7 @@ import { StatusPill } from './adminTable'
 import BookingRequestSummary from '@/components/BookingRequestSummary'
 import { buildBookingSummaryData } from '@/lib/bookingSummary'
 import type { BookingResult } from '@/lib/types/booking'
+import { describeLead, minutesBeforeStart, reasonLabel } from '@/lib/cancellation'
 
 // The "View booking request" popup — full detail for one booking, reached
 // from the document icon in the Booking Requests/Matches row. Reuses the
@@ -44,6 +45,23 @@ export function BookingDetailCard({ booking, onClose }: { booking: BookingResult
             <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
               {t('admin.bookings.expiredNote')}
             </p>
+          )}
+
+          {booking.status === 'cancelled' && booking.cancelled_by && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 space-y-0.5">
+              <p className="font-semibold">
+                {booking.cancelled_by === 'host' ? booking.customer_name : booking.cleaner_name} · {booking.cancelled_by} ·{' '}
+                {booking.cancelled_from_status === 'accepted' ? 'confirmed clean' : 'request withdrawn'}
+              </p>
+              {booking.cancelled_at && (
+                <p>
+                  {new Date(booking.cancelled_at).toLocaleString(lang === 'he' ? 'he-IL' : 'en-GB')} ·{' '}
+                  {describeLead(minutesBeforeStart(booking.scheduled_date, booking.scheduled_start, booking.cancelled_at), lang)}
+                </p>
+              )}
+              {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang) && <p>{reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang)}</p>}
+              {booking.cancellation_message && <p className="italic">“{booking.cancellation_message}”</p>}
+            </div>
           )}
 
           <BookingRequestSummary data={summaryData} cleanerName={booking.cleaner_name} lang={lang} />

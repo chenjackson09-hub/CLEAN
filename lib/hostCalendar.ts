@@ -63,3 +63,23 @@ export function openFrameDates(bookings: HostBooking[]): Set<string> {
   })
   return out
 }
+
+// A cancelled booking being re-requested ("Find another cleaner"): the same
+// request, reopened on its day, with its details carried over and the cleaner
+// who cancelled left out of the choices.
+export type RebookInfo = {
+  bookingId: string
+  date: string
+  cleanerId: string
+  cleanerName: string
+  address: string | null
+  duration: number
+  prefill: {
+    startTime: string
+    notes: string
+    cleaningType?: 'regular' | 'deep'
+    extras: string[]
+    petsPresent: boolean | null
+    hostPresent: boolean | null
+  }
+}

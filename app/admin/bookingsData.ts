@@ -18,6 +18,17 @@ export async function fetchBookingResults(statuses: BookingStatus[]): Promise<Bo
     .order('scheduled_date', { ascending: false })
     .limit(500)
 
+  // Internal cancellation record (migration 0036), read on its own so a missing
+  // column just means no cancellation details show.
+  const { data: cancelRows } = (bookingRows ?? []).some(b => b.status === 'cancelled')
+    ? await admin
+        .from('bookings')
+        .select('id, cancelled_by, cancelled_at, cancellation_reason, cancellation_message, cancelled_from_status')
+        .eq('status', 'cancelled')
+        .in('id', (bookingRows ?? []).filter(b => b.status === 'cancelled').map(b => b.id))
+    : { data: [] as { id: string; cancelled_by: 'host' | 'cleaner' | null; cancelled_at: string | null; cancellation_reason: string | null; cancellation_message: string | null; cancelled_from_status: 'pending' | 'accepted' | null }[] }
+  const cancelMap = new Map((cancelRows ?? []).map(r => [r.id as string, r]))
+
   const allIds = Array.from(new Set([
     ...(bookingRows ?? []).map(b => b.cleaner_id),
     ...(bookingRows ?? []).map(b => b.customer_id),
@@ -88,6 +99,11 @@ export async function fetchBookingResults(statuses: BookingStatus[]): Promise<Bo
       // passes — this is admin-side visibility, not a second source of truth).
       expired: b.status === 'pending' && b.scheduled_date < todayStr,
       seen: seenMap.get(b.id) ?? false,
+      cancelled_by: cancelMap.get(b.id)?.cancelled_by ?? null,
+      cancelled_at: cancelMap.get(b.id)?.cancelled_at ?? null,
+      cancellation_reason: cancelMap.get(b.id)?.cancellation_reason ?? null,
+      cancellation_message: cancelMap.get(b.id)?.cancellation_message ?? null,
+      cancelled_from_status: cancelMap.get(b.id)?.cancelled_from_status ?? null,
       cleaning_type: b.cleaning_type,
       extras: b.extras ?? [],
       pets_present: b.pets_present,

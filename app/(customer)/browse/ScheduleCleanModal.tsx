@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { BookingRequestForm } from '@/app/(customer)/cleaners/[id]/BookingRequestForm'
+import { BookingRequestForm, type RequestPrefill } from '@/app/(customer)/cleaners/[id]/BookingRequestForm'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
@@ -15,12 +15,16 @@ export function ScheduleCleanModal({
   date,
   location,
   cleanGroupId,
+  duration,
+  prefill,
   onClose,
 }: {
   cleaner: CleanerResult
   date?: string
   location?: string
   cleanGroupId?: string
+  duration?: number
+  prefill?: RequestPrefill
   onClose: () => void
 }) {
   const { t } = useLanguage()
@@ -71,6 +75,8 @@ export function ScheduleCleanModal({
           presetDate={date}
           presetAddress={location}
           cleanGroupId={cleanGroupId}
+          presetDuration={duration}
+          prefill={prefill}
           defaultOpen
           onCancel={onClose}
         />

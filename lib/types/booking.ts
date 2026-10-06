@@ -70,6 +70,12 @@ export type BookingResult = {
   // Why a request ended without the host doing it. 'cleaner_unavailable' =
   // the cleaner deleted the availability slot it depended on (migration 0033).
   status_reason?: 'cleaner_unavailable' | null
+  // Cancellation record (migration 0036) — set when the booking was cancelled.
+  cancelled_by?: 'host' | 'cleaner' | null
+  cancelled_at?: string | null
+  cancellation_reason?: string | null
+  cancellation_message?: string | null
+  cancelled_from_status?: 'pending' | 'accepted' | null
   // Set when the cleaner changed their times so this still-pending request no
   // longer fits; holds the new times ("10:00–13:00"). The host confirms (v) or
   // cancels (x) — see AvailabilityNotice.

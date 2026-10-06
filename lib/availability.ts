@@ -91,3 +91,66 @@ export async function restoreSlot(
 ) {
   await restoreAvailability(client, cleanerId, date, timeToMinutes(slotStart), timeToMinutes(slotEnd));
 }
+
+// Pure: `range` minus every blocker, as the pieces that remain (minutes since
+// midnight, ascending). Pieces shorter than `minLength` are dropped.
+export function subtractRanges(
+  range: [number, number],
+  blockers: [number, number][],
+  minLength = 15,
+): [number, number][] {
+  let pieces: [number, number][] = [range];
+  for (const [bs, be] of blockers) {
+    pieces = pieces.flatMap(([ps, pe]): [number, number][] => {
+      if (be <= ps || bs >= pe) return [[ps, pe]];
+      const out: [number, number][] = [];
+      if (bs > ps) out.push([ps, bs]);
+      if (be < pe) out.push([be, pe]);
+      return out;
+    });
+  }
+  return pieces.filter(([a, b]) => b - a >= minLength).sort((a, b) => a[0] - b[0]);
+}
+
+// Releases the time a cancelled booking was holding: puts back the slot it
+// consumed (or, for bookings accepted before slots were recorded, just its own
+// window) — never more than the cleaner originally marked. Any OTHER accepted
+// booking the cleaner has since gotten that day keeps its time: it is cut out of
+// what is released, so a cancel can never reopen time that is booked.
+export async function releaseBookingTime(
+  client: SupabaseClient,
+  booking: {
+    id: string;
+    cleaner_id: string;
+    scheduled_date: string;
+    scheduled_start: string;
+    duration_hours: number;
+    slot_start?: string | null;
+    slot_end?: string | null;
+  },
+) {
+  const start = booking.slot_start && booking.slot_end ? timeToMinutes(booking.slot_start) : timeToMinutes(booking.scheduled_start);
+  const end =
+    booking.slot_start && booking.slot_end
+      ? timeToMinutes(booking.slot_end)
+      : timeToMinutes(booking.scheduled_start) + booking.duration_hours * 60;
+
+  const { data: others } = await client
+    .from("bookings")
+    .select("scheduled_start, duration_hours, slot_start, slot_end")
+    .eq("cleaner_id", booking.cleaner_id)
+    .eq("scheduled_date", booking.scheduled_date)
+    .eq("status", "accepted")
+    .neq("id", booking.id);
+
+  const blockers: [number, number][] = (others ?? []).map((o) => {
+    const hasSlot = o.slot_start && o.slot_end;
+    const s = timeToMinutes((hasSlot ? o.slot_start : o.scheduled_start) as string);
+    const e = hasSlot ? timeToMinutes(o.slot_end as string) : s + Number(o.duration_hours) * 60;
+    return [s, e];
+  });
+
+  for (const [ps, pe] of subtractRanges([start, end], blockers)) {
+    await restoreAvailability(client, booking.cleaner_id, booking.scheduled_date, ps, pe);
+  }
+}

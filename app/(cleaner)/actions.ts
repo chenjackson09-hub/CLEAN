@@ -7,6 +7,7 @@ import { geocodeAddress } from "@/lib/geocode";
 import { findSlotForBooking, restoreAvailability, restoreSlot } from "@/lib/availability";
 import { ensureBookingInConversation } from "@/lib/chat";
 import { findAffectedRequests, formatSlotTimes } from "@/lib/availabilityImpact";
+import { cancelBookingCore } from "@/lib/cancellation";
 import { notify, profileNames } from "@/lib/notifications";
 import { shortName } from "@/lib/chatFormat";
 import {
@@ -848,72 +849,32 @@ export async function completeBooking(bookingId: string) {
   return { success: true };
 }
 
-// Lets a cleaner cancel a clean they already accepted (from the dashboard's
-// CleanDetailModal). Only `accepted` bookings can be cancelled; the booking is
-// scoped to the calling cleaner, and the "cleaner updates assigned bookings"
-// RLS policy (auth.uid() = cleaner_id) enforces ownership at the DB level too.
-//
-// The booked time that respondToBooking carved out of the cleaner's
-// availability on accept is restored here, so the slot reopens for new requests.
-// Does NOT notify the customer — still an open follow-up.
-export async function cancelClean(bookingId: string) {
+// Lets a cleaner cancel a clean they already accepted (the dashboard's
+// CleanDetailModal). Only confirmed cleans can be cancelled by the cleaner. All
+// the work lives in cancelBookingCore (shared with the host's cancelBooking):
+// the booking is kept and marked cancelled with who/when/why, the time it held is
+// released back to the cleaner's own availability (never more than they marked),
+// and the host is told. A repeat or stale cancel reports "already cancelled".
+export async function cancelClean(
+  bookingId: string,
+  input?: { reason?: string | null; message?: string | null },
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
 
-  const { data: booking, error: fetchErr } = await supabase
-    .from("bookings")
-    .select("status, scheduled_date, scheduled_start, duration_hours, customer_id")
-    .eq("id", bookingId)
-    .eq("cleaner_id", user.id)
-    .single();
-
-  if (fetchErr || !booking) return { error: "Booking not found." };
-  if (booking.status !== "accepted") return { error: "Only accepted cleans can be cancelled." };
-
-  const { error } = await supabase
-    .from("bookings")
-    .update({ status: "cancelled", cleaner_ack_cancelled: true })
-    .eq("id", bookingId)
-    .eq("cleaner_id", user.id);
-
-  if (error) return { error: error.message };
-
-  // Reopen the slot the booking occupied (it was carved out on accept).
-  const bookedStart = timeToMinutes(booking.scheduled_start);
-  const bookedEnd = bookedStart + booking.duration_hours * 60;
-  // Put back the slot this booking consumed (bookings accepted before
-  // migration 0035 have no recorded slot and keep restoring just the booked window).
-  const { data: slotRow } = await createAdminClient()
-    .from("bookings")
-    .select("slot_start, slot_end")
-    .eq("id", bookingId)
-    .maybeSingle<{ slot_start: string | null; slot_end: string | null }>();
-  if (slotRow?.slot_start && slotRow.slot_end) {
-    await restoreSlot(supabase, user.id, booking.scheduled_date, slotRow.slot_start, slotRow.slot_end);
-  } else {
-    await restoreAvailability(supabase, user.id, booking.scheduled_date, bookedStart, bookedEnd);
-  }
-
-  {
-    const notifyAdmin = createAdminClient();
-    const names = await profileNames(notifyAdmin, [user.id]);
-    await notify(notifyAdmin, {
-      userId: booking.customer_id,
-      kind: "booking_cancelled_by_cleaner",
-      actorId: user.id,
-      bookingId,
-      data: { name: shortName(names.get(user.id) ?? ""), date: booking.scheduled_date },
-      href: "/bookings",
-      once: true,
-    });
+  const result = await cancelBookingCore(createAdminClient(), { bookingId, actorId: user.id, input });
+  if (!result.ok) {
+    return result.code === "already_cancelled"
+      ? { error: result.error, alreadyCancelled: true as const }
+      : { error: result.error };
   }
 
   revalidatePath("/cleaner/availability");
   revalidatePath("/cleaner/dashboard");
-  return { success: true };
+  return { success: true as const };
 }
 
 // Cleaner rates the customer of a completed clean (1-5) and can optionally

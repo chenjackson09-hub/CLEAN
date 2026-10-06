@@ -124,9 +124,32 @@ export async function loadChatThread(opts: {
     created_at: string
     bookings: { status: string; scheduled_date: string; scheduled_start: string; address: string | null } | null
   }
+  // Who cancelled, when and why (migration 0036) — read on its own so a missing
+  // column can never take the whole chat down; cancelled cards just lack the entry.
+  type CancelRow = {
+    id: string
+    cancelled_by: 'host' | 'cleaner' | null
+    cancelled_at: string | null
+    cancellation_reason: string | null
+    cancellation_message: string | null
+  }
+  const cancelledIds = ((cardRows ?? []) as unknown as CardRow[]).filter((r) => r.bookings?.status === 'cancelled').map((r) => r.booking_id)
+  const cancelById = new Map<string, CancelRow>()
+  if (cancelledIds.length > 0) {
+    const { data: cancelRows } = await admin
+      .from('bookings')
+      .select('id, cancelled_by, cancelled_at, cancellation_reason, cancellation_message')
+      .in('id', cancelledIds)
+    for (const r of (cancelRows ?? []) as CancelRow[]) cancelById.set(r.id, r)
+  }
+
   const cards: ChatBookingCard[] = ((cardRows ?? []) as unknown as CardRow[])
     .filter((r) => r.bookings)
     .map((r) => ({
+      cancelled_by: cancelById.get(r.booking_id)?.cancelled_by ?? null,
+      cancelled_at: cancelById.get(r.booking_id)?.cancelled_at ?? null,
+      cancellation_reason: cancelById.get(r.booking_id)?.cancellation_reason ?? null,
+      cancellation_message: cancelById.get(r.booking_id)?.cancellation_message ?? null,
       booking_id: r.booking_id,
       attached_at: r.created_at,
       status: r.bookings!.status,

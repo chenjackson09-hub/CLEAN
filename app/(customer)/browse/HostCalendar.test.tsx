@@ -5,8 +5,8 @@ import type { HostBooking } from '@/lib/hostCalendar'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 jest.mock('./CleanerCard', () => ({
-  CleanerCard: ({ cleaner, cleanGroupId }: { cleaner: CleanerResult; cleanGroupId?: string }) => (
-    <div data-testid="cleaner-card" data-group={cleanGroupId ?? ''}>{cleaner.full_name}</div>
+  CleanerCard: ({ cleaner, cleanGroupId, duration, location, prefill }: { cleaner: CleanerResult; cleanGroupId?: string; duration?: number; location?: string; prefill?: { notes?: string } }) => (
+    <div data-testid="cleaner-card" data-group={cleanGroupId ?? ''} data-duration={duration ?? ''} data-location={location ?? ''} data-notes={prefill?.notes ?? ''}>{cleaner.full_name}</div>
   ),
 }))
 
@@ -67,5 +67,29 @@ describe('HostCalendar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Flexible days' }))
     fireEvent.click(cell('2026-10-02'))
     expect(screen.getByText('0 days selected')).toBeInTheDocument()
+  })
+
+  it('"Find another cleaner" opens the cancelled request’s day with details carried over, without the cleaner who cancelled', () => {
+    const props = {
+      ...base,
+      cleaners: [cleaner('c3', 'Free Cleaner'), cleaner('c9', 'Maya Levi')],
+      dayAvail: { '2026-10-20': [
+        { id: 'c3', slots: [{ start: '08:00', end: '16:00' }] },
+        { id: 'c9', slots: [{ start: '08:00', end: '16:00' }] },
+      ] },
+      rebook: {
+        bookingId: 'old', date: '2026-10-20', cleanerId: 'c9', cleanerName: 'Maya Levi', address: '12 Herzl, Haifa', duration: 3,
+        prefill: { startTime: '10:00', notes: 'Key under the mat', extras: ['oven'], petsPresent: false, hostPresent: true },
+      },
+    }
+    render(<HostCalendar {...props} />)
+    // the sheet is already open on the right day, with a banner
+    expect(screen.getByText(/Maya L\. had to cancel this cleaning/)).toBeInTheDocument()
+    const cards = screen.getAllByTestId('cleaner-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveTextContent('Free Cleaner')
+    expect(cards[0]).toHaveAttribute('data-duration', '3')
+    expect(cards[0]).toHaveAttribute('data-location', '12 Herzl, Haifa')
+    expect(cards[0]).toHaveAttribute('data-notes', 'Key under the mat')
   })
 })

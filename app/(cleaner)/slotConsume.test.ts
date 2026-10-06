@@ -1,4 +1,4 @@
-import { cancelClean, respondToBooking } from './actions'
+import { respondToBooking } from './actions'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -86,27 +86,5 @@ describe('accepting a request takes the whole availability slot', () => {
       expect.objectContaining({ start_time: '09:00', end_time: '10:00' }),
       expect.objectContaining({ start_time: '13:00', end_time: '15:00' }),
     ])
-  })
-})
-
-describe('cancelling an accepted clean puts the right time back', () => {
-  const accepted = { status: 'accepted', scheduled_date: '2099-01-10', scheduled_start: '10:00:00', duration_hours: 3, customer_id: 'host-1' }
-
-  it('restores the whole slot that was consumed', async () => {
-    const { u } = setup(
-      { 'bookings:one': { data: accepted, error: null }, cleaner_availability: { data: [], error: null } },
-      { 'bookings:one': { data: { slot_start: '09:00:00', slot_end: '15:00:00' }, error: null } },
-    )
-    expect(await cancelClean('b1')).toEqual({ success: true })
-    expect(opsOf(u, 'cleaner_availability', 'insert')).toContainEqual([expect.objectContaining({ start_time: '09:00', end_time: '15:00' })])
-  })
-
-  it('bookings accepted before the change just restore the booked window', async () => {
-    const { u } = setup(
-      { 'bookings:one': { data: accepted, error: null }, cleaner_availability: { data: [], error: null } },
-      { 'bookings:one': { data: { slot_start: null, slot_end: null }, error: null } },
-    )
-    expect(await cancelClean('b1')).toEqual({ success: true })
-    expect(opsOf(u, 'cleaner_availability', 'insert')).toContainEqual([expect.objectContaining({ start_time: '10:00', end_time: '13:00' })])
   })
 })

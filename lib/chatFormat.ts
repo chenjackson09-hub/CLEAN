@@ -22,12 +22,20 @@ export type ChatBookingCard = {
   scheduled_start: string // HH:MM[:SS]
   address: string | null
   hourly_rate: number | null
+  // Set when the booking was cancelled after being confirmed (migration 0036);
+  // the chat shows a permanent "cancelled" entry built from these.
+  cancelled_by?: 'host' | 'cleaner' | null
+  cancelled_at?: string | null
+  cancellation_reason?: string | null
+  cancellation_message?: string | null
 }
 
 export type TimelineItem =
   | { kind: 'divider'; key: string; date: Date }
   | { kind: 'message'; key: string; message: ChatMessage }
   | { kind: 'card'; key: string; card: ChatBookingCard }
+  // "Cleaning cancelled by …" — one per cancelled booking, at the moment it was cancelled.
+  | { kind: 'cancellation'; key: string; card: ChatBookingCard }
 
 // "First L." — first name plus the last name's initial (the app-wide way a
 // cleaner's name is shown to hosts).
@@ -86,6 +94,17 @@ export function buildTimeline(
       id: card.booking_id,
       item: { kind: 'card', key: `c-${card.booking_id}`, card } as TimelineItem,
     })),
+    // The cancellation is a permanent event in the thread, derived from the
+    // booking's own record — so there is exactly one per booking and it can
+    // never be duplicated.
+    ...cards
+      .filter((card) => card.cancelled_at && card.cancelled_by)
+      .map((card) => ({
+        ts: new Date(card.cancelled_at as string).getTime(),
+        order: 2,
+        id: card.booking_id,
+        item: { kind: 'cancellation', key: `x-${card.booking_id}`, card } as TimelineItem,
+      })),
   ].sort((a, b) => a.ts - b.ts || a.order - b.order || a.id.localeCompare(b.id))
 
   if (!withDividers) return entries.map((e) => e.item)

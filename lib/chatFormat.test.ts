@@ -73,3 +73,19 @@ describe('date formatting', () => {
     expect(formatBookingDate('2026-06-17', 'en')).toBe('17 June')
   })
 })
+
+describe('cancellation event in the timeline', () => {
+  const card = {
+    booking_id: 'b1', attached_at: '2026-10-01T10:00:00Z', status: 'cancelled', scheduled_date: '2026-10-13', scheduled_start: '10:00:00',
+    address: null, hourly_rate: 80, cancelled_by: 'cleaner' as const, cancelled_at: '2026-10-05T12:00:00Z', cancellation_reason: 'unexpected', cancellation_message: null,
+  }
+  it('adds exactly one cancellation entry, at the moment it was cancelled, after the booking card', () => {
+    const msgs = [{ id: 'm1', sender_id: 'x', body: 'Sorry!', created_at: '2026-10-05T12:05:00Z' }]
+    const kinds = buildTimeline(msgs, [card], false).map((i) => i.kind)
+    expect(kinds).toEqual(['card', 'cancellation', 'message'])
+  })
+  it('adds nothing for a cancelled booking that has no cancellation record (older ones)', () => {
+    const kinds = buildTimeline([], [{ ...card, cancelled_at: null, cancelled_by: null }], false).map((i) => i.kind)
+    expect(kinds).toEqual(['card'])
+  })
+})

@@ -7,7 +7,7 @@ import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
 import { extractArea } from '@/lib/bookingArea'
 import type { CleanerResult } from '@/lib/types/cleaner'
-import type { DayAvailEntry, HostBooking, HostBookingStatus } from '@/lib/hostCalendar'
+import type { DayAvailEntry, HostBooking, HostBookingStatus, RebookInfo } from '@/lib/hostCalendar'
 
 function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -17,7 +17,7 @@ function ymd(d: Date): string {
 // cleans and requests plus how many cleaners are free, with a sheet per day to
 // see who's booked / asked / free and to send requests. This page only gathers
 // the data; HostCalendar owns the interaction.
-export default async function BrowsePage() {
+export default async function BrowsePage({ searchParams }: { searchParams?: { rebook?: string } }) {
   const admin = createAdminClient()
 
   // The customer's location comes from their profile, not a search field — we
@@ -102,6 +102,42 @@ export default async function BrowsePage() {
     slotStart: slotById.get(b.id)?.slot_start ?? null,
     slotEnd: slotById.get(b.id)?.slot_end ?? null,
   }))
+
+  // "Find another cleaner": reopen one of the host's own cancelled requests. Read
+  // on its own (admin client, scoped to this host) so it can never break the page.
+  let rebook: RebookInfo | undefined
+  if (user && searchParams?.rebook) {
+    const { data: old } = await admin
+      .from('bookings')
+      .select('id, cleaner_id, scheduled_date, scheduled_start, duration_hours, address, notes, cleaning_type, extras, pets_present, host_present')
+      .eq('id', searchParams.rebook)
+      .eq('customer_id', user.id)
+      .eq('status', 'cancelled')
+      .maybeSingle<{
+        id: string; cleaner_id: string; scheduled_date: string; scheduled_start: string; duration_hours: number
+        address: string | null; notes: string | null; cleaning_type: 'regular' | 'deep' | null
+        extras: string[] | null; pets_present: boolean | null; host_present: boolean | null
+      }>()
+    if (old) {
+      const { data: who } = await admin.from('profiles').select('full_name').eq('id', old.cleaner_id).maybeSingle<{ full_name: string | null }>()
+      rebook = {
+        bookingId: old.id,
+        date: old.scheduled_date,
+        cleanerId: old.cleaner_id,
+        cleanerName: who?.full_name ?? '',
+        address: old.address,
+        duration: old.duration_hours,
+        prefill: {
+          startTime: old.scheduled_start.slice(0, 5),
+          notes: old.notes ?? '',
+          cleaningType: old.cleaning_type ?? undefined,
+          extras: old.extras ?? [],
+          petsPresent: old.pets_present,
+          hostPresent: old.host_present,
+        },
+      }
+    }
+  }
 
   const locationQuery = customer?.address?.trim() ?? ''
   // The customer has a usable location when they've saved an address.
@@ -250,6 +286,7 @@ export default async function BrowsePage() {
         cleaners={cleaners}
         dayAvail={dayAvail}
         bookings={myBookings}
+        rebook={rebook}
       />
     </div>
   )
