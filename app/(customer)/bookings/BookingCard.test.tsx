@@ -79,4 +79,15 @@ describe('BookingCard', () => {
     expect(screen.queryByText(/050-222-1111/)).not.toBeInTheDocument()
     expect(screen.queryByText(/sarah.m@example.com/)).not.toBeInTheDocument()
   })
+
+  it('says who cancelled a confirmed clean, and why', () => {
+    render(<BookingCard booking={{ ...baseBooking, status: 'cancelled', cancelled_by: 'host', cancelled_from_status: 'accepted', cancellation_reason: 'plans_changed' }} />)
+    expect(screen.getByText('You cancelled this cleaning')).toBeInTheDocument()
+    expect(screen.getByText('Reason: Plans changed')).toBeInTheDocument()
+  })
+
+  it('names the cleaner when they cancelled', () => {
+    render(<BookingCard booking={{ ...baseBooking, status: 'cancelled', cancelled_by: 'cleaner', cancelled_from_status: 'accepted', cancellation_reason: 'unexpected' }} />)
+    expect(screen.getByText('Sarah M. had to cancel this cleaning')).toBeInTheDocument()
+  })
 })

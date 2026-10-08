@@ -4,6 +4,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingDetailModal } from './BookingDetailModal'
 import { acknowledgeBookingSeen } from '@/app/(customer)/actions'
 import { AvailabilityNotice } from './AvailabilityNotice'
+import { reasonLabel } from '@/lib/cancellation'
 import type { BookingResult, BookingStatus } from '@/lib/types/booking'
 
 const STATUS_BADGE: Record<BookingStatus, string> = {
@@ -115,6 +116,19 @@ export function BookingCard({ booking, muted = false, dismissible = false }: { b
 
         {booking.status === 'cancelled' && booking.status_reason === 'cleaner_unavailable' && (
           <p className="mt-2 text-sm font-semibold text-red-600">{t('bookingCard.reasonCleanerUnavailable')}</p>
+        )}
+
+        {booking.status === 'cancelled' && booking.cancelled_by && (
+          <div className="mt-2 text-sm text-gray-600">
+            <p className="font-semibold text-gray-700">
+              {booking.cancelled_by === 'host'
+                ? t('bookingCard.cancelledByYou')
+                : t('bookingCard.cancelledByCleaner').replace('{name}', displayName)}
+            </p>
+            {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang) && (
+              <p>{t('bookingCard.cancelledReason')}: {reasonLabel(booking.cancellation_reason, booking.cancelled_by, lang)}</p>
+            )}
+          </div>
         )}
 
         {booking.status === 'pending' && booking.availability_notice && (

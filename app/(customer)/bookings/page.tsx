@@ -28,8 +28,13 @@ export default async function BookingsPage() {
   // Refused (declined/expired) and cancelled requests share one collapsed
   // section; combined and capped at the 20 most recent (already newest-first).
   // Once the customer marks one as seen it drops off the list.
+  // A confirmed clean that was later cancelled (by either side) is a record the
+  // host keeps — its own "Cancelled" tab, never dismissible. Bookings without the
+  // cancellation record (older ones, or migration 0036 not applied) stay in "closed".
+  const isCancelledClean = (b: (typeof bookings)[number]) => b.status === 'cancelled' && b.cancelled_from_status === 'accepted'
+  const cancelledCleans = bookings.filter(isCancelledClean)
   const inactive = bookings
-    .filter(b => (b.status === 'declined' || b.status === 'cancelled') && !b.customer_ack_inactive)
+    .filter(b => (b.status === 'declined' || b.status === 'cancelled') && !isCancelledClean(b) && !b.customer_ack_inactive)
     .slice(0, 20)
   const past = bookings.filter(b => b.status === 'completed')
 
@@ -38,7 +43,7 @@ export default async function BookingsPage() {
       <MarkBookingsSeen />
       <h1 className="text-xl font-bold text-gray-900 mb-6">My Bookings</h1>
 
-      {confirmed.length + pending.length + inactive.length + past.length === 0 ? (
+      {confirmed.length + pending.length + cancelledCleans.length + inactive.length + past.length === 0 ? (
         <p className="text-gray-500 text-sm">
           No bookings yet.{' '}
           <Link href="/browse" className="text-blue-600 font-semibold hover:underline">
@@ -47,7 +52,7 @@ export default async function BookingsPage() {
           to make your first booking.
         </p>
       ) : (
-        <BookingsSections confirmed={confirmed} pending={pending} inactive={inactive} past={past} todayStr={todayStr} />
+        <BookingsSections confirmed={confirmed} pending={pending} cancelled={cancelledCleans} inactive={inactive} past={past} todayStr={todayStr} />
       )}
     </div>
   )

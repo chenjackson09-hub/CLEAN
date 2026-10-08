@@ -329,8 +329,10 @@ const translations = {
       nonePending: 'No pending requests.',
       nonePast: 'No past cleans yet.',
       noneRefused: 'No refused requests.',
-      noneCancelled: 'No cancelled bookings.',
+      noneCancelled: 'No cancelled cleans.',
       noneRefusedCancelled: 'No refused or cancelled bookings.',
+      closedRequests: 'Closed requests',
+      noneClosed: 'No closed requests.',
     },
     bookingCard: {
       hour: 'hr',
@@ -1155,8 +1157,10 @@ const translations = {
       nonePending: 'אין בקשות בהמתנה.',
       nonePast: 'אין ניקיונות קודמים עדיין.',
       noneRefused: 'אין בקשות שנדחו.',
-      noneCancelled: 'אין הזמנות שבוטלו.',
+      noneCancelled: 'אין ניקיונות שבוטלו.',
       noneRefusedCancelled: 'אין בקשות שנדחו או בוטלו.',
+      closedRequests: 'בקשות שנסגרו',
+      noneClosed: 'אין בקשות שנסגרו.',
     },
     bookingCard: {
       hour: 'שעה',

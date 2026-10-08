@@ -6,7 +6,7 @@ import { ScheduleCard } from './ScheduleCard'
 import { acknowledgeAllBookingsSeen } from '@/app/(customer)/actions'
 import type { BookingResult } from '@/lib/types/booking'
 
-// "Mark all as seen" for the Refused & cancelled list: dismisses every visible
+// "Mark all as seen" for the Closed requests list: dismisses every visible
 // card at once. On success the page revalidates and the section drops out.
 function MarkAllSeenButton({ ids }: { ids: string[] }) {
   const { t } = useLanguage()
@@ -62,12 +62,14 @@ function Grid({
 export function BookingsSections({
   confirmed,
   pending,
+  cancelled,
   inactive,
   past,
   todayStr,
 }: {
   confirmed: BookingResult[]
   pending: BookingResult[]
+  cancelled: BookingResult[]
   inactive: BookingResult[]
   past: BookingResult[]
   todayStr: string
@@ -76,7 +78,8 @@ export function BookingsSections({
 
   // Every category always gets a tab, even empty ones, so the customer can see
   // the full set at a glance (an empty tab just shows its "none" message when
-  // selected). Order: confirmed → pending → refused/cancelled → past.
+  // selected). Order: confirmed → pending → past → cancelled (confirmed cleans that were
+  // cancelled, permanent) → closed requests (declined / expired / auto-closed).
   // Confirmed and past are accepted/completed-only, so they use the same
   // ScheduleCard as /home ("schedule: true") — matching the developer spec's
   // "only what's accepted shows this format" — pending/refused-cancelled keep
@@ -84,8 +87,10 @@ export function BookingsSections({
   const sections = [
     { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, schedule: true, empty: t('bookings.noneConfirmed') },
     { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, schedule: false, empty: t('bookings.nonePending') },
-    { key: 'inactive', title: t('bookings.refusedCancelled'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, schedule: false, empty: t('bookings.noneRefusedCancelled') },
     { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, schedule: true, empty: t('bookings.nonePast') },
+    // Confirmed cleans that were cancelled — a permanent record, so no "mark as seen".
+    { key: 'cancelled', title: t('bookings.cancelled'), data: cancelled, badgeColor: 'bg-gray-400', muted: true, dismissible: false, schedule: false, empty: t('bookings.noneCancelled') },
+    { key: 'inactive', title: t('bookings.closedRequests'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, schedule: false, empty: t('bookings.noneClosed') },
   ]
 
   // Land the customer on the first tab that actually has bookings (falling back
