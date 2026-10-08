@@ -7,6 +7,7 @@ import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
 import { WORK_AREAS } from "@/lib/workAreas";
+import dynamic from "next/dynamic";
 import type { Profile, Cleaner } from "@/types/database";
 
 function birthdateParts(birthdate: string | null | undefined) {
@@ -15,16 +16,22 @@ function birthdateParts(birthdate: string | null | undefined) {
   return { d: String(Number(d)), m: String(Number(m)), y };
 }
 
+// Leaflet touches `window`, so the map is only ever loaded in the browser.
+const WorkAreaMap = dynamic(() => import("@/components/WorkAreaMap"), { ssr: false });
+
 interface Props {
   profile: Profile | null;
   cleaner: Cleaner | null;
   onSaved?: () => void;
+  // The saved home point (geocoded from the address) the work-area map is drawn around.
+  center?: { lat: number; lng: number } | null;
 }
 
-export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
+export default function ProfileForm({ profile, cleaner, onSaved, center = null }: Props) {
   const { t } = useLang();
   const router = useRouter();
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
+  const [radius, setRadius] = useState<number>(cleaner?.service_radius_km ?? 10);
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url ?? null);
   const birth = birthdateParts(cleaner?.birthdate);
@@ -46,12 +53,18 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
     if (result?.error) {
       setMessage({ type: "error", text: result.error });
     } else {
-      setMessage({ type: "success", text: t("prof_saved") });
+      // An address we couldn't place is a warning, not a success: stay on the form
+      // so it isn't lost when the view comes back.
+      setMessage(
+        result?.locationFailed
+          ? { type: "warning", text: t("prof_address_not_found") }
+          : { type: "success", text: t("prof_saved") },
+      );
       // Adopt the freshly-saved (cache-busted) avatar URL and re-fetch server
       // data so the preview/edit pages no longer show the previous photo.
       if (result?.avatarUrl) setAvatarPreview(result.avatarUrl);
       router.refresh();
-      onSaved?.();
+      if (!result?.locationFailed) onSaved?.();
     }
     setLoading(false);
   }
@@ -129,31 +142,17 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="hourly_rate" className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
-          <input
-            id="hourly_rate"
-            type="number"
-            name="hourly_rate"
-            min="0"
-            step="0.50"
-            defaultValue={cleaner?.hourly_rate ?? ""}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="service_radius_km" className="block text-base font-medium text-gray-700 mb-1">{t("prof_service_radius")}</label>
-          <input
-            id="service_radius_km"
-            type="number"
-            name="service_radius_km"
-            min="1"
-            max="100"
-            defaultValue={cleaner?.service_radius_km ?? 10}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+      <div>
+        <label htmlFor="hourly_rate" className="block text-base font-medium text-gray-700 mb-1">{t("prof_hourly_rate")}</label>
+        <input
+          id="hourly_rate"
+          type="number"
+          name="hourly_rate"
+          min="0"
+          step="0.50"
+          defaultValue={cleaner?.hourly_rate ?? ""}
+          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
       {/* Min/max job length — paired side by side, one shared hint below both
@@ -190,17 +189,45 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
         <p className="text-sm text-gray-400 mt-1">{t("prof_min_job_length_hint")}</p>
       </div>
 
-      <div>
-        <label htmlFor="address" className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
-        <input
-          id="address"
-          type="text"
-          name="address"
-          autoComplete="street-address"
-          defaultValue={cleaner?.address ?? ""}
-          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <p className="text-sm text-gray-400 mt-1">{t("prof_address_hint")}</p>
+      {/* Where I work: a fixed home address + how far I'll travel. Never the phone's
+          live location. The map shows the saved point, so it updates after saving. */}
+      <div className="space-y-3">
+        <p className="text-base font-semibold text-gray-900">{t("prof_where_title")}</p>
+        <div>
+          <label htmlFor="address" className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
+          <input
+            id="address"
+            type="text"
+            name="address"
+            autoComplete="street-address"
+            defaultValue={cleaner?.address ?? ""}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-sm text-gray-400 mt-1">{t("prof_address_hint")}</p>
+        </div>
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <label htmlFor="service_radius_range" className="block text-base font-medium text-gray-700">{t("prof_radius_label")}</label>
+            <span className="text-base font-semibold text-blue-600">{t("prof_radius_value").replace("{n}", String(radius))}</span>
+          </div>
+          <input
+            id="service_radius_range"
+            type="range"
+            min={1}
+            max={Math.max(50, radius)}
+            step={1}
+            value={radius}
+            onChange={(e) => setRadius(Number(e.target.value))}
+            className="w-full accent-blue-600"
+          />
+          <input type="hidden" name="service_radius_km" value={radius} />
+          <p className="text-sm text-gray-400 mt-1">{t("prof_radius_sentence").replace("{n}", String(radius))}</p>
+        </div>
+        {center ? (
+          <WorkAreaMap center={center} radiusKm={radius} label={t("prof_map_alt")} />
+        ) : (
+          <p className="rounded-2xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">{t("prof_map_needs_address")}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -418,7 +445,9 @@ export default function ProfileForm({ profile, cleaner, onSaved }: Props) {
           className={`text-base rounded-xl px-3 py-2 ${
             message.type === "success"
               ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-600"
+              : message.type === "warning"
+                ? "bg-amber-50 text-amber-800"
+                : "bg-red-50 text-red-600"
           }`}
         >
           {message.text}

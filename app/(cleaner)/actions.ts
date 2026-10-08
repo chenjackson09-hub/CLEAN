@@ -77,7 +77,7 @@ export async function updateCleanerProfile(formData: FormData) {
   const phone = formData.get("phone") as string;
   const bio = formData.get("bio") as string;
   const hourlyRate = parseFloat(formData.get("hourly_rate") as string) || null;
-  const serviceRadius = parseInt(formData.get("service_radius_km") as string) || 10;
+  const serviceRadius = Math.min(100, Math.max(1, parseInt(formData.get("service_radius_km") as string) || 10));
   const yearsExp = parseInt(formData.get("years_experience") as string) || 0;
   // min_hours now allows half-hour steps (migration 0018 widened it to
   // numeric) since the signup flow's "minimum job length" question does —
@@ -191,7 +191,9 @@ export async function updateCleanerProfile(formData: FormData) {
   // — revalidating only the profile page left the preview showing the old photo.
   revalidatePath("/cleaner/profile");
   revalidatePath("/cleaner/preview");
-  return { success: true, avatarUrl: avatarUrl ?? undefined };
+  // An address we couldn't place keeps the previous point (if any): tell the form,
+  // since the cleaner would otherwise never learn that hosts can't find them.
+  return { success: true, avatarUrl: avatarUrl ?? undefined, locationFailed: !!address && !geocodeResult };
 }
 
 export async function addAvailability(formData: FormData) {

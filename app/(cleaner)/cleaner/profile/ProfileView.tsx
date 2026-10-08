@@ -4,12 +4,17 @@ import { useLang } from "@/context/LangContext";
 import { StarRatingDisplay } from "@/components/StarRating";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
 import { extractArea } from "@/lib/bookingArea";
+import dynamic from "next/dynamic";
 import type { Profile, Cleaner } from "@/types/database";
+
+// Leaflet touches `window`, so the map is only ever loaded in the browser.
+const WorkAreaMap = dynamic(() => import("@/components/WorkAreaMap"), { ssr: false });
 
 interface Props {
   profile: Profile | null;
   cleaner: Cleaner | null;
   onEdit: () => void;
+  center?: { lat: number; lng: number } | null;
 }
 
 function ageFromBirthdate(birthdate: string | null): number | null {
@@ -22,7 +27,7 @@ function ageFromBirthdate(birthdate: string | null): number | null {
   return age;
 }
 
-export default function ProfileView({ profile, cleaner, onEdit }: Props) {
+export default function ProfileView({ profile, cleaner, onEdit, center = null }: Props) {
   const { t } = useLang();
   const age = ageFromBirthdate(cleaner?.birthdate ?? null);
   const missing = computeProfileMissing(t, cleaner, profile);
@@ -129,6 +134,25 @@ export default function ProfileView({ profile, cleaner, onEdit }: Props) {
           </div>
         </div>
       )}
+
+      {/* Where I work: the home point and travel radius hosts are matched against. */}
+      <div className="mb-4">
+        <p className="text-xs text-gray-400 mb-1.5">{t("prof_where_title")}</p>
+        {center ? (
+          <>
+            <WorkAreaMap center={center} radiusKm={cleaner?.service_radius_km ?? 10} label={t("prof_map_alt")} className="h-44" />
+            <p className="text-sm text-gray-500 mt-1.5">{t("prof_radius_sentence").replace("{n}", String(cleaner?.service_radius_km ?? 10))}</p>
+          </>
+        ) : cleaner?.address ? (
+          <button type="button" onClick={onEdit} className="w-full text-start rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {t("prof_address_not_found_view")}
+          </button>
+        ) : (
+          <button type="button" onClick={onEdit} className="w-full text-start rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">
+            {t("prof_map_needs_address")}
+          </button>
+        )}
+      </div>
 
       <p className="text-xs text-gray-400 mb-1.5">{t("prof_services_label")}</p>
       <div className="flex flex-wrap gap-1.5 mb-4">

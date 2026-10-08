@@ -27,6 +27,7 @@ type Answers = {
   rate: string;
   duration: string;
   maxDuration: string;
+  radius: string;
   maxDurationNoLimit: boolean;
   services: string[];
   serviceOtherText: string;
@@ -64,7 +65,7 @@ const MATCH_OPTS: { value: MatchType; key: string }[] = [
   { value: "other", key: "matchOther" },
 ];
 
-const DEFAULTED_KEYS = ["freq", "rate", "duration", "maxDuration", "gasrate"];
+const DEFAULTED_KEYS = ["freq", "rate", "duration", "maxDuration", "gasrate", "radius"];
 const REQUIRED_KEYS = ["name", "birth", "loc", "services", "match", "areas"];
 
 const initialAnswers: Answers = {
@@ -81,6 +82,7 @@ const initialAnswers: Answers = {
   rate: "75",
   duration: "3",
   maxDuration: "5",
+  radius: "10",
   maxDurationNoLimit: false,
   services: [],
   serviceOtherText: "",
@@ -135,6 +137,7 @@ export default function CleanerRegisterPage() {
     { key: "photo" },
     { key: "birth" },
     { key: "loc" },
+    { key: "radius" },
     { key: "freq" },
     { key: "rate" },
     { key: "duration" },
@@ -314,6 +317,7 @@ export default function CleanerRegisterPage() {
       min_hours: answers.duration ? Number(answers.duration) : null,
       max_hours: answers.maxDurationNoLimit ? null : answers.maxDuration ? Number(answers.maxDuration) : null,
       address: answers.loc || null,
+      service_radius_km: Math.min(100, Math.max(1, Number(answers.radius) || 10)),
       ...(location && { location: `POINT(${location.lng} ${location.lat})` }),
       birthdate,
       weekly_clean_target: weeklyCleanTarget,
@@ -621,6 +625,30 @@ export default function CleanerRegisterPage() {
                       className="w-28 border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-500">hrs</span>
+                  </div>
+                </>
+              )}
+
+              {current.key === "radius" && (
+                <>
+                  <p className="text-lg font-medium text-gray-900 mb-1">{t("auth.registerCleaner.qRadius")}</p>
+                  <p className="text-sm text-gray-500 mb-4">{t("auth.registerCleaner.radiusSub")}</p>
+                  <p className="text-center text-3xl font-bold text-blue-600 mb-3">
+                    {t("auth.registerCleaner.radiusValue").replace("{n}", answers.radius)}
+                  </p>
+                  <input
+                    type="range"
+                    min={1}
+                    max={50}
+                    step={1}
+                    value={answers.radius}
+                    onChange={(e) => setAnswers((a) => ({ ...a, radius: e.target.value }))}
+                    aria-label={t("auth.registerCleaner.qRadius")}
+                    className="w-full accent-blue-600"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>1</span>
+                    <span>50</span>
                   </div>
                 </>
               )}
