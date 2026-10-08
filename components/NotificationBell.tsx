@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { describeNotification, relativeTime, type NotificationData } from "@/lib/notificationText";
@@ -29,6 +30,28 @@ const STRINGS = {
     bell: "התראות", all: "הכל", unread: "שלא נקראו", fresh: "חדשות", earlier: "קודמות", loading: "טוען…",
   },
 } as const;
+
+// Who a notification is about: their profile picture (stored with the notification),
+// or their initial when they have none. System messages (account approved/rejected)
+// get a plain bell badge instead.
+function NotificationAvatar({ item }: { item: Item }) {
+  const avatar = typeof item.data?.avatar === "string" ? item.data.avatar : null;
+  const name = typeof item.data?.name === "string" ? item.data.name.trim() : "";
+  const isSystem = item.kind.startsWith("account_") || !name;
+  return (
+    <span className="relative shrink-0 w-11 h-11 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+      {avatar ? (
+        <Image src={avatar} alt="" width={44} height={44} className="object-cover w-full h-full" />
+      ) : isSystem ? (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0" />
+        </svg>
+      ) : (
+        name.charAt(0).toUpperCase()
+      )}
+    </span>
+  );
+}
 
 // Facebook-style bell for the header: an unread count on the icon and a
 // dropdown with the latest updates, newest first. Reads the signed-in user's own
@@ -241,15 +264,16 @@ export default function NotificationBell({
                                 <button
                                   type="button"
                                   onClick={() => openItem(item)}
-                                  className={`w-full flex items-start gap-3 px-4 py-3 text-start hover:bg-gray-50 ${unreadItem ? "bg-blue-50/60" : ""}`}
+                                  className={`w-full flex items-center gap-3 px-4 py-3 text-start hover:bg-gray-50 ${unreadItem ? "bg-blue-50/60" : ""}`}
                                 >
+                                  <NotificationAvatar item={item} />
                                   <span className="min-w-0 flex-1">
                                     <span className={`block text-sm ${unreadItem ? "font-semibold text-gray-900" : "text-gray-700"}`}>{text}</span>
                                     <span className={`block text-xs mt-0.5 ${unreadItem ? "text-blue-600" : "text-gray-400"}`}>
                                       {relativeTime(item.created_at, now, lang)}
                                     </span>
                                   </span>
-                                  {unreadItem && <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" aria-hidden />}
+                                  {unreadItem && <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" aria-hidden />}
                                 </button>
                               </li>
                             );

@@ -42,12 +42,16 @@ export async function notify(admin: SupabaseClient, inputs: NotifyInput | Notify
   const list = (Array.isArray(inputs) ? inputs : [inputs]).filter((i) => i.userId)
   if (list.length === 0) return
   try {
+    // Notifications about another person show their profile picture next to the
+    // text (like Facebook). The recipient can't read other users' profiles
+    // (RLS), so the picture is stored with the notification when it's written.
+    const avatars = await avatarsFor(admin, list.map((i) => i.actorId))
     const rows = list.map((i) => ({
       user_id: i.userId,
       kind: i.kind,
       actor_id: i.actorId ?? null,
       booking_id: i.bookingId ?? null,
-      data: i.data ?? {},
+      data: { ...(i.data ?? {}), ...(i.actorId && avatars.get(i.actorId) ? { avatar: avatars.get(i.actorId) as string } : {}) },
       href: i.href,
       dedupe_key: i.once && i.bookingId ? `${i.kind}:${i.bookingId}` : null,
     }))
@@ -57,6 +61,20 @@ export async function notify(admin: SupabaseClient, inputs: NotifyInput | Notify
     if (error) console.error('notify: insert failed', error.message)
   } catch (e) {
     console.error('notify: failed', e)
+  }
+}
+
+// id -> avatar_url for the people a batch of notifications is about. Never throws.
+async function avatarsFor(admin: SupabaseClient, ids: (string | null | undefined)[]): Promise<Map<string, string>> {
+  const unique = Array.from(new Set(ids.filter((x): x is string => !!x)))
+  if (unique.length === 0) return new Map()
+  try {
+    const { data } = await admin.from('profiles').select('id, avatar_url').in('id', unique)
+    return new Map(
+      (data ?? []).filter((p) => p.avatar_url).map((p) => [p.id as string, p.avatar_url as string]),
+    )
+  } catch {
+    return new Map()
   }
 }
 

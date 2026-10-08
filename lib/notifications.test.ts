@@ -75,3 +75,18 @@ describe('notifyChatMessage', () => {
     expect(rows[0]).toMatchObject({ data: { count: 3 } })
   })
 })
+
+describe('notify — the person a notification is about', () => {
+  it('stores their profile picture with the notification', async () => {
+    const admin = fakeAdmin({ error: null }, [{ id: 'maya', avatar_url: 'https://img/maya.jpg' }, { id: 'noavatar', avatar_url: null }])
+    await notify(admin as never, [
+      { userId: 'host', kind: 'request_accepted', actorId: 'maya', bookingId: 'b1', href: '/bookings', data: { name: 'Maya L.' } },
+      { userId: 'host', kind: 'request_declined', actorId: 'noavatar', bookingId: 'b2', href: '/bookings', data: { name: 'Sam K.' } },
+      { userId: 'host', kind: 'account_approved', href: '/browse' },
+    ])
+    const [rows] = admin.upsert.mock.calls[0] as unknown as [Record<string, unknown>[]]
+    expect(rows[0].data).toEqual({ name: 'Maya L.', avatar: 'https://img/maya.jpg' })
+    expect(rows[1].data).toEqual({ name: 'Sam K.' }) // no picture on file → the bell shows their initial
+    expect(rows[2].data).toEqual({}) // system message, no person
+  })
+})

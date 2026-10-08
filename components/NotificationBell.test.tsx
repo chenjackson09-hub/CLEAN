@@ -127,4 +127,21 @@ describe('NotificationBell', () => {
       rows.splice(0, rows.length, ...original)
     }
   })
+
+  it('shows the other person’s picture (or their initial) next to a notification, and a bell for system ones', async () => {
+    const people = [
+      { id: 'a', kind: 'request_accepted', data: { name: 'Noa R.', date: '2026-10-17', avatar: 'https://example.com/noa.jpg' }, href: '/bookings', read_at: null, created_at: new Date().toISOString() },
+      { id: 'b', kind: 'request_declined', data: { name: 'Sam K.', date: '2026-10-18' }, href: '/bookings', read_at: null, created_at: new Date().toISOString() },
+      { id: 'c', kind: 'account_approved', data: {}, href: '/browse', read_at: null, created_at: new Date().toISOString() },
+    
+    ] as unknown as typeof rows
+    rows.splice(0, rows.length, ...people)
+    render(<Harness />)
+    await userEvent.click(await screen.findByRole('button', { name: /Notifications/ }))
+    const items = within(screen.getByRole('dialog')).getAllByRole('listitem')
+    expect(items[0].querySelector('img')).toHaveAttribute('src', expect.stringContaining('noa.jpg'))
+    expect(items[1]).toHaveTextContent('S') // initial fallback
+    expect(items[1].querySelector('img')).toBeNull()
+    expect(items[2].querySelector('svg')).not.toBeNull() // system message → bell badge
+  })
 })
