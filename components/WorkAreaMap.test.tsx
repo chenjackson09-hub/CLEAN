@@ -33,13 +33,14 @@ describe('WorkAreaMap', () => {
     render(<WorkAreaMap center={{ lat: 33.2, lng: 35.57 }} radiusKm={15} label="Map" />)
     expect(screen.getByRole('img', { name: 'Map' })).toBeInTheDocument()
     await waitFor(() => expect(fitBounds).toHaveBeenCalled())
-    expect(toBounds).toHaveBeenCalledWith(15 * 2000)
+    // 15 km by road is drawn as a 12.5 km (straight-line) circle
+    expect(toBounds).toHaveBeenCalledWith(expect.closeTo((15 / 1.2) * 2000, 3))
   })
 
   it('resizes the circle when the radius changes', async () => {
     const { rerender } = render(<WorkAreaMap center={{ lat: 33.2, lng: 35.57 }} radiusKm={15} label="Map" />)
     await waitFor(() => expect(fitBounds).toHaveBeenCalled())
     rerender(<WorkAreaMap center={{ lat: 33.2, lng: 35.57 }} radiusKm={30} label="Map" />)
-    await waitFor(() => expect(setRadius).toHaveBeenCalledWith(30000))
+    await waitFor(() => expect(setRadius).toHaveBeenCalledWith(expect.closeTo(25000, 3)))
   })
 })

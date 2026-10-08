@@ -5,6 +5,7 @@ import { WaitlistNotice } from './WaitlistNotice'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
+import { estimateRoadKm } from '@/lib/roadDistance'
 import { extractArea } from '@/lib/bookingArea'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { closedReasonFor, type DayAvailEntry, type HostBooking, type HostBookingStatus, type RebookInfo } from '@/lib/hostCalendar'
@@ -207,7 +208,9 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
       base = base.filter(c => {
         const cleanerLoc = parsePoint((c as { location?: unknown }).location)
         if (!cleanerLoc) return false
-        const dist = distanceKm(customerLoc, cleanerLoc)
+        // Estimated road distance (straight line × a detour factor), compared with
+        // the cleaner's "km I'll travel" — the number they set on their profile.
+        const dist = estimateRoadKm(distanceKm(customerLoc, cleanerLoc))
         const radius = (c as { service_radius_km?: number }).service_radius_km ?? 10
         if (dist > radius) return false
         distanceById.set(c.id, dist)

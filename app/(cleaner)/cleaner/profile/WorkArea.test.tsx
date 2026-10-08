@@ -22,7 +22,7 @@ describe('Where I work', () => {
     fireEvent.change(screen.getByLabelText('How far I\'ll travel'), { target: { value: '30' } })
     expect(screen.getByTestId('map')).toHaveAttribute('data-radius', '30')
     expect(container.querySelector('input[name="service_radius_km"]')).toHaveValue('30')
-    expect(screen.getByText('Hosts within 30 km of your address can find you.')).toBeInTheDocument()
+    expect(screen.getByText(/Hosts within about 30 km of your address by road/)).toBeInTheDocument()
   })
 
   it('asks to save an address first when there is no saved point yet', () => {

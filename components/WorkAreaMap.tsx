@@ -3,10 +3,13 @@
 import { useEffect, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
 import type { Circle, Map as LeafletMap } from 'leaflet'
+import { straightKmForRoadKm } from '@/lib/roadDistance'
 
 // "Where I work": a fixed home point and a circle for how far the cleaner will
 // travel. An illustration, not a navigator — it never asks for the phone's
 // location and can't be dragged, so scrolling the page past it works normally.
+// `radiusKm` is the travel distance BY ROAD (what the cleaner sets and what search
+// compares against); the circle is drawn at the matching straight-line distance.
 // Leaflet + OpenStreetMap tiles (free, no API key); leaflet is imported inside
 // the effect so it only ever loads in the browser.
 export default function WorkAreaMap({
@@ -23,8 +26,8 @@ export default function WorkAreaMap({
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<LeafletMap | null>(null)
   const circle = useRef<Circle | null>(null)
-  const radius = useRef(radiusKm)
-  radius.current = radiusKm
+  const radius = useRef(straightKmForRoadKm(radiusKm))
+  radius.current = straightKmForRoadKm(radiusKm)
 
   // (Re)build the map when the home point changes.
   useEffect(() => {
@@ -94,8 +97,8 @@ export default function WorkAreaMap({
     const c = circle.current
     const m = map.current
     if (!c || !m) return
-    c.setRadius(radiusKm * 1000)
-    m.fitBounds(c.getLatLng().toBounds(radiusKm * 2000), { padding: [12, 12], animate: false })
+    c.setRadius(radius.current * 1000)
+    m.fitBounds(c.getLatLng().toBounds(radius.current * 2000), { padding: [12, 12], animate: false })
   }, [radiusKm])
 
   return <div ref={el} role="img" aria-label={label} className={`w-full ${className} rounded-2xl overflow-hidden bg-gray-100 z-0`} />
