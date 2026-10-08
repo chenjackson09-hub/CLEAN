@@ -147,7 +147,7 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
                 {model.closed.map((b) => (
                   <li key={b.id} className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
                     <span className="truncate">{shortName(b.cleanerName)} · {b.start}</span>
-                    <span className="shrink-0">{b.status === 'declined' ? t('browse.sheetDeclined') : t('browse.sheetCancelled')}</span>
+                    <span className="shrink-0 text-end">{b.closedReason ? t(`browse.closed_${b.closedReason}`) : t('browse.sheetCancelled')}</span>
                   </li>
                 ))}
               </ul>

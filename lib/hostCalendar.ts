@@ -4,6 +4,14 @@
 
 export type HostBookingStatus = 'pending' | 'accepted' | 'completed' | 'declined' | 'cancelled'
 
+export type ClosedReason =
+  | 'declined' // the cleaner said no
+  | 'expired' // no answer within 24 hours
+  | 'you_cancelled' // the host cancelled / withdrew it
+  | 'cleaner_cancelled' // the cleaner cancelled a confirmed clean
+  | 'cleaner_unavailable' // the cleaner removed the time it relied on
+  | 'other_accepted' // closed automatically when another request was accepted
+
 export type HostBooking = {
   id: string
   date: string // YYYY-MM-DD
@@ -18,6 +26,8 @@ export type HostBooking = {
   // null for bookings accepted before that.
   slotStart: string | null
   slotEnd: string | null
+  // Why a declined/cancelled request is closed (null while it's live).
+  closedReason?: ClosedReason | null
 }
 
 export type DayAvailEntry = { id: string; slots: { start: string; end: string }[] }
@@ -82,4 +92,28 @@ export type RebookInfo = {
     petsPresent: boolean | null
     hostPresent: boolean | null
   }
+}
+
+// Why a request is closed, from what the booking row records. Requests closed by
+// the app itself (another request was accepted) are the ones with a response time
+// but no "cancelled by" record; a lapse is a "decline" the cleaner never made
+// (responded after the deadline).
+export function closedReasonFor(b: {
+  status: string
+  pendingExpired?: boolean
+  respondedAt?: string | null
+  responseDeadline?: string | null
+  cancelledBy?: 'host' | 'cleaner' | null
+  statusReason?: string | null
+}): ClosedReason | null {
+  if (b.status === 'pending' && b.pendingExpired) return 'expired'
+  if (b.status === 'declined') {
+    const lapsed = b.respondedAt && b.responseDeadline && new Date(b.respondedAt) >= new Date(b.responseDeadline)
+    return lapsed ? 'expired' : 'declined'
+  }
+  if (b.status !== 'cancelled') return null
+  if (b.statusReason === 'cleaner_unavailable') return 'cleaner_unavailable'
+  if (b.cancelledBy === 'host') return 'you_cancelled'
+  if (b.cancelledBy === 'cleaner') return 'cleaner_cancelled'
+  return b.respondedAt ? 'other_accepted' : 'you_cancelled'
 }

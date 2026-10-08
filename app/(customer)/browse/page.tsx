@@ -7,7 +7,7 @@ import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
 import { extractArea } from '@/lib/bookingArea'
 import type { CleanerResult } from '@/lib/types/cleaner'
-import type { DayAvailEntry, HostBooking, HostBookingStatus, RebookInfo } from '@/lib/hostCalendar'
+import { closedReasonFor, type DayAvailEntry, type HostBooking, type HostBookingStatus, type RebookInfo } from '@/lib/hostCalendar'
 
 function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -62,14 +62,14 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
   const { data: bookingRows } = user
     ? await admin
         .from('bookings')
-        .select('id, cleaner_id, scheduled_date, scheduled_start, duration_hours, status, response_deadline, clean_group_id')
+        .select('id, cleaner_id, scheduled_date, scheduled_start, duration_hours, status, response_deadline, responded_at, clean_group_id')
         .eq('customer_id', user.id)
         .gte('scheduled_date', ymd(since))
         .order('scheduled_date')
         .limit(400)
         .returns<{
           id: string; cleaner_id: string; scheduled_date: string; scheduled_start: string; duration_hours: number
-          status: HostBookingStatus; response_deadline: string; clean_group_id: string | null
+          status: HostBookingStatus; response_deadline: string; responded_at: string | null; clean_group_id: string | null
         }[]>()
     : { data: null }
   // The block a booking consumed (migration 0035) is read on its own so a not-yet-
@@ -82,6 +82,18 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
         .gte('scheduled_date', ymd(since))
         .returns<{ id: string; slot_start: string | null; slot_end: string | null }[]>()
     : { data: null }
+  // Why a request was closed (status_reason 0033, cancelled_by 0036) — read on its
+  // own so a missing column just means a less specific reason.
+  const { data: reasonRows } = user
+    ? await admin
+        .from('bookings')
+        .select('id, status_reason, cancelled_by')
+        .eq('customer_id', user.id)
+        .in('status', ['declined', 'cancelled'])
+        .gte('scheduled_date', ymd(since))
+        .returns<{ id: string; status_reason: string | null; cancelled_by: 'host' | 'cleaner' | null }[]>()
+    : { data: null }
+  const reasonById = new Map((reasonRows ?? []).map(r => [r.id, r]))
   const slotById = new Map((slotRows ?? []).map(r => [r.id, r]))
   const bookingCleanerIds = Array.from(new Set((bookingRows ?? []).map(b => b.cleaner_id)))
   const { data: bookingCleanerProfiles } = bookingCleanerIds.length
@@ -101,6 +113,14 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
     groupId: b.clean_group_id,
     slotStart: slotById.get(b.id)?.slot_start ?? null,
     slotEnd: slotById.get(b.id)?.slot_end ?? null,
+    closedReason: closedReasonFor({
+      status: b.status,
+      pendingExpired: b.status === 'pending' && new Date(b.response_deadline).getTime() < now,
+      respondedAt: b.responded_at,
+      responseDeadline: b.response_deadline,
+      cancelledBy: reasonById.get(b.id)?.cancelled_by ?? null,
+      statusReason: reasonById.get(b.id)?.status_reason ?? null,
+    }),
   }))
 
   // "Find another cleaner": reopen one of the host's own cancelled requests. Read

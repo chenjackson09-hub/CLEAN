@@ -1,4 +1,4 @@
-import { bookedHours, buildDayModel, openFrameDates, type HostBooking } from './hostCalendar'
+import { closedReasonFor, bookedHours, buildDayModel, openFrameDates, type HostBooking } from './hostCalendar'
 
 const bk = (over: Partial<HostBooking>): HostBooking => ({
   id: 'b', date: '2026-10-15', start: '09:00', durationHours: 4, status: 'pending', cleanerId: 'c1', cleanerName: 'Noa R.',
@@ -49,5 +49,21 @@ describe('openFrameDates', () => {
       bk({ id: '4', date: '2026-10-21', groupId: 'g', status: 'cancelled' }),
     ])
     expect(Array.from(dates).sort()).toEqual(['2026-10-12', '2026-10-16'])
+  })
+})
+
+describe('closedReasonFor', () => {
+  it('tells apart why a request is closed', () => {
+    expect(closedReasonFor({ status: 'pending' })).toBeNull()
+    expect(closedReasonFor({ status: 'pending', pendingExpired: true })).toBe('expired')
+    expect(closedReasonFor({ status: 'declined', respondedAt: '2026-10-05T10:00:00Z', responseDeadline: '2026-10-06T10:00:00Z' })).toBe('declined')
+    expect(closedReasonFor({ status: 'declined', respondedAt: '2026-10-06T12:00:00Z', responseDeadline: '2026-10-06T10:00:00Z' })).toBe('expired')
+    expect(closedReasonFor({ status: 'cancelled', cancelledBy: 'host' })).toBe('you_cancelled')
+    expect(closedReasonFor({ status: 'cancelled', cancelledBy: 'cleaner' })).toBe('cleaner_cancelled')
+    expect(closedReasonFor({ status: 'cancelled', statusReason: 'cleaner_unavailable' })).toBe('cleaner_unavailable')
+    // closed by the app when another request was accepted: a response time, no "cancelled by"
+    expect(closedReasonFor({ status: 'cancelled', respondedAt: '2026-10-05T19:21:39Z' })).toBe('other_accepted')
+    // an older host cancel (before 0036): no response time
+    expect(closedReasonFor({ status: 'cancelled' })).toBe('you_cancelled')
   })
 })

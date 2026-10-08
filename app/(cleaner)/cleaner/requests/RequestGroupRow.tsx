@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { respondToBooking } from "../../actions";
+import { deadlineLabel, type DeadlineLabel } from "@/lib/deadline";
 import { useLang } from "@/context/LangContext";
 import BookingRequestSummary from "@/components/BookingRequestSummary";
 import { buildBookingSummaryData, type CustomerHomeInfo } from "@/lib/bookingSummary";
@@ -24,25 +25,23 @@ export type RequestGroup = {
 
 function Countdown({ deadline }: { deadline: string }) {
   const { t } = useLang();
-  const [remaining, setRemaining] = useState("");
+  const [label, setLabel] = useState<DeadlineLabel | null>(null);
 
   useEffect(() => {
-    function update() {
-      const diff = new Date(deadline).getTime() - Date.now();
-      if (diff <= 0) {
-        setRemaining(t("req_expired"));
-        return;
-      }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setRemaining(`${h}${t("req_h")} ${m}${t("req_m_left")}`);
-    }
+    const update = () => setLabel(deadlineLabel(new Date(deadline).getTime() - Date.now()));
     update();
     const id = setInterval(update, 60000);
     return () => clearInterval(id);
-  }, [deadline, t]);
+  }, [deadline]);
 
-  return <span className="text-xs font-medium text-orange-500 whitespace-nowrap">{remaining}</span>;
+  if (!label) return null;
+  if (label.kind === "expired") {
+    return <span className="text-xs font-medium text-gray-400 whitespace-nowrap">{t("req_expired")}</span>;
+  }
+  const text = (label.kind === "hours" ? t("req_to_accept_h") : t("req_to_accept_m")).replace("{n}", String(label.n));
+  const tone =
+    label.tone === "calm" ? "text-gray-500" : label.tone === "soon" ? "text-orange-500" : "text-red-600 font-semibold";
+  return <span className={`text-xs font-medium whitespace-nowrap ${tone}`}>{text}</span>;
 }
 
 function Avatar({ url, name, size }: { url: string | null; name: string; size: number }) {

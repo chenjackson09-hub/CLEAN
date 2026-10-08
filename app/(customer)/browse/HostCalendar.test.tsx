@@ -92,4 +92,15 @@ describe('HostCalendar', () => {
     expect(cards[0]).toHaveAttribute('data-location', '12 Herzl, Haifa')
     expect(cards[0]).toHaveAttribute('data-notes', 'Key under the mat')
   })
+
+  it('says why a request is closed', () => {
+    const closed = (id: string, reason: HostBooking['closedReason']): HostBooking => ({
+      ...asked, id, date: '2026-10-22', status: 'cancelled', closedReason: reason, cleanerName: `Cleaner ${id}`,
+    })
+    render(<HostCalendar {...base} bookings={[closed('a', 'other_accepted'), closed('b', 'expired'), closed('c', 'you_cancelled')]} />)
+    fireEvent.click(cell('2026-10-22'))
+    expect(screen.getByText('Another request was accepted')).toBeInTheDocument()
+    expect(screen.getByText('No answer in 24 h')).toBeInTheDocument()
+    expect(screen.getByText('You cancelled')).toBeInTheDocument()
+  })
 })
