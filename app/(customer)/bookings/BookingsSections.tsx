@@ -1,150 +1,122 @@
 'use client'
 import { useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { BookingCard } from './BookingCard'
-import { ScheduleCard } from './ScheduleCard'
+import { BookingRow } from './BookingRow'
+import { BookingDetailModal } from './BookingDetailModal'
 import { acknowledgeAllBookingsSeen } from '@/app/(customer)/actions'
+import { splitBookings, groupByMonth } from '@/lib/bookingBuckets'
+import { shortDateLabel } from '@/lib/dateLabels'
+import { shortName } from '@/lib/chatFormat'
 import type { BookingResult } from '@/lib/types/booking'
 
-// "Mark all as seen" for the Closed requests list: dismisses every visible
-// card at once. On success the page revalidates and the section drops out.
-function MarkAllSeenButton({ ids }: { ids: string[] }) {
-  const { t } = useLanguage()
-  const [busy, setBusy] = useState(false)
-  async function dismissAll() {
-    setBusy(true)
-    const res = await acknowledgeAllBookingsSeen(ids)
-    if (res?.error) setBusy(false)
-  }
+// A closed request is a single quiet line: who, when, and why it ended.
+function ClosedLine({ booking }: { booking: BookingResult }) {
+  const { t, lang } = useLanguage()
+  const [open, setOpen] = useState(false)
   return (
-    <div className="flex justify-end mb-4">
+    <>
       <button
         type="button"
-        onClick={dismissAll}
-        disabled={busy}
-        className="rounded-full bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 hover:bg-gray-700 transition disabled:opacity-50"
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-between gap-3 py-2 text-start text-sm text-gray-500 hover:text-gray-800"
       >
-        {busy ? t('bookingCard.markingSeen') : t('bookingCard.markAllSeen')}
+        <span className="truncate">
+          {shortName(booking.cleaner_name)} · {shortDateLabel(booking.scheduled_date, lang === 'he' ? 'he' : 'en')}
+        </span>
+        <span className="shrink-0 text-xs text-gray-400">
+          {booking.closed_reason ? t(`browse.closed_${booking.closed_reason}`) : t('bookings.tagClosed')}
+        </span>
       </button>
-    </div>
+      {open && <BookingDetailModal booking={booking} onClose={() => setOpen(false)} />}
+    </>
   )
 }
 
-function Grid({
-  bookings,
-  empty,
-  muted = false,
-  dismissible = false,
-  schedule = false,
-  todayStr,
-}: {
-  bookings: BookingResult[]
-  empty: string
-  muted?: boolean
-  dismissible?: boolean
-  schedule?: boolean
-  todayStr: string
-}) {
-  if (bookings.length === 0) {
-    return <p className="text-gray-400 text-sm">{empty}</p>
+export function BookingsSections({ bookings, todayStr }: { bookings: BookingResult[]; todayStr: string }) {
+  const { t, lang } = useLanguage()
+  const { upcoming, history, closed } = splitBookings(bookings, todayStr)
+  const [tab, setTab] = useState<'upcoming' | 'history'>('upcoming')
+  const [clearing, setClearing] = useState(false)
+  const locale = lang === 'he' ? 'he-IL' : 'en-GB'
+
+  async function clearClosed() {
+    setClearing(true)
+    const res = await acknowledgeAllBookingsSeen(closed.map(b => b.id))
+    if (res?.error) setClearing(false)
   }
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {bookings.map(b =>
-        schedule
-          ? <ScheduleCard key={b.id} booking={b} todayStr={todayStr} />
-          : <BookingCard key={b.id} booking={b} muted={muted} dismissible={dismissible} />
-      )}
-    </div>
-  )
-}
 
-export function BookingsSections({
-  confirmed,
-  pending,
-  cancelled,
-  inactive,
-  past,
-  todayStr,
-}: {
-  confirmed: BookingResult[]
-  pending: BookingResult[]
-  cancelled: BookingResult[]
-  inactive: BookingResult[]
-  past: BookingResult[]
-  todayStr: string
-}) {
-  const { t } = useLanguage()
-
-  // Every category always gets a tab, even empty ones, so the customer can see
-  // the full set at a glance (an empty tab just shows its "none" message when
-  // selected). Order: confirmed → pending → past → cancelled (confirmed cleans that were
-  // cancelled, permanent) → closed requests (declined / expired / auto-closed).
-  // Confirmed and past are accepted/completed-only, so they use the same
-  // ScheduleCard as /home ("schedule: true") — matching the developer spec's
-  // "only what's accepted shows this format" — pending/refused-cancelled keep
-  // BookingCard, which shows their own status-specific state.
-  const sections = [
-    { key: 'confirmed', title: t('bookings.confirmed'), data: confirmed, badgeColor: 'bg-green-600', muted: false, dismissible: false, schedule: true, empty: t('bookings.noneConfirmed') },
-    { key: 'pending', title: t('bookings.pendingRequests'), data: pending, badgeColor: 'bg-yellow-500', muted: false, dismissible: false, schedule: false, empty: t('bookings.nonePending') },
-    { key: 'past', title: t('bookings.pastCleans'), data: past, badgeColor: 'bg-gray-500', muted: true, dismissible: false, schedule: true, empty: t('bookings.nonePast') },
-    // Confirmed cleans that were cancelled — a permanent record, so no "mark as seen".
-    { key: 'cancelled', title: t('bookings.cancelled'), data: cancelled, badgeColor: 'bg-gray-400', muted: true, dismissible: false, schedule: false, empty: t('bookings.noneCancelled') },
-    { key: 'inactive', title: t('bookings.closedRequests'), data: inactive, badgeColor: 'bg-gray-400', muted: true, dismissible: true, schedule: false, empty: t('bookings.noneClosed') },
+  const tabs = [
+    { key: 'upcoming' as const, title: t('bookings.upcomingTab'), count: upcoming.length },
+    { key: 'history' as const, title: t('bookings.historyTab'), count: 0 },
   ]
 
-  // Land the customer on the first tab that actually has bookings (falling back
-  // to the first tab if every category is empty), so a useful list is showing
-  // on first render rather than an empty one.
-  const [active, setActive] = useState((sections.find(s => s.data.length > 0) ?? sections[0]).key)
-
-  const current = sections.find(s => s.key === active) ?? sections[0]
-
   return (
-    <div className="flex flex-col gap-6">
-      {/* Top tab bar: one pill button per category, replacing the old
-          collapsible accordion sections. Centered, and wraps onto a second row
-          on narrow screens rather than scrolling (so nothing collapses to the
-          left edge when the pills don't quite fit). */}
-      <div className="mx-auto w-fit flex flex-wrap items-center justify-center gap-2 bg-gray-100 rounded-xl p-1.5">
-        {sections.map(s => {
-          const selected = s.key === current.key
-          return (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => setActive(s.key)}
-              // Selected tab = solid dark pill; others = outlined white pills.
-              className={`flex items-center gap-1 whitespace-nowrap rounded-xl px-2 py-2 text-sm font-semibold transition ${
-                selected
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {s.title}
-              {/* Count badge: keeps the per-category color when unselected, but
-                  goes translucent-white on the dark selected pill for contrast. */}
-              <span
-                className={`min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold rounded-full ${
-                  selected ? 'bg-white/20 text-white' : `${s.badgeColor} text-white`
-                }`}
-              >
-                {s.data.length}
+    <div className="flex flex-col gap-5">
+      <div className="mx-auto w-fit flex items-center gap-1 bg-gray-100 rounded-xl p-1.5">
+        {tabs.map(s => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => setTab(s.key)}
+            className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-5 py-2 text-sm font-semibold transition ${
+              tab === s.key ? 'bg-blue-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {s.title}
+            {s.count > 0 && (
+              <span className={`min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold rounded-full ${tab === s.key ? 'bg-white/20 text-white' : 'bg-green-600 text-white'}`}>
+                {s.count}
               </span>
-            </button>
-          )
-        })}
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Body: only the selected category's cards. The "mark all as seen" bulk
-          action is specific to the refused/cancelled ('inactive') tab and only
-          worth showing when there's more than one card to clear. */}
-      <div>
-        {current.key === 'inactive' && current.data.length > 1 && (
-          <MarkAllSeenButton ids={current.data.map(b => b.id)} />
-        )}
-        <Grid bookings={current.data} empty={current.empty} muted={current.muted} dismissible={current.dismissible} schedule={current.schedule} todayStr={todayStr} />
-      </div>
+      {tab === 'upcoming' && (
+        upcoming.length === 0 ? (
+          <p className="text-center text-sm text-gray-400">{t('bookings.noneUpcoming')}</p>
+        ) : (
+          <div className="space-y-3">
+            {upcoming.map(b => <BookingRow key={b.id} booking={b} todayStr={todayStr} />)}
+          </div>
+        )
+      )}
+
+      {tab === 'history' && (
+        <div className="space-y-6">
+          {history.length === 0 && closed.length === 0 && (
+            <p className="text-center text-sm text-gray-400">{t('bookings.noneHistory')}</p>
+          )}
+          {groupByMonth(history).map(group => (
+            <section key={group.month}>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
+                {new Date(`${group.month}-01T12:00:00`).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
+              </h2>
+              <div className="space-y-3">
+                {group.items.map(b => <BookingRow key={b.id} booking={b} todayStr={todayStr} />)}
+              </div>
+            </section>
+          ))}
+          {closed.length > 0 && (
+            <details className="rounded-2xl bg-white/60 px-4 py-2">
+              <summary className="cursor-pointer select-none py-1 text-sm font-semibold text-gray-500">
+                {t('bookings.closedTitle', { n: String(closed.length) })}
+              </summary>
+              <div className="divide-y divide-gray-100">
+                {closed.map(b => <ClosedLine key={b.id} booking={b} />)}
+              </div>
+              <button
+                type="button"
+                onClick={clearClosed}
+                disabled={clearing}
+                className="mt-1 mb-1 text-xs font-semibold text-gray-400 hover:text-gray-700 disabled:opacity-50"
+              >
+                {clearing ? t('bookingCard.markingSeen') : t('bookings.closedClear')}
+              </button>
+            </details>
+          )}
+        </div>
+      )}
     </div>
   )
 }

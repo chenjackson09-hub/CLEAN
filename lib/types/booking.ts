@@ -80,4 +80,6 @@ export type BookingResult = {
   // longer fits; holds the new times ("10:00–13:00"). The host confirms (v) or
   // cancels (x) — see AvailabilityNotice.
   availability_notice?: string | null
+  // Why a declined/cancelled request ended (see closedReasonFor in lib/hostCalendar.ts).
+  closed_reason?: import('@/lib/hostCalendar').ClosedReason | null
 }

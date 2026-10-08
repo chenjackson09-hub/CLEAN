@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { BookingResult } from '@/lib/types/booking'
 import type { CustomerHomeInfo } from '@/lib/bookingSummary'
+import { closedReasonFor } from '@/lib/hostCalendar'
 
 // Shared by /bookings and /home so the two pages' booking data can't drift —
 // same query, same cleaner-profile join, same rating lookup, same "expired
@@ -11,7 +12,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
 
   const { data: rawBookings } = await supabase
     .from('bookings')
-    .select('id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, cleaner_id, cleaner_modified, customer_ack_inactive, cleaning_type, extras, pets_present, host_present, created_at')
+    .select('id, service_type, scheduled_date, scheduled_start, duration_hours, duration_flexible, address, notes, status, response_deadline, responded_at, cleaner_id, cleaner_modified, customer_ack_inactive, cleaning_type, extras, pets_present, host_present, created_at')
     .eq('customer_id', userId)
     .order('created_at', { ascending: false })
 
@@ -114,6 +115,14 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       cancellation_reason: cancelMap.get(b.id)?.cancellation_reason ?? null,
       cancellation_message: cancelMap.get(b.id)?.cancellation_message ?? null,
       cancelled_from_status: cancelMap.get(b.id)?.cancelled_from_status ?? null,
+      closed_reason: closedReasonFor({
+        status: b.status,
+        pendingExpired: expired,
+        respondedAt: b.responded_at,
+        responseDeadline: b.response_deadline,
+        cancelledBy: cancelMap.get(b.id)?.cancelled_by ?? null,
+        statusReason: scheduleMap.get(b.id)?.status_reason ?? null,
+      }),
     } satisfies BookingResult
   })
 }
