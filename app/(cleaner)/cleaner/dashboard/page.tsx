@@ -92,15 +92,14 @@ export default async function CleanerDashboardPage() {
     const cleanDay = new Date(yy, mm - 1, dd);
     return Math.round((cleanDay.getTime() - startOfToday.getTime()) / 86_400_000);
   };
-  // The cleaner's own ratings, keyed by the customer they rated — one editable
-  // rating per customer, so every completed clean with that customer seeds the
-  // same score in the detail modal.
+  // The cleaner's own ratings, keyed by the clean (booking) they were left for —
+  // each completed clean is rated on its own.
   const { data: myRatings } = await admin
     .from("ratings")
-    .select("ratee_id, score, review_text")
+    .select("booking_id, score, review_text")
     .eq("rater_id", user.id);
-  const ratingMap = Object.fromEntries((myRatings ?? []).map((r) => [r.ratee_id, r.score]));
-  const reviewMap = Object.fromEntries((myRatings ?? []).map((r) => [r.ratee_id, r.review_text]));
+  const ratingMap = Object.fromEntries((myRatings ?? []).map((r) => [r.booking_id, r.score]));
+  const reviewMap = Object.fromEntries((myRatings ?? []).map((r) => [r.booking_id, r.review_text]));
 
   const pastBookings = [
     ...(pastRaw ?? []).filter((b) => startDateTime(b) < now).slice(0, 20),
@@ -110,8 +109,8 @@ export default async function CleanerDashboardPage() {
     .slice(0, 30)
     .map((b) => ({
       ...b,
-      my_rating: ratingMap[b.customer_id] ?? null,
-      my_review_text: reviewMap[b.customer_id] ?? null,
+      my_rating: ratingMap[b.id] ?? null,
+      my_review_text: reviewMap[b.id] ?? null,
     }));
 
   // Each requesting host's live home/pet snapshot, for the shared

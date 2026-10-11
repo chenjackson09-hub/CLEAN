@@ -92,7 +92,7 @@ export function CleanerCard({ cleaner, date, location, cleanGroupId, duration, p
             {t('common.yearsExp', { years: cleaner.years_experience })}
           </p>
           {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
-            <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} size="sm" className="mt-1" />
+            <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} countText={cleaner.rating_count === 1 ? t('common.cleanRated') : t('common.cleansRated', { n: String(cleaner.rating_count) })} size="sm" className="mt-1" />
           )}
         </div>
 

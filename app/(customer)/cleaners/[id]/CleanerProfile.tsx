@@ -127,7 +127,11 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 </h1>
                 {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
                   <div className="mt-1">
-                    <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} />
+                    <StarRatingDisplay
+                      value={cleaner.rating_avg}
+                      count={cleaner.rating_count}
+                      countText={cleaner.rating_count === 1 ? t('common.cleanRated') : t('common.cleansRated', { n: String(cleaner.rating_count ?? 0) })}
+                    />
                   </div>
                 )}
                 {cleaner.area && <p className="text-sm text-gray-500 mt-1 truncate">{cleaner.area}</p>}

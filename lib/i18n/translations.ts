@@ -71,6 +71,8 @@ const translations = {
       both: 'Both',
       perHour: '/hr',
       kmAway: '{km}km away',
+      cleansRated: '{n} cleans',
+      cleanRated: '1 clean',
       yearsExp: '{years} yrs exp',
     },
     filterBar: {
@@ -922,6 +924,8 @@ const translations = {
       both: 'שניהם',
       perHour: '/שעה',
       kmAway: 'במרחק {km} ק"מ',
+      cleansRated: '{n} ניקיונות',
+      cleanRated: 'ניקיון אחד',
       yearsExp: '{years} שנות ניסיון',
     },
     filterBar: {

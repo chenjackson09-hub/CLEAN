@@ -8,6 +8,7 @@ import { findSlotForBooking, restoreAvailability, restoreSlot } from "@/lib/avai
 import { ensureBookingInConversation } from "@/lib/chat";
 import { findAffectedRequests, formatSlotTimes } from "@/lib/availabilityImpact";
 import { cancelBookingCore } from "@/lib/cancellation";
+import { saveRating } from "@/lib/ratings";
 import { notify, profileNames } from "@/lib/notifications";
 import { shortName } from "@/lib/chatFormat";
 import {
@@ -906,20 +907,17 @@ export async function rateCustomer(bookingId: string, score: number, reviewText?
   if (fetchErr || !booking) return { error: "Booking not found." };
   if (booking.status !== "completed") return { error: "You can only rate a completed clean." };
 
-  const { error: rErr } = await supabase.from("ratings").upsert(
-    {
-      booking_id: bookingId,
-      rater_id: user.id,
-      ratee_id: booking.customer_id,
-      ratee_role: "customer",
-      score,
-      ...(reviewText !== undefined && { review_text: reviewText.trim() || null }),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "rater_id,ratee_id" },
-  );
+  // One rating per clean (see lib/ratings.ts).
+  const { error: rErr } = await saveRating(supabase, {
+    bookingId,
+    raterId: user.id,
+    rateeId: booking.customer_id,
+    rateeRole: "customer",
+    score,
+    reviewText,
+  });
 
-  if (rErr) return { error: rErr.message };
+  if (rErr) return { error: rErr };
 
   {
     const notifyAdmin = createAdminClient();

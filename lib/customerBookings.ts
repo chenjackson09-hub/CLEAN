@@ -43,14 +43,14 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
 
   const now = Date.now()
 
-  // The customer's own ratings (rater_id = user.id), keyed by the cleaner they
-  // rated — there's one editable rating per cleaner, so every completed booking
-  // with that cleaner seeds the same score. RLS lets a rater read their own rows.
+  // The customer's own ratings (rater_id = user.id), keyed by the CLEAN (booking)
+  // they were left for — each completed clean is rated on its own. RLS lets a
+  // rater read their own rows.
   const { data: myRatings } = await supabase
     .from('ratings')
-    .select('ratee_id, score')
+    .select('booking_id, score')
     .eq('rater_id', userId)
-  const ratingMap = Object.fromEntries((myRatings ?? []).map(r => [r.ratee_id, r.score]))
+  const ratingMap = Object.fromEntries((myRatings ?? []).map(r => [r.booking_id, r.score]))
 
   // The customer's own home/pet snapshot, for every booking's "Your home"/
   // "Pets" rows in the shared BookingRequestSummary (see lib/bookingSummary.ts)
@@ -99,7 +99,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       status: (expired ? 'declined' : b.status) as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
       cleaner_modified: b.cleaner_modified ?? false,
       customer_ack_inactive: b.customer_ack_inactive ?? false,
-      my_rating: ratingMap[b.cleaner_id] ?? null,
+      my_rating: ratingMap[b.id] ?? null,
       cleaning_type: b.cleaning_type,
       extras: b.extras ?? [],
       pets_present: b.pets_present,

@@ -76,7 +76,12 @@ export default function ProfileView({ profile, cleaner, onEdit, center = null }:
               {age !== null ? `, ${age}` : ""}
             </p>
             <div className="mt-1">
-              <StarRatingDisplay value={cleaner?.rating_avg} count={cleaner?.rating_count} emptyLabel={t("prof_no_ratings")} />
+              <StarRatingDisplay
+                value={cleaner?.rating_avg}
+                count={cleaner?.rating_count}
+                countText={cleaner?.rating_count === 1 ? t("prof_clean_rated") : t("prof_cleans_rated").replace("{n}", String(cleaner?.rating_count ?? 0))}
+                emptyLabel={t("prof_no_ratings")}
+              />
             </div>
             <p className="text-sm text-gray-500 mt-1 truncate">{area ?? "—"}</p>
           </div>

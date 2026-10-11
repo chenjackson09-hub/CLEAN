@@ -6,6 +6,7 @@ import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
 import { sendNewBookingRequest } from "@/lib/resend"
 import { cancelBookingCore } from "@/lib/cancellation"
+import { saveRating } from "@/lib/ratings"
 import { notify, profileNames } from "@/lib/notifications"
 
 // Records that the customer has now seen their bookings, clearing the "newly
@@ -525,21 +526,17 @@ export async function rateCleaner(bookingId: string, score: number): Promise<Act
   if (fetchErr || !booking) return { error: "Booking not found." }
   if (booking.status !== "completed") return { error: "You can only rate a completed clean." }
 
-  const { error } = await supabase
-    .from("ratings")
-    .upsert(
-      {
-        booking_id: bookingId,
-        rater_id: user.id,
-        ratee_id: booking.cleaner_id,
-        ratee_role: "cleaner",
-        score,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "rater_id,ratee_id" },
-    )
+  // One rating per clean: each completed clean is rated on its own and counts
+  // toward the cleaner's average and "N cleans" (see lib/ratings.ts).
+  const { error } = await saveRating(supabase, {
+    bookingId,
+    raterId: user.id,
+    rateeId: booking.cleaner_id,
+    rateeRole: "cleaner",
+    score,
+  })
 
-  if (error) return { error: error.message }
+  if (error) return { error }
 
   const admin = createAdminClient()
   const names = await profileNames(admin, [user.id])

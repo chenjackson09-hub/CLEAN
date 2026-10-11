@@ -21,6 +21,7 @@ const SIZE = { sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-7 h-7' } as const
 export function StarRatingDisplay({
   value,
   count,
+  countText,
   size = 'sm',
   showNumber = true,
   emptyLabel,
@@ -28,6 +29,8 @@ export function StarRatingDisplay({
 }: {
   value: number | null | undefined
   count?: number
+  // A caller-formatted label for the count (e.g. "6 cleans"), shown instead of "(6)".
+  countText?: string
   size?: keyof typeof SIZE
   showNumber?: boolean
   emptyLabel?: string
@@ -58,7 +61,9 @@ export function StarRatingDisplay({
         </span>
       </span>
       {showNumber && <span className="text-sm font-semibold text-gray-700">{num.toFixed(1)}</span>}
-      {count != null && count > 0 && <span className="text-xs text-gray-400">({count})</span>}
+      {count != null && count > 0 && (
+        <span className="text-xs text-gray-400">{countText ? `· ${countText}` : `(${count})`}</span>
+      )}
     </span>
   )
 }

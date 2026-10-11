@@ -97,7 +97,7 @@ export default function HostProfileCard({
             <div className="flex items-center gap-1 mt-1 text-sm text-gray-600">
               <StarIcon className="w-4 h-4 text-amber-400" />
               <span className="font-semibold">{ratingAvg.toFixed(1)}</span>
-              <span className="text-gray-400">({ratingCount})</span>
+              <span className="text-gray-400">· {ratingCount === 1 ? "1 clean" : `${ratingCount} cleans`}</span>
             </div>
           )}
           {customer?.address && <p className="text-sm text-gray-500 mt-1 truncate">{customer.address}</p>}
