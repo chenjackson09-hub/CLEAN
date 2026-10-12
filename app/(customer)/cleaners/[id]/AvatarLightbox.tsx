@@ -9,6 +9,7 @@ import Image from 'next/image'
 const SIZE = {
   lg: { button: 'w-32 h-32 lg:w-48 lg:h-48', sizes: '(min-width: 1024px) 12rem, 8rem' },
   md: { button: 'w-16 h-16', sizes: '4rem' },
+  xl: { button: 'w-24 h-24', sizes: '6rem' },
 } as const
 
 export function AvatarLightbox({ src, name, size = 'lg' }: { src: string; name: string; size?: keyof typeof SIZE }) {

@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import { screen } from '@testing-library/react'
 import { renderWithLanguage as render } from '@/lib/i18n/testUtils'
 import { CleanerProfile } from './CleanerProfile'
@@ -46,8 +47,8 @@ describe('CleanerProfile', () => {
   it('renders languages', () => {
     render(<CleanerProfile cleaner={cleaner} />)
     // Each language renders as its own chip.
-    expect(screen.getByText('EN')).toBeInTheDocument()
-    expect(screen.getByText('HE')).toBeInTheDocument()
+    // Languages are one row in "Preferences & details".
+    expect(screen.getByText('EN, HE')).toBeInTheDocument()
   })
 
   it('renders a Request Booking button when arriving from a dated search', () => {
@@ -90,5 +91,56 @@ describe('CleanerProfile', () => {
       />
     )
     expect(screen.queryByText('08:00 – 12:00')).not.toBeInTheDocument()
+  })
+
+  describe('redesigned profile', () => {
+    const rich = {
+      ...cleaner,
+      bio: 'I have been cleaning homes for several years and love paying attention to the little details. '.repeat(3),
+      rating_avg: 4,
+      rating_count: 2,
+      cleans_completed: 3,
+      min_hours: 3,
+      max_hours: 6,
+      has_car: true,
+      gas_return_enabled: true,
+      gas_return_rate: 1,
+      match_preferences: ['recurring' as const],
+      cleaning_categories: ['General cleaning', 'Deep cleaning'],
+    }
+
+    it('shows the rating with the number of cleans, and the two stat tiles', () => {
+      render(<CleanerProfile cleaner={rich} />)
+      expect(screen.getByText('4.0')).toBeInTheDocument()
+      expect(screen.getByText(/2 cleans/)).toBeInTheDocument()
+      expect(screen.getByText('Completed cleans')).toBeInTheDocument()
+      expect(screen.getByText(/^3–6 /)).toBeInTheDocument()
+      expect(screen.getByText('Job duration')).toBeInTheDocument()
+    })
+
+    it('lists services as pills and details as icon rows', () => {
+      render(<CleanerProfile cleaner={rich} />)
+      expect(screen.getByRole('heading', { name: 'Cleaning services' })).toBeInTheDocument()
+      expect(screen.getByText('Deep cleaning')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Preferences & details' })).toBeInTheDocument()
+      expect(screen.getByText('Travel reimbursement')).toBeInTheDocument()
+      expect(screen.getByText(/₪1 \/ km/)).toBeInTheDocument()
+    })
+
+    it('a long bio is cut off and "Read more" opens it', async () => {
+      render(<CleanerProfile cleaner={rich} />)
+      const readMore = screen.getByRole('button', { name: 'Read more' })
+      expect(readMore).toHaveAttribute('aria-expanded', 'false')
+      await userEvent.click(readMore)
+      expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('has a back button, and an edit button only when it is the cleaner\'s own preview', () => {
+      const { rerender } = render(<CleanerProfile cleaner={rich} />)
+      expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+      rerender(<CleanerProfile cleaner={rich} editHref="/cleaner/profile?edit=1" bookingDisabled />)
+      expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    })
   })
 })

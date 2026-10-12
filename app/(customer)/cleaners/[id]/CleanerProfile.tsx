@@ -1,14 +1,38 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookingRequestForm } from './BookingRequestForm'
 import { AvatarLightbox } from './AvatarLightbox'
 import { GalleryLightbox } from './GalleryLightbox'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
-import { StarRatingDisplay } from '@/components/StarRating'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
 type DateSlot = { date: string; start_time: string; end_time: string }
+
+// Small line icons for the "Preferences & details" rows and stat tiles.
+const ICON = { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
+function IconSprout({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><path d="M12 21v-8M12 13c0-3 2-5 6-5 0 3-2 5-6 5zM12 15c0-2.5-1.8-4.5-5-4.5 0 2.5 1.8 4.5 5 4.5z" /></svg>
+}
+function IconCar({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><path d="M5 16V11l1.6-4.2A2 2 0 018.5 5.5h7a2 2 0 011.9 1.3L19 11v5M3 16h18v2.5a.5.5 0 01-.5.5H19a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H3.5a.5.5 0 01-.5-.5V16zM7.5 13h.01M16.5 13h.01" /></svg>
+}
+function IconGlobe({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" /></svg>
+}
+function IconBriefcase({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M3 13h18" /></svg>
+}
+function IconPin({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+}
+function IconCheckCircle({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.7 2.7L16 9.8" /></svg>
+}
+function IconClock({ className = 'w-5 h-5' }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" className={className} {...ICON}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+}
 
 function ageFromBirthdate(birthdate: string | null | undefined): number | null {
   if (!birthdate) return null
@@ -51,6 +75,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   const router = useRouter()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
   const age = ageFromBirthdate(cleaner.birthdate)
+  const [bioOpen, setBioOpen] = useState(false)
 
   // Availability badges shown next to the "Book {name}" header — the cleaner's
   // slots for the date the customer came from (presetDate), mirroring the slot
@@ -79,174 +104,192 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   // booking section — there's no context in which a cleaner should book themselves.
   const showBooking = !bookingDisabled && presetDate != null
 
-  return (
-    <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen">
-      <div className="px-4 lg:px-10 py-6 space-y-4">
+  // "Read more" only appears when the bio is long enough to be cut off.
+  const longBio = (cleaner.bio ?? '').length > 150 || (cleaner.bio ?? '').split('\n').length > 3
 
-        {/* Main card: avatar/name/price header, bio, stats, services, looking for —
-            mirrors the layout of the cleaner's own editable profile (ProfileView.tsx). */}
-        <div className="bg-white shadow-sm rounded-2xl p-6">
-          {completionPct != null && completionPct < 100 && (
-            <button type="button" onClick={() => editHref && router.push(editHref)} className="w-full text-start mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-blue-600" style={{ width: `${completionPct}%` }} />
-                </div>
-                <span className="text-sm font-semibold text-gray-600">{completionPct}%</span>
-              </div>
-              {missingSummary && <p className="text-sm text-gray-400 mt-1.5">{missingSummary}</p>}
+  // "3–6 h", "3+ h" (no upper limit), "up to 6 h" — or nothing when neither is set.
+  const jobDuration =
+    cleaner.min_hours != null && cleaner.max_hours != null
+      ? `${cleaner.min_hours}–${cleaner.max_hours} ${t('filterBar.hoursShort')}`
+      : cleaner.min_hours != null
+        ? `${cleaner.min_hours}+ ${t('filterBar.hoursShort')}`
+        : cleaner.max_hours != null
+          ? `${t('cleanerProfile.upTo')} ${cleaner.max_hours} ${t('filterBar.hoursShort')}`
+          : null
+
+  const lookingFor = (cleaner.match_preferences ?? []).map(pref =>
+    pref === 'other'
+      ? cleaner.match_preference_other || t('cleanerProfile.matchOther')
+      : pref === 'recurring'
+        ? t('cleanerProfile.matchRecurring')
+        : t('cleanerProfile.matchOccasional'),
+  )
+
+  // The rows of "Preferences & details" — only those the cleaner has filled in.
+  const details: { key: string; icon: React.ReactNode; label: string; value: string }[] = []
+  if (lookingFor.length > 0) details.push({ key: 'looking', icon: <IconSprout />, label: t('cleanerProfile.lookingFor'), value: lookingFor.join(', ') })
+  if (cleaner.has_car && cleaner.gas_return_enabled) {
+    details.push({
+      key: 'travel', icon: <IconCar />, label: t('cleanerProfile.travel'),
+      value: `₪${Number(cleaner.gas_return_rate ?? 1).toFixed(2).replace(/\.00$/, '')} / ${t('cleanerProfile.km')}`,
+    })
+  }
+  if (cleaner.languages.length > 0) details.push({ key: 'lang', icon: <IconGlobe />, label: t('cleanerProfile.languages'), value: cleaner.languages.join(', ') })
+  if (cleaner.years_experience != null && cleaner.years_experience > 0) {
+    details.push({
+      key: 'exp', icon: <IconBriefcase />, label: t('cleanerProfile.experience'),
+      value: `${cleaner.years_experience} ${cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}`,
+    })
+  }
+  if (cleaner.distance_km > 0) {
+    details.push({ key: 'dist', icon: <IconPin />, label: t('cleanerProfile.distance'), value: `${cleaner.distance_km.toFixed(1)} ${t('cleanerProfile.km')}` })
+  }
+
+  const services =
+    cleaner.cleaning_categories && cleaner.cleaning_categories.length > 0
+      ? cleaner.cleaning_categories.map(cat => (cat === 'Other' ? cleaner.cleaning_category_other || cat : cat))
+      : cleaner.service_types.map(type => t(`common.${type}`))
+
+  const rated = cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0
+
+  return (
+    <div className="-mx-3 sm:-mx-8 -mt-2 min-h-screen bg-white">
+      <div className="mx-auto max-w-2xl px-5 py-4 space-y-6">
+
+        {/* Top bar: back, and (preview only) edit. */}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => (window.history.length > 1 ? router.back() : router.push('/browse'))}
+            aria-label={t('cleanerProfile.back')}
+            className="w-10 h-10 -ms-2 flex items-center justify-center rounded-full text-gray-800 hover:bg-gray-100 transition-colors rtl:rotate-180"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          {editHref && (
+            <button
+              type="button"
+              onClick={() => router.push(editHref)}
+              aria-label={t('cleanerProfile.edit')}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
             </button>
           )}
+        </div>
 
-          {editHref && (
-            <div className="flex justify-end mb-2">
-              <button
-                type="button"
-                onClick={() => router.push(editHref)}
-                aria-label={t('cleanerProfile.edit')}
-                className="text-lg text-gray-500 hover:text-gray-800 transition-colors"
-              >
-                ✏️
-              </button>
+        {completionPct != null && completionPct < 100 && (
+          <button type="button" onClick={() => editHref && router.push(editHref)} className="w-full text-start rounded-2xl bg-gray-50 p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-600" style={{ width: `${completionPct}%` }} />
+              </div>
+              <span className="text-sm font-semibold text-gray-600">{completionPct}%</span>
+            </div>
+            {missingSummary && <p className="text-sm text-gray-500 mt-1.5">{missingSummary}</p>}
+          </button>
+        )}
+
+        {/* Header: photo, name, area, rating — and the hourly rate. */}
+        <div className="flex items-center gap-4">
+          {cleaner.avatar_url ? (
+            <AvatarLightbox src={cleaner.avatar_url} name={cleaner.full_name} size="xl" />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-4xl shrink-0">
+              {initial}
             </div>
           )}
-
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="flex items-center gap-4 min-w-0">
-              {cleaner.avatar_url ? (
-                <AvatarLightbox src={cleaner.avatar_url} name={cleaner.full_name} size="md" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-2xl shrink-0">
-                  {initial}
-                </div>
-              )}
-              <div className="min-w-0">
-                <h1 className="text-lg font-semibold text-gray-900 truncate">
-                  {cleaner.full_name}
-                  {age !== null ? `, ${age}` : ''}
-                </h1>
-                {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
-                  <div className="mt-1">
-                    <StarRatingDisplay
-                      value={cleaner.rating_avg}
-                      count={cleaner.rating_count}
-                      countText={cleaner.rating_count === 1 ? t('common.cleanRated') : t('common.cleansRated', { n: String(cleaner.rating_count ?? 0) })}
-                    />
-                  </div>
-                )}
-                {cleaner.area && <p className="text-sm text-gray-500 mt-1 truncate">{cleaner.area}</p>}
-              </div>
-            </div>
-            <div className="bg-blue-600 text-white rounded-2xl px-4 py-2.5 text-center shrink-0">
-              <p className="text-xl font-semibold leading-none">₪{cleaner.hourly_rate}</p>
-              <p className="text-[10px] font-medium mt-1 leading-none">{t('common.perHour')}</p>
-            </div>
-          </div>
-
-          {cleaner.bio && <p className="text-sm text-gray-700 leading-relaxed mb-4 whitespace-pre-line">{cleaner.bio}</p>}
-
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {cleaner.years_experience != null && cleaner.years_experience > 0 && (
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-                <p className="text-xs text-gray-400">{t('cleanerProfile.experience')}</p>
-                <p className="text-base font-semibold text-gray-900 mt-0.5">
-                  {cleaner.years_experience} {cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}
-                </p>
-              </div>
-            )}
-            {cleaner.distance_km > 0 && (
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-                <p className="text-xs text-gray-400">{t('cleanerProfile.distance')}</p>
-                <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.distance_km.toFixed(1)} {t('cleanerProfile.km')}</p>
-              </div>
-            )}
-            {cleaner.min_hours != null && (
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-                <p className="text-xs text-gray-400">{t('cleanerProfile.minJob')}</p>
-                <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.min_hours} {t('filterBar.hoursShort')}</p>
-              </div>
-            )}
-            <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-              <p className="text-xs text-gray-400">{t('cleanerProfile.maxJob')}</p>
-              <p className="text-base font-semibold text-gray-900 mt-0.5">
-                {cleaner.max_hours != null ? `${cleaner.max_hours} ${t('filterBar.hoursShort')}` : t('cleanerProfile.noLimit')}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">
+              {cleaner.full_name}
+              {age !== null ? `, ${age}` : ''}
+            </h1>
+            {cleaner.area && (
+              <p className="mt-1 flex items-center gap-1.5 text-gray-500">
+                <IconPin className="w-4 h-4 shrink-0" />
+                <span className="truncate">{cleaner.area}</span>
               </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-              <p className="text-xs text-gray-400">{t('cleanerProfile.cleansDone')}</p>
-              <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner.cleans_completed ?? 0}</p>
-            </div>
-            {cleaner.has_car && cleaner.gas_return_enabled && (
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-                <p className="text-xs text-gray-400">{t('cleanerProfile.gasReturn')}</p>
-                <p className="text-base font-semibold text-gray-900 mt-0.5">
-                  ₪{Number(cleaner.gas_return_rate ?? 1).toFixed(2)} <b>{t('cleanerProfile.perKm')}</b>
-                </p>
-              </div>
+            )}
+            {rated && (
+              <p className="mt-1 flex items-center gap-1.5">
+                <svg viewBox="0 0 20 20" className="w-5 h-5 text-amber-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+                  <path d="M9.05 2.93a1 1 0 011.9 0l1.29 3.96a1 1 0 00.95.69h4.16a1 1 0 01.59 1.81l-3.37 2.45a1 1 0 00-.36 1.12l1.29 3.96a1 1 0 01-1.54 1.12l-3.37-2.45a1 1 0 00-1.18 0l-3.37 2.45a1 1 0 01-1.54-1.12l1.29-3.96a1 1 0 00-.36-1.12L2.36 9.39a1 1 0 01.59-1.81h4.16a1 1 0 00.95-.69l1.29-3.96z" />
+                </svg>
+                <span className="text-lg font-bold text-gray-900">{Number(cleaner.rating_avg).toFixed(1)}</span>
+                <span className="text-gray-500">
+                  · {cleaner.rating_count === 1 ? t('common.cleanRated') : t('common.cleansRated', { n: String(cleaner.rating_count ?? 0) })}
+                </span>
+              </p>
             )}
           </div>
+          <div className="rounded-2xl bg-emerald-50 text-emerald-900 px-3 py-2.5 text-center shrink-0">
+            <p className="text-2xl font-bold leading-none">₪{cleaner.hourly_rate}</p>
+            <p className="text-xs mt-1">{t('common.perHour')}</p>
+          </div>
+        </div>
 
-          {cleaner.languages.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs text-gray-400 mb-1.5">{t('cleanerProfile.languages')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {cleaner.languages.map(lang => (
-                  <span key={lang} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-sm px-2.5 py-0.5 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
-                    </svg>
-                    {lang}
-                  </span>
-                ))}
-              </div>
+        {/* Two stat tiles. */}
+        <div className={`grid gap-3 ${jobDuration ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className="rounded-2xl bg-gray-50 px-3 py-4 text-center">
+            <IconCheckCircle className="w-6 h-6 mx-auto text-emerald-700" />
+            <p className="mt-2 text-2xl font-bold text-gray-900">{cleaner.cleans_completed ?? 0}</p>
+            <p className="text-sm text-gray-500">{t('cleanerProfile.completedCleans')}</p>
+          </div>
+          {jobDuration && (
+            <div className="rounded-2xl bg-gray-50 px-3 py-4 text-center">
+              <IconClock className="w-6 h-6 mx-auto text-gray-500" />
+              <p className="mt-2 text-2xl font-bold text-gray-900">{jobDuration}</p>
+              <p className="text-sm text-gray-500">{t('cleanerProfile.jobDuration')}</p>
             </div>
-          )}
-
-          {/* Services — the richer cleaning_categories list (migration 0018) takes
-              priority; falls back to the older residential/commercial service_types
-              for cleaners who signed up before that redesign and never set it. */}
-          {cleaner.cleaning_categories && cleaner.cleaning_categories.length > 0 ? (
-            <>
-              <p className="text-xs text-gray-400 mb-1.5">{t('cleanerProfile.serviceTypes')}</p>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {cleaner.cleaning_categories.map(cat => (
-                  <span key={cat} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
-                    {cat === 'Other' ? cleaner.cleaning_category_other || cat : cat}
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : cleaner.service_types.length > 0 && (
-            <>
-              <p className="text-xs text-gray-400 mb-1.5">{t('cleanerProfile.serviceTypes')}</p>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {cleaner.service_types.map(type => (
-                  <span key={type} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
-                    {t(`common.${type}`)}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Looking for — the cleaner's match preferences (recurring/occasional/other), a multi-select. */}
-          {cleaner.match_preferences && cleaner.match_preferences.length > 0 && (
-            <>
-              <p className="text-xs text-gray-400 mb-1.5">{t('cleanerProfile.lookingFor')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {cleaner.match_preferences.map(pref => (
-                  <span key={pref} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
-                    {pref === 'other'
-                      ? cleaner.match_preference_other || t('cleanerProfile.matchOther')
-                      : pref === 'recurring'
-                        ? t('cleanerProfile.matchRecurring')
-                        : t('cleanerProfile.matchOccasional')}
-                  </span>
-                ))}
-              </div>
-            </>
           )}
         </div>
+
+        {cleaner.bio && (
+          <section className="border-t border-gray-100 pt-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('cleanerProfile.aboutMe')}</h2>
+            <p className={`text-gray-700 leading-relaxed whitespace-pre-line ${longBio && !bioOpen ? 'line-clamp-4' : ''}`}>{cleaner.bio}</p>
+            {longBio && (
+              <button
+                type="button"
+                onClick={() => setBioOpen(o => !o)}
+                aria-expanded={bioOpen}
+                className="mt-2 text-sm font-semibold text-emerald-800 hover:underline"
+              >
+                {bioOpen ? t('cleanerProfile.readLess') : t('cleanerProfile.readMore')}
+              </button>
+            )}
+          </section>
+        )}
+
+        {services.length > 0 && (
+          <section className="border-t border-gray-100 pt-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-3">{t('cleanerProfile.cleaningServices')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {services.map(label => (
+                <span key={label} className="px-4 py-2 rounded-full bg-gray-100 text-gray-800">{label}</span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {details.length > 0 && (
+          <section className="border-t border-gray-100 pt-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('cleanerProfile.details')}</h2>
+            <ul className="divide-y divide-gray-100">
+              {details.map(d => (
+                <li key={d.key} className="flex items-center gap-4 py-3">
+                  <span className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">{d.icon}</span>
+                  <span className="flex-1 text-gray-500">{d.label}</span>
+                  <span className="text-end font-medium text-gray-900">{d.value}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Booking form — only when the customer arrived from a dated browse
             search. Otherwise a prompt to search, since booking needs that
@@ -254,7 +297,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             themselves makes no sense, so the whole section is skipped. */}
         {!bookingDisabled && (
           showBooking ? (
-            <div id="book" className="bg-white shadow-sm rounded-2xl p-6 scroll-mt-4">
+            <div id="book" className="bg-gray-50 rounded-2xl p-5 scroll-mt-4">
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <h2 className="text-lg font-bold text-gray-900">
                   {t('cleanerProfile.book').replace('{name}', cleaner.full_name)}
@@ -271,7 +314,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
               <BookingRequestForm cleaner={cleaner} weeklyAvailability={weeklyAvailability} dateAvailability={dateAvailability} presetDate={presetDate} presetAddress={presetAddress} presetDuration={presetDuration} cleanGroupId={cleanGroupId} />
             </div>
           ) : (
-            <div className="bg-white shadow-sm rounded-2xl p-6 text-center">
+            <div className="bg-gray-50 rounded-2xl p-5 text-center">
               <p className="text-base text-gray-700 mb-3">{t('cleanerProfile.bookPrompt')}</p>
               <button
                 type="button"
