@@ -7,6 +7,7 @@ import { geocodeAddress } from "@/lib/geocode"
 import { sendNewBookingRequest } from "@/lib/resend"
 import { cancelBookingCore } from "@/lib/cancellation"
 import { saveRating } from "@/lib/ratings"
+import { resolvePlace } from "@/lib/localities/resolve"
 import { notify, profileNames } from "@/lib/notifications"
 
 // Records that the customer has now seen their bookings, clearing the "newly
@@ -119,14 +120,20 @@ export async function updateCustomerProfile(
     .eq("id", user.id)
   if (profileErr) return { error: profileErr.message }
 
-  const location = await geocodeAddress(address)
+  // The host picks their locality from the official list (and may add a street);
+  // the address text and coordinates come from that, not from free-text geocoding.
+  const place = await resolvePlace(createAdminClient(), {
+    localityId: (formData.get("locality_id") as string | null) || null,
+    street: address,
+  })
+  const location = place.coords
 
   const { error: customerErr } = await supabase
     .from("customers")
     .upsert({
       id: user.id,
       bio,
-      address,
+      address: place.address,
       // preferred_service_type and max_hours are intentionally omitted: no
       // longer customer-editable, and omitting them from the upsert preserves
       // any value already stored (mirrors the num_kids_under_15/num_people
@@ -150,6 +157,13 @@ export async function updateCustomerProfile(
       floor: dwellingType === "apartment" ? toIntSigned(formData.get("floor")) : null,
     })
   if (customerErr) return { error: customerErr.message }
+
+  // The locality link is its own best-effort write: if migration 0039 hasn't been
+  // applied the rest of the profile has already saved and nothing fails.
+  if (place.localityId) {
+    const { error: linkErr } = await supabase.from("customers").update({ locality_id: place.localityId }).eq("id", user.id)
+    if (linkErr) console.error("locality link not saved (migration 0039?)", linkErr.message)
+  }
 
   revalidatePath("/profile")
   return { success: true, avatarUrl: avatarUrl ?? undefined, petPhotoUrl: petPhotoUrl ?? undefined }

@@ -26,6 +26,7 @@ const TEXT: Record<NotificationKind | 'chat_messages', Record<Lang, string>> = {
   clean_tomorrow: { en: 'Reminder: your clean with {name} is tomorrow at {time}', he: 'תזכורת: הניקיון שלך עם {name} מחר בשעה {time}' },
   chat_message: { en: '{name} sent you a message', he: '{name} שלח/ה לך הודעה' },
   chat_messages: { en: '{name} sent you {count} messages', he: '{name} שלח/ה לך {count} הודעות' },
+  choose_area: { en: 'Choose your area so we can show you the right matches nearby — tap to pick it', he: 'בחרו את האזור שלכם כדי שנוכל להציג לכם התאמות קרובות — הקישו לבחירה' },
   account_approved: { en: 'You’re approved — welcome to Clean!', he: 'אושרת — ברוכים הבאים ל-Clean!' },
   account_rejected: { en: 'Your account wasn’t approved', he: 'החשבון שלך לא אושר' },
 }

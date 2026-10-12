@@ -67,3 +67,10 @@ describe('cancellation notifications', () => {
     )
   })
 })
+
+describe('choose-area notification', () => {
+  it('asks the person to pick their area', () => {
+    expect(describeNotification('choose_area', {}, 'en')).toContain('Choose your area')
+    expect(describeNotification('choose_area', {}, 'he')).toContain('בחרו את האזור')
+  })
+})

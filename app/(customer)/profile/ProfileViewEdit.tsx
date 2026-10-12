@@ -21,6 +21,7 @@ export default function ProfileViewEdit({
   reviews,
   defaultValues,
   action,
+  startInEdit = false,
 }: {
   fullName: string
   avatarUrl: string | null
@@ -28,8 +29,10 @@ export default function ProfileViewEdit({
   reviews: ReviewItem[]
   defaultValues: DefaultValues
   action: (state: ActionResult, formData: FormData) => Promise<ActionResult>
+  // Set by `?edit=1` — e.g. the "choose your area" notification lands straight in the form.
+  startInEdit?: boolean
 }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(startInEdit)
 
   if (editing) {
     return <ProfileForm defaultValues={defaultValues} action={action} onSaved={() => setEditing(false)} />

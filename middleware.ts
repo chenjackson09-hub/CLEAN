@@ -57,8 +57,11 @@ export async function middleware(request: NextRequest) {
   const isSignedOutPath = pathname === '/signed-out'
   // OAuth callback must run while still unauthenticated (it sets the session).
   const isCallbackPath = pathname.startsWith('/auth/')
+  // Read-only locality autocomplete — used on the registration screens, before
+  // an account exists. Returns geography only.
+  const isLocalitySearch = pathname === '/api/localities/search'
 
-  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isCallbackPath) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isCallbackPath && !isLocalitySearch) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

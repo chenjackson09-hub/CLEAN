@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/lib/geocode";
+import LocalityPicker from "@/components/LocalityPicker";
+import type { PickedLocality } from "@/lib/localities/address";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
@@ -21,6 +23,9 @@ type Answers = {
   birthM: string;
   birthY: string;
   loc: string;
+  // The official locality picked from the list (preferred over the typed `loc`).
+  locality: PickedLocality | null;
+  locManual: boolean;
   freqType: FreqType;
   freqVal: number;
   freqOtherText: string;
@@ -76,6 +81,8 @@ const initialAnswers: Answers = {
   birthM: "",
   birthY: "",
   loc: "",
+  locality: null,
+  locManual: false,
   freqType: "num",
   freqVal: 3,
   freqOtherText: "",
@@ -165,7 +172,7 @@ export default function CleanerRegisterPage() {
       case "birth":
         return !!(answers.birthD && answers.birthM && answers.birthY);
       case "loc":
-        return answers.loc.trim().length > 0;
+        return answers.locality != null || answers.loc.trim().length > 0;
       case "services":
         return answers.services.length > 0;
       case "match":
@@ -290,7 +297,16 @@ export default function CleanerRegisterPage() {
       return false;
     }
 
-    const location = answers.loc ? await geocodeAddress(answers.loc) : null;
+    // A picked locality supplies the address text and the official coordinates;
+    // typed text (the "can't find it" fallback) is geocoded as before.
+    const pickedLocality = answers.locality;
+    const addressText = pickedLocality ? pickedLocality.name_he : answers.loc.trim();
+    const location =
+      pickedLocality && pickedLocality.lat != null && pickedLocality.lng != null
+        ? { lat: pickedLocality.lat, lng: pickedLocality.lng }
+        : addressText
+          ? await geocodeAddress(addressText)
+          : null;
 
     const birthdate =
       answers.birthD && answers.birthM && answers.birthY
@@ -316,7 +332,7 @@ export default function CleanerRegisterPage() {
       hourly_rate: answers.rate ? Number(answers.rate) : null,
       min_hours: answers.duration ? Number(answers.duration) : null,
       max_hours: answers.maxDurationNoLimit ? null : answers.maxDuration ? Number(answers.maxDuration) : null,
-      address: answers.loc || null,
+      address: addressText || null,
       service_radius_km: Math.min(100, Math.max(1, Number(answers.radius) || 10)),
       ...(location && { location: `POINT(${location.lng} ${location.lat})` }),
       birthdate,
@@ -333,6 +349,16 @@ export default function CleanerRegisterPage() {
       setError(cleanerErr.message);
       setLoading(false);
       return false;
+    }
+
+    // The locality link is its own best-effort write: if migration 0039 hasn't been
+    // applied the profile above has already saved, so registration never fails on it.
+    if (answers.locality) {
+      try {
+        await supabase.from("cleaners").update({ locality_id: answers.locality.id }).eq("id", user.id);
+      } catch {
+        /* best-effort only */
+      }
     }
 
     localStorage.removeItem("pending_signup");
@@ -534,14 +560,33 @@ export default function CleanerRegisterPage() {
                 <>
                   <p className="text-lg font-medium text-gray-900 mb-1">{t("auth.registerCleaner.qLoc")}</p>
                   <p className="text-sm text-gray-500 mb-4">{t("auth.registerCleaner.locSub")}</p>
-                  <input
-                    type="text"
+                  <LocalityPicker
+                    lang={lang === "he" ? "he" : "en"}
+                    value={answers.locality}
+                    onChange={(l) => setAnswers((a) => ({ ...a, locality: l }))}
                     autoFocus
-                    value={answers.loc}
-                    onChange={(e) => setAnswers((a) => ({ ...a, loc: e.target.value }))}
-                    placeholder={t("auth.registerCleaner.phLoc")}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {!answers.locality && (
+                    <div className="mt-3">
+                      {answers.locManual ? (
+                        <input
+                          type="text"
+                          value={answers.loc}
+                          onChange={(e) => setAnswers((a) => ({ ...a, loc: e.target.value }))}
+                          placeholder={t("auth.registerCleaner.phLoc")}
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setAnswers((a) => ({ ...a, locManual: true }))}
+                          className="text-sm text-gray-500 underline"
+                        >
+                          {t("auth.registerCleaner.locManual")}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 

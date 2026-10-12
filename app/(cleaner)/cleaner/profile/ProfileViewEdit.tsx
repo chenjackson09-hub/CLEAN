@@ -4,6 +4,7 @@ import { useState } from "react";
 import ProfileView from "./ProfileView";
 import ProfileForm from "./ProfileForm";
 import type { Profile, Cleaner } from "@/types/database";
+import type { PickedLocality } from "@/lib/localities/address";
 
 interface Props {
   profile: Profile | null;
@@ -14,13 +15,14 @@ interface Props {
   startInEdit?: boolean;
   // The cleaner's saved home point (geocoded from their address), for the work-area map.
   center?: { lat: number; lng: number } | null;
+  locality?: PickedLocality | null;
 }
 
-export default function ProfileViewEdit({ profile, cleaner, startInEdit = false, center = null }: Props) {
+export default function ProfileViewEdit({ profile, cleaner, startInEdit = false, center = null, locality = null }: Props) {
   const [editing, setEditing] = useState(startInEdit);
 
   if (editing) {
-    return <ProfileForm profile={profile} cleaner={cleaner} center={center} onSaved={() => setEditing(false)} />;
+    return <ProfileForm profile={profile} cleaner={cleaner} center={center} locality={locality} onSaved={() => setEditing(false)} />;
   }
   return <ProfileView profile={profile} cleaner={cleaner} center={center} onEdit={() => setEditing(true)} />;
 }

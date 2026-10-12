@@ -40,7 +40,7 @@ describe('ProfileForm', () => {
     expect(screen.getByLabelText<HTMLInputElement>(/full name/i).value).toBe('Maya Cohen')
     expect(screen.getByLabelText<HTMLInputElement>(/phone/i).value).toBe('050-1234567')
     expect(screen.getByLabelText<HTMLTextAreaElement>(/about me/i).value).toBe('Looking for a reliable cleaner for my apartment.')
-    expect(screen.getByLabelText<HTMLInputElement>(/address/i).value).toBe('12 Rothschild Blvd, Tel Aviv')
+    expect(screen.getByLabelText<HTMLInputElement>(/street and number/i).value).toBe('12 Rothschild Blvd, Tel Aviv')
   })
 
   it('shows the name initial when there is no avatar photo', () => {

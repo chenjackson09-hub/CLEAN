@@ -29,10 +29,20 @@ const mockGetPublicUrl = jest.fn()
 const mockFrom = jest.fn()
 const mockStorageFrom = jest.fn()
 
+const LOCALITY = {
+  id: 'loc-1', cbs_code: 322, name_he: 'בית הלל', name_en: 'Bet Hillel', locality_type: 'moshav',
+  regional_council: 'מבואות החרמון', lat: 33.2085, lng: 35.6058,
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
+  // The area picker's autocomplete endpoint.
+  global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ results: [LOCALITY] }) }) as unknown as typeof fetch
   localStorage.clear()
-  mockFrom.mockImplementation(() => ({ upsert: mockUpsert }))
+  mockFrom.mockImplementation(() => ({
+    upsert: mockUpsert,
+    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+  }))
   mockUpsert.mockResolvedValue({ error: null })
   mockStorageFrom.mockImplementation(() => ({ upload: jest.fn(), getPublicUrl: mockGetPublicUrl }))
   mockedCreateClient.mockReturnValue({
@@ -48,8 +58,9 @@ async function fillRequiredStepsAndReachPreview(user: ReturnType<typeof userEven
   await user.type(screen.getByLabelText(/last name/i), 'Doe')
   await user.click(screen.getByRole('button', { name: /next/i }))
 
-  // Step 2 — Your home: only area is required.
-  await user.type(screen.getByLabelText(/area \/ town/i), '1 Rothschild Blvd, Tel Aviv')
+  // Step 2 — Your home: only the area is required — picked from the official list.
+  await user.type(screen.getByLabelText(/area \/ town/i), 'Beit Hil')
+  await user.click(await screen.findByRole('option', { name: /Bet Hillel/ }))
   await user.click(screen.getByRole('button', { name: /next/i }))
 
   // Step 3 — Household: fully optional, just advance.
@@ -98,7 +109,8 @@ describe('CustomerOnboardingPage', () => {
       })
     })
 
-    expect(mockedGeocode).toHaveBeenCalledWith('1 Rothschild Blvd, Tel Aviv')
+    // A picked locality supplies the official coordinates — no free-text geocoding.
+    expect(mockedGeocode).not.toHaveBeenCalled()
 
     expect(mockFrom).toHaveBeenCalledWith('profiles')
     expect(mockUpsert).toHaveBeenCalledWith(
@@ -115,9 +127,9 @@ describe('CustomerOnboardingPage', () => {
         id: 'user-1',
         first_name: 'Jane',
         last_name: 'Doe',
-        address: '1 Rothschild Blvd, Tel Aviv',
-        lat: 32.08,
-        lng: 34.78,
+        address: 'בית הלל',
+        lat: 33.2085,
+        lng: 35.6058,
       }),
     )
 

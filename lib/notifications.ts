@@ -11,6 +11,7 @@ export type NotificationKind =
   | 'request_expiring' // cleaner: a pending request is about to lapse
   | 'clean_tomorrow' // either: reminder the day before a matched clean
   | 'chat_message' // either: new chat message(s), grouped per conversation
+  | 'choose_area' // either: pick your locality from the official list
   | 'request_taken' // cleaner: the host got matched with someone else
   | 'request_cleaner_unavailable' // host: cleaner deleted the slot it relied on
   | 'availability_changed' // host: cleaner changed their hours — still relevant?
@@ -32,6 +33,8 @@ export type NotifyInput = {
   // Set for one-shot events so a retry can't notify twice; leave undefined for
   // repeatable ones (e.g. availability_changed).
   once?: boolean
+  // An explicit once-per-user key for events that aren't tied to a booking.
+  dedupeKey?: string
 }
 
 // Writes one notification per input. Best-effort and never throws: a missing
@@ -53,7 +56,7 @@ export async function notify(admin: SupabaseClient, inputs: NotifyInput | Notify
       booking_id: i.bookingId ?? null,
       data: { ...(i.data ?? {}), ...(i.actorId && avatars.get(i.actorId) ? { avatar: avatars.get(i.actorId) as string } : {}) },
       href: i.href,
-      dedupe_key: i.once && i.bookingId ? `${i.kind}:${i.bookingId}` : null,
+      dedupe_key: i.dedupeKey ?? (i.once && i.bookingId ? `${i.kind}:${i.bookingId}` : null),
     }))
     const { error } = await admin
       .from('notifications')

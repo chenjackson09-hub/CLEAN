@@ -5,6 +5,8 @@ import ProfileViewEdit from "./ProfileViewEdit";
 import GalleryManager from "./GalleryManager";
 import type { Profile, Cleaner, CleanerGalleryPhoto } from "@/types/database";
 import { parsePoint } from "@/lib/geo";
+import { getLocality } from "@/lib/localities/resolve";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 
@@ -27,12 +29,14 @@ export default async function CleanerProfilePage({ searchParams }: { searchParam
       .returns<CleanerGalleryPhoto[]>(),
   ]);
 
+  const locality = await getLocality(createAdminClient(), (cleaner as { locality_id?: string | null } | null)?.locality_id);
+
   return (
     <div className="max-w-3xl -mx-2 sm:mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{t(lang, "prof_title")}</h1>
       <p className="text-base text-gray-500 mb-6">{t(lang, "prof_subtitle")}</p>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
-        <ProfileViewEdit profile={profile} cleaner={cleaner} center={parsePoint((cleaner as { location?: unknown } | null)?.location)} startInEdit={searchParams.edit === "1"} />
+        <ProfileViewEdit profile={profile} cleaner={cleaner} center={parsePoint((cleaner as { location?: unknown } | null)?.location)} locality={locality} startInEdit={searchParams.edit === "1"} />
         <GalleryManager photos={photos ?? []} />
       </div>
     </div>

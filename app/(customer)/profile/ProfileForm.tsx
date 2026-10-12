@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { normalizeImageToJpeg } from '@/lib/image/normalizeImage'
+import LocalityPicker from '@/components/LocalityPicker'
+import type { PickedLocality } from '@/lib/localities/address'
 
 type ActionResult = { error?: string; success?: boolean; avatarUrl?: string; petPhotoUrl?: string } | null
 
@@ -12,6 +14,8 @@ type DefaultValues = {
   phone: string
   bio: string
   address: string
+  // The host's picked official locality (migration 0039), if they have chosen one.
+  locality?: PickedLocality | null
   avatar_url: string | null
   num_rooms: string
   pet_types: ('dog' | 'cat' | 'other')[]
@@ -45,7 +49,8 @@ function SubmitButton() {
 }
 
 export function ProfileForm({ defaultValues, action, onSaved }: Props) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const [locality, setLocality] = useState<PickedLocality | null>(defaultValues.locality ?? null)
   const [state, formAction] = useFormState(action, null)
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -191,15 +196,24 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
           />
         </div>
 
+        {/* Where you live: pick your town / kibbutz / moshav from the official list
+            (Hebrew or English), then optionally add the street. */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="address" className={labelClass}>{t('profile.address')}</label>
+          <label htmlFor="locality" className={labelClass}>{t('profile.area')}</label>
+          <LocalityPicker id="locality" lang={lang === 'he' ? 'he' : 'en'} value={locality} onChange={setLocality} />
+          <input type="hidden" name="locality_id" value={locality?.id ?? ''} />
+          <p className="text-xs text-gray-500">{t('profile.areaHelp')}</p>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="address" className={labelClass}>{t('profile.street')}</label>
           <input
             id="address"
             name="address"
             type="text"
             autoComplete="street-address"
             defaultValue={defaultValues.address}
-            required
+            required={!locality}
             className={fieldClass}
           />
           <p className="text-xs text-gray-500">{t('profile.addressHelp')}</p>

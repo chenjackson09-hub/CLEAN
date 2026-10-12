@@ -3,12 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { geocodeAddress } from "@/lib/geocode";
 import { findSlotForBooking, restoreAvailability, restoreSlot } from "@/lib/availability";
 import { ensureBookingInConversation } from "@/lib/chat";
 import { findAffectedRequests, formatSlotTimes } from "@/lib/availabilityImpact";
 import { cancelBookingCore } from "@/lib/cancellation";
 import { saveRating } from "@/lib/ratings";
+import { resolvePlace } from "@/lib/localities/resolve";
 import { notify, profileNames } from "@/lib/notifications";
 import { shortName } from "@/lib/chatFormat";
 import {
@@ -90,7 +90,7 @@ export async function updateCleanerProfile(formData: FormData) {
   }
   const languagesRaw = formData.get("languages") as string;
   const languages = languagesRaw.split(",").map((l) => l.trim()).filter(Boolean);
-  const address = formData.get("address") as string;
+  const streetInput = (formData.get("address") as string) ?? "";
 
   const cleaningCategories = formData.getAll("cleaning_categories") as string[];
   const cleaningCategoryOther = (formData.get("cleaning_category_other") as string) || null;
@@ -127,9 +127,13 @@ export async function updateCleanerProfile(formData: FormData) {
 
   const avatarFile = formData.get("avatar") as File;
 
-  // Geocoding and avatar upload are independent — run in parallel
-  const [geocodeResult, avatarResult] = await Promise.all([
-    address ? geocodeAddress(address) : Promise.resolve(null),
+  // Place resolution (picked locality + optional street → address text and
+  // coordinates) and the avatar upload are independent — run in parallel.
+  const [place, avatarResult] = await Promise.all([
+    resolvePlace(createAdminClient(), {
+      localityId: (formData.get("locality_id") as string | null) || null,
+      street: streetInput,
+    }),
     avatarFile && avatarFile.size > 0
       ? (async () => {
           const ext = avatarFile.name.split(".").pop();
@@ -150,6 +154,8 @@ export async function updateCleanerProfile(formData: FormData) {
 
   if (avatarResult.error) return { error: avatarResult.error };
   const avatarUrl = avatarResult.url;
+  const address = place.address;
+  const geocodeResult = place.coords;
 
   const cleanerUpdate: Record<string, unknown> = {
     bio,
@@ -187,6 +193,13 @@ export async function updateCleanerProfile(formData: FormData) {
 
   if (profileResult.error) return { error: profileResult.error.message };
   if (cleanerResult.error) return { error: cleanerResult.error.message };
+
+  // The locality link is its own best-effort write: if migration 0039 hasn't been
+  // applied the rest of the profile has already saved and nothing fails.
+  if (place.localityId) {
+    const { error: linkErr } = await supabase.from("cleaners").update({ locality_id: place.localityId }).eq("id", user.id);
+    if (linkErr) console.error("locality link not saved (migration 0039?)", linkErr.message);
+  }
 
   // Both the edit form and the public preview render the avatar, so refresh both
   // — revalidating only the profile page left the preview showing the old photo.

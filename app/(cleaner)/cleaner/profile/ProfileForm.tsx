@@ -8,6 +8,8 @@ import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
 import { WORK_AREAS } from "@/lib/workAreas";
 import dynamic from "next/dynamic";
+import LocalityPicker from "@/components/LocalityPicker";
+import type { PickedLocality } from "@/lib/localities/address";
 import type { Profile, Cleaner } from "@/types/database";
 
 function birthdateParts(birthdate: string | null | undefined) {
@@ -25,10 +27,13 @@ interface Props {
   onSaved?: () => void;
   // The saved home point (geocoded from the address) the work-area map is drawn around.
   center?: { lat: number; lng: number } | null;
+  // The cleaner's picked official locality (migration 0039), if they have chosen one.
+  locality?: PickedLocality | null;
 }
 
-export default function ProfileForm({ profile, cleaner, onSaved, center = null }: Props) {
-  const { t } = useLang();
+export default function ProfileForm({ profile, cleaner, onSaved, center = null, locality: initialLocality = null }: Props) {
+  const { t, lang } = useLang();
+  const [locality, setLocality] = useState<PickedLocality | null>(initialLocality);
   const router = useRouter();
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
   const [radius, setRadius] = useState<number>(cleaner?.service_radius_km ?? 10);
@@ -194,7 +199,13 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null }
       <div className="space-y-3">
         <p className="text-base font-semibold text-gray-900">{t("prof_where_title")}</p>
         <div>
-          <label htmlFor="address" className="block text-base font-medium text-gray-700 mb-1">{t("prof_address")}</label>
+          <label htmlFor="locality" className="block text-base font-medium text-gray-700 mb-1">{t("prof_area")}</label>
+          <LocalityPicker id="locality" lang={lang === "he" ? "he" : "en"} value={locality} onChange={setLocality} />
+          <input type="hidden" name="locality_id" value={locality?.id ?? ""} />
+          <p className="text-sm text-gray-400 mt-1">{t("prof_area_hint")}</p>
+        </div>
+        <div>
+          <label htmlFor="address" className="block text-base font-medium text-gray-700 mb-1">{t("prof_street")}</label>
           <input
             id="address"
             type="text"

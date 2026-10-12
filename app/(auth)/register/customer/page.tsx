@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/lib/geocode";
+import LocalityPicker from "@/components/LocalityPicker";
+import type { PickedLocality } from "@/lib/localities/address";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
@@ -22,6 +24,9 @@ type Answers = {
   languages: string;
   aboutMe: string;
   area: string;
+  // The official locality picked from the list (preferred over the typed `area`).
+  locality: PickedLocality | null;
+  areaManual: boolean;
   homeType: HomeType | null;
   bedrooms: string;
   bathrooms: string;
@@ -86,6 +91,8 @@ const initialAnswers: Answers = {
   languages: "",
   aboutMe: "",
   area: "",
+  locality: null,
+  areaManual: false,
   homeType: null,
   bedrooms: "",
   bathrooms: "",
@@ -108,7 +115,7 @@ const STEPS = ["about", "home", "household", "preferences", "preview"] as const;
 type StepKey = (typeof STEPS)[number];
 
 export default function CustomerRegisterPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const [creds, setCreds] = useState<{ email: string; password: string } | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
@@ -137,7 +144,7 @@ export default function CustomerRegisterPage() {
   // optional and skippable, per the "keep each step short" UX rule.
   function isStepValid(key: StepKey): boolean {
     if (key === "about") return answers.firstName.trim().length > 0 && answers.lastName.trim().length > 0;
-    if (key === "home") return answers.area.trim().length > 0;
+    if (key === "home") return answers.locality != null || answers.area.trim().length > 0;
     return true;
   }
 
@@ -262,7 +269,16 @@ export default function CustomerRegisterPage() {
       return false;
     }
 
-    const location = answers.area ? await geocodeAddress(answers.area) : null;
+    // A picked locality supplies the address text and the official coordinates;
+    // typed text (the "can't find it" fallback) is geocoded as before.
+    const pickedLocality = answers.locality;
+    const addressText = pickedLocality ? pickedLocality.name_he : answers.area.trim();
+    const location =
+      pickedLocality && pickedLocality.lat != null && pickedLocality.lng != null
+        ? { lat: pickedLocality.lat, lng: pickedLocality.lng }
+        : addressText
+          ? await geocodeAddress(addressText)
+          : null;
 
     const languagesArr = answers.languages
       .split(",")
@@ -275,7 +291,7 @@ export default function CustomerRegisterPage() {
       last_name: answers.lastName.trim() || null,
       languages: languagesArr,
       bio: answers.aboutMe || null,
-      address: answers.area || null,
+      address: addressText || null,
       lat: location?.lat ?? null,
       lng: location?.lng ?? null,
       dwelling_type: answers.homeType,
@@ -298,6 +314,16 @@ export default function CustomerRegisterPage() {
       setError(customerErr.message);
       setLoading(false);
       return false;
+    }
+
+    // The locality link is its own best-effort write: if migration 0039 hasn't been
+    // applied the profile above has already saved, so registration never fails on it.
+    if (answers.locality) {
+      try {
+        await supabase.from("customers").update({ locality_id: answers.locality.id }).eq("id", user.id);
+      } catch {
+        /* best-effort only */
+      }
     }
 
     localStorage.removeItem("pending_signup");
@@ -481,15 +507,34 @@ export default function CustomerRegisterPage() {
 
                   <div>
                     <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qArea")}</label>
-                    <input
+                    <LocalityPicker
                       id="area"
-                      type="text"
+                      lang={lang === "he" ? "he" : "en"}
+                      value={answers.locality}
+                      onChange={(l) => setAnswers((a) => ({ ...a, locality: l }))}
                       autoFocus
-                      value={answers.area}
-                      onChange={(e) => setAnswers((a) => ({ ...a, area: e.target.value }))}
-                      placeholder={t("auth.registerCustomer.phArea")}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {!answers.locality && (
+                      <div className="mt-2">
+                        {answers.areaManual ? (
+                          <input
+                            type="text"
+                            value={answers.area}
+                            onChange={(e) => setAnswers((a) => ({ ...a, area: e.target.value }))}
+                            placeholder={t("auth.registerCustomer.phArea")}
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setAnswers((a) => ({ ...a, areaManual: true }))}
+                            className="text-xs text-gray-500 underline"
+                          >
+                            {t("auth.registerCustomer.areaManual")}
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">{t("auth.registerCustomer.areaSub")}</p>
                   </div>
 
@@ -748,10 +793,10 @@ export default function CustomerRegisterPage() {
                   </div>
 
                   <div className="space-y-2 text-sm bg-gray-50 rounded-xl p-4">
-                    {answers.area && (
+                    {(answers.locality || answers.area) && (
                       <div className="flex justify-between gap-3">
                         <span className="text-gray-500">{t("auth.registerCustomer.previewArea")}</span>
-                        <span className="text-gray-900 text-end">{answers.area}</span>
+                        <span className="text-gray-900 text-end">{answers.locality ? answers.locality.name_he : answers.area}</span>
                       </div>
                     )}
                     {answers.homeType && (

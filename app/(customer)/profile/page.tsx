@@ -5,8 +5,9 @@ import ProfileViewEdit from './ProfileViewEdit'
 import { updateCustomerProfile } from '../actions'
 import type { Customer } from "@/types/database"
 import type { ReviewItem } from "@/components/HostProfileReviews"
+import { getLocality } from "@/lib/localities/resolve"
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams?: { edit?: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
@@ -27,6 +28,9 @@ export default async function ProfilePage() {
       .returns<{ id: string; score: number; review_text: string; updated_at: string; rater: { full_name: string | null } | null }[]>(),
   ])
 
+  // The host's picked locality (null until they choose one — they're asked to).
+  const locality = await getLocality(createAdminClient(), (customer as { locality_id?: string | null } | null)?.locality_id)
+
   const numOrEmpty = (n: number | null | undefined) => (n == null ? "" : String(n))
 
   const reviews: ReviewItem[] = (reviewRows ?? []).map((r) => ({
@@ -44,11 +48,13 @@ export default async function ProfilePage() {
         avatarUrl={profile?.avatar_url ?? null}
         customer={customer}
         reviews={reviews}
+        startInEdit={searchParams?.edit === "1"}
         defaultValues={{
           full_name: profile?.full_name ?? "",
           phone: profile?.phone ?? "",
           bio: customer?.bio ?? "",
           address: customer?.address ?? "",
+          locality,
           avatar_url: profile?.avatar_url ?? null,
           num_rooms: numOrEmpty(customer?.num_rooms),
           pet_types: (customer?.pet_types as ('dog' | 'cat' | 'other')[]) ?? [],
