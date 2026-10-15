@@ -112,6 +112,11 @@ const translations = {
       waitlistBody2:
         "We're working on bringing more cleaners to your area and will let you know as soon as your spot opens.",
       waitlistClosing: "Thanks for joining Cindy — we're excited to have you here. 💚",
+      comingSoonTitle: "We're coming to {place} soon",
+      comingSoonTitleNoPlace: "We're coming to your area soon",
+      comingSoonBody:
+        "Cindy isn't available in your area just yet — we're opening one community at a time. You can still look around the app, and we'll let you know the moment your area opens.",
+      comingSoonChange: 'Wrong place? Update your area',
       enterLocation: 'Add your address in your profile to find cleaners who serve your area.',
       locationNotFound: "We couldn't locate your saved address. Try updating it in your profile.",
       goToProfile: 'Go to profile',
@@ -979,6 +984,11 @@ const translations = {
       waitlistBold: 'את/ה ברשימת ההמתנה!',
       waitlistBody2: 'אנחנו עובדים על הבאת עוד מנקים לאזור שלך ונעדכן אותך ברגע שהמקום שלך ייפתח.',
       waitlistClosing: 'תודה שהצטרפת ל-Cindy — אנחנו נרגשים שאת/ה כאן. 💚',
+      comingSoonTitle: 'בקרוב ב{place}',
+      comingSoonTitleNoPlace: 'בקרוב באזור שלך',
+      comingSoonBody:
+        'סינדי עדיין לא זמינה באזור שלך — אנחנו נפתחים יישוב אחרי יישוב. אפשר להמשיך להסתובב באפליקציה, ונעדכן אותך ברגע שהאזור שלך ייפתח.',
+      comingSoonChange: 'המקום לא נכון? עדכנו את האזור',
       enterLocation: 'הוסיפו את הכתובת שלכם בפרופיל כדי למצוא מנקים שמשרתים את האזור שלכם.',
       locationNotFound: 'לא הצלחנו לאתר את הכתובת השמורה שלכם. נסו לעדכן אותה בפרופיל.',
       goToProfile: 'מעבר לפרופיל',

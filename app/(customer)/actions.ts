@@ -8,6 +8,7 @@ import { sendNewBookingRequest } from "@/lib/resend"
 import { cancelBookingCore } from "@/lib/cancellation"
 import { saveRating } from "@/lib/ratings"
 import { resolvePlace } from "@/lib/localities/resolve"
+import { hostServiceArea } from "@/lib/localities/serviceArea"
 import { notify, profileNames } from "@/lib/notifications"
 
 // Records that the customer has now seen their bookings, clearing the "newly
@@ -243,6 +244,14 @@ export async function createBooking(data: {
     .single<{ status: string | null }>()
   if (customerRow?.status === 'pending' || customerRow?.status === 'rejected') {
     return { error: "Your account is still awaiting approval — you can't book a cleaner yet." }
+  }
+
+  // Only communities an admin has opened can book. Authoritative server-side
+  // check (the /browse page shows "coming soon" too); fails open — see
+  // hostServiceArea — so a host with no chosen area is never blocked.
+  const area = await hostServiceArea(adminClient, user.id)
+  if (area.state === 'closed') {
+    return { error: "We haven't opened your area yet — we'll let you know as soon as we do." }
   }
 
   // Verify the cleaner exists and is approved — never let a customer book a

@@ -2,6 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUser } from '@/lib/supabase/server'
 import { HostCalendar } from './HostCalendar'
 import { WaitlistNotice } from './WaitlistNotice'
+import { ComingSoonNotice } from './ComingSoonNotice'
+import { hostServiceArea } from '@/lib/localities/serviceArea'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
@@ -49,6 +51,17 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
     return (
       <div className="max-w-3xl mx-auto">
         <WaitlistNotice name={firstName} />
+      </div>
+    )
+  }
+
+  // Service-area gate: the app only operates in communities an admin has opened.
+  // Decided from the host's chosen locality (fails open — see hostServiceArea).
+  const area = user ? await hostServiceArea(admin, user.id) : ({ state: 'open' } as const)
+  if (area.state === 'closed') {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <ComingSoonNotice nameHe={area.nameHe} nameEn={area.nameEn} />
       </div>
     )
   }
