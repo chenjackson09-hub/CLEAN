@@ -34,7 +34,7 @@ app/
 ├── (auth)/       # /login  /register  /register/cleaner  /register/customer
 ├── (cleaner)/    # /cleaner/dashboard  /profile  /availability  /requests  /preview  /pending  /customers/[id]
 ├── (customer)/   # /browse  /cleaners/[id]  /bookings  /profile  /home
-├── admin/        # /admin/dashboard  /applications  /cleaners  /customers  /bookings  /support  /blocked  /inactive  /availability
+├── admin/        # /admin/dashboard  /applications  /locations  /cleaners  /customers  /bookings  /support  /blocked  /inactive  /availability
 └── api/auth/signout/
 ```
 
@@ -461,6 +461,16 @@ Goal: accurate Hebrew/English Israeli locations picked from a list (not free tex
 - **Types** (`lib/localities/cbs.ts`): only settlement-form codes checked against known places get a specific type (310 moshav, 330 kibbutz, 320 moshav shitufi, 370 community settlement, 190 local council, 120–160/250 city…); unverified codes are `other` rather than guessed.
 - **Matching keys** (`lib/localities/normalize.ts`): names and queries are reduced to the same key so spellings meet (Hebrew `קריית`=`קרית`, ignores niqqud/quotes/hyphens; English Bet/Beit, Kefar/Kfar, Qiryat/Kiryat, Barukh/Baruch, doubled letters). Keys are for matching only; users always see the official name.
 - **Migration `0037_localities_service_areas.sql`** (apply by hand): `localities` (geography only, trigram-indexed `search_he`/`search_en`), `locality_aliases`, `service_regions`, `service_region_members` (**PK on locality_id = one region per locality**), `locality_overrides`, and the view `locality_effective_availability` — **the one place availability is decided: the locality's own override → its region's setting → otherwise INACTIVE.** RLS on with no policies (service-role only); new regions start inactive; nothing is open until an admin opens it.
+
+### Admin Locations (`/admin/locations`) — step 1 of the location-management build
+
+Sidebar entry **📍 Locations**. Overview tab only so far (individual-location page, analytics/expansion/health/comparisons/map are later steps). **Spec vocabulary → CLEAN:** "users" = hosts (`customers`, approved only), "hosts" = cleaners, "activities" = booking requests/cleans; capacity-utilization style metrics don't exist and are left out, never faked.
+
+- **Migration `0040_location_management.sql`** (apply by hand; the page shows an amber "run migration 0040" notice and an empty table until then): `locality_overrides.status` (`open | coming_soon | not_open`, backfilled from `is_active`; `is_active` stays the one thing the gate reads, true only for `open`), `locality_interest` (host asks to be told when a town opens — written in step 2; "Waiting" counts un-notified rows), indexes on `bookings.created_at`/`messages.created_at`, and three SQL functions (service-role only, `SECURITY DEFINER`): `admin_location_overview` (one paginated, filtered, sorted page of per-locality aggregates + `total_count`), `admin_location_totals` (summary cards), `admin_location_districts`. **No user rows are ever loaded** — all counting happens in SQL.
+- **Definitions (one place, the SQL):** *effective status* = override's `status` → else region active ⇒ `open` → else `not_open`. *Active* in a period = a host who sent a booking request, a cleaner who answered one (`responded_at`), or anyone who sent a chat message. *New* = approved hosts/cleaners whose `profiles.created_at` falls in the period (by sign-up date of people *currently* in that town — town changes aren't historised); growth % compares with the previous equal period and is `null` ("no data", never invented) without a baseline. "All time" starts 2000-01-01.
+- **Everything is URL state** (`period/from/to`, `q`, `district`, `status`, `users`, `sort/dir`, `page`) read by the server page (`app/admin/locations/page.tsx`) → `lib/locationsData.ts` → RPCs; `LocationsView.tsx` is the client table (debounced search, `searchKeys` in `lib/locations.ts` routes Hebrew/English/official-code queries to the same normalised keys the locality picker uses). Reuses `AdminTable/AdminRow/SearchInput`.
+- **Status changes:** `setLocalityStatus` (`app/admin/locations/actions.ts`, admin-only, ≤500 ids) upserts an explicit override per locality — single or bulk. Closing an *open* location asks for confirmation first. Every change writes one `admin_action_log` row per locality (`action = 'locality_status'`, payload = batch id + previous override state); `undoLocalityChange(batch)` restores it (deleting the override if there wasn't one) and marks the rows undone. The "Recent changes" panel lists the last batches with Undo. Opening a town does **not** yet notify waiting hosts (step 2).
+- Deliberately not built yet: the per-column numeric range filters from the spec (sorting + "only places with people" cover the need for now), the Individual Location page, Analytics/Expansion tabs, Location Health, comparisons, the map, `location_settings` (configurable thresholds/weights).
 
 ### Server Actions pattern
 
