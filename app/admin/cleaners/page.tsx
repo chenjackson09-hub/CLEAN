@@ -3,19 +3,26 @@ import { CleanersList } from './CleanersList'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { classifyUserStatus, type UserStatus } from '@/lib/adminUserStatus'
 import { unstable_noStore as noStore } from 'next/cache'
+import { LocalityFilterChip } from '../LocalityFilterChip'
+import { readLocalityFilter } from '@/lib/localityFilter'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminCleanersPage() {
+export default async function AdminCleanersPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   noStore()
   const admin = createAdminClient()
+  // Opened from Locations (?locality=<id>): only cleaners who chose that place.
+  const place = await readLocalityFilter(admin, searchParams, '/admin/cleaners')
 
   // Only approved (or later suspended, still shown under the Blocked filter)
   // cleaners are listed here — a cleaner isn't tallied as a real cleaner
   // until admin has approved their application. Pending/rejected applicants
   // only ever appear on the Applications screen.
   const [{ data: cleanerRows }, { data: profileRows }, { data: appRows }, authData] = await Promise.all([
-    admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address, cleans_completed').in('status', ['approved', 'suspended']).limit(500),
+    (place
+      ? admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address, cleans_completed').in('status', ['approved', 'suspended']).eq('locality_id', place.id)
+      : admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, status, rating_avg, rating_count, address, cleans_completed').in('status', ['approved', 'suspended'])
+    ).limit(500),
     admin.from('profiles').select('id, full_name, phone, avatar_url').limit(500),
     admin.from('cleaner_applications').select('cleaner_id, reviewed_at, submitted_at').order('submitted_at', { ascending: false }),
     admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -62,6 +69,7 @@ export default async function AdminCleanersPage() {
 
   return (
       <div className="px-6 py-6">
+        {place && <LocalityFilterChip locality={place.locality} clearHref={place.clearHref} backHref={place.backHref} />}
         <CleanersList cleaners={cleaners} />
       </div>
   )

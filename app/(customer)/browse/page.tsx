@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUser } from '@/lib/supabase/server'
 import { HostCalendar } from './HostCalendar'
 import { WaitlistNotice } from './WaitlistNotice'
-import { ComingSoonNotice } from './ComingSoonNotice'
+import { ComingSoonBanner } from './ComingSoonNotice'
 import { hostServiceArea } from '@/lib/localities/serviceArea'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
@@ -57,14 +57,11 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
 
   // Service-area gate: the app only operates in communities an admin has opened.
   // Decided from the host's chosen locality (fails open — see hostServiceArea).
+  // A host in a closed area still sees their own calendar and bookings (so nothing
+  // they already arranged disappears); they just can't find cleaners or request new
+  // cleans — the search below is skipped and createBooking refuses too.
   const area = user ? await hostServiceArea(admin, user.id) : ({ state: 'open' } as const)
-  if (area.state === 'closed') {
-    return (
-      <div className="max-w-3xl mx-auto">
-        <ComingSoonNotice nameHe={area.nameHe} nameEn={area.nameEn} />
-      </div>
-    )
-  }
+  const areaClosed = area.state === 'closed'
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -183,7 +180,7 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
   // "resolved fine but no cleaner covers it".
   let locationError = false
 
-  if (hasLocation) {
+  if (hasLocation && !areaClosed) {
     // Window: today through ~4 months out. Weekly availability repeats by weekday
     // so it needs no date range; only specific-date rows are range-bounded.
     const HEAT_DAYS = 120
@@ -314,7 +311,9 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
     // A fixed-height column (the viewport minus the header) so the whole month,
     // its key and the controls fit on screen with no scrolling.
     <div className="max-w-3xl mx-auto flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+      {area.state === 'closed' && <ComingSoonBanner nameHe={area.nameHe} nameEn={area.nameEn} />}
       <HostCalendar
+        areaClosed={areaClosed}
         todayStr={todayStr}
         hasLocation={hasLocation}
         locationError={locationError}

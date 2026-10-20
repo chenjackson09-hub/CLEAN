@@ -14,6 +14,7 @@ type Props = {
   todayStr: string
   hasLocation: boolean
   locationError: boolean
+  areaClosed?: boolean
   location: string
   cleanersById: Map<string, CleanerResult>
   // Set in flexible-days mode: every request sent from here joins this frame, so
@@ -28,7 +29,7 @@ type Props = {
 
 // The host's view of one day: what's booked, which requests are out, and who is
 // free to ask — the host-side twin of the cleaner's day panel.
-export function DaySheet({ days, active, model, todayStr, hasLocation, locationError, location, cleanersById, frameId, rebook, onPick, onClose, onRequestSent }: Props) {
+export function DaySheet({ days, active, model, todayStr, hasLocation, locationError, areaClosed, location, cleanersById, frameId, rebook, onPick, onClose, onRequestSent }: Props) {
   const { t, lang } = useLanguage()
   const locale = lang === 'he' ? 'he-IL' : 'en-GB'
   const fmt = (d: string, opts: Intl.DateTimeFormatOptions) => new Date(d + 'T12:00:00').toLocaleDateString(locale, opts)
@@ -160,7 +161,9 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
                 {t('browse.sheetFree')}
                 {hasLocation && !locationError && freeList.length > 0 && <span className="ms-1.5 text-gray-400 font-normal">({freeList.length})</span>}
               </h3>
-              {locationError ? (
+              {areaClosed ? (
+                <p className="text-sm text-gray-500">{t('browse.sheetAreaClosed')}</p>
+              ) : locationError ? (
                 <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-3 py-2">
                   {t('browse.locationNotFound')}{' '}
                   <Link href="/profile" className="font-semibold text-blue-600 hover:underline">{t('browse.goToProfile')}</Link>

@@ -21,3 +21,15 @@ export function ComingSoonNotice({ nameHe, nameEn }: { nameHe: string | null; na
     </div>
   )
 }
+
+// Compact version shown above the host's own calendar while their area is closed.
+export function ComingSoonBanner({ nameHe, nameEn }: { nameHe: string | null; nameEn: string | null }) {
+  const { t, lang } = useLanguage()
+  const place = lang === 'he' ? nameHe ?? nameEn : nameEn ?? nameHe
+  return (
+    <div className="shrink-0 mb-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span>{place ? t('browse.areaClosedBanner', { place }) : t('browse.areaClosedBannerNoPlace')}</span>
+      <Link href="/profile?edit=1" className="font-semibold text-blue-600 hover:underline">{t('browse.comingSoonChange')}</Link>
+    </div>
+  )
+}

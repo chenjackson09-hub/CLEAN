@@ -11,6 +11,8 @@ type Props = {
   todayStr: string
   hasLocation: boolean
   locationError: boolean
+  // The host's area isn't open yet: calendar shows their own bookings only.
+  areaClosed?: boolean
   location: string
   cleaners: CleanerResult[]
   // date → the cleaners free that day, with their slots
@@ -30,7 +32,7 @@ function ds(y: number, m: number, d: number) {
 // Tapping a day opens a sheet to see who is booked/asked/free and to ask someone.
 // "Flexible days" lets the host mark several days for ONE clean: requests sent
 // from there share a frame, so when one is accepted the rest cancel on their own.
-export function HostCalendar({ todayStr, hasLocation, locationError, location, cleaners, dayAvail, bookings, rebook }: Props) {
+export function HostCalendar({ areaClosed, todayStr, hasLocation, locationError, location, cleaners, dayAvail, bookings, rebook }: Props) {
   const router = useRouter()
   const { t, messages } = useLanguage()
   const liveRebook = rebook && rebook.date >= todayStr ? rebook : undefined
@@ -215,6 +217,7 @@ export function HostCalendar({ todayStr, hasLocation, locationError, location, c
           todayStr={todayStr}
           hasLocation={hasLocation}
           locationError={locationError}
+          areaClosed={areaClosed}
           location={location}
           cleanersById={cleanersById}
           frameId={frameMode ? frameId : undefined}

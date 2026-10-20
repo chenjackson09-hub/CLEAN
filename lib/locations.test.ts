@@ -1,60 +1,58 @@
-import { districtLabel, growthPct, isLocationStatus, resolvePeriod, searchKeys } from './locations'
+import { activeCard, CARD_FILTER, districtLabel, hasActiveFilters, isSetStatus, localityName, parseFilters } from './locations'
 
-const NOW = new Date('2026-10-15T12:00:00Z')
-
-describe('resolvePeriod', () => {
-  it('defaults to the last 30 days', () => {
-    const p = resolvePeriod(undefined, undefined, undefined, NOW)
-    expect(p.key).toBe('30d')
-    expect(Math.round((p.until.getTime() - p.since.getTime()) / 86400000)).toBe(30)
+describe('parseFilters', () => {
+  it('defaults to the manage tab sorted by customers', () => {
+    const f = parseFilters({})
+    expect(f).toMatchObject({ tab: 'manage', q: '', status: '', users: '', sort: 'customers', dir: 'desc', page: 1 })
+    expect(hasActiveFilters(f)).toBe(false)
   })
-  it('handles the presets', () => {
-    expect(resolvePeriod('7d', undefined, undefined, NOW).key).toBe('7d')
-    expect(resolvePeriod('90d', undefined, undefined, NOW).key).toBe('90d')
-    expect(resolvePeriod('all', undefined, undefined, NOW).since.getUTCFullYear()).toBe(2000)
+  it('ignores junk values', () => {
+    const f = parseFilters({ status: 'weird', users: 'x', sort: 'drop table', region: 'not-a-uuid', page: '-3' })
+    expect(f).toMatchObject({ status: '', users: '', sort: 'customers', region: '', page: 1 })
   })
-  it('takes a custom range inclusive of the last day', () => {
-    const p = resolvePeriod('custom', '2026-10-01', '2026-10-07', NOW)
-    expect(p.key).toBe('custom')
-    expect(p.since.toISOString()).toBe('2026-10-01T00:00:00.000Z')
-    expect(p.until.toISOString()).toBe('2026-10-08T00:00:00.000Z')
+  it('keeps valid filters', () => {
+    const f = parseFilters({ status: 'open', users: 'waiting_customers', sort: 'name', dir: 'asc', page: '3', tab: 'regions' })
+    expect(f).toMatchObject({ status: 'open', users: 'waiting_customers', sort: 'name', dir: 'asc', page: 3, tab: 'regions' })
   })
-  it('falls back to 30 days for a bad or reversed custom range', () => {
-    expect(resolvePeriod('custom', 'nope', '2026-10-07', NOW).key).toBe('30d')
-    expect(resolvePeriod('custom', '2026-10-09', '2026-10-01', NOW).key).toBe('30d')
+  it('puts the best search match first unless a sort was chosen', () => {
+    expect(parseFilters({ q: 'snir' })).toMatchObject({ sort: 'relevance', dir: 'asc' })
+    expect(parseFilters({ q: 'snir', sort: 'cleaners' }).sort).toBe('cleaners')
+  })
+  it('takes the first value of a repeated param', () => {
+    expect(parseFilters({ status: ['closed', 'open'] }).status).toBe('closed')
   })
 })
 
-describe('searchKeys', () => {
-  it('detects an official code', () => {
-    expect(searchKeys(' 6700 ')).toEqual({ he: '', en: '', code: '6700' })
+describe('summary cards', () => {
+  it('each card maps to a filter that highlights that same card', () => {
+    for (const key of Object.keys(CARD_FILTER) as (keyof typeof CARD_FILTER)[]) {
+      const f = parseFilters({ ...CARD_FILTER[key] })
+      expect(activeCard(f)).toBe(key)
+    }
   })
-  it('routes Hebrew and English to the right key', () => {
-    expect(searchKeys('בית הלל').he).not.toBe('')
-    expect(searchKeys('Beit Hillel').en).not.toBe('')
-    expect(searchKeys('Beit Hillel').he).toBe('')
+  it('highlights nothing once a search, region or district narrows the table', () => {
+    expect(activeCard(parseFilters({ q: 'x' }))).toBeNull()
+    expect(activeCard(parseFilters({ district: 'הצפון' }))).toBeNull()
   })
-  it('is empty for an empty query', () => {
-    expect(searchKeys('  ')).toEqual({ he: '', en: '', code: '' })
-  })
-})
-
-describe('growthPct', () => {
-  it('is null without a baseline', () => expect(growthPct(5, 0)).toBeNull())
-  it('computes percent change', () => {
-    expect(growthPct(15, 10)).toBe(50)
-    expect(growthPct(5, 10)).toBe(-50)
+  it('highlights nothing for a combination no card represents', () => {
+    expect(activeCard(parseFilters({ status: 'open', users: 'cleaners' }))).toBeNull()
   })
 })
 
 describe('misc', () => {
-  it('validates statuses', () => {
-    expect(isLocationStatus('open')).toBe(true)
-    expect(isLocationStatus('closed')).toBe(false)
+  it('validates the settable statuses', () => {
+    expect(isSetStatus('inherit')).toBe(true)
+    expect(isSetStatus('coming_soon')).toBe(false)
   })
   it('labels districts in both languages', () => {
     expect(districtLabel('הצפון', 'en')).toBe('Northern District')
     expect(districtLabel('הצפון', 'he')).toBe('הצפון')
     expect(districtLabel(null, 'en')).toBe('—')
+  })
+  it('prefers the display spelling in English only', () => {
+    const l = { name_he: 'בית הלל', name_en: 'Bet Hillel', name_en_display: 'Beit Hillel' }
+    expect(localityName(l, 'en')).toBe('Beit Hillel')
+    expect(localityName(l, 'he')).toBe('בית הלל')
+    expect(localityName({ ...l, name_en_display: null }, 'en')).toBe('Bet Hillel')
   })
 })

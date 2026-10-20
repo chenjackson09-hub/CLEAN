@@ -3,12 +3,16 @@ import { CustomersList } from './CustomersList'
 import type { CustomerResult } from '@/lib/types/customer'
 import { classifyUserStatus, type UserStatus } from '@/lib/adminUserStatus'
 import { unstable_noStore as noStore } from 'next/cache'
+import { LocalityFilterChip } from '../LocalityFilterChip'
+import { readLocalityFilter } from '@/lib/localityFilter'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminCustomersPage() {
+export default async function AdminCustomersPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   noStore()
   const admin = createAdminClient()
+  // Opened from Locations (?locality=<id>): only people who chose that place.
+  const place = await readLocalityFilter(admin, searchParams, '/admin/customers')
 
   // Deleted customers are hard-deleted (unlike cleaners' soft-suspend) — the
   // only trace left is their blocked_users snapshot. So "Blocked" for
@@ -18,10 +22,14 @@ export default async function AdminCustomersPage() {
   // A customer isn't tallied here until approved (mirroring the same rule
   // for cleaners) — pending/rejected signups only ever show on Applications.
   const [{ data: customerRows }, { data: profileRows }, authData, { data: blockedRows }] = await Promise.all([
-    admin.from('customers').select('id, address, rating_avg, rating_count').eq('status', 'approved').limit(500),
+    (place
+      ? admin.from('customers').select('id, address, rating_avg, rating_count').eq('status', 'approved').eq('locality_id', place.id)
+      : admin.from('customers').select('id, address, rating_avg, rating_count').eq('status', 'approved')
+    ).limit(500),
     admin.from('profiles').select('id, full_name, phone').eq('role', 'customer').limit(500),
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    admin.from('blocked_users').select('id, name, email, phone').eq('role', 'customer').limit(500),
+    // Blocked customers have no live account (so no place) — left out of a place filter.
+    place ? Promise.resolve({ data: [] as { id: string; name: string | null; email: string | null; phone: string | null }[] }) : admin.from('blocked_users').select('id, name, email, phone').eq('role', 'customer').limit(500),
   ])
 
   const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
@@ -64,6 +72,7 @@ export default async function AdminCustomersPage() {
 
   return (
       <div className="px-6 py-6">
+        {place && <LocalityFilterChip locality={place.locality} clearHref={place.clearHref} backHref={place.backHref} />}
         <CustomersList customers={[...customers, ...blockedPhantoms]} />
       </div>
   )

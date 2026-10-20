@@ -27,6 +27,7 @@ const TEXT: Record<NotificationKind | 'chat_messages', Record<Lang, string>> = {
   chat_message: { en: '{name} sent you a message', he: '{name} שלח/ה לך הודעה' },
   chat_messages: { en: '{name} sent you {count} messages', he: '{name} שלח/ה לך {count} הודעות' },
   choose_area: { en: 'Choose your area so we can show you the right matches nearby — tap to pick it', he: 'בחרו את האזור שלכם כדי שנוכל להציג לכם התאמות קרובות — הקישו לבחירה' },
+  area_opened: { en: 'Good news — Clean is now open in {place}!', he: 'חדשות טובות — Clean נפתחה עכשיו ב{place}!' },
   account_approved: { en: 'You’re approved — welcome to Clean!', he: 'אושרת — ברוכים הבאים ל-Clean!' },
   account_rejected: { en: 'Your account wasn’t approved', he: 'החשבון שלך לא אושר' },
 }
@@ -44,6 +45,7 @@ export function describeNotification(kind: string, data: NotificationData, lang:
     times: String(data.times ?? ''),
     score: String(data.score ?? ''),
     count: String(data.count ?? ''),
+    place: String((lang === 'he' ? data.place_he : data.place_en) ?? data.place_he ?? data.place_en ?? ''),
   }
   return Object.entries(values).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), template)
 }

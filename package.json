@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "regeocode": "node scripts/regeocode-cleaners.mjs",
     "clear-weekly": "node scripts/clear-weekly-availability.mjs",
-    "import:localities": "tsx scripts/import-localities.ts"
+    "import:localities": "tsx scripts/import-localities.ts",
+    "seed:hula": "tsx --env-file=.env.local scripts/seed-hula-region.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

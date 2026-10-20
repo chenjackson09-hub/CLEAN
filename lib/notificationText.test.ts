@@ -74,3 +74,11 @@ describe('choose-area notification', () => {
     expect(describeNotification('choose_area', {}, 'he')).toContain('בחרו את האזור')
   })
 })
+
+describe('area_opened', () => {
+  it('names the place in the viewer’s language', () => {
+    const data = { place_he: 'בית הלל', place_en: 'Beit Hillel' }
+    expect(describeNotification('area_opened', data, 'en')).toBe('Good news — Clean is now open in Beit Hillel!')
+    expect(describeNotification('area_opened', data, 'he')).toContain('בית הלל')
+  })
+})

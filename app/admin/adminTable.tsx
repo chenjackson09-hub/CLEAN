@@ -296,9 +296,11 @@ export function AdminTable({
   minWidth = 'min-w-[820px]',
   isEmpty,
   empty,
+  onSort,
   children,
 }: {
-  title: string
+  // Optional: a page that already has its own heading can leave it out.
+  title?: string
   count?: number
   toolbar?: ReactNode
   columns: AdminColumn[]
@@ -306,19 +308,23 @@ export function AdminTable({
   minWidth?: string
   isEmpty: boolean
   empty: string
+  // When given, header cells whose column carries a className containing "cursor-pointer" call it with the column key.
+  onSort?: (key: string) => void
   children: ReactNode
 }) {
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        {count != null && count > 0 && (
-          <span className="text-sm font-semibold text-[#2f7d7c] rounded-full px-2.5 py-0.5 tabular-nums">
-            {count}
-          </span>
-        )}
-        {toolbar && <div className="w-full sm:w-auto sm:ms-auto">{toolbar}</div>}
-      </div>
+      {(title || toolbar) && (
+        <div className="flex flex-wrap items-center gap-3 mb-5">
+          {title && <h1 className="text-2xl font-bold text-gray-900">{title}</h1>}
+          {title && count != null && count > 0 && (
+            <span className="text-sm font-semibold text-[#2f7d7c] rounded-full px-2.5 py-0.5 tabular-nums">
+              {count}
+            </span>
+          )}
+          {toolbar && <div className={`w-full ${title ? 'sm:w-auto sm:ms-auto' : ''}`}>{toolbar}</div>}
+        </div>
+      )}
 
       {isEmpty ? (
         <div className="rounded-2xl bg-white/70 p-12 text-center text-gray-500 text-lg">
@@ -334,7 +340,11 @@ export function AdminTable({
                 style={{ gridTemplateColumns: template }}
               >
                 {columns.map(c => (
-                  <div key={c.key} className={c.className}>
+                  <div
+                    key={c.key}
+                    className={c.className}
+                    onClick={onSort && c.className?.includes('cursor-pointer') ? () => onSort(c.key) : undefined}
+                  >
                     {c.label}
                   </div>
                 ))}
