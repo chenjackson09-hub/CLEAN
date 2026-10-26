@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { bookingLink, buildGoogleCalendarUrl, type CalendarLang } from '@/lib/googleCalendar'
+import { bookingLink, buildGoogleCalendarUrl, chatLink, type CalendarLang } from '@/lib/googleCalendar'
 
 const STRINGS = {
   en: { label: 'Add to Google Calendar', hint: 'Opens Google Calendar in a new tab — press Save there to add it.' },
@@ -19,7 +19,7 @@ const envOrigin = /^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(rawOr
 // saved by us, and we never assume the person pressed Save. The event holds only
 // the general area, never the street address (see lib/googleCalendar.ts).
 // i18n-agnostic (a plain `lang` prop) because it sits in both i18n systems.
-export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate }: {
+export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate, otherUserId }: {
   booking: {
     id: string
     status: string
@@ -34,6 +34,8 @@ export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate 
   role: 'host' | 'cleaner'
   lang: CalendarLang
   withName?: string | null
+  // The other person's user id — for the private-chat link in the event.
+  otherUserId?: string | null
 }) {
   // The production URL when configured, else wherever the app is open right now.
   const [origin, setOrigin] = useState(envOrigin)
@@ -55,6 +57,7 @@ export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate 
     withName,
     hourlyRate,
     link: bookingLink(role, booking.id, origin),
+    chatLink: otherUserId ? chatLink(role, otherUserId, origin) : null,
     lang,
   })
   if (!url) return null

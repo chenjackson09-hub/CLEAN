@@ -168,7 +168,7 @@ export default function CleanDetailModal({
             <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
           </div>
 
-          <AddToCalendarButton booking={booking} role="cleaner" lang={lang === "he" ? "he" : "en"} withName={booking.profiles?.full_name} hourlyRate={hourlyRate} />
+          <AddToCalendarButton booking={booking} role="cleaner" lang={lang === "he" ? "he" : "en"} withName={booking.profiles?.full_name} hourlyRate={hourlyRate} otherUserId={booking.customer_id} />
 
           {booking.avail_window_start && booking.avail_window_end && (
             <div className="bg-blue-50 rounded-xl px-4 py-3">

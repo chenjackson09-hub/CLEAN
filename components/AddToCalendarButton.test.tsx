@@ -20,7 +20,7 @@ const href = () => screen.getByRole('link', { name: /Add to Google Calendar/ }).
 
 describe('AddToCalendarButton', () => {
   it('opens a prefilled Google Calendar event in a new tab for a confirmed upcoming clean', () => {
-    render(<AddToCalendarButton booking={booking} role="host" lang="en" withName="Noa R." hourlyRate={80} />)
+    render(<AddToCalendarButton booking={booking} role="host" lang="en" withName="Noa R." hourlyRate={80} otherUserId="cleaner-1" />)
     const link = screen.getByRole('link', { name: /Add to Google Calendar/ })
     expect(link).toHaveAttribute('target', '_blank')
     expect(link.getAttribute('rel')).toContain('noopener')
@@ -29,7 +29,8 @@ describe('AddToCalendarButton', () => {
     expect(p.get('location')).toBe('Beit Hillel')
     expect(p.get('details')).toContain('/bookings?booking=a1b2c3d4-0000-4000-8000-000000000000')
     expect(p.get('text')).toBe('Cleaning Booked - Noa R.')
-    expect(p.get('details')).toContain('Rate: ₪80 per hour')
+    expect(p.get('details')).toMatch(/\/chat\/cleaner-1$/)
+    expect(p.get('details')).toContain('<b>Rate:</b> ₪80 per hour')
   })
 
   it('never puts the street address in the event', () => {
@@ -39,11 +40,12 @@ describe('AddToCalendarButton', () => {
   })
 
   it('works for the cleaner too, linking to their dashboard, in Hebrew', () => {
-    render(<AddToCalendarButton booking={booking} role="cleaner" lang="he" withName="דנה כהן" />)
+    render(<AddToCalendarButton booking={booking} role="cleaner" lang="he" withName="דנה כהן" otherUserId="host-1" />)
     const link = screen.getByRole('link', { name: /הוספה ליומן Google/ })
     const p = new URL(link.getAttribute('href')!).searchParams
     expect(p.get('location')).toBe('בית הלל')
     expect(p.get('details')).toContain('/cleaner/dashboard?booking=')
+    expect(p.get('details')).toMatch(/\/cleaner\/chat\/host-1$/)
   })
 
   it('has no location when the area is unknown', () => {

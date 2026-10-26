@@ -24,6 +24,8 @@ export type CalendarEventInput = {
   hourlyRate?: number | string | null
   // Full URL of the booking in the web app.
   link: string
+  // Full URL of the private chat with the other person (exact address & coordination).
+  chatLink?: string | null
   lang: CalendarLang
 }
 
@@ -105,23 +107,37 @@ export function calendarTitle(input: Pick<CalendarEventInput, 'withName' | 'lang
   return name ? `${s.booked} - ${name}` : s.booked
 }
 
-export function calendarDescription(input: CalendarEventInput): string {
+// Google's template link takes the description as HTML (bold labels, <br> line breaks),
+// so everything that comes from a person is escaped. `plain` is the fallback if a
+// surface ever shows the tags literally — flip DESCRIPTION_FORMAT below.
+export type DescriptionFormat = 'html' | 'plain'
+export const DESCRIPTION_FORMAT: DescriptionFormat = 'html'
+
+const escapeHtml = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+export function calendarDescription(input: CalendarEventInput, format: DescriptionFormat = DESCRIPTION_FORMAT): string {
   const s = TEXT[input.lang]
+  const html = format === 'html'
+  const esc = (v: string) => (html ? escapeHtml(v) : v)
+  const bold = (v: string) => (html ? `<b>${escapeHtml(v)}</b>` : v)
+  const nl = html ? '<br>' : '\n'
+
   const name = input.withName?.trim()
   const rate = rateLabel(input.hourlyRate)
   const area = input.area?.trim()
-  const lines = [
-    name ? s.bookedWith(name) : s.booked,
-    area ? `${s.location}: ${area}` : null,
-    input.cleaningType ? `${s.service}: ${input.cleaningType === 'deep' ? s.deep : s.regular}` : null,
-    rate ? `${s.rate}: ${s.perHour(rate)}` : null,
+  const lines: (string | null)[] = [
+    bold(name ? s.bookedWith(name) : s.booked),
+    area ? `${bold(`${s.location}:`)} ${esc(area)}` : null,
+    input.cleaningType ? `${bold(`${s.service}:`)} ${input.cleaningType === 'deep' ? s.deep : s.regular}` : null,
+    rate ? `${bold(`${s.rate}:`)} ${s.perHour(rate)}` : null,
     '',
-    `${s.view}:`,
+    bold(`${s.view}:`),
     input.link,
     '',
     s.privacy,
+    input.chatLink ? input.chatLink : null,
   ]
-  return lines.filter((l): l is string => l !== null).join('\n')
+  return lines.filter((l): l is string => l !== null).join(nl)
 }
 
 // Returns null when the booking has no usable date/time (the button then isn't shown).
@@ -150,4 +166,11 @@ export function bookingLink(role: 'host' | 'cleaner', bookingId: string, origin:
   const base = origin.replace(/\/+$/, '')
   const path = role === 'host' ? '/bookings' : '/cleaner/dashboard'
   return `${base}${path}?booking=${encodeURIComponent(bookingId)}`
+}
+
+// The private chat with the other person (where the exact address is shared).
+// `otherUserId` is the host's id for a cleaner, and the cleaner's id for a host.
+export function chatLink(role: 'host' | 'cleaner', otherUserId: string, origin: string): string {
+  const base = origin.replace(/\/+$/, '')
+  return `${base}${role === 'host' ? '/chat' : '/cleaner/chat'}/${encodeURIComponent(otherUserId)}`
 }

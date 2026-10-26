@@ -1,4 +1,4 @@
-import { addHours, bookingLink, buildGoogleCalendarUrl, calendarDescription, type CalendarEventInput } from './googleCalendar'
+import { addHours, bookingLink, buildGoogleCalendarUrl, calendarDescription, chatLink, type CalendarEventInput } from './googleCalendar'
 
 const base: CalendarEventInput = {
   bookingId: 'a1b2c3d4-0000-4000-8000-000000000000',
@@ -10,6 +10,7 @@ const base: CalendarEventInput = {
   withName: 'Noa R.',
   hourlyRate: 80,
   link: 'https://clean.example/bookings?booking=a1b2c3d4-0000-4000-8000-000000000000',
+  chatLink: 'https://clean.example/chat/cleaner-1',
   lang: 'en',
 }
 const parse = (url: string) => new URL(url).searchParams
@@ -41,19 +42,20 @@ describe('buildGoogleCalendarUrl', () => {
     expect(p.get('ctz')).toBe('Asia/Jerusalem')
     expect(p.get('location')).toBe('Beit Hillel')
   })
-  it('writes the description in the agreed format (English)', () => {
+  it('writes the description with bold labels and the private-chat link underneath (English)', () => {
     expect(parse(buildGoogleCalendarUrl(base)!).get('details')).toBe(
       [
-        'Cleaning Booked with Noa R.',
-        'Location: Beit Hillel',
-        'Service: Deep Cleaning',
-        'Rate: ₪80 per hour',
+        '<b>Cleaning Booked with Noa R.</b>',
+        '<b>Location:</b> Beit Hillel',
+        '<b>Service:</b> Deep Cleaning',
+        '<b>Rate:</b> ₪80 per hour',
         '',
-        'View Booking:',
+        '<b>View Booking:</b>',
         base.link,
         '',
         'For exact address or coordination please use your private chat in app',
-      ].join('\n'),
+        'https://clean.example/chat/cleaner-1',
+      ].join('<br>'),
     )
   })
   it('writes the same description in Hebrew', () => {
@@ -61,17 +63,36 @@ describe('buildGoogleCalendarUrl', () => {
     expect(p.get('text')).toBe('ניקיון נקבע - נועה ר.')
     expect(p.get('details')).toBe(
       [
-        'ניקיון נקבע עם נועה ר.',
-        'מיקום: בית הלל',
-        'שירות: ניקיון יסודי',
-        'תעריף: ₪80 לשעה',
+        '<b>ניקיון נקבע עם נועה ר.</b>',
+        '<b>מיקום:</b> בית הלל',
+        '<b>שירות:</b> ניקיון יסודי',
+        '<b>תעריף:</b> ₪80 לשעה',
         '',
-        'צפייה בהזמנה:',
+        '<b>צפייה בהזמנה:</b>',
         base.link,
         '',
         'לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה',
-      ].join('\n'),
+        'https://clean.example/chat/cleaner-1',
+      ].join('<br>'),
     )
+  })
+  it('has a plain-text fallback with real line breaks and no tags', () => {
+    const d = calendarDescription(base, 'plain')
+    expect(d).not.toMatch(/<|>/)
+    expect(d.split('\n')[0]).toBe('Cleaning Booked with Noa R.')
+    expect(d.split('\n')[1]).toBe('Location: Beit Hillel')
+    expect(d.endsWith('https://clean.example/chat/cleaner-1')).toBe(true)
+  })
+  it('escapes anything a person typed so it can never inject markup into the description', () => {
+    const d = calendarDescription({ ...base, withName: 'Noa <script>alert(1)</script> & co', area: '<b>x</b>' })
+    expect(d).not.toContain('<script>')
+    expect(d).toContain('Noa &lt;script&gt;alert(1)&lt;/script&gt; &amp; co')
+    expect(d).toContain('&lt;b&gt;x&lt;/b&gt;')
+  })
+  it('leaves the chat link out when there is no other person to chat with', () => {
+    const d = calendarDescription({ ...base, chatLink: null })
+    expect(d).not.toContain('/chat/')
+    expect(d.endsWith('use your private chat in app')).toBe(true)
   })
   it('has no booking reference or duration line any more', () => {
     const d = parse(buildGoogleCalendarUrl(base)!).get('details')!
@@ -81,12 +102,12 @@ describe('buildGoogleCalendarUrl', () => {
     for (const hourlyRate of [undefined, null, 0, 'abc']) {
       expect(parse(buildGoogleCalendarUrl({ ...base, hourlyRate })!).get('details')).not.toContain('Rate:')
     }
-    expect(calendarDescription({ ...base, hourlyRate: '82.50' })).toContain('Rate: ₪82.5 per hour')
+    expect(calendarDescription({ ...base, hourlyRate: '82.50' })).toContain('<b>Rate:</b> ₪82.5 per hour')
   })
   it('says just "Cleaning Booked" when the other person’s name is unknown', () => {
     const p = parse(buildGoogleCalendarUrl({ ...base, withName: null })!)
     expect(p.get('text')).toBe('Cleaning Booked')
-    expect(p.get('details')!.split('\n')[0]).toBe('Cleaning Booked')
+    expect(p.get('details')!.split('<br>')[0]).toBe('<b>Cleaning Booked</b>')
   })
   it('leaves the location blank when there is no area (never falls back to an address)', () => {
     for (const area of [undefined, null, '', '   ']) {
@@ -121,7 +142,7 @@ describe('buildGoogleCalendarUrl', () => {
     const p = parse(url)
     expect(p.get('location')).toBe('מעיין ברוך & "דן"')
     expect(p.get('text')).toContain('ניקיון נקבע')
-    expect(p.get('details')).toContain('נועה <ר.>')
+    expect(p.get('details')).toContain('נועה &lt;ר.&gt;')
     expect(url).not.toContain('"')
     expect(url).not.toContain('<')
   })
@@ -130,7 +151,11 @@ describe('buildGoogleCalendarUrl', () => {
   })
 })
 
-describe('booking link and reference', () => {
+describe('booking and chat links', () => {
+  it('links to the private chat with the other person', () => {
+    expect(chatLink('host', 'cleaner-1', 'https://clean-roan.vercel.app/')).toBe('https://clean-roan.vercel.app/chat/cleaner-1')
+    expect(chatLink('cleaner', 'host-1', 'https://clean-roan.vercel.app')).toBe('https://clean-roan.vercel.app/cleaner/chat/host-1')
+  })
   it('uses the production origin and the booking id, and nothing sensitive', () => {
     expect(bookingLink('host', 'abc-123', 'https://clean-roan.vercel.app/')).toBe('https://clean-roan.vercel.app/bookings?booking=abc-123')
     expect(bookingLink('cleaner', 'abc-123', 'https://clean-roan.vercel.app')).toBe('https://clean-roan.vercel.app/cleaner/dashboard?booking=abc-123')
