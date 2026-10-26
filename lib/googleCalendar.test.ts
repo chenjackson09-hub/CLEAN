@@ -53,7 +53,7 @@ describe('buildGoogleCalendarUrl', () => {
         '<b>View Booking:</b>',
         base.link,
         '',
-        'For exact address or coordination please use your private chat in app',
+        '<b>For exact address or coordinates please use your private in app chat:</b>',
         'https://clean.example/chat/cleaner-1',
       ].join('<br>'),
     )
@@ -71,7 +71,7 @@ describe('buildGoogleCalendarUrl', () => {
         '<b>צפייה בהזמנה:</b>',
         base.link,
         '',
-        'לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה',
+        '<b>לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה:</b>',
         'https://clean.example/chat/cleaner-1',
       ].join('<br>'),
     )
@@ -92,7 +92,7 @@ describe('buildGoogleCalendarUrl', () => {
   it('leaves the chat link out when there is no other person to chat with', () => {
     const d = calendarDescription({ ...base, chatLink: null })
     expect(d).not.toContain('/chat/')
-    expect(d.endsWith('use your private chat in app')).toBe(true)
+    expect(d.endsWith('<b>For exact address or coordinates please use your private in app chat:</b>')).toBe(true)
   })
   it('has no booking reference or duration line any more', () => {
     const d = parse(buildGoogleCalendarUrl(base)!).get('details')!

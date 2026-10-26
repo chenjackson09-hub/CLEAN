@@ -78,7 +78,7 @@ const TEXT = {
     rate: 'Rate',
     perHour: (r: string) => `₪${r} per hour`,
     view: 'View Booking',
-    privacy: 'For exact address or coordination please use your private chat in app',
+    privacy: 'For exact address or coordinates please use your private in app chat:',
   },
   he: {
     booked: 'ניקיון נקבע',
@@ -90,7 +90,7 @@ const TEXT = {
     rate: 'תעריף',
     perHour: (r: string) => `₪${r} לשעה`,
     view: 'צפייה בהזמנה',
-    privacy: 'לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה',
+    privacy: 'לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה:',
   },
 } as const
 
@@ -134,7 +134,7 @@ export function calendarDescription(input: CalendarEventInput, format: Descripti
     bold(`${s.view}:`),
     input.link,
     '',
-    s.privacy,
+    bold(s.privacy),
     input.chatLink ? input.chatLink : null,
   ]
   return lines.filter((l): l is string => l !== null).join(nl)
