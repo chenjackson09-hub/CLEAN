@@ -201,7 +201,7 @@ export function BookingDetailModal({
             <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
           </div>
 
-          <AddToCalendarButton booking={booking} role="host" lang={lang === 'he' ? 'he' : 'en'} withName={displayName} />
+          <AddToCalendarButton booking={booking} role="host" lang={lang === 'he' ? 'he' : 'en'} withName={displayName} hourlyRate={booking.hourly_rate} />
 
 
           {booking.status === 'completed' && (

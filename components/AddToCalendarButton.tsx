@@ -8,14 +8,18 @@ const STRINGS = {
 } as const
 
 const WORKDAY_TZ = 'Asia/Jerusalem'
-const envOrigin = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim()
+// A localhost value (left over from development) must never end up in someone's calendar,
+// so only a real public URL from the environment is trusted; otherwise use the address
+// the app is open on, which on the live site IS the production URL.
+const rawOrigin = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim()
+const envOrigin = /^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(rawOrigin) ? '' : rawOrigin
 
 // "Add to Google Calendar" for a CONFIRMED, upcoming clean — for hosts and cleaners.
 // A plain link (Google's event-template URL): nothing is connected, nothing is
 // saved by us, and we never assume the person pressed Save. The event holds only
 // the general area, never the street address (see lib/googleCalendar.ts).
 // i18n-agnostic (a plain `lang` prop) because it sits in both i18n systems.
-export function AddToCalendarButton({ booking, role, lang, withName }: {
+export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate }: {
   booking: {
     id: string
     status: string
@@ -25,6 +29,8 @@ export function AddToCalendarButton({ booking, role, lang, withName }: {
     cleaning_type?: 'regular' | 'deep' | null
     area?: { he: string; en: string } | null
   }
+  // The cleaner's hourly rate in shekels (the booking itself doesn't store one).
+  hourlyRate?: number | string | null
   role: 'host' | 'cleaner'
   lang: CalendarLang
   withName?: string | null
@@ -47,6 +53,7 @@ export function AddToCalendarButton({ booking, role, lang, withName }: {
     cleaningType: booking.cleaning_type,
     area: booking.area ? booking.area[lang] : null,
     withName,
+    hourlyRate,
     link: bookingLink(role, booking.id, origin),
     lang,
   })

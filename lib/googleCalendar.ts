@@ -20,6 +20,8 @@ export type CalendarEventInput = {
   area?: string | null
   // The person on the other side, as already shown in the app ("Noa R.").
   withName?: string | null
+  // The cleaner's hourly rate in shekels (shown as "₪80 per hour"); omitted when unknown.
+  hourlyRate?: number | string | null
   // Full URL of the booking in the web app.
   link: string
   lang: CalendarLang
@@ -33,10 +35,6 @@ const FALLBACK_HOURS = 2
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const TIME_RE = /^(\d{2}):(\d{2})/
-
-export function bookingReference(bookingId: string): string {
-  return `#${bookingId.replace(/-/g, '').slice(0, 8).toUpperCase()}`
-}
 
 function pad(n: number) {
   return String(n).padStart(2, '0')
@@ -69,53 +67,54 @@ function cleanDuration(d: CalendarEventInput['durationHours']): number {
 
 const TEXT = {
   en: {
-    title: 'Cleaning Appointment',
-    confirmed: 'Cleaning appointment confirmed.',
-    reference: 'Booking Reference',
+    booked: 'Cleaning Booked',
+    bookedWith: (name: string) => `Cleaning Booked with ${name}`,
+    location: 'Location',
     service: 'Service',
-    regular: 'Regular cleaning',
-    deep: 'Deep cleaning',
-    area: 'Area',
-    with: 'With',
-    duration: 'Estimated duration',
-    hours: (h: string) => `about ${h} h`,
+    regular: 'Regular Cleaning',
+    deep: 'Deep Cleaning',
+    rate: 'Rate',
+    perHour: (r: string) => `₪${r} per hour`,
     view: 'View Booking',
-    privacy: 'For the exact address and any coordination, please use your private chat in the app.',
+    privacy: 'For exact address or coordination please use your private chat in app',
   },
   he: {
-    title: 'ניקיון',
-    confirmed: 'הניקיון אושר.',
-    reference: 'מספר הזמנה',
-    service: 'סוג שירות',
+    booked: 'ניקיון נקבע',
+    bookedWith: (name: string) => `ניקיון נקבע עם ${name}`,
+    location: 'מיקום',
+    service: 'שירות',
     regular: 'ניקיון רגיל',
     deep: 'ניקיון יסודי',
-    area: 'אזור',
-    with: 'עם',
-    duration: 'משך משוער',
-    hours: (h: string) => `כ-${h} שעות`,
+    rate: 'תעריף',
+    perHour: (r: string) => `₪${r} לשעה`,
     view: 'צפייה בהזמנה',
-    privacy: 'לכתובת המדויקת ולתיאום, השתמשו בצ׳אט הפרטי באפליקציה.',
+    privacy: 'לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה',
   },
 } as const
 
-function hoursLabel(h: number): string {
-  return Number.isInteger(h) ? String(h) : String(Math.round(h * 10) / 10)
+function rateLabel(rate: CalendarEventInput['hourlyRate']): string | null {
+  const n = typeof rate === 'string' ? parseFloat(rate) : rate
+  if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return null
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '')
 }
 
-export function calendarTitle(input: Pick<CalendarEventInput, 'bookingId' | 'lang'>): string {
-  return `${TEXT[input.lang].title} – ${bookingReference(input.bookingId)}`
+// "Cleaning Booked - Chen J." (just "Cleaning Booked" when the other person's name is unknown)
+export function calendarTitle(input: Pick<CalendarEventInput, 'withName' | 'lang'>): string {
+  const s = TEXT[input.lang]
+  const name = input.withName?.trim()
+  return name ? `${s.booked} - ${name}` : s.booked
 }
 
 export function calendarDescription(input: CalendarEventInput): string {
   const s = TEXT[input.lang]
-  const hours = cleanDuration(input.durationHours)
+  const name = input.withName?.trim()
+  const rate = rateLabel(input.hourlyRate)
+  const area = input.area?.trim()
   const lines = [
-    s.confirmed,
-    `${s.reference}: ${bookingReference(input.bookingId)}`,
+    name ? s.bookedWith(name) : s.booked,
+    area ? `${s.location}: ${area}` : null,
     input.cleaningType ? `${s.service}: ${input.cleaningType === 'deep' ? s.deep : s.regular}` : null,
-    input.area?.trim() ? `${s.area}: ${input.area.trim()}` : null,
-    input.withName?.trim() ? `${s.with}: ${input.withName.trim()}` : null,
-    `${s.duration}: ${s.hours(hoursLabel(hours))}`,
+    rate ? `${s.rate}: ${s.perHour(rate)}` : null,
     '',
     `${s.view}:`,
     input.link,

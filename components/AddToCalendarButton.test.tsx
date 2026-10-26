@@ -20,7 +20,7 @@ const href = () => screen.getByRole('link', { name: /Add to Google Calendar/ }).
 
 describe('AddToCalendarButton', () => {
   it('opens a prefilled Google Calendar event in a new tab for a confirmed upcoming clean', () => {
-    render(<AddToCalendarButton booking={booking} role="host" lang="en" withName="Noa R." />)
+    render(<AddToCalendarButton booking={booking} role="host" lang="en" withName="Noa R." hourlyRate={80} />)
     const link = screen.getByRole('link', { name: /Add to Google Calendar/ })
     expect(link).toHaveAttribute('target', '_blank')
     expect(link.getAttribute('rel')).toContain('noopener')
@@ -28,6 +28,8 @@ describe('AddToCalendarButton', () => {
     expect(p.get('action')).toBe('TEMPLATE')
     expect(p.get('location')).toBe('Beit Hillel')
     expect(p.get('details')).toContain('/bookings?booking=a1b2c3d4-0000-4000-8000-000000000000')
+    expect(p.get('text')).toBe('Cleaning Booked - Noa R.')
+    expect(p.get('details')).toContain('Rate: ₪80 per hour')
   })
 
   it('never puts the street address in the event', () => {

@@ -1,4 +1,4 @@
-import { addHours, bookingLink, bookingReference, buildGoogleCalendarUrl, calendarDescription, type CalendarEventInput } from './googleCalendar'
+import { addHours, bookingLink, buildGoogleCalendarUrl, calendarDescription, type CalendarEventInput } from './googleCalendar'
 
 const base: CalendarEventInput = {
   bookingId: 'a1b2c3d4-0000-4000-8000-000000000000',
@@ -8,6 +8,7 @@ const base: CalendarEventInput = {
   cleaningType: 'deep',
   area: 'Beit Hillel',
   withName: 'Noa R.',
+  hourlyRate: 80,
   link: 'https://clean.example/bookings?booking=a1b2c3d4-0000-4000-8000-000000000000',
   lang: 'en',
 }
@@ -35,26 +36,63 @@ describe('buildGoogleCalendarUrl', () => {
     expect(url.startsWith('https://calendar.google.com/calendar/render?')).toBe(true)
     const p = parse(url)
     expect(p.get('action')).toBe('TEMPLATE')
-    expect(p.get('text')).toBe('Cleaning Appointment – #A1B2C3D4')
+    expect(p.get('text')).toBe('Cleaning Booked - Noa R.')
     expect(p.get('dates')).toBe('20261015T090000/20261015T120000')
     expect(p.get('ctz')).toBe('Asia/Jerusalem')
     expect(p.get('location')).toBe('Beit Hillel')
   })
-  it('carries the booking reference, service, area and a direct link in the description', () => {
+  it('writes the description in the agreed format (English)', () => {
+    expect(parse(buildGoogleCalendarUrl(base)!).get('details')).toBe(
+      [
+        'Cleaning Booked with Noa R.',
+        'Location: Beit Hillel',
+        'Service: Deep Cleaning',
+        'Rate: ₪80 per hour',
+        '',
+        'View Booking:',
+        base.link,
+        '',
+        'For exact address or coordination please use your private chat in app',
+      ].join('\n'),
+    )
+  })
+  it('writes the same description in Hebrew', () => {
+    const p = parse(buildGoogleCalendarUrl({ ...base, lang: 'he', area: 'בית הלל', withName: 'נועה ר.' })!)
+    expect(p.get('text')).toBe('ניקיון נקבע - נועה ר.')
+    expect(p.get('details')).toBe(
+      [
+        'ניקיון נקבע עם נועה ר.',
+        'מיקום: בית הלל',
+        'שירות: ניקיון יסודי',
+        'תעריף: ₪80 לשעה',
+        '',
+        'צפייה בהזמנה:',
+        base.link,
+        '',
+        'לכתובת המדויקת או לתיאום, אנא השתמשו בצ׳אט הפרטי באפליקציה',
+      ].join('\n'),
+    )
+  })
+  it('has no booking reference or duration line any more', () => {
     const d = parse(buildGoogleCalendarUrl(base)!).get('details')!
-    expect(d).toContain('Booking Reference: #A1B2C3D4')
-    expect(d).toContain('Service: Deep cleaning')
-    expect(d).toContain('Area: Beit Hillel')
-    expect(d).toContain('With: Noa R.')
-    expect(d).toContain('about 3 h')
-    expect(d).toContain(base.link)
-    expect(d).toContain('private chat')
+    expect(d).not.toMatch(/Reference|#A1B2C3D4|duration|Estimated/i)
+  })
+  it('skips the rate line when the rate is unknown or nonsense, and formats decimals', () => {
+    for (const hourlyRate of [undefined, null, 0, 'abc']) {
+      expect(parse(buildGoogleCalendarUrl({ ...base, hourlyRate })!).get('details')).not.toContain('Rate:')
+    }
+    expect(calendarDescription({ ...base, hourlyRate: '82.50' })).toContain('Rate: ₪82.5 per hour')
+  })
+  it('says just "Cleaning Booked" when the other person’s name is unknown', () => {
+    const p = parse(buildGoogleCalendarUrl({ ...base, withName: null })!)
+    expect(p.get('text')).toBe('Cleaning Booked')
+    expect(p.get('details')!.split('\n')[0]).toBe('Cleaning Booked')
   })
   it('leaves the location blank when there is no area (never falls back to an address)', () => {
     for (const area of [undefined, null, '', '   ']) {
       const p = parse(buildGoogleCalendarUrl({ ...base, area })!)
       expect(p.has('location')).toBe(false)
-      expect(p.get('details')).not.toContain('Area:')
+      expect(p.get('details')).not.toContain('Location:')
     }
   })
   it('only ever contains what it is given — the street address cannot get in', () => {
@@ -82,7 +120,7 @@ describe('buildGoogleCalendarUrl', () => {
     const url = buildGoogleCalendarUrl({ ...base, lang: 'he', area: 'מעיין ברוך & "דן"', withName: 'נועה <ר.>' })!
     const p = parse(url)
     expect(p.get('location')).toBe('מעיין ברוך & "דן"')
-    expect(p.get('text')).toContain('ניקיון')
+    expect(p.get('text')).toContain('ניקיון נקבע')
     expect(p.get('details')).toContain('נועה <ר.>')
     expect(url).not.toContain('"')
     expect(url).not.toContain('<')
@@ -96,8 +134,5 @@ describe('booking link and reference', () => {
   it('uses the production origin and the booking id, and nothing sensitive', () => {
     expect(bookingLink('host', 'abc-123', 'https://clean-roan.vercel.app/')).toBe('https://clean-roan.vercel.app/bookings?booking=abc-123')
     expect(bookingLink('cleaner', 'abc-123', 'https://clean-roan.vercel.app')).toBe('https://clean-roan.vercel.app/cleaner/dashboard?booking=abc-123')
-  })
-  it('makes a short readable reference', () => {
-    expect(bookingReference('a1b2c3d4-0000-4000-8000-000000000000')).toBe('#A1B2C3D4')
   })
 })
