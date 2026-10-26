@@ -25,7 +25,7 @@ const PLACES: Record<number, [string, string[]]> = {
   322: ['Beit Hillel', []],
   2800: ['Kiryat Shmona', ['Kiryat Shemona', 'Qiryat Shmona']],
   43: ['Metula', []],
-  2009: ['Yuval', ['Kfar Yuval', 'כפר יובל']],
+  2009: ['Kfar Yuval', ['Yuval', 'כפר יובל']],
   416: ["Ma'ayan Baruch", ['Maayan Baruch', 'Maayan Barukh', 'מעין ברוך']],
   76: ['Kfar Giladi', ['Kfar Gil’adi']],
   356: ['HaGoshrim', ['Hagoshrim', 'Ha Goshrim']],
