@@ -62,7 +62,12 @@ export async function middleware(request: NextRequest) {
   const isLocalitySearch = pathname === '/api/localities/search'
 
   if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isCallbackPath && !isLocalitySearch) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    // Remember where they were headed (e.g. a booking link from a calendar event)
+    // so sign-in can take them straight back. Validated again when it's used.
+    const loginUrl = new URL('/login', request.url)
+    const dest = pathname + request.nextUrl.search
+    if (pathname !== '/') loginUrl.searchParams.set('next', dest)
+    return NextResponse.redirect(loginUrl)
   }
 
   if (user) {

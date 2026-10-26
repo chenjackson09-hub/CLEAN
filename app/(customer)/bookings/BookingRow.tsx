@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingDetailModal } from './BookingDetailModal'
 import { AvailabilityNotice } from './AvailabilityNotice'
@@ -20,7 +21,9 @@ import type { BookingResult } from '@/lib/types/booking'
 // everything else, is in the detail that opens on tap.
 export function BookingRow({ booking, todayStr }: { booking: BookingResult; todayStr: string }) {
   const { t, lang } = useLanguage()
-  const [open, setOpen] = useState(false)
+  // Opened from an "Add to Google Calendar" event: /bookings?booking=<id> shows this clean's detail.
+  // Only the host's own bookings are ever listed here, so someone else's id opens nothing.
+  const [open, setOpen] = useState(useSearchParams().get('booking') === booking.id)
   const l = lang === 'he' ? 'he' : 'en'
 
   const name = shortName(booking.cleaner_name)

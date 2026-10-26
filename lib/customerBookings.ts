@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { BookingResult } from '@/lib/types/booking'
 import type { CustomerHomeInfo } from '@/lib/bookingSummary'
 import { closedReasonFor } from '@/lib/hostCalendar'
+import { fetchCustomerAreas } from '@/lib/localities/areaNames'
 
 // Shared by /bookings and /home so the two pages' booking data can't drift —
 // same query, same cleaner-profile join, same rating lookup, same "expired
@@ -68,6 +69,8 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
   // so the session client would return nothing and every booking would fall
   // back to the literal "Cleaner".
   const admin = createAdminClient()
+  // The host's own town (general area only) for the calendar button — best-effort.
+  const hostArea = (await fetchCustomerAreas(admin, [userId])).get(userId) ?? null
   const [{ data: cleanerProfiles }, { data: cleanerRows }] = cleanerIds.length > 0
     ? await Promise.all([
         admin.from('profiles').select('id, full_name, avatar_url').in('id', cleanerIds),
@@ -106,6 +109,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       host_present: b.host_present,
       hourly_rate: rateMap[b.cleaner_id] ?? null,
       home_info: homeRow ?? null,
+      area: hostArea,
       created_at: b.created_at,
       cleaner_address: cleanerAddressMap[b.cleaner_id] ?? null,
       status_reason: (scheduleMap.get(b.id)?.status_reason ?? null) as 'cleaner_unavailable' | null,

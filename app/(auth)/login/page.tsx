@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath, POST_LOGIN_COOKIE } from "@/lib/safeRedirect";
 
 function GoogleIcon() {
   return (
@@ -31,11 +32,14 @@ export default function LoginPage() {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Where to go after signing in (set by the middleware when a link needed a login).
+  const [next, setNext] = useState<string | null>(null);
 
   // Surface an error passed back from the OAuth callback (?error=...).
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get("error");
     if (err) setError(err);
+    setNext(safeNextPath(new URLSearchParams(window.location.search).get("next")));
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -53,6 +57,9 @@ export default function LoginPage() {
   async function handleGoogle() {
     setLoading(true);
     setError(null);
+    // The Google round trip can't carry a query string safely (the redirect URL must
+    // match the allow-list exactly), so remember the destination for 10 minutes instead.
+    if (next) document.cookie = `${POST_LOGIN_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -84,6 +91,7 @@ export default function LoginPage() {
         <p className="text-sm text-gray-600 mb-6">{t("auth.login.subtitle")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {next && <input type="hidden" name="next" value={next} />}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             {t("auth.login.email")}

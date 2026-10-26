@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingRow } from './BookingRow'
 import { BookingDetailModal } from './BookingDetailModal'
@@ -35,7 +36,10 @@ function ClosedLine({ booking }: { booking: BookingResult }) {
 export function BookingsSections({ bookings, todayStr }: { bookings: BookingResult[]; todayStr: string }) {
   const { t, lang } = useLanguage()
   const { upcoming, history, closed } = splitBookings(bookings, todayStr)
-  const [tab, setTab] = useState<'upcoming' | 'history'>('upcoming')
+  const linked = useSearchParams().get('booking')
+  const [tab, setTab] = useState<'upcoming' | 'history'>(() =>
+    linked && !upcoming.some(b => b.id === linked) && (history.some(b => b.id === linked) || closed.some(b => b.id === linked)) ? 'history' : 'upcoming',
+  )
   const [clearing, setClearing] = useState(false)
   const locale = lang === 'he' ? 'he-IL' : 'en-GB'
 

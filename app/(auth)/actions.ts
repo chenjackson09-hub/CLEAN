@@ -1,5 +1,6 @@
 "use server";
 
+import { safeNextPath } from "@/lib/safeRedirect";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -89,6 +90,11 @@ export async function signIn(formData: FormData) {
     .select("role")
     .eq("id", user.id)
     .single();
+
+  // Back to the page they were trying to open (e.g. a booking link), if any.
+  // The middleware still enforces role access, so a wrong-role link lands on their home.
+  const next = safeNextPath(formData.get("next"));
+  if (next && profile?.role) redirect(next);
 
   redirect(profile?.role ? (ROLE_HOME[profile.role as UserRole] ?? "/login") : "/login");
 }

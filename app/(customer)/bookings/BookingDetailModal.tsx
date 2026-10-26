@@ -1,4 +1,5 @@
 'use client'
+import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
@@ -199,6 +200,8 @@ export function BookingDetailModal({
             <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t('bookingCard.detail.address')}</p>
             <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
           </div>
+
+          <AddToCalendarButton booking={booking} role="host" lang={lang === 'he' ? 'he' : 'en'} withName={displayName} />
 
 
           {booking.status === 'completed' && (

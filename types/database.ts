@@ -231,6 +231,8 @@ export interface BookingWithCustomer extends Booking {
   // BookingRequestSummary (see lib/bookingSummary.ts). Attached by whichever
   // page fetched it (dashboard/requests) — undefined where it wasn't needed.
   home_info?: import("@/lib/bookingSummary").CustomerHomeInfo | null;
+  // The host's general area (chosen town) for the "Add to Google Calendar" event.
+  area?: import("@/lib/localities/areaNames").AreaName | null;
 }
 
 export interface Rating {

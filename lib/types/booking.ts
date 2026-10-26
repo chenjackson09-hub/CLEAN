@@ -57,6 +57,9 @@ export type BookingResult = {
   // result (lib/customerBookings.ts, app/admin/bookingsData.ts) so every
   // reader can build a full BookingRequestSummary without a second query.
   hourly_rate?: number | null
+  // The general area (the host's chosen town) — the only place info that goes into an
+  // "Add to Google Calendar" event. Never the street address.
+  area?: import('@/lib/localities/areaNames').AreaName | null
   home_info?: import('@/lib/bookingSummary').CustomerHomeInfo | null
   // The cleaner's own saved address (`cleaners.address`) — distinct from
   // `address` above, which is this specific booking's clean location (the

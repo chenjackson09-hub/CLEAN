@@ -1,3 +1,4 @@
+import { fetchCustomerAreas } from "@/lib/localities/areaNames";
 import { createClient, getCurrentUser, getCleanerStatus } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -126,13 +127,16 @@ export default async function CleanerDashboardPage() {
         .returns<(CustomerHomeInfo & { id: string })[]>()
     : { data: [] as (CustomerHomeInfo & { id: string })[] };
   const homeInfoMap = new Map((homeRows ?? []).map((r) => [r.id, r]));
+  // Each host's general area (chosen town) for the "Add to Google Calendar" button.
+  const areaMap = await fetchCustomerAreas(admin, homeCustomerIds);
 
   const upcomingWithHome = upcomingBookings.map((b) => ({
     ...b,
     home_info: homeInfoMap.get(b.customer_id) ?? null,
+    area: areaMap.get(b.customer_id) ?? null,
     daysUntil: daysUntilClean(b),
   }));
-  const pastWithHome = pastBookings.map((b) => ({ ...b, home_info: homeInfoMap.get(b.customer_id) ?? null }));
+  const pastWithHome = pastBookings.map((b) => ({ ...b, home_info: homeInfoMap.get(b.customer_id) ?? null, area: areaMap.get(b.customer_id) ?? null }));
 
   if (!cleanerStatus || cleanerStatus === "pending") {
     return (

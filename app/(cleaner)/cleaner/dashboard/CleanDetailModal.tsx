@@ -1,5 +1,6 @@
 "use client";
 
+import { AddToCalendarButton } from "@/components/AddToCalendarButton";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -166,6 +167,8 @@ export default function CleanDetailModal({
             <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">{t("req_address")}</p>
             <p className="text-lg font-semibold text-gray-900">{booking.address}</p>
           </div>
+
+          <AddToCalendarButton booking={booking} role="cleaner" lang={lang === "he" ? "he" : "en"} withName={booking.profiles?.full_name} />
 
           {booking.avail_window_start && booking.avail_window_end && (
             <div className="bg-blue-50 rounded-xl px-4 py-3">

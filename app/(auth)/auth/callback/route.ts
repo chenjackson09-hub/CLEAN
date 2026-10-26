@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { safeNextPath, POST_LOGIN_COOKIE } from '@/lib/safeRedirect'
 import { createClient } from '@/lib/supabase/server'
 import { ROLE_HOME } from '@/lib/roleHome'
 import type { UserRole } from '@/types/database'
@@ -39,6 +41,19 @@ export async function GET(request: Request) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     const role = profile?.role as UserRole | undefined
     dest = role ? ROLE_HOME[role] ?? '/browse' : '/browse'
+    // Back to the page they were trying to open before signing in (one-shot cookie
+    // set by the login page), if it is a safe same-site path.
+    const jar = cookies()
+    let raw: string | null = null
+    try {
+      const v = jar.get(POST_LOGIN_COOKIE)?.value
+      raw = v ? decodeURIComponent(v) : null
+    } catch {
+      raw = null
+    }
+    const next = safeNextPath(raw)
+    if (next && role) dest = next
+    if (jar.get(POST_LOGIN_COOKIE)) jar.delete(POST_LOGIN_COOKIE)
   }
   return NextResponse.redirect(new URL(dest, url.origin))
 }

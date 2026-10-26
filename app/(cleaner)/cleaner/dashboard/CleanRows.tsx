@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { completeBooking } from "../../actions";
 import { useLang } from "@/context/LangContext";
@@ -37,7 +38,9 @@ export function UpcomingCleanRow({
 }) {
   const { t } = useLang();
   const lang = useChipLang();
-  const [open, setOpen] = useState(false);
+  // Opened from an "Add to Google Calendar" event: /cleaner/dashboard?booking=<id>. Only this cleaner's own
+  // bookings are listed, so someone else's id opens nothing.
+  const [open, setOpen] = useState(useSearchParams().get("booking") === booking.id);
 
   const day = daysUntil <= 0 ? t("dash_in_today") : t("dash_in_tomorrow");
   const detail = detailLine(booking, t("req_h"));
@@ -85,7 +88,9 @@ export function PastCleanRow({
   const [status, setStatus] = useState(booking.status);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  // Opened from an "Add to Google Calendar" event: /cleaner/dashboard?booking=<id>. Only this cleaner's own
+  // bookings are listed, so someone else's id opens nothing.
+  const [open, setOpen] = useState(useSearchParams().get("booking") === booking.id);
   const completed = status === "completed";
   const cancelled = status === "cancelled";
 
