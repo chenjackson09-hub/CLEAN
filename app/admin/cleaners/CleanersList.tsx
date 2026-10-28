@@ -16,10 +16,12 @@ import {
   ContactIconStack,
 } from '@/app/admin/adminTable'
 import { SearchInput } from '@/app/admin/SearchInput'
+import { CindyVerifyControl } from '@/app/admin/CindyVerifyControl'
+import { CindyVerifiedBadge } from '@/components/CindyVerifiedBadge'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import type { UserStatus } from '@/lib/adminUserStatus'
 
-type CleanerWithNotes = CleanerResult & { adminNotes: string; userStatus: UserStatus; joinedAt: string | null }
+type CleanerWithNotes = CleanerResult & { adminNotes: string; userStatus: UserStatus; joinedAt: string | null; cindyVerifiedAt?: string | null }
 
 // Name / Status / Contact / Location / Rate / Rating / (chat, email, delete) —
 // admin notes and the "New" badge live in the row's expand panel (the
@@ -35,8 +37,9 @@ function CleanerRow({
   onSaveNotes: (id: string, notes: string) => void
   onDelete: (id: string) => void
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [notes, setNotes] = useState(cleaner.adminNotes)
+  const [verifiedAt, setVerifiedAt] = useState<string | null>(cleaner.cindyVerifiedAt ?? null)
   const isNew = (cleaner.cleans_completed ?? 0) < 5
 
   function handleDelete() {
@@ -54,7 +57,12 @@ function CleanerRow({
       <NameCell
         name={cleaner.full_name}
         url={cleaner.avatar_url}
-        subtitle={cleaner.joinedAt ? t('admin.cleaners.joined', { date: cleaner.joinedAt }) : null}
+        subtitle={
+          <>
+            {cleaner.joinedAt ? t('admin.cleaners.joined', { date: cleaner.joinedAt }) : null}
+            {verifiedAt && <span className="ms-1.5 align-middle"><CindyVerifiedBadge size="sm" lang={lang === 'he' ? 'he' : 'en'} /></span>}
+          </>
+        }
       />
     </Link>,
     <StatusPill key="st" status={cleaner.userStatus} label={statusLabel} />,
@@ -103,6 +111,7 @@ function CleanerRow({
           <span className="text-sm text-gray-400">—</span>
         )}
       </div>
+      <CindyVerifyControl kind="cleaner" id={cleaner.id} verifiedAt={verifiedAt} onChange={setVerifiedAt} />
       <NotesPanel id={cleaner.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(cleaner.id, notes)} />
     </div>
   )

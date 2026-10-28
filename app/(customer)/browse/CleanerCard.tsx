@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { StarRatingDisplay } from '@/components/StarRating'
+import { CindyVerifiedBadge } from '@/components/CindyVerifiedBadge'
 import { ScheduleCleanModal } from './ScheduleCleanModal'
 import type { RequestPrefill } from '@/app/(customer)/cleaners/[id]/BookingRequestForm'
 
@@ -16,7 +17,7 @@ function shortenName(fullName: string): string {
 }
 
 export function CleanerCard({ cleaner, date, location, cleanGroupId, duration, prefill, onModalClosed }: { cleaner: CleanerResult; date?: string; location?: string; cleanGroupId?: string; duration?: number; prefill?: RequestPrefill; onModalClosed?: () => void }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [scheduling, setScheduling] = useState(false)
   const initial = cleaner.full_name.charAt(0).toUpperCase()
   const displayName = shortenName(cleaner.full_name)
@@ -74,6 +75,7 @@ export function CleanerCard({ cleaner, date, location, cleanGroupId, duration, p
         <div className="mb-3 min-w-0">
           <div className="flex items-baseline justify-between gap-2 min-w-0">
             <p className="font-bold text-gray-900 truncate">{displayName}</p>
+            {cleaner.cindy_verified && <CindyVerifiedBadge size="sm" lang={lang === 'he' ? 'he' : 'en'} />}
             {availability.length > 0 && (
               <div className="flex flex-wrap justify-center gap-1 flex-1">
                 {availability.map((s, i) => (

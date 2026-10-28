@@ -16,6 +16,7 @@ export default function ProfileView({
   customer,
   reviews,
   town,
+  cindyVerified,
   onEdit,
 }: {
   fullName: string
@@ -23,6 +24,7 @@ export default function ProfileView({
   customer: Customer | null
   reviews: ReviewItem[]
   town?: string | null
+  cindyVerified?: boolean
   onEdit: () => void
 }) {
   const { t } = useLanguage()
@@ -33,6 +35,7 @@ export default function ProfileView({
       customer={customer}
       reviews={reviews}
       town={town}
+      cindyVerified={cindyVerified}
       action={
         <button
           type="button"

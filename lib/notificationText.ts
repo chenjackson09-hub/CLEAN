@@ -27,6 +27,7 @@ const TEXT: Record<NotificationKind | 'chat_messages', Record<Lang, string>> = {
   chat_message: { en: '{name} sent you a message', he: '{name} שלח/ה לך הודעה' },
   chat_messages: { en: '{name} sent you {count} messages', he: '{name} שלח/ה לך {count} הודעות' },
   choose_area: { en: 'Choose your area so we can show you the right matches nearby — tap to pick it', he: 'בחרו את האזור שלכם כדי שנוכל להציג לכם התאמות קרובות — הקישו לבחירה' },
+  cindy_verified: { en: 'You are now Cindy Verified ✓ — the badge now shows on your profile', he: 'קיבלת את תג Cindy Verified ✓ — התג מוצג עכשיו בפרופיל שלך' },
   area_opened: { en: 'Good news — Clean is now open in {place}!', he: 'חדשות טובות — Clean נפתחה עכשיו ב{place}!' },
   account_approved: { en: 'You’re approved — welcome to Clean!', he: 'אושרת — ברוכים הבאים ל-Clean!' },
   account_rejected: { en: 'Your account wasn’t approved', he: 'החשבון שלך לא אושר' },

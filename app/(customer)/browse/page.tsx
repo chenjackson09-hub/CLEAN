@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/supabase/server'
 import { HostCalendar } from './HostCalendar'
 import { WaitlistNotice } from './WaitlistNotice'
 import { ComingSoonBanner } from './ComingSoonNotice'
+import { fetchCindyVerified } from '@/lib/cindyVerified'
 import { hostServiceArea } from '@/lib/localities/serviceArea'
 import { sortCleaners } from '@/lib/cleanerSearch'
 import { geocodeAddress } from '@/lib/geocode'
@@ -242,6 +243,7 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
         admin.from('profiles').select('id, full_name, avatar_url').in('id', ids),
       ])
       const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
+      const verified = await fetchCindyVerified(admin, 'cleaners', ids)
 
       // Every in-range cleaner once (nearest first); a day's list just points at them.
       cleaners = sortCleaners(
@@ -262,6 +264,7 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
             rating_count: (c as { rating_count?: number }).rating_count ?? 0,
             min_hours: (c as { min_hours?: number | null }).min_hours ?? null,
             max_hours: (c as { max_hours?: number | null }).max_hours ?? null,
+            cindy_verified: verified.has(c.id),
           } satisfies CleanerResult
         }),
         'distance_asc',

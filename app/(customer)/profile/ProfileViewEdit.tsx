@@ -20,6 +20,7 @@ export default function ProfileViewEdit({
   customer,
   reviews,
   town,
+  cindyVerified,
   defaultValues,
   action,
   startInEdit = false,
@@ -29,6 +30,7 @@ export default function ProfileViewEdit({
   customer: Customer | null
   reviews: ReviewItem[]
   town?: string | null
+  cindyVerified?: boolean
   defaultValues: DefaultValues
   action: (state: ActionResult, formData: FormData) => Promise<ActionResult>
   // Set by `?edit=1` — e.g. the "choose your area" notification lands straight in the form.
@@ -46,6 +48,7 @@ export default function ProfileViewEdit({
       customer={customer}
       reviews={reviews}
       town={town}
+      cindyVerified={cindyVerified}
       onEdit={() => setEditing(true)}
     />
   )

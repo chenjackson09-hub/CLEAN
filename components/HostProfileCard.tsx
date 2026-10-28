@@ -1,3 +1,4 @@
+import { CindyVerifiedBadge } from "@/components/CindyVerifiedBadge";
 import Image from "next/image";
 import type { Customer } from "@/types/database";
 import ReviewsList, { type ReviewItem } from "./HostProfileReviews";
@@ -37,6 +38,7 @@ export default function HostProfileCard({
   reviews,
   action,
   town,
+  cindyVerified = false,
 }: {
   fullName: string;
   avatarUrl: string | null;
@@ -45,6 +47,8 @@ export default function HostProfileCard({
   action?: React.ReactNode;
   // The host's TOWN only (never a street). Passed in by the page that knows the chosen locality.
   town?: string | null;
+  // True only when an admin has explicitly Cindy-Verified this host.
+  cindyVerified?: boolean;
 }) {
   const ratingCount = customer?.rating_count ?? 0;
   const ratingAvg = customer?.rating_avg != null ? Number(customer.rating_avg) : null;
@@ -102,6 +106,7 @@ export default function HostProfileCard({
             </div>
           )}
           {town && <p className="text-sm text-gray-500 mt-1 truncate">{town}</p>}
+          {cindyVerified && <p className="mt-1.5"><CindyVerifiedBadge /></p>}
         </div>
       </div>
 

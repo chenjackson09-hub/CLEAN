@@ -15,10 +15,12 @@ import {
   btnDanger,
 } from '@/app/admin/adminTable'
 import { SearchInput } from '@/app/admin/SearchInput'
+import { CindyVerifyControl } from '@/app/admin/CindyVerifyControl'
+import { CindyVerifiedBadge } from '@/components/CindyVerifiedBadge'
 import type { CustomerResult } from '@/lib/types/customer'
 import type { UserStatus } from '@/lib/adminUserStatus'
 
-type CustomerWithNotes = CustomerResult & { adminNotes: string; userStatus: UserStatus; isPhantomBlocked: boolean }
+type CustomerWithNotes = CustomerResult & { adminNotes: string; userStatus: UserStatus; isPhantomBlocked: boolean; cindyVerifiedAt?: string | null }
 
 // Customers rendered as the shared admin "table of rows" (see app/admin/adminTable.tsx).
 // TEMPLATE must have the same track count as the `columns` header; last track = actions.
@@ -33,8 +35,9 @@ function CustomerRow({
   onSaveNotes: (id: string, notes: string) => void
   onDelete: (id: string) => void
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [notes, setNotes] = useState(customer.adminNotes)
+  const [verifiedAt, setVerifiedAt] = useState<string | null>(customer.cindyVerifiedAt ?? null)
 
   function handleDelete() {
     if (window.confirm(t('admin.shared.confirmDelete'))) onDelete(customer.id)
@@ -47,7 +50,7 @@ function CustomerRow({
   }[customer.userStatus]
 
   const cells = [
-    <NameCell key="n" name={customer.full_name} />,
+    <NameCell key="n" name={customer.full_name} subtitle={verifiedAt ? <CindyVerifiedBadge size="sm" lang={lang === 'he' ? 'he' : 'en'} /> : null} />,
     <StatusPill key="st" status={customer.userStatus} label={statusLabel} />,
     <ContactCell key="c" email={customer.email} phone={customer.phone} />,
     <TextCell key="l">{customer.address || t('admin.shared.none')}</TextCell>,
@@ -70,7 +73,12 @@ function CustomerRow({
 
   const expanded = customer.isPhantomBlocked
     ? undefined
-    : <NotesPanel id={customer.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(customer.id, notes)} />
+    : (
+        <div className="flex flex-col gap-4">
+          <CindyVerifyControl kind="customer" id={customer.id} verifiedAt={verifiedAt} onChange={setVerifiedAt} />
+          <NotesPanel id={customer.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(customer.id, notes)} />
+        </div>
+      )
 
   return <AdminRow template={TEMPLATE} cells={cells} actions={actions} expanded={expanded} />
 }

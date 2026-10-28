@@ -7,6 +7,7 @@ import type { Customer } from "@/types/database"
 import type { ReviewItem } from "@/components/HostProfileReviews"
 import { getLocality } from "@/lib/localities/resolve"
 import { fetchCustomerAreas } from "@/lib/localities/areaNames"
+import { fetchCindyVerified } from "@/lib/cindyVerified"
 
 export default async function ProfilePage({ searchParams }: { searchParams?: { edit?: string } }) {
   const supabase = await createClient()
@@ -35,6 +36,8 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
   // Town only (never a street) for the card cleaners see.
   const town = (await fetchCustomerAreas(createAdminClient(), [user.id])).get(user.id)?.en ?? null
 
+  const cindyVerified = (await fetchCindyVerified(createAdminClient(), "customers", [user.id])).has(user.id)
+
   const numOrEmpty = (n: number | null | undefined) => (n == null ? "" : String(n))
 
   const reviews: ReviewItem[] = (reviewRows ?? []).map((r) => ({
@@ -53,6 +56,7 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
         customer={customer}
         reviews={reviews}
         town={town}
+        cindyVerified={cindyVerified}
         startInEdit={searchParams?.edit === "1"}
         defaultValues={{
           full_name: profile?.full_name ?? "",

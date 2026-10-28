@@ -140,6 +140,13 @@ describe('CleanerProfile', () => {
       expect(screen.getByText('A regular family and/or jobs once in a while')).toBeInTheDocument()
     })
 
+    it('shows Cindy Verified only for a cleaner an admin has verified', () => {
+      const { rerender } = render(<CleanerProfile cleaner={rich} />)
+      expect(screen.queryByText('Cindy Verified')).not.toBeInTheDocument()
+      rerender(<CleanerProfile cleaner={{ ...rich, cindy_verified: true }} />)
+      expect(screen.getByText('Cindy Verified')).toBeInTheDocument()
+    })
+
     it('does not show the photo gallery while it is switched off', () => {
       render(<CleanerProfile cleaner={rich} gallery={['https://x/a.jpg']} />)
       expect(screen.queryByRole('img', { name: /photo/i })).not.toBeInTheDocument()

@@ -5,6 +5,7 @@ import { classifyUserStatus, type UserStatus } from '@/lib/adminUserStatus'
 import { unstable_noStore as noStore } from 'next/cache'
 import { LocalityFilterChip } from '../LocalityFilterChip'
 import { readLocalityFilter } from '@/lib/localityFilter'
+import { fetchCindyVerified } from '@/lib/cindyVerified'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ export default async function AdminCleanersPage({ searchParams }: { searchParams
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
+  const verified = await fetchCindyVerified(admin, 'cleaners')
   const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
   const authMap = new Map((authData.data?.users ?? []).map(u => [u.id, u]))
   // Latest application per cleaner (rows are already ordered newest-first).
@@ -64,7 +66,8 @@ export default async function AdminCleanersPage({ searchParams }: { searchParams
       adminNotes: '',
       userStatus,
       joinedAt: reviewedAt ? new Date(reviewedAt).toLocaleDateString() : null,
-    } satisfies CleanerResult & { adminNotes: string; userStatus: UserStatus; joinedAt: string | null }
+      cindyVerifiedAt: verified.get(c.id) ?? null,
+    } satisfies CleanerResult & { adminNotes: string; userStatus: UserStatus; joinedAt: string | null; cindyVerifiedAt: string | null }
   })
 
   return (

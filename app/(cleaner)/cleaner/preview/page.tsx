@@ -8,6 +8,8 @@ import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
 import { extractArea } from "@/lib/bookingArea";
+import { fetchCindyVerified } from "@/lib/cindyVerified";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // The cleaner's preview is the customer-facing profile, one-to-one. It reuses the
 // same <CleanerProfile> shell and only overrides what's preview-specific: no
@@ -79,6 +81,7 @@ export default async function PreviewPage() {
     has_car: cleaner?.has_car ?? null,
     gas_return_enabled: cleaner?.gas_return_enabled ?? false,
     gas_return_rate: cleaner?.gas_return_rate ?? null,
+    cindy_verified: (await fetchCindyVerified(createAdminClient(), 'cleaners', [user.id])).has(user.id),
   };
 
   return (

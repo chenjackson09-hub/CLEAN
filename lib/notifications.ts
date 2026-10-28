@@ -13,6 +13,7 @@ export type NotificationKind =
   | 'chat_message' // either: new chat message(s), grouped per conversation
   | 'choose_area' // either: pick your locality from the official list
   | 'area_opened' // either: an admin opened the area they live in
+  | 'cindy_verified' // either: an admin Cindy-verified this person (the badge now shows)
   | 'request_taken' // cleaner: the host got matched with someone else
   | 'request_cleaner_unavailable' // host: cleaner deleted the slot it relied on
   | 'availability_changed' // host: cleaner changed their hours — still relevant?

@@ -5,6 +5,7 @@ import { BookingRequestForm } from './BookingRequestForm'
 import { AvatarLightbox } from './AvatarLightbox'
 import { GalleryLightbox } from './GalleryLightbox'
 import { GALLERY_ENABLED } from '@/lib/features'
+import { CindyVerifiedBadge } from '@/components/CindyVerifiedBadge'
 import { lookingForLabels } from '@/lib/matchPreferences'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
@@ -73,7 +74,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   missingSummary?: string
   editHref?: string
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const router = useRouter()
   const initial = cleaner.full_name.charAt(0).toUpperCase()
   const age = ageFromBirthdate(cleaner.birthdate)
@@ -212,6 +213,9 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 <IconPin className="w-4 h-4 shrink-0" />
                 <span className="truncate">{cleaner.area}</span>
               </p>
+            )}
+            {cleaner.cindy_verified && (
+              <p className="mt-1.5"><CindyVerifiedBadge lang={lang === 'he' ? 'he' : 'en'} /></p>
             )}
             {rated && (
               <p className="mt-1 flex items-center gap-1.5">

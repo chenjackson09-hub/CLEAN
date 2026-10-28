@@ -5,6 +5,7 @@ import type { Profile, Customer } from "@/types/database";
 import BackLink from "./BackLink";
 import HostProfileCard from "@/components/HostProfileCard";
 import { fetchCustomerAreas } from "@/lib/localities/areaNames";
+import { fetchCindyVerified } from "@/lib/cindyVerified";
 import type { ReviewItem } from "@/components/HostProfileReviews";
 
 export default async function CustomerProfilePage({
@@ -61,6 +62,7 @@ export default async function CustomerProfilePage({
 
   // The host's town only — the card never shows a street.
   const town = (await fetchCustomerAreas(supabase, [id])).get(id)?.en ?? null;
+  const cindyVerified = (await fetchCindyVerified(supabase, "customers", [id])).has(id);
 
   const reviews: ReviewItem[] = (reviewRows ?? []).map((r) => ({
     id: r.id,
@@ -79,6 +81,7 @@ export default async function CustomerProfilePage({
         customer={customer}
         reviews={reviews}
         town={town}
+        cindyVerified={cindyVerified}
       />
     </div>
   );

@@ -20,6 +20,13 @@ describe('HostProfileCard privacy and honesty', () => {
     expect(screen.queryByText(/Herzl/)).not.toBeInTheDocument()
   })
 
+  it('shows Cindy Verified only when an admin has verified the host', () => {
+    const { rerender } = render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} town="Beit Hillel" />)
+    expect(screen.queryByText('Cindy Verified')).not.toBeInTheDocument()
+    rerender(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} town="Beit Hillel" cindyVerified />)
+    expect(screen.getByText('Cindy Verified')).toBeInTheDocument()
+  })
+
   it('does not hand out a "Verified" badge just because an admin approved the signup', () => {
     render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} town="Beit Hillel" />)
     expect(screen.queryByText(/Verified/i)).not.toBeInTheDocument()

@@ -5,6 +5,7 @@ import { classifyUserStatus, type UserStatus } from '@/lib/adminUserStatus'
 import { unstable_noStore as noStore } from 'next/cache'
 import { LocalityFilterChip } from '../LocalityFilterChip'
 import { readLocalityFilter } from '@/lib/localityFilter'
+import { fetchCindyVerified } from '@/lib/cindyVerified'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,7 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
     place ? Promise.resolve({ data: [] as { id: string; name: string | null; email: string | null; phone: string | null }[] }) : admin.from('blocked_users').select('id, name, email, phone').eq('role', 'customer').limit(500),
   ])
 
+  const verified = await fetchCindyVerified(admin, 'customers')
   const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
   const authMap = new Map((authData.data?.users ?? []).map(u => [u.id, u]))
 
@@ -54,7 +56,8 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
       adminNotes: '',
       userStatus,
       isPhantomBlocked: false,
-    } satisfies CustomerResult & { adminNotes: string; userStatus: UserStatus; isPhantomBlocked: boolean }
+      cindyVerifiedAt: verified.get(c.id) ?? null,
+    } satisfies CustomerResult & { adminNotes: string; userStatus: UserStatus; isPhantomBlocked: boolean; cindyVerifiedAt: string | null }
   })
 
   const blockedPhantoms = (blockedRows ?? []).map(b => ({
