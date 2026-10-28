@@ -12,7 +12,6 @@ export function computeProfileMissing(t: (k: TranslationKey) => string, cleaner:
   if (!cleaner?.address) missing.push(t("prof_address"));
   if (!cleaner?.cleaning_categories || cleaner.cleaning_categories.length === 0) missing.push(t("prof_service_types"));
   if (!cleaner?.match_preferences || cleaner.match_preferences.length === 0) missing.push(t("prof_match_preference"));
-  if (!cleaner?.work_areas || cleaner.work_areas.length === 0) missing.push(t("prof_work_areas"));
   return missing;
 }
 

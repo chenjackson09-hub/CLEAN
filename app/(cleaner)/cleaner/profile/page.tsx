@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import ProfileViewEdit from "./ProfileViewEdit";
 import GalleryManager from "./GalleryManager";
+import { GALLERY_ENABLED } from "@/lib/features";
 import type { Profile, Cleaner, CleanerGalleryPhoto } from "@/types/database";
 import { parsePoint } from "@/lib/geo";
 import { getLocality } from "@/lib/localities/resolve";
@@ -37,7 +38,7 @@ export default async function CleanerProfilePage({ searchParams }: { searchParam
       <p className="text-base text-gray-500 mb-6">{t(lang, "prof_subtitle")}</p>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
         <ProfileViewEdit profile={profile} cleaner={cleaner} center={parsePoint((cleaner as { location?: unknown } | null)?.location)} locality={locality} startInEdit={searchParams.edit === "1"} />
-        <GalleryManager photos={photos ?? []} />
+        {GALLERY_ENABLED && <GalleryManager photos={photos ?? []} />}
       </div>
     </div>
   );

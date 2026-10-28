@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import type { Profile, Customer } from "@/types/database";
 import BackLink from "./BackLink";
 import HostProfileCard from "@/components/HostProfileCard";
+import { fetchCustomerAreas } from "@/lib/localities/areaNames";
 import type { ReviewItem } from "@/components/HostProfileReviews";
 
 export default async function CustomerProfilePage({
@@ -58,6 +59,9 @@ export default async function CustomerProfilePage({
 
   if (!profile || !bookings || bookings.length === 0) notFound();
 
+  // The host's town only — the card never shows a street.
+  const town = (await fetchCustomerAreas(supabase, [id])).get(id)?.en ?? null;
+
   const reviews: ReviewItem[] = (reviewRows ?? []).map((r) => ({
     id: r.id,
     score: r.score,
@@ -74,6 +78,7 @@ export default async function CustomerProfilePage({
         avatarUrl={profile.avatar_url}
         customer={customer}
         reviews={reviews}
+        town={town}
       />
     </div>
   );

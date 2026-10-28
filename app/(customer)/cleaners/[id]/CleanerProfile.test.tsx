@@ -46,9 +46,10 @@ describe('CleanerProfile', () => {
 
   it('renders languages', () => {
     render(<CleanerProfile cleaner={cleaner} />)
-    // Each language renders as its own chip.
-    // Languages are one row in "Preferences & details".
-    expect(screen.getByText('EN, HE')).toBeInTheDocument()
+    // "At a glance": each language is its own chip next to a "Languages" label.
+    expect(screen.getByText('Languages')).toBeInTheDocument()
+    expect(screen.getByText('EN')).toBeInTheDocument()
+    expect(screen.getByText('HE')).toBeInTheDocument()
   })
 
   it('renders a Request Booking button when arriving from a dated search', () => {
@@ -123,8 +124,25 @@ describe('CleanerProfile', () => {
       expect(screen.getByRole('heading', { name: 'Cleaning services' })).toBeInTheDocument()
       expect(screen.getByText('Deep cleaning')).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: 'Preferences & details' })).toBeInTheDocument()
-      expect(screen.getByText('Travel reimbursement')).toBeInTheDocument()
+      expect(screen.getByText('Gas returns')).toBeInTheDocument()
       expect(screen.getByText(/₪1 \/ km/)).toBeInTheDocument()
+    })
+
+    it('shows experience and job length as tiles next to completed cleans, not as list rows', () => {
+      render(<CleanerProfile cleaner={{ ...rich, years_experience: 2 }} />)
+      expect(screen.getByText('2 years')).toBeInTheDocument()
+      expect(screen.getByText('Experience')).toBeInTheDocument()
+      expect(screen.getByText('Job duration')).toBeInTheDocument()
+    })
+
+    it('"either is fine" reads as one sentence', () => {
+      render(<CleanerProfile cleaner={{ ...rich, match_preferences: ['recurring', 'occasional'] }} />)
+      expect(screen.getByText('A regular family and/or jobs once in a while')).toBeInTheDocument()
+    })
+
+    it('does not show the photo gallery while it is switched off', () => {
+      render(<CleanerProfile cleaner={rich} gallery={['https://x/a.jpg']} />)
+      expect(screen.queryByRole('img', { name: /photo/i })).not.toBeInTheDocument()
     })
 
     it('a long bio is cut off and "Read more" opens it', async () => {

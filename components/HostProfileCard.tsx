@@ -36,14 +36,16 @@ export default function HostProfileCard({
   customer,
   reviews,
   action,
+  town,
 }: {
   fullName: string;
   avatarUrl: string | null;
   customer: Customer | null;
   reviews: ReviewItem[];
   action?: React.ReactNode;
+  // The host's TOWN only (never a street). Passed in by the page that knows the chosen locality.
+  town?: string | null;
 }) {
-  const isVerified = customer?.status === "approved";
   const ratingCount = customer?.rating_count ?? 0;
   const ratingAvg = customer?.rating_avg != null ? Number(customer.rating_avg) : null;
   const cleansCompleted = customer?.cleans_completed ?? 0;
@@ -51,7 +53,6 @@ export default function HostProfileCard({
   const dwellingLabel = customer?.dwelling_type
     ? DWELLING_LABELS[customer.dwelling_type] ?? customer.dwelling_type
     : null;
-  const homeTypeLine = [dwellingLabel, customer?.address].filter(Boolean).join(" · ");
 
   // Home stats as label/value tiles (same format as the cleaner profile's stats
   // grid). Merges the older num_rooms/floor fields with the newer
@@ -100,8 +101,7 @@ export default function HostProfileCard({
               <span className="text-gray-400">· {ratingCount === 1 ? "1 clean" : `${ratingCount} cleans`}</span>
             </div>
           )}
-          {customer?.address && <p className="text-sm text-gray-500 mt-1 truncate">{customer.address}</p>}
-          {isVerified && <p className="text-xs font-medium text-blue-600 mt-1">✓ Verified host</p>}
+          {town && <p className="text-sm text-gray-500 mt-1 truncate">{town}</p>}
         </div>
       </div>
 

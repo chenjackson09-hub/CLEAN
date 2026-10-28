@@ -3,6 +3,7 @@
 import { useLang } from "@/context/LangContext";
 import { StarRatingDisplay } from "@/components/StarRating";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
+import { lookingForLabels } from "@/lib/matchPreferences";
 import { extractArea } from "@/lib/bookingArea";
 import dynamic from "next/dynamic";
 import type { Profile, Cleaner } from "@/types/database";
@@ -30,6 +31,12 @@ function ageFromBirthdate(birthdate: string | null): number | null {
 export default function ProfileView({ profile, cleaner, onEdit, center = null }: Props) {
   const { t } = useLang();
   const age = ageFromBirthdate(cleaner?.birthdate ?? null);
+  const lookingFor = lookingForLabels(cleaner?.match_preferences, cleaner?.match_preference_other, {
+    recurring: t("prof_match_recurring"),
+    occasional: t("prof_match_occasional"),
+    either: t("prof_match_either"),
+    other: t("prof_match_other"),
+  });
   const missing = computeProfileMissing(t, cleaner, profile);
   const pct = profileCompletionPct(missing.length);
   const area = cleaner?.address ? extractArea(cleaner.address) ?? cleaner.address : null;
@@ -174,14 +181,10 @@ export default function ProfileView({ profile, cleaner, onEdit, center = null }:
 
       <p className="text-xs text-gray-400 mb-1.5">{t("prof_looking_for_label")}</p>
       <div className="flex flex-wrap gap-1.5">
-        {cleaner?.match_preferences && cleaner.match_preferences.length > 0 ? (
-          cleaner.match_preferences.map((pref) => (
-            <span key={pref} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
-              {pref === "other"
-                ? cleaner.match_preference_other || t("prof_match_other")
-                : pref === "recurring"
-                  ? t("prof_match_recurring")
-                  : t("prof_match_occasional")}
+        {lookingFor.length > 0 ? (
+          lookingFor.map((label) => (
+            <span key={label} className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
+              {label}
             </span>
           ))
         ) : (

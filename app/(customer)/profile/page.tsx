@@ -6,6 +6,7 @@ import { updateCustomerProfile } from '../actions'
 import type { Customer } from "@/types/database"
 import type { ReviewItem } from "@/components/HostProfileReviews"
 import { getLocality } from "@/lib/localities/resolve"
+import { fetchCustomerAreas } from "@/lib/localities/areaNames"
 
 export default async function ProfilePage({ searchParams }: { searchParams?: { edit?: string } }) {
   const supabase = await createClient()
@@ -31,6 +32,9 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
   // The host's picked locality (null until they choose one — they're asked to).
   const locality = await getLocality(createAdminClient(), (customer as { locality_id?: string | null } | null)?.locality_id)
 
+  // Town only (never a street) for the card cleaners see.
+  const town = (await fetchCustomerAreas(createAdminClient(), [user.id])).get(user.id)?.en ?? null
+
   const numOrEmpty = (n: number | null | undefined) => (n == null ? "" : String(n))
 
   const reviews: ReviewItem[] = (reviewRows ?? []).map((r) => ({
@@ -48,6 +52,7 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
         avatarUrl={profile?.avatar_url ?? null}
         customer={customer}
         reviews={reviews}
+        town={town}
         startInEdit={searchParams?.edit === "1"}
         defaultValues={{
           full_name: profile?.full_name ?? "",

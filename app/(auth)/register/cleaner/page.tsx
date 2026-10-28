@@ -9,7 +9,6 @@ import type { PickedLocality } from "@/lib/localities/address";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
-import { WORK_AREAS } from "@/lib/workAreas";
 import { signOutToLogin } from "../../actions";
 
 type FreqType = "num" | "monthly" | "other";
@@ -71,7 +70,7 @@ const MATCH_OPTS: { value: MatchType; key: string }[] = [
 ];
 
 const DEFAULTED_KEYS = ["freq", "rate", "duration", "maxDuration", "gasrate", "radius"];
-const REQUIRED_KEYS = ["name", "birth", "loc", "services", "match", "areas"];
+const REQUIRED_KEYS = ["name", "birth", "loc", "services", "match"];
 
 const initialAnswers: Answers = {
   name: "",
@@ -154,7 +153,6 @@ export default function CleanerRegisterPage() {
     { key: "car" },
     ...(answers.car === "yes" ? [{ key: "gas" }] : []),
     ...(answers.car === "yes" && answers.gas === "yes" ? [{ key: "gasrate" }] : []),
-    { key: "areas" },
     { key: "bio" },
   ];
 
@@ -343,7 +341,6 @@ export default function CleanerRegisterPage() {
       gas_return_rate: answers.car === "yes" && answers.gas === "yes" ? Number(answers.gasAmt || "1") : null,
       match_preferences: answers.matchTypes,
       match_preference_other: answers.matchTypes.includes("other") ? answers.matchOtherText || null : null,
-      work_areas: answers.areas,
     });
     if (cleanerErr) {
       setError(cleanerErr.message);
@@ -838,27 +835,6 @@ export default function CleanerRegisterPage() {
                       className="w-24 border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-500">{t("auth.registerCleaner.perKm")}</span>
-                  </div>
-                </>
-              )}
-
-              {current.key === "areas" && (
-                <>
-                  <p className="text-lg font-medium text-gray-900 mb-1">{t("auth.registerCleaner.qAreas")}</p>
-                  <p className="text-sm text-gray-500 mb-4">{t("auth.registerCleaner.areasSub")}</p>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {WORK_AREAS.map((area) => (
-                      <button
-                        key={area}
-                        type="button"
-                        onClick={() => toggleArrayValue("areas", area)}
-                        className={`px-3 py-1.5 rounded-full border text-sm ${
-                          answers.areas.includes(area) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                        }`}
-                      >
-                        {area}
-                      </button>
-                    ))}
                   </div>
                 </>
               )}

@@ -6,7 +6,6 @@ import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
-import { WORK_AREAS } from "@/lib/workAreas";
 import dynamic from "next/dynamic";
 import LocalityPicker from "@/components/LocalityPicker";
 import type { PickedLocality } from "@/lib/localities/address";
@@ -48,7 +47,6 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
   const [matchPrefs, setMatchPrefs] = useState<string[]>(cleaner?.match_preferences ?? []);
   const [servicesOtherPicked, setServicesOtherPicked] = useState(cleaner?.cleaning_categories?.includes("Other") ?? false);
   const [cleaningCategories, setCleaningCategories] = useState<string[]>(cleaner?.cleaning_categories ?? []);
-  const [workAreas, setWorkAreas] = useState<string[]>(cleaner?.work_areas ?? []);
   const [freqVal, setFreqVal] = useState<number | null>(cleaner?.weekly_clean_target ?? null);
 
   async function handleSubmit(formData: FormData) {
@@ -345,25 +343,6 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         )}
-      </div>
-
-      <div>
-        <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_work_areas")}</span>
-        <div className="flex flex-wrap gap-2">
-          {WORK_AREAS.map((area) => (
-            <label key={area} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${workAreas.includes(area) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
-              <input
-                type="checkbox"
-                name="work_areas"
-                value={area}
-                checked={workAreas.includes(area)}
-                onChange={() => setWorkAreas((prev) => (prev.includes(area) ? prev.filter((x) => x !== area) : [...prev, area]))}
-                className="sr-only"
-              />
-              {area}
-            </label>
-          ))}
-        </div>
       </div>
 
       <div className="rounded-2xl bg-gray-50 p-4 space-y-4">

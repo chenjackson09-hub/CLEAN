@@ -123,7 +123,6 @@ export async function updateCleanerProfile(formData: FormData) {
   );
   const matchPreferenceOther = matchPreferences.includes("other") ? (formData.get("match_preference_other") as string) || null : null;
 
-  const workAreas = formData.getAll("work_areas") as string[];
 
   const avatarFile = formData.get("avatar") as File;
 
@@ -176,7 +175,6 @@ export async function updateCleanerProfile(formData: FormData) {
     gas_return_rate: gasReturnRate,
     match_preferences: matchPreferences,
     match_preference_other: matchPreferenceOther,
-    work_areas: workAreas,
   };
   if (geocodeResult) {
     cleanerUpdate.location = `POINT(${geocodeResult.lng} ${geocodeResult.lat})`;

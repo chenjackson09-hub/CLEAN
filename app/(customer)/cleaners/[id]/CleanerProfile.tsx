@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { BookingRequestForm } from './BookingRequestForm'
 import { AvatarLightbox } from './AvatarLightbox'
 import { GalleryLightbox } from './GalleryLightbox'
+import { GALLERY_ENABLED } from '@/lib/features'
+import { lookingForLabels } from '@/lib/matchPreferences'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
@@ -117,13 +119,12 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           ? `${t('cleanerProfile.upTo')} ${cleaner.max_hours} ${t('filterBar.hoursShort')}`
           : null
 
-  const lookingFor = (cleaner.match_preferences ?? []).map(pref =>
-    pref === 'other'
-      ? cleaner.match_preference_other || t('cleanerProfile.matchOther')
-      : pref === 'recurring'
-        ? t('cleanerProfile.matchRecurring')
-        : t('cleanerProfile.matchOccasional'),
-  )
+  const lookingFor = lookingForLabels(cleaner.match_preferences, cleaner.match_preference_other, {
+    recurring: t('cleanerProfile.matchRecurring'),
+    occasional: t('cleanerProfile.matchOccasional'),
+    either: t('cleanerProfile.matchEither'),
+    other: t('cleanerProfile.matchOther'),
+  })
 
   // The rows of "Preferences & details" — only those the cleaner has filled in.
   const details: { key: string; icon: React.ReactNode; label: string; value: string }[] = []
@@ -134,13 +135,11 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
       value: `₪${Number(cleaner.gas_return_rate ?? 1).toFixed(2).replace(/\.00$/, '')} / ${t('cleanerProfile.km')}`,
     })
   }
-  if (cleaner.languages.length > 0) details.push({ key: 'lang', icon: <IconGlobe />, label: t('cleanerProfile.languages'), value: cleaner.languages.join(', ') })
-  if (cleaner.years_experience != null && cleaner.years_experience > 0) {
-    details.push({
-      key: 'exp', icon: <IconBriefcase />, label: t('cleanerProfile.experience'),
-      value: `${cleaner.years_experience} ${cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}`,
-    })
-  }
+  // Experience and languages live in the "at a glance" block above, not in this list.
+  const experience =
+    cleaner.years_experience != null && cleaner.years_experience > 0
+      ? `${cleaner.years_experience} ${cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}`
+      : null
   if (cleaner.distance_km > 0) {
     details.push({ key: 'dist', icon: <IconPin />, label: t('cleanerProfile.distance'), value: `${cleaner.distance_km.toFixed(1)} ${t('cleanerProfile.km')}` })
   }
@@ -232,18 +231,38 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
           </div>
         </div>
 
-        {/* Two stat tiles. */}
-        <div className={`grid gap-3 ${jobDuration ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          <div className="rounded-2xl bg-gray-50 px-3 py-4 text-center">
-            <IconCheckCircle className="w-6 h-6 mx-auto text-emerald-700" />
-            <p className="mt-2 text-2xl font-bold text-gray-900">{cleaner.cleans_completed ?? 0}</p>
-            <p className="text-sm text-gray-500">{t('cleanerProfile.completedCleans')}</p>
+        {/* At a glance: one row of equal tiles (cleans, experience, job length), then languages. */}
+        <div className="space-y-3">
+          <div className={`grid gap-3 ${[true, experience, jobDuration].filter(Boolean).length === 3 ? 'grid-cols-3' : [true, experience, jobDuration].filter(Boolean).length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className="rounded-2xl bg-gray-50 px-2 py-4 text-center">
+              <IconCheckCircle className="w-6 h-6 mx-auto text-emerald-700" />
+              <p className="mt-2 text-xl font-bold text-gray-900">{cleaner.cleans_completed ?? 0}</p>
+              <p className="text-sm text-gray-500">{t('cleanerProfile.completedCleans')}</p>
+            </div>
+            {experience && (
+              <div className="rounded-2xl bg-gray-50 px-2 py-4 text-center">
+                <IconBriefcase className="w-6 h-6 mx-auto text-gray-500" />
+                <p className="mt-2 text-xl font-bold text-gray-900">{experience}</p>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.experience')}</p>
+              </div>
+            )}
+            {jobDuration && (
+              <div className="rounded-2xl bg-gray-50 px-2 py-4 text-center">
+                <IconClock className="w-6 h-6 mx-auto text-gray-500" />
+                <p className="mt-2 text-xl font-bold text-gray-900">{jobDuration}</p>
+                <p className="text-sm text-gray-500">{t('cleanerProfile.jobDuration')}</p>
+              </div>
+            )}
           </div>
-          {jobDuration && (
-            <div className="rounded-2xl bg-gray-50 px-3 py-4 text-center">
-              <IconClock className="w-6 h-6 mx-auto text-gray-500" />
-              <p className="mt-2 text-2xl font-bold text-gray-900">{jobDuration}</p>
-              <p className="text-sm text-gray-500">{t('cleanerProfile.jobDuration')}</p>
+          {cleaner.languages.length > 0 && (
+            <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+              <IconGlobe className="w-5 h-5 text-gray-500 shrink-0" />
+              <span className="text-sm text-gray-500 shrink-0">{t('cleanerProfile.languages')}</span>
+              <span className="flex flex-wrap gap-1.5 ms-auto justify-end">
+                {cleaner.languages.map(l => (
+                  <span key={l} className="px-3 py-1 rounded-full bg-white text-gray-800 text-sm">{l}</span>
+                ))}
+              </span>
             </div>
           )}
         </div>
@@ -328,7 +347,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
         )}
 
         {/* Gallery — tap a thumbnail to zoom. Renders nothing when empty. */}
-        <GalleryLightbox photos={gallery} name={cleaner.full_name} />
+        {GALLERY_ENABLED && <GalleryLightbox photos={gallery} name={cleaner.full_name} />}
 
       </div>
     </div>

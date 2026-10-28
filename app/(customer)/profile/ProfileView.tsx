@@ -15,12 +15,14 @@ export default function ProfileView({
   avatarUrl,
   customer,
   reviews,
+  town,
   onEdit,
 }: {
   fullName: string
   avatarUrl: string | null
   customer: Customer | null
   reviews: ReviewItem[]
+  town?: string | null
   onEdit: () => void
 }) {
   const { t } = useLanguage()
@@ -30,6 +32,7 @@ export default function ProfileView({
       avatarUrl={avatarUrl}
       customer={customer}
       reviews={reviews}
+      town={town}
       action={
         <button
           type="button"
