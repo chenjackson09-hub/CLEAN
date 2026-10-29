@@ -32,12 +32,14 @@ export async function loadOnboarding(): Promise<OnboardingState> {
   if (!user) return { error: 'Not signed in' }
   const supabase = await createClient()
 
-  const { data: profile } = await supabase.from('profiles').select('role, full_name, phone, avatar_url').eq('id', user.id).maybeSingle<{ role: string; full_name: string | null; phone: string | null; avatar_url: string | null }>()
+  // Independent reads, fetched together. `done` is isolated: if the column isn't there
+  // (migration not applied) the sign-up is treated as finished.
+  const [{ data: profile }, done] = await Promise.all([
+    supabase.from('profiles').select('role, full_name, phone, avatar_url').eq('id', user.id).maybeSingle<{ role: string; full_name: string | null; phone: string | null; avatar_url: string | null }>(),
+    supabase.from('profiles').select('onboarding_completed_at').eq('id', user.id).maybeSingle<{ onboarding_completed_at: string | null }>(),
+  ])
   if (!profile || (profile.role !== 'cleaner' && profile.role !== 'customer')) return { error: 'This account does not have a sign-up to finish' }
   const role = profile.role as OnboardingRole
-
-  // Isolated: if the column isn't there (migration not applied) treat the sign-up as finished.
-  const done = await supabase.from('profiles').select('onboarding_completed_at').eq('id', user.id).maybeSingle<{ onboarding_completed_at: string | null }>()
   const completed = !!done.error || !!done.data?.onboarding_completed_at
 
   const table = role === 'cleaner' ? 'cleaners' : 'customers'
@@ -59,57 +61,64 @@ export async function saveOnboarding(input: { role: OnboardingRole; draft: unkno
   if (input?.role !== 'cleaner' && input?.role !== 'customer') return { error: 'Something went wrong. Please try again.' }
   const supabase = await createClient()
 
-  // You can only save the sign-up of the role your account has.
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle<{ role: string }>()
-  if (!profile || profile.role !== input.role) return { error: 'This sign-up belongs to a different account type.' }
+  // The role check and the place lookup do not depend on each other - run them together.
+  // (Everything on this path is a network round trip, and the wizard waits for it.)
+  const submit = input.submit === true
+  const admin = createAdminClient()
+  const opts = { submit, userId: user.id, supabaseUrl: SUPABASE_URL }
+  const roleCheck = supabase.from('profiles').select('role').eq('id', user.id).maybeSingle<{ role: string }>()
 
   try {
-    const submit = input.submit === true
-    const admin = createAdminClient()
-    const opts = { submit, userId: user.id, supabaseUrl: SUPABASE_URL }
+    // Checked first, before anything is looked up or written.
+    const draft = input.role === 'cleaner' ? validateCleanerDraft(input.draft, opts) : validateCustomerDraft(input.draft, opts)
+    const typed = input.role === 'cleaner' ? (draft as CleanerDraft).loc : (draft as CustomerDraft).area
+    const placeLookup = resolvePlace(admin, { localityId: draft.localityId, street: draft.localityId ? '' : typed, geocode: submit })
+    const [{ data: profile }, place] = await Promise.all([roleCheck, placeLookup])
 
-    if (input.role === 'cleaner') {
-      const draft = validateCleanerDraft(input.draft, opts)
-      const place = await resolvePlace(admin, { localityId: draft.localityId, street: draft.localityId ? '' : draft.loc })
-      const rows = cleanerDraftToRows(draft, place)
-      const p = await supabase.from('profiles').update(rows.profile).eq('id', user.id)
-      if (p.error) throw p.error
-      const c = await supabase.from('cleaners').upsert({ id: user.id, ...rows.cleaner })
-      if (c.error) throw c.error
-      if (draft.experience) {
-        // Needs migration 0043. Its own best-effort write: a missing column never fails the sign-up.
-        const exp = await supabase.from('cleaners').update(rows.extras).eq('id', user.id)
-        if (exp.error) console.error('[onboarding] experience range not saved', exp.error.message)
-      }
-      if (place.localityId) {
-        // Its own best-effort write, as before: a missing column never fails the sign-up.
-        const link = await supabase.from('cleaners').update({ locality_id: place.localityId }).eq('id', user.id)
-        if (link.error) console.error('[onboarding] locality link not saved', link.error.message)
-      }
-    } else {
-      const draft = validateCustomerDraft(input.draft, opts)
-      const place = await resolvePlace(admin, { localityId: draft.localityId, street: draft.localityId ? '' : draft.area })
-      const rows = customerDraftToRows(draft, place)
-      const p = await supabase.from('profiles').update(rows.profile).eq('id', user.id)
-      if (p.error) throw p.error
-      const c = await supabase.from('customers').upsert({ id: user.id, ...rows.customer })
-      if (c.error) throw c.error
-      if (place.localityId) {
-        const link = await supabase.from('customers').update({ locality_id: place.localityId }).eq('id', user.id)
-        if (link.error) console.error('[onboarding] locality link not saved', link.error.message)
-      }
-    }
+    // You can only save the sign-up of the role your account has.
+    if (!profile || profile.role !== input.role) return { error: 'This sign-up belongs to a different account type.' }
 
     // Where they are now, so the next sign-in resumes here (best-effort).
     const step = Number.isInteger(input.step) ? Math.min(Math.max(input.step, 0), MAX_STEP) : 0
-    const meta = await supabase.auth.updateUser({ data: { onboarding_step: submit ? 0 : step } })
-    if (meta.error) console.error('[onboarding] step not remembered', meta.error.message)
+    const table = input.role === 'cleaner' ? 'cleaners' : 'customers'
+    let row: Record<string, unknown>
+    let profileRow: Record<string, unknown>
+    let extras: Record<string, unknown> | null = null
+    if (input.role === 'cleaner') {
+      const rows = cleanerDraftToRows(draft as CleanerDraft, place)
+      row = rows.cleaner
+      profileRow = rows.profile
+      if ((draft as CleanerDraft).experience) extras = rows.extras
+    } else {
+      const rows = customerDraftToRows(draft as CustomerDraft, place)
+      row = rows.customer
+      profileRow = rows.profile
+    }
 
+    // The two main writes touch different tables: together.
+    const [p, c] = await Promise.all([
+      supabase.from('profiles').update(profileRow).eq('id', user.id),
+      supabase.from(table).upsert({ id: user.id, ...row }),
+    ])
+    if (p.error) throw p.error
+    if (c.error) throw c.error
+
+    // Everything left is best-effort (a missing column or a failed step note never fails the
+    // sign-up), so it all runs at once instead of one round trip after another.
+    const tail: PromiseLike<unknown>[] = []
+    if (extras) {
+      // Needs migration 0043.
+      tail.push(supabase.from('cleaners').update(extras).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] experience range not saved', r.error.message) }))
+    }
+    if (place.localityId) {
+      tail.push(supabase.from(table).update({ locality_id: place.localityId }).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] locality link not saved', r.error.message) }))
+    }
+    tail.push(supabase.auth.updateUser({ data: { onboarding_step: submit ? 0 : step } }).then((r) => { if (r.error) console.error('[onboarding] step not remembered', r.error.message) }))
     if (submit) {
       // The finish line: from now on admin sees this sign-up and can approve it.
-      const done = await supabase.from('profiles').update({ onboarding_completed_at: new Date().toISOString() }).eq('id', user.id)
-      if (done.error) console.error('[onboarding] could not mark the sign-up finished', done.error.message)
+      tail.push(supabase.from('profiles').update({ onboarding_completed_at: new Date().toISOString() }).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] could not mark the sign-up finished', r.error.message) }))
     }
+    await Promise.all(tail)
     return { ok: true }
   } catch (e) {
     if (e instanceof DraftError) return { error: e.message }

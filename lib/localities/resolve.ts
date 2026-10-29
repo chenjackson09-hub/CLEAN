@@ -24,19 +24,21 @@ export async function getLocality(admin: SupabaseClient, id: string | null | und
 // ignored rather than trusted.
 export async function resolvePlace(
   admin: SupabaseClient,
-  input: { localityId?: string | null; street: string },
+  // `geocode: false` skips the (slow, network) street lookup: used for the mid-wizard saves,
+  // where the typed text is kept and only the final submit pays for finding coordinates.
+  input: { localityId?: string | null; street: string; geocode?: boolean },
 ): Promise<{ address: string; coords: Coordinates | null; localityId: string | null; locationFound: boolean }> {
   const street = input.street?.trim() ?? ''
   const locality = await getLocality(admin, input.localityId)
 
   if (!locality) {
-    const coords = street ? await geocodeAddress(street) : null
+    const coords = street && input.geocode !== false ? await geocodeAddress(street) : null
     return { address: street, coords, localityId: null, locationFound: !!coords }
   }
 
   const address = composeAddress(street, locality)
   const hasStreet = street.length > 0 && address !== locality.name_he
-  const streetGeocode = hasStreet ? await geocodeAddress(address) : null
+  const streetGeocode = hasStreet && input.geocode !== false ? await geocodeAddress(address) : null
   const { coords } = chooseCoordinates(locality, streetGeocode)
   return { address, coords, localityId: locality.id, locationFound: !!coords }
 }

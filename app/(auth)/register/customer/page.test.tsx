@@ -134,15 +134,15 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     expect(await screen.findByText('Your profile')).toBeInTheDocument()
   })
 
-  it('stays on the screen and shows the problem when saving fails', async () => {
+  it('moves on at once and shows the problem if a background save fails', async () => {
     mockSave.mockResolvedValue({ error: 'Could not save. Please try again.' })
     const user = userEvent.setup()
     render(<CustomerOnboardingPage />)
     await user.type(await screen.findByLabelText(/first name/i), 'Jane')
     await user.type(screen.getByLabelText(/last name/i), 'Doe')
     await user.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(await screen.findByText('Step 2 of 5')).toBeInTheDocument()
     expect(await screen.findByText('Could not save. Please try again.')).toBeInTheDocument()
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
   })
 
   it('never keeps a password in the browser', async () => {

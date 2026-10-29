@@ -226,7 +226,38 @@ describe('Cleaner wizard (9 screens, every Continue saved)', () => {
     expect(mockPush).toHaveBeenCalledWith('/cleaner/availability?welcome=1')
   })
 
-  it('stays on the screen and shows the problem when saving fails', async () => {
+  it('moves on at once and saves in the background (it never waits for the server)', async () => {
+    let finish!: (v: unknown) => void
+    mockSave.mockReturnValueOnce(new Promise((r) => { finish = r }))
+    mockLoad.mockResolvedValue(fresh({ step: 0, draft: FILLED, locality: LOCALITY }))
+    const user = userEvent.setup()
+    render(<CleanerOnboardingPage />)
+    await screen.findByLabelText('Full name')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(await screen.findByText('Step 2 of 9')).toBeInTheDocument() // save still pending
+    expect(mockSave).toHaveBeenCalledTimes(1)
+    finish({ ok: true })
+  })
+
+  it('the final submit waits for the earlier saves, and saves are sent in order', async () => {
+    const order: string[] = []
+    let finish!: (v: unknown) => void
+    mockSave.mockImplementationOnce(() => new Promise((r) => { finish = (v) => { order.push('first done'); r(v) } }))
+    mockSave.mockImplementation(async (arg: { submit: boolean }) => { order.push(arg.submit ? 'submit' : 'save'); return { ok: true } })
+    mockLoad.mockResolvedValue(fresh({ step: 7, draft: FILLED, locality: LOCALITY }))
+    const user = userEvent.setup()
+    render(<CleanerOnboardingPage />)
+    await screen.findByText('Tell hosts about yourself')
+    await user.click(screen.getByRole('button', { name: 'Continue' })) // -> preview, first save still pending
+    await screen.findByText('Your profile')
+    await user.click(screen.getByRole('button', { name: 'Submit for review' }))
+    await Promise.resolve()
+    expect(order).toEqual([]) // submit is waiting behind the first save
+    finish({ ok: true })
+    await waitFor(() => expect(order).toEqual(['first done', 'submit']))
+  })
+
+  it('shows the problem when a background save fails, without blocking the person', async () => {
     mockLoad.mockResolvedValue(fresh({ step: 0, draft: FILLED, locality: LOCALITY }))
     mockSave.mockResolvedValue({ error: 'Could not save. Please try again.' })
     const user = userEvent.setup()
@@ -234,7 +265,7 @@ describe('Cleaner wizard (9 screens, every Continue saved)', () => {
     await screen.findByLabelText('Full name')
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     expect(await screen.findByText('Could not save. Please try again.')).toBeInTheDocument()
-    expect(screen.getByText('Step 1 of 9')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 9')).toBeInTheDocument()
   })
 
   it('"continue later" saves and signs out', async () => {

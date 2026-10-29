@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import LocalityPicker from "@/components/LocalityPicker";
 import WizardShell from "@/components/onboarding/WizardShell";
+import { useSaveQueue } from "@/components/onboarding/useSaveQueue";
 import PhotoPicker from "@/components/onboarding/PhotoPicker";
 import PreviewSection from "@/components/onboarding/PreviewSection";
 import GuidedAbout from "@/components/onboarding/GuidedAbout";
@@ -122,7 +123,7 @@ export default function CleanerRegisterPage() {
   const [returnToPreview, setReturnToPreview] = useState(false);
   const [phase, setPhase] = useState<"flow" | "confirm" | "congrats">("flow");
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { enqueue, flush } = useSaveQueue();
   // False until the saved answers have been loaded (so the screen never flashes empty).
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,19 +179,17 @@ export default function CleanerRegisterPage() {
 
   // Every Continue saves that screen first, so nothing is lost if the person leaves.
   async function goNext() {
-    if (!isStepValid(current) || saving) return;
+    if (!isStepValid(current)) return;
     if (isLast) {
       void handleSubmit();
       return;
     }
+    // Move on straight away; the screen is saved in the background (a failure shows its
+    // message here, and the next save - or the final submit - sends everything again).
     const target = returnToPreview ? PREVIEW : step + 1;
-    setSaving(true);
-    const ok = await persist(false, target);
-    setSaving(false);
-    if (ok) {
-      setStep(target);
-      setReturnToPreview(false);
-    }
+    setStep(target);
+    setReturnToPreview(false);
+    void enqueue(() => persist(false, target));
   }
   function goBack() {
     if (returnToPreview) {
@@ -236,6 +235,7 @@ export default function CleanerRegisterPage() {
 
   async function handleSubmit() {
     setLoading(true);
+    await flush(); // earlier screens finish saving first, so the final save is the last word
     const ok = await persist(true);
     setLoading(false);
     if (ok) setPhase("congrats");
@@ -243,6 +243,7 @@ export default function CleanerRegisterPage() {
 
   async function handleContinueLater() {
     setLoading(true);
+    await flush();
     const ok = await persist(false);
     // Their answers are saved — sign them out and send them to /login. Signing back in
     // resumes this wizard where they stopped.
@@ -297,7 +298,7 @@ export default function CleanerRegisterPage() {
     );
   }
 
-  const nextLabel = saving ? tr("saving") : isLast ? tr("submit") : returnToPreview ? tr("backToPreview") : tr("next");
+  const nextLabel = isLast ? tr("submit") : returnToPreview ? tr("backToPreview") : tr("next");
   const workChoice = workChoiceOf(answers.matchTypes);
   const keepOther = answers.matchTypes.filter((m) => m === "other");
   const setWork = (c: WorkChoice) =>
@@ -329,7 +330,7 @@ export default function CleanerRegisterPage() {
         closeLabel={tr("close")}
         error={error}
         back={{ label: tr("back"), onClick: goBack, hidden: step === 0 && !returnToPreview }}
-        next={{ label: nextLabel, onClick: goNext, disabled: !isStepValid(current) || loading || saving }}
+        next={{ label: nextLabel, onClick: goNext, disabled: !isStepValid(current) || loading }}
         skip={OPTIONAL.includes(current) && !returnToPreview ? { label: tr("skip"), onClick: goNext } : undefined}
       >
         {current === "you" && (
