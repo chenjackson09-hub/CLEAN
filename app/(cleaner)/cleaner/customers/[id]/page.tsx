@@ -39,11 +39,11 @@ export default async function CustomerProfilePage({
       .single<Customer>(),
     supabase
       .from("bookings")
-      .select("id")
+      .select("id, status")
       .eq("cleaner_id", user.id)
       .eq("customer_id", id)
-      .limit(1)
-      .returns<{ id: string }[]>(),
+      .limit(50)
+      .returns<{ id: string; status: string }[]>(),
     // "Reviews from cleaners" — every cleaner's rating of this host that
     // includes a free-text review (see migration 0028), not just this
     // cleaner's own. Uses the admin client since RLS ("Participants read
@@ -59,6 +59,12 @@ export default async function CustomerProfilePage({
   ]);
 
   if (!profile || !bookings || bookings.length === 0) notFound();
+
+  // The home notes are a private booking detail: they open up only once this cleaner has a
+  // confirmed (accepted or completed) booking with the host. Until then the text is removed
+  // here, on the server, so it never reaches the cleaner's browser at all.
+  const confirmed = bookings.some((b) => b.status === "accepted" || b.status === "completed");
+  const visibleCustomer = confirmed || !customer ? customer : { ...customer, home_instructions: null };
 
   // The host's town only — the card never shows a street.
   const town = (await fetchCustomerAreas(supabase, [id])).get(id)?.en ?? null;
@@ -78,7 +84,8 @@ export default async function CustomerProfilePage({
       <HostProfileCard
         fullName={profile.full_name ?? "Customer"}
         avatarUrl={profile.avatar_url}
-        customer={customer}
+        customer={visibleCustomer}
+        homeNotesLocked={!confirmed}
         reviews={reviews}
         town={town}
         cindyVerified={cindyVerified}

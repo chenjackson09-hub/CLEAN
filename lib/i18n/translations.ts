@@ -174,6 +174,8 @@ const translations = {
       schedule: 'Schedule a clean',
     },
     cleanerProfile: {
+      reviews: 'Reviews from hosts',
+      seeAllReviews: 'See all reviews',
       experience: 'Experience',
       distance: 'Distance',
       rate: 'Rate',
@@ -432,6 +434,9 @@ const translations = {
         saved: 'Your rating',
         saving: 'Saving…',
         error: 'Could not save your rating. Please try again.',
+        reviewPlaceholder: 'Write a short review of this cleaner for other hosts (optional)',
+        reviewSave: 'Save review',
+        reviewSaved: 'Review saved',
       },
     },
     admin: {
@@ -1230,6 +1235,8 @@ const translations = {
       schedule: 'קביעת ניקיון',
     },
     cleanerProfile: {
+      reviews: 'חוות דעת ממארחים',
+      seeAllReviews: 'לכל חוות הדעת',
       experience: 'ניסיון',
       distance: 'מרחק',
       rate: 'תעריף',
@@ -1487,6 +1494,9 @@ const translations = {
         saved: 'הדירוג שלכם',
         saving: 'שומר…',
         error: 'לא ניתן היה לשמור את הדירוג. נסו שוב.',
+        reviewPlaceholder: 'כתבו חוות דעת קצרה על המנקה עבור מארחים אחרים (לא חובה)',
+        reviewSave: 'שמירת חוות דעת',
+        reviewSaved: 'חוות הדעת נשמרה',
       },
     },
     admin: {

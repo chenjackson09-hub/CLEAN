@@ -1,3 +1,4 @@
+import { fetchCleanerReviews } from "@/lib/cleanerReviews";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -93,6 +94,7 @@ export default async function PreviewPage() {
         weeklyAvailability={weeklyAvailability ?? []}
         dateAvailability={dateAvailability ?? []}
         bookingDisabled
+        reviews={await fetchCleanerReviews(createAdminClient(), user.id)}
         completionPct={completionPct}
         missingSummary={missingSummary}
         editHref="/cleaner/profile?edit=1"

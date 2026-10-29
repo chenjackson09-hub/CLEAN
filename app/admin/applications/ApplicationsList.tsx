@@ -147,18 +147,7 @@ function ApplicationRow({
         </div>
       )}
 
-      <NotesPanel id={app.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(app, notes)}>
-        {app.id_document_url && (
-          <a
-            href={app.id_document_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-[#43629e] hover:underline"
-          >
-            {t('admin.applications.idDocument')}
-          </a>
-        )}
-      </NotesPanel>
+      <NotesPanel id={app.id} value={notes} onChange={setNotes} onSave={() => onSaveNotes(app, notes)} />
     </div>
   )
 

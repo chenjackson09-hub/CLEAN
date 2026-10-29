@@ -22,7 +22,6 @@ export type UnifiedApplication = {
   status: ApplicationStatus
   submitted_at: string
   reviewed_at: string | null
-  id_document_url: string | null
   admin_notes: string | null
   cleans_completed: number
   // Shared admin "seen/unseen" worklist flag (migration 0024). See

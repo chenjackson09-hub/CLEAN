@@ -31,4 +31,15 @@ describe('HostProfileCard privacy and honesty', () => {
     render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} town="Beit Hillel" />)
     expect(screen.queryByText(/Verified/i)).not.toBeInTheDocument()
   })
+
+  it('shows home notes by default (the host\'s own profile)', () => {
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={{ ...customer, home_instructions: 'Key under the mat' } as Customer} reviews={[]} />)
+    expect(screen.getByText(/Key under the mat/)).toBeInTheDocument()
+    expect(screen.queryByText(/shared once you accept/)).not.toBeInTheDocument()
+  })
+
+  it('locks the home notes for a cleaner who has not accepted yet', () => {
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} homeNotesLocked />)
+    expect(screen.getByText(/Home notes are shared once you accept/)).toBeInTheDocument()
+  })
 })

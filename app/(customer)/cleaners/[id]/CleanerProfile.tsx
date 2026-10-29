@@ -1,4 +1,5 @@
 'use client'
+import ReviewsList, { type ReviewItem } from '@/components/HostProfileReviews'
 import { experienceLabel } from '@/lib/onboarding/options'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -48,7 +49,7 @@ function ageFromBirthdate(birthdate: string | null | undefined): number | null {
   return age
 }
 
-export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, bookingDisabled = false, completionPct, missingSummary, editHref }: {
+export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [], dateAvailability = [], presetDate, presetAddress, presetDuration, presetAvailFrom, presetAvailTo, cleanGroupId, bookingDisabled = false, completionPct, missingSummary, editHref, reviews = [] }: {
   cleaner: CleanerResult
   gallery?: string[]
   weeklyAvailability?: WeeklySlot[]
@@ -74,6 +75,8 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   completionPct?: number
   missingSummary?: string
   editHref?: string
+  // Short written reviews hosts have left after a completed clean (First L. + text).
+  reviews?: ReviewItem[]
 }) {
   const { t, lang } = useLanguage()
   const router = useRouter()
@@ -312,6 +315,13 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {reviews.length > 0 && (
+          <section className="border-t border-gray-100 pt-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-3">{t('cleanerProfile.reviews')}</h2>
+            <ReviewsList reviews={reviews} seeAllLabel={t('cleanerProfile.seeAllReviews')} />
           </section>
         )}
 

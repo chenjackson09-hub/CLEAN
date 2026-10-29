@@ -25,7 +25,7 @@ function FilledStars({ score }: { score: number }) {
 // Shows up to 3 reviews inline, with a "See all reviews" toggle to expand the
 // rest in place — this page is otherwise a plain server component, so this
 // small bit of interactivity is split out into its own client component.
-export default function ReviewsList({ reviews }: { reviews: ReviewItem[] }) {
+export default function ReviewsList({ reviews, seeAllLabel = "See all reviews" }: { reviews: ReviewItem[]; seeAllLabel?: string }) {
   const [expanded, setExpanded] = useState(false);
   const shown = expanded ? reviews : reviews.slice(0, VISIBLE_COUNT);
   const remaining = reviews.length - VISIBLE_COUNT;
@@ -45,7 +45,7 @@ export default function ReviewsList({ reviews }: { reviews: ReviewItem[] }) {
           onClick={() => setExpanded(true)}
           className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700 text-center"
         >
-          See all reviews ({reviews.length}) →
+          {seeAllLabel} ({reviews.length}) →
         </button>
       )}
     </div>

@@ -1,4 +1,5 @@
 "use server"
+import { contactVerificationBlock } from "@/lib/verification"
 import { HOME_TYPES } from "@/lib/onboarding/options"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -231,6 +232,10 @@ export async function createBooking(data: {
   if (!user) return { error: "Not authenticated" }
 
   const adminClient = createAdminClient()
+
+  // Switched off today (lib/features.ts REQUIRE_VERIFIED_CONTACT); see docs/verification-architecture.md.
+  const notVerified = await contactVerificationBlock(adminClient, user.id)
+  if (notVerified) return { error: notVerified }
 
   // A customer can't book until admin has approved their account — this is
   // the authoritative check (the /browse UI is gated too, but a pending
@@ -534,11 +539,14 @@ async function notifyCleanerOfBooking(
 // The DB trigger recomputes the cleaner's rating_avg/rating_count. RLS allows the
 // insert only when rater_id = auth.uid(); we additionally verify the booking is
 // the customer's own and `completed`.
-export async function rateCleaner(bookingId: string, score: number): Promise<ActionResult> {
+// `reviewText` is the host's optional written review (shown on the cleaner's profile). Left out
+// (undefined) it never touches an existing review, so a plain star re-rate keeps what was written.
+export async function rateCleaner(bookingId: string, score: number, reviewText?: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
   if (!Number.isInteger(score) || score < 1 || score > 5) return { error: "Rating must be 1-5." }
+  if (reviewText !== undefined && (typeof reviewText !== "string" || reviewText.length > 500)) return { error: "Review is too long." }
 
   const { data: booking, error: fetchErr } = await supabase
     .from("bookings")
@@ -558,6 +566,7 @@ export async function rateCleaner(bookingId: string, score: number): Promise<Act
     rateeId: booking.cleaner_id,
     rateeRole: "cleaner",
     score,
+    reviewText,
   })
 
   if (error) return { error }

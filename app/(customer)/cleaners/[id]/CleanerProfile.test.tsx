@@ -140,6 +140,15 @@ describe('CleanerProfile', () => {
       expect(screen.getByText('A recurring family · Occasional jobs')).toBeInTheDocument()
     })
 
+    it('shows written reviews from hosts (first name + initial) and nothing when there are none', () => {
+      const { rerender } = render(<CleanerProfile cleaner={rich} />)
+      expect(screen.queryByText('Reviews from hosts')).not.toBeInTheDocument()
+      rerender(<CleanerProfile cleaner={rich} reviews={[{ id: 'r1', score: 5, reviewText: 'Spotless, thank you', reviewerName: 'Dana L.' }]} />)
+      expect(screen.getByText('Reviews from hosts')).toBeInTheDocument()
+      expect(screen.getByText(/Spotless, thank you/)).toBeInTheDocument()
+      expect(screen.getByText(/Dana L\./)).toBeInTheDocument()
+    })
+
     it('shows Cindy Verified only for a cleaner an admin has verified', () => {
       const { rerender } = render(<CleanerProfile cleaner={rich} />)
       expect(screen.queryByText('Cindy Verified')).not.toBeInTheDocument()

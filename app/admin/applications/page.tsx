@@ -11,7 +11,7 @@ export default async function ApplicationsPage() {
   const admin = createAdminClient()
 
   const [{ data: appRows }, { data: cleanerRows }, { data: customerRows }, { data: profileRows }, authData, unfinished] = await Promise.all([
-    admin.from('cleaner_applications').select('id, status, submitted_at, reviewed_at, cleaner_id, id_document_url, admin_notes').order('submitted_at', { ascending: false }),
+    admin.from('cleaner_applications').select('id, status, submitted_at, reviewed_at, cleaner_id, admin_notes').order('submitted_at', { ascending: false }),
     admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, address, cleans_completed'),
     // Customers have no separate "applications" table — their own row IS the
     // review record (status/status_reviewed_at, migration 0023).
@@ -48,7 +48,6 @@ export default async function ApplicationsPage() {
       status: row.status as UnifiedApplication['status'],
       submitted_at: row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '',
       reviewed_at: row.status === 'approved' && row.reviewed_at ? new Date(row.reviewed_at).toLocaleDateString() : null,
-      id_document_url: row.id_document_url ?? null,
       admin_notes: row.admin_notes ?? null,
       cleans_completed: (cleaner as { cleans_completed?: number } | undefined)?.cleans_completed ?? 0,
       seen: cleanerSeenMap.get(row.id) ?? false,
@@ -73,7 +72,6 @@ export default async function ApplicationsPage() {
       status: (row.status ?? 'approved') as UnifiedApplication['status'],
       submitted_at: createdAt ? new Date(createdAt).toLocaleDateString() : '',
       reviewed_at: row.status === 'approved' && row.status_reviewed_at ? new Date(row.status_reviewed_at).toLocaleDateString() : null,
-      id_document_url: null,
       admin_notes: row.admin_notes ?? null,
       cleans_completed: 0,
       seen: customerSeenMap.get(row.id) ?? false,

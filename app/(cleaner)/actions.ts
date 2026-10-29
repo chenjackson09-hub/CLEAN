@@ -1,5 +1,6 @@
 "use server";
 
+import { contactVerificationBlock } from "@/lib/verification";
 import { EXPERIENCE_RANGES } from "@/lib/onboarding/options";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -649,6 +650,10 @@ export async function respondToBooking(
   const bookedEnd = bookedStart + booking.duration_hours * 60;
 
   if (response === "accepted") {
+    // Switched off today (lib/features.ts REQUIRE_VERIFIED_CONTACT); see docs/verification-architecture.md.
+    const notVerified = await contactVerificationBlock(createAdminClient(), user.id);
+    if (notVerified) return { error: notVerified };
+
     // Guard against double-booking: the slot must still be within the cleaner's
     // availability and must not overlap a booking already accepted for that day.
     const dayOfWeek = new Date(booking.scheduled_date + "T12:00:00").getDay();

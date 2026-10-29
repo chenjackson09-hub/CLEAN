@@ -32,6 +32,8 @@ export type BookingResult = {
   // (null/undefined = not yet rated). Seeds the rating control in the detail
   // modal. See migration 0011.
   my_rating?: number | null
+  // The written review the customer already left for this clean (null/undefined = none).
+  my_review_text?: string | null
   customer_name?: string
   cleaner_email?: string
   cleaner_phone?: string

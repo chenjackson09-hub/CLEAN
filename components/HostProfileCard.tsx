@@ -39,6 +39,7 @@ export default function HostProfileCard({
   action,
   town,
   cindyVerified = false,
+  homeNotesLocked = false,
 }: {
   fullName: string;
   avatarUrl: string | null;
@@ -49,6 +50,10 @@ export default function HostProfileCard({
   town?: string | null;
   // True only when an admin has explicitly Cindy-Verified this host.
   cindyVerified?: boolean;
+  // True for a cleaner who has no confirmed booking with this host yet: the home notes are a
+  // private booking detail, shared once the cleaner accepts. The caller must also leave the
+  // text out of `customer`, so it never reaches the cleaner's browser.
+  homeNotesLocked?: boolean;
 }) {
   const ratingCount = customer?.rating_count ?? 0;
   const ratingAvg = customer?.rating_avg != null ? Number(customer.rating_avg) : null;
@@ -170,7 +175,14 @@ export default function HostProfileCard({
         </div>
       )}
 
-      {customer?.home_instructions && (
+      {homeNotesLocked && (
+        <div className="mb-4 rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-500">
+          <span aria-hidden>🔒 </span>
+          Home notes are shared once you accept a request from this host.
+        </div>
+      )}
+
+      {!homeNotesLocked && customer?.home_instructions && (
         <div className="mb-4">
           <p className={LABEL}>Home notes</p>
           <p className="text-sm text-gray-600 italic whitespace-pre-line">&ldquo;{customer.home_instructions}&rdquo;</p>

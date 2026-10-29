@@ -5,6 +5,7 @@ import { CleanerProfile } from './CleanerProfile'
 import { extractArea } from '@/lib/bookingArea'
 import { fetchCindyVerified } from '@/lib/cindyVerified'
 import { fetchExperienceRanges } from '@/lib/experience'
+import { fetchCleanerReviews } from '@/lib/cleanerReviews'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
@@ -102,6 +103,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
         presetAvailFrom={searchParams.from}
         presetAvailTo={searchParams.to}
         cleanGroupId={searchParams.cleanGroup}
+        reviews={await fetchCleanerReviews(admin, cleaner.id)}
       />
     </div>
   )

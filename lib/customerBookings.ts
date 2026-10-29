@@ -52,6 +52,9 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
     .select('booking_id, score')
     .eq('rater_id', userId)
   const ratingMap = Object.fromEntries((myRatings ?? []).map(r => [r.booking_id, r.score]))
+  // The written part is read on its own so a missing column can never cost the stars.
+  const { data: myReviews } = await supabase.from('ratings').select('booking_id, review_text').eq('rater_id', userId)
+  const reviewMap = Object.fromEntries((myReviews ?? []).map(r => [r.booking_id, r.review_text as string | null]))
 
   // The customer's own home/pet snapshot, for every booking's "Your home"/
   // "Pets" rows in the shared BookingRequestSummary (see lib/bookingSummary.ts)
@@ -103,6 +106,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       cleaner_modified: b.cleaner_modified ?? false,
       customer_ack_inactive: b.customer_ack_inactive ?? false,
       my_rating: ratingMap[b.id] ?? null,
+      my_review_text: reviewMap[b.id] ?? null,
       cleaning_type: b.cleaning_type,
       extras: b.extras ?? [],
       pets_present: b.pets_present,
