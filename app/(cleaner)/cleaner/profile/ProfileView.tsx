@@ -35,7 +35,6 @@ export default function ProfileView({ profile, cleaner, onEdit, center = null }:
   const lookingFor = lookingForLabels(cleaner?.match_preferences, cleaner?.match_preference_other, {
     recurring: t("prof_match_recurring"),
     occasional: t("prof_match_occasional"),
-    either: t("prof_match_either"),
     other: t("prof_match_other"),
   });
   const missing = computeProfileMissing(t, cleaner, profile);

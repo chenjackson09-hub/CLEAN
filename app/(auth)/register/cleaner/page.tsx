@@ -310,7 +310,8 @@ export default function CleanerRegisterPage() {
       : tr("previewJobsRange", { min: answers.duration, max: answers.maxDuration })
     : null;
   const langNames = [...answers.languages.map((l) => tr(LANGUAGE_CHIPS.find((c) => c.value === l)?.key ?? "langOther")), ...answers.languagesOther.split(",").map((l) => l.trim()).filter(Boolean)];
-  const lookingFor = [tr(workChoice === "regular" ? "matchRegular" : workChoice === "once" ? "matchOnce" : "matchEither")];
+  // "Either is fine" is shown as the two things it means, so a host never has to guess.
+  const lookingFor = workChoice === "regular" ? [tr("matchRegular")] : workChoice === "once" ? [tr("matchOnce")] : [tr("matchRegular"), tr("matchOnce")];
   const notSet = <span className="text-sm text-gray-400">{tr("previewNotSet")}</span>;
 
   return (
@@ -509,7 +510,7 @@ export default function CleanerRegisterPage() {
             <div className="flex flex-col gap-2">
               <OptionCard selected={workChoice === "regular"} onClick={() => setWork("regular")} title={tr("matchRegular")} />
               <OptionCard selected={workChoice === "once"} onClick={() => setWork("once")} title={tr("matchOnce")} />
-              <OptionCard selected={workChoice === "either"} onClick={() => setWork("either")} title={tr("matchEither")} />
+              <OptionCard selected={workChoice === "either"} onClick={() => setWork("either")} title={tr("matchEither")} hint={`${tr("matchRegular")} · ${tr("matchOnce")}`} />
             </div>
           </>
         )}
@@ -573,7 +574,7 @@ export default function CleanerRegisterPage() {
               {langNames.length > 0 && <p className="text-sm text-gray-600">{tr("previewLanguages")}: {langNames.join(", ")}</p>}
             </PreviewSection>
             <PreviewSection title={tr("previewLooking")} editLabel={tr("edit")} onEdit={() => editSection("prefer")}>
-              <p className="text-sm text-gray-800">{lookingFor.join(" · ")}</p>
+              <ul className="text-sm text-gray-800 space-y-0.5">{lookingFor.map((l) => <li key={l}>{l}</li>)}</ul>
             </PreviewSection>
             <PreviewSection title={tr("previewAbout")} editLabel={tr("edit")} onEdit={() => editSection("about")}>
               <p className="text-sm text-gray-800 whitespace-pre-line">{answers.bio || notSet}</p>

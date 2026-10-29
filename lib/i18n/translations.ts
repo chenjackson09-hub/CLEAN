@@ -204,7 +204,6 @@ const translations = {
       lookingFor: 'Looking for',
       matchRecurring: 'A recurring family',
       matchOccasional: 'Occasional jobs',
-      matchEither: 'A regular family and/or jobs once in a while',
       matchOther: 'Other',
       gallery: 'Gallery',
       book: 'Book {name}',
@@ -1010,7 +1009,7 @@ const translations = {
         matchRegular: 'A regular family I keep coming back to',
         matchOnce: 'Jobs once in a while',
         matchEither: 'Either is fine',
-
+  
         // Step 8 — About me
         s8Title: 'Tell hosts about yourself',
         s8Sub: 'Optional, but a few sentences help hosts feel they know you. Tap a start to begin a sentence.',
@@ -1261,7 +1260,6 @@ const translations = {
       lookingFor: 'מחפש/ת',
       matchRecurring: 'משפחה קבועה',
       matchOccasional: 'עבודות מדי פעם',
-      matchEither: 'משפחה קבועה ו/או עבודות מדי פעם',
       matchOther: 'אחר',
       gallery: 'גלריה',
       book: 'הזמנת {name}',
@@ -2054,7 +2052,7 @@ const translations = {
         matchRegular: 'משפחה קבועה שאני חוזר/ת אליה',
         matchOnce: 'עבודות מדי פעם',
         matchEither: 'שניהם מתאימים',
-
+  
         s8Title: 'ספרו למארחים על עצמכם',
         s8Sub: 'לא חובה, אבל כמה משפטים עוזרים למארחים להרגיש שהם מכירים אתכם. לחצו על התחלה כדי להתחיל משפט.',
         aboutP1: 'כמה זמן אתם מנקים, ובמה אתם מוכרים?',

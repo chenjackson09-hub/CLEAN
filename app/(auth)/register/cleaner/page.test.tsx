@@ -164,11 +164,22 @@ describe('Cleaner wizard (9 screens, every Continue saved)', () => {
     const user = userEvent.setup()
     render(<CleanerOnboardingPage />)
     await screen.findByText('What kind of work do you prefer?')
-    expect(screen.getByRole('button', { name: 'Either is fine' })).toHaveAttribute('aria-pressed', 'true')
+    // The card names both options it stands for, so nobody has to guess what "either" means.
+    expect(screen.getByRole('button', { name: /Either is fine/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /Either is fine/ })).toHaveTextContent('A regular family I keep coming back to · Jobs once in a while')
     await user.click(screen.getByRole('button', { name: 'Jobs once in a while' }))
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockSave).toHaveBeenCalled())
     expect(lastDraft().matchTypes).toEqual(['occasional'])
+  })
+
+  it('the preview writes out BOTH options when "either is fine" is chosen', async () => {
+    mockLoad.mockResolvedValue(fresh({ step: 8, draft: FILLED, locality: LOCALITY }))
+    render(<CleanerOnboardingPage />)
+    await screen.findByText('Your profile')
+    expect(screen.getByText('A regular family I keep coming back to')).toBeInTheDocument()
+    expect(screen.getByText('Jobs once in a while')).toBeInTheDocument()
+    expect(screen.queryByText('Either is fine')).not.toBeInTheDocument()
   })
 
   it('guided About me builds the text from the prompts and stays editable', async () => {

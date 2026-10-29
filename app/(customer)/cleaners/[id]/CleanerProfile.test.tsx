@@ -135,9 +135,9 @@ describe('CleanerProfile', () => {
       expect(screen.getByText('Job duration')).toBeInTheDocument()
     })
 
-    it('"either is fine" reads as one sentence', () => {
+    it('"either is fine" writes out both options so a host knows what it means', () => {
       render(<CleanerProfile cleaner={{ ...rich, match_preferences: ['recurring', 'occasional'] }} />)
-      expect(screen.getByText('A regular family and/or jobs once in a while')).toBeInTheDocument()
+      expect(screen.getByText('A recurring family · Occasional jobs')).toBeInTheDocument()
     })
 
     it('shows Cindy Verified only for a cleaner an admin has verified', () => {

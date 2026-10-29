@@ -124,13 +124,12 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   const lookingFor = lookingForLabels(cleaner.match_preferences, cleaner.match_preference_other, {
     recurring: t('cleanerProfile.matchRecurring'),
     occasional: t('cleanerProfile.matchOccasional'),
-    either: t('cleanerProfile.matchEither'),
     other: t('cleanerProfile.matchOther'),
   })
 
   // The rows of "Preferences & details" — only those the cleaner has filled in.
   const details: { key: string; icon: React.ReactNode; label: string; value: string }[] = []
-  if (lookingFor.length > 0) details.push({ key: 'looking', icon: <IconSprout />, label: t('cleanerProfile.lookingFor'), value: lookingFor.join(', ') })
+  if (lookingFor.length > 0) details.push({ key: 'looking', icon: <IconSprout />, label: t('cleanerProfile.lookingFor'), value: lookingFor.join(' · ') })
   if (cleaner.has_car && cleaner.gas_return_enabled) {
     details.push({
       key: 'travel', icon: <IconCar />, label: t('cleanerProfile.travel'),
