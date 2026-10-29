@@ -1,5 +1,6 @@
 "use client";
 
+import { CLEANER_SERVICES, EXPERIENCE_RANGES, normalizeServices } from "@/lib/onboarding/options";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -45,8 +46,11 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
   const [hasCar, setHasCar] = useState(cleaner?.has_car === true ? "yes" : cleaner?.has_car === false ? "no" : "");
   const [gasEnabled, setGasEnabled] = useState(cleaner?.gas_return_enabled ? "yes" : "no");
   const [matchPrefs, setMatchPrefs] = useState<string[]>(cleaner?.match_preferences ?? []);
-  const [servicesOtherPicked, setServicesOtherPicked] = useState(cleaner?.cleaning_categories?.includes("Other") ?? false);
-  const [cleaningCategories, setCleaningCategories] = useState<string[]>(cleaner?.cleaning_categories ?? []);
+  // Older profiles may still hold the previous, longer list of service names - read them as
+  // the closest of today's choices (they are saved that way next time).
+  const initialServices = normalizeServices(cleaner?.cleaning_categories);
+  const [servicesOtherPicked, setServicesOtherPicked] = useState(initialServices.includes("Other"));
+  const [cleaningCategories, setCleaningCategories] = useState<string[]>(initialServices);
   const [freqVal, setFreqVal] = useState<number | null>(cleaner?.weekly_clean_target ?? null);
 
   async function handleSubmit(formData: FormData) {
@@ -241,17 +245,21 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="years_experience" className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
-          <input
-            id="years_experience"
-            type="number"
-            name="years_experience"
-            min="0"
-            max="50"
-            defaultValue={cleaner?.years_experience ?? 0}
+          <label htmlFor="experience_range" className="block text-base font-medium text-gray-700 mb-1">{t("prof_experience")}</label>
+          <select
+            id="experience_range"
+            name="experience_range"
+            defaultValue={cleaner?.experience_range ?? ""}
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-sm text-gray-400 mt-1">{t("prof_optional")}</p>
+          >
+            <option value="">{t("prof_optional")}</option>
+            {EXPERIENCE_RANGES.map((r) => (
+              <option key={r.value} value={r.value}>{lang === "he" ? r.he : r.en}</option>
+            ))}
+          </select>
+          {!cleaner?.experience_range && !!cleaner?.years_experience && (
+            <p className="text-sm text-gray-400 mt-1">{t("prof_experience_saved").replace("{n}", String(cleaner.years_experience))}</p>
+          )}
         </div>
         <div>
           <label htmlFor="languages" className="block text-base font-medium text-gray-700 mb-1">{t("prof_languages")}</label>
@@ -287,7 +295,7 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
       <div>
         <span className="block text-base font-medium text-gray-700 mb-2">{t("prof_service_types")}</span>
         <div className="flex flex-wrap gap-2">
-          {["General home cleaning","Deep cleaning","Closets","Windows","Laundry","Pesach","Move-in","Move-out","Airbnb","Organization","Newly renovated","Pet friendly","Residential cleaning","Commercial cleaning","Offices","Other"].map((cat) => (
+          {CLEANER_SERVICES.map((s) => s.value).map((cat) => (
             <label key={cat} className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${cleaningCategories.includes(cat) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700"}`}>
               <input
                 type="checkbox"

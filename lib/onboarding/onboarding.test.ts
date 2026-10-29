@@ -38,7 +38,8 @@ describe('cleaner draft', () => {
     expect(() => validateCleanerDraft({ ...good, birthD: '', birthM: '', birthY: '' }, opts(true))).toThrow('date of birth')
     expect(() => validateCleanerDraft({ ...good, localityId: null, loc: '' }, opts(true))).toThrow('where you work')
     expect(() => validateCleanerDraft({ ...good, services: [] }, opts(true))).toThrow('type of cleaning')
-    expect(() => validateCleanerDraft({ ...good, matchTypes: [] }, opts(true))).toThrow('kind of work')
+    // The kind of work is optional now ("either is fine" is the default).
+    expect(validateCleanerDraft({ ...good, matchTypes: [] }, opts(true)).matchTypes).toEqual([])
     expect(validateCleanerDraft(good, opts(true)).name).toBe('Noa Rosen')
   })
   it('rejects values the screen would never send', () => {
@@ -65,14 +66,34 @@ describe('cleaner draft', () => {
     expect('location' in rows.cleaner).toBe(false)
   })
   it('round-trips: what was saved comes back as the same answers', () => {
-    const d = validateCleanerDraft({ ...good, freqType: 'other', freqOtherText: 'Weekends', car: 'yes', gas: 'no', rate: '80', matchTypes: ['recurring', 'other'], matchOtherText: 'Mornings', services: ['Other', 'Windows'], serviceOtherText: 'Pesach prep', bio: 'Hi' }, opts(true))
+    const d = validateCleanerDraft({ ...good, freqType: 'other', freqOtherText: 'Weekends', car: 'yes', gas: 'no', rate: '80', matchTypes: ['recurring', 'other'], matchOtherText: 'Mornings', services: ['Other', 'Windows'], serviceOtherText: 'Pesach prep', bio: 'Hi', experience: '3_5', languages: ['Hebrew', 'Russian'], languagesOther: 'Tigrinya, Thai' }, opts(true))
     const rows = cleanerDraftToRows(d, place, new Date('2026-10-29T00:00:00Z'))
-    const back = cleanerRowsToDraft({ full_name: 'Noa Rosen', avatar_url: null }, { ...rows.cleaner, locality_id: d.localityId })
+    const back = cleanerRowsToDraft({ full_name: 'Noa Rosen', avatar_url: null }, { ...rows.cleaner, ...rows.extras, locality_id: d.localityId })
     expect(back).toMatchObject({
       name: 'Noa Rosen', birthD: '5', birthM: '3', birthY: '1995', localityId: d.localityId, loc: '', rate: '80',
       freqType: 'other', freqOtherText: 'Weekends', car: 'yes', gas: 'no', matchTypes: ['recurring', 'other'], matchOtherText: 'Mornings',
-      services: ['Other', 'Windows'], serviceOtherText: 'Pesach prep', bio: 'Hi',
+      services: ['Other', 'Windows'], serviceOtherText: 'Pesach prep', bio: 'Hi', experience: '3_5',
+      languages: ['Hebrew', 'Russian'], languagesOther: 'Tigrinya, Thai',
     })
+  })
+  it('"either is fine" is the default when nothing is ticked, and experience is stored as its lower bound', () => {
+    const rows = cleanerDraftToRows(validateCleanerDraft({ ...good, matchTypes: [], experience: '1_3', languages: ['English'], languagesOther: 'Thai' }, opts(true)), place)
+    expect(rows.cleaner.match_preferences).toEqual(['recurring', 'occasional'])
+    expect(rows.cleaner.years_experience).toBe(1)
+    expect(rows.cleaner.languages).toEqual(['English', 'Thai'])
+    expect(rows.extras).toEqual({ experience_range: '1_3' })
+    // A person who never answered keeps whatever years_experience they already had.
+    expect('years_experience' in cleanerDraftToRows(validateCleanerDraft(good, opts(true)), place).cleaner).toBe(false)
+  })
+  it('older service names are read as the new grouped choices', () => {
+    const d = validateCleanerDraft({ ...good, services: ['General home cleaning', 'Move-in', 'Move-out', 'Closets', 'Deep cleaning'] }, opts(false))
+    expect(d.services).toEqual(['Regular cleaning', 'Move-in / move-out', 'Organizing', 'Deep cleaning'])
+    const back = cleanerRowsToDraft({ full_name: 'x', avatar_url: null }, { cleaning_categories: ['Pet friendly', 'Offices', 'Commercial cleaning', 'Nonsense'] })
+    expect(back.services).toEqual(['Pet-friendly', 'Offices & commercial', 'Nonsense'].filter((x) => x !== 'Nonsense'))
+  })
+  it('rejects an experience range or language chip the screen never offers', () => {
+    expect(() => validateCleanerDraft({ ...good, experience: '50years' }, opts(false))).toThrow(DraftError)
+    expect(() => validateCleanerDraft({ ...good, languages: ['Klingon'] }, opts(false))).toThrow(DraftError)
   })
   it('a brand-new account (empty rows) resumes with the wizard defaults', () => {
     const back = cleanerRowsToDraft({ full_name: null, avatar_url: null }, {})
@@ -98,15 +119,15 @@ describe('customer draft', () => {
     expect(() => validateCustomerDraft({ ...good, homeInstructions: 'x'.repeat(2001) }, opts(false))).toThrow(DraftError)
   })
   it('keeps full_name as "first last", and drops pet details when there are no pets', () => {
-    const rows = customerDraftToRows(validateCustomerDraft({ ...good, languages: 'Hebrew, English ,', petTypes: [], numPets: '2', petNote: 'friendly' }, opts(true)), place)
+    const rows = customerDraftToRows(validateCustomerDraft({ ...good, languages: ['Hebrew'], languagesOther: 'English ,', petTypes: [], numPets: '2', petNote: 'friendly' }, opts(true)), place)
     expect(rows.profile.full_name).toBe('Dana Cohen')
     expect(rows.customer).toMatchObject({ languages: ['Hebrew', 'English'], num_pets: null, pet_note: null, address: 'בית הלל', lat: 33.2, lng: 35.6 })
   })
   it('round-trips the host answers', () => {
-    const d = validateCustomerDraft({ ...good, phone: '050', homeType: 'house', bedrooms: '3', petTypes: ['dog'], numPets: '1', petNote: 'shy', frequency: 'weekly', cleaningType: 'deep', priorities: ['kitchen', 'other'], priorityOtherText: 'Balcony', homeInstructions: 'No bleach' }, opts(true))
+    const d = validateCustomerDraft({ ...good, phone: '050', homeType: 'villa', bedrooms: '3', petTypes: ['dog'], numPets: '1', petNote: 'shy', frequency: 'weekly', cleaningType: 'deep', priorities: ['kitchen', 'other'], priorityOtherText: 'Balcony', homeInstructions: 'No bleach' }, opts(true))
     const rows = customerDraftToRows(d, place)
     const back = customerRowsToDraft(rows.profile, { ...rows.customer, locality_id: d.localityId })
-    expect(back).toMatchObject({ firstName: 'Dana', lastName: 'Cohen', phone: '050', homeType: 'house', bedrooms: '3', petTypes: ['dog'], numPets: '1', petNote: 'shy', frequency: 'weekly', cleaningType: 'deep', priorities: ['kitchen', 'other'], priorityOtherText: 'Balcony', homeInstructions: 'No bleach', localityId: d.localityId, area: '' })
+    expect(back).toMatchObject({ firstName: 'Dana', lastName: 'Cohen', phone: '050', homeType: 'villa', bedrooms: '3', petTypes: ['dog'], numPets: '1', petNote: 'shy', frequency: 'weekly', cleaningType: 'deep', priorities: ['kitchen', 'other'], priorityOtherText: 'Balcony', homeInstructions: 'No bleach', localityId: d.localityId, area: '' })
   })
   it('a brand-new account fills the name from the profile when the host columns are empty', () => {
     expect(customerRowsToDraft({ full_name: 'Dana Cohen', phone: null, avatar_url: null }, {})).toMatchObject({ firstName: 'Dana', lastName: 'Cohen' })

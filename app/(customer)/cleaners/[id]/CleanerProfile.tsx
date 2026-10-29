@@ -1,4 +1,5 @@
 'use client'
+import { experienceLabel } from '@/lib/onboarding/options'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookingRequestForm } from './BookingRequestForm'
@@ -138,9 +139,10 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   }
   // Experience and languages live in the "at a glance" block above, not in this list.
   const experience =
-    cleaner.years_experience != null && cleaner.years_experience > 0
+    experienceLabel(cleaner.experience_range, lang === 'he' ? 'he' : 'en') ??
+    (cleaner.years_experience != null && cleaner.years_experience > 0
       ? `${cleaner.years_experience} ${cleaner.years_experience !== 1 ? t('cleanerProfile.years') : t('cleanerProfile.year')}`
-      : null
+      : null)
   if (cleaner.distance_km > 0) {
     details.push({ key: 'dist', icon: <IconPin />, label: t('cleanerProfile.distance'), value: `${cleaner.distance_km.toFixed(1)} ${t('cleanerProfile.km')}` })
   }

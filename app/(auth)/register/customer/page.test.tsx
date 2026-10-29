@@ -51,10 +51,11 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/register/cleaner'))
   })
 
-  it('shows About you first, with Next disabled until both names are filled', async () => {
+  it('shows About you first as step 1 of 5, with Continue disabled until both names are filled', async () => {
     render(<CustomerOnboardingPage />)
     expect(await screen.findByLabelText(/first name/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
+    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
   })
 
   it('resumes where the person stopped, with their saved answers filled in', async () => {
@@ -64,10 +65,17 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
       locality: LOCALITY,
     })
     render(<CustomerOnboardingPage />)
-    // Step 2 (Your home), with the town already chosen.
+    // Step 2 (Where is your home?), with the town already chosen.
     expect(await screen.findByText(/bet hillel|בית הלל/i)).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 5')).toBeInTheDocument()
     expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /next/i })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
+  })
+
+  it('never claims the street is hidden: it says the street is shared with a cleaner on request', async () => {
+    mockLoad.mockResolvedValue({ ...fresh(), step: 1 })
+    render(<CustomerOnboardingPage />)
+    expect(await screen.findByText(/street address is shared with a cleaner when you send them a request/i)).toBeInTheDocument()
   })
 
   it('saves each screen when Continue is pressed, then the final screen as a submit', async () => {
@@ -75,22 +83,55 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     render(<CustomerOnboardingPage />)
     await user.type(await screen.findByLabelText(/first name/i), 'Jane')
     await user.type(screen.getByLabelText(/last name/i), 'Doe')
-    await user.click(screen.getByRole('button', { name: /next/i }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1))
     expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ role: 'customer', step: 1, submit: false, draft: expect.objectContaining({ firstName: 'Jane', lastName: 'Doe' }) }))
 
-    await user.type(await screen.findByLabelText(/area \/ town/i), 'Beit Hil')
+    await user.type(await screen.findByLabelText(/^town/i), 'Beit Hil')
     await user.click(await screen.findByRole('option', { name: /Bet Hillel/ }))
-    await user.click(screen.getByRole('button', { name: /next/i }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(2))
     // The server is told the official town by id — never coordinates or text it must trust.
     expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ step: 2, draft: expect.objectContaining({ localityId: 'loc-1', area: '' }) }))
 
-    await user.click(await screen.findByRole('button', { name: /next/i })) // household
-    await user.click(await screen.findByRole('button', { name: /next/i })) // preferences
-    await user.click(await screen.findByRole('button', { name: /start finding cleaners/i }))
+    // Home: pick a type and add a bedroom; then pets (skipped); then the preview.
+    await user.click(await screen.findByRole('button', { name: 'Villa' }))
+    await user.click(screen.getByRole('button', { name: 'Bedrooms +' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(3))
+    expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ draft: expect.objectContaining({ homeType: 'villa', bedrooms: '1' }) }))
+    await user.click(await screen.findByRole('button', { name: 'Skip for now' }))
+    expect(await screen.findByText('Your profile')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Start finding cleaners' }))
     await waitFor(() => expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ submit: true })))
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/browse'))
+  })
+
+  it('no longer asks for priorities, frequency or home instructions', async () => {
+    const user = userEvent.setup()
+    mockLoad.mockResolvedValue({ ...fresh(), step: 2 })
+    render(<CustomerOnboardingPage />)
+    await screen.findByText('Your home')
+    expect(screen.queryByText(/important to you/i)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
+    expect(screen.queryByText(/how often/i)).not.toBeInTheDocument()
+  })
+
+  it('the preview offers Edit on each section and returns to the preview after it', async () => {
+    const user = userEvent.setup()
+    mockLoad.mockResolvedValue({
+      ...fresh(), step: 4,
+      draft: { ...EMPTY_CUSTOMER_DRAFT, firstName: 'Jane', lastName: 'Doe', localityId: LOCALITY.id },
+      locality: LOCALITY,
+    })
+    render(<CustomerOnboardingPage />)
+    await screen.findByText('Your profile')
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]) // About you
+    expect(await screen.findByLabelText(/first name/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to preview' }))
+    await waitFor(() => expect(mockSave).toHaveBeenCalled())
+    expect(await screen.findByText('Your profile')).toBeInTheDocument()
   })
 
   it('stays on the screen and shows the problem when saving fails', async () => {
@@ -99,7 +140,7 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     render(<CustomerOnboardingPage />)
     await user.type(await screen.findByLabelText(/first name/i), 'Jane')
     await user.type(screen.getByLabelText(/last name/i), 'Doe')
-    await user.click(screen.getByRole('button', { name: /next/i }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     expect(await screen.findByText('Could not save. Please try again.')).toBeInTheDocument()
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
   })

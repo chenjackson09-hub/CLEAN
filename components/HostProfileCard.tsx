@@ -131,6 +131,17 @@ export default function HostProfileCard({
         ))}
       </div>
 
+      {(customer?.languages ?? []).length > 0 && (
+        <div className="mb-4">
+          <p className={LABEL}>Languages</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(customer?.languages ?? []).map((l) => (
+              <span key={l} className={PILL}>{l}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {hasPets && (
         <div className="mb-4">
           <p className={LABEL}>Pets</p>

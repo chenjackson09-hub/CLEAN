@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import LocalityPicker from "@/components/LocalityPicker";
+import WizardShell from "@/components/onboarding/WizardShell";
+import PhotoPicker from "@/components/onboarding/PhotoPicker";
+import PreviewSection from "@/components/onboarding/PreviewSection";
+import GuidedAbout from "@/components/onboarding/GuidedAbout";
+import { Chip, OptionCard, Stepper } from "@/components/onboarding/Choice";
 import type { PickedLocality } from "@/lib/localities/address";
-import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { signOutToLogin } from "../../actions";
 import { loadOnboarding, saveOnboarding } from "../../onboardingActions";
+import { HOME_TYPE_CHOICES, LANGUAGE_CHIPS } from "@/lib/onboarding/options";
 import type { CustomerDraft } from "@/lib/onboarding/customer";
 import { ROLE_HOME } from "@/lib/roleHome";
-
-type HomeType = "apartment" | "house" | "guesthouse" | "other";
-type Frequency = "weekly" | "twice_monthly" | "occasional" | "one_time";
-type CleaningType = "regular" | "deep";
 
 type Answers = {
   // Photos already saved to the account; `photoFile` / `petPhotoFile` are NEW picks not yet uploaded.
@@ -26,13 +27,14 @@ type Answers = {
   firstName: string;
   lastName: string;
   phone: string;
-  languages: string;
+  languages: string[];
+  languagesOther: string;
   aboutMe: string;
   area: string;
   // The official locality picked from the list (preferred over the typed `area`).
   locality: PickedLocality | null;
   areaManual: boolean;
-  homeType: HomeType | null;
+  homeType: CustomerDraft["homeType"];
   bedrooms: string;
   bathrooms: string;
   numFloors: string;
@@ -43,89 +45,42 @@ type Answers = {
   petNote: string;
   petPhotoFile: File | null;
   petPhotoPreview: string | null;
-  frequency: Frequency | null;
-  cleaningType: CleaningType | null;
+  // No longer asked at sign-up (they belong to the request, not the profile) but kept so a
+  // value saved earlier is never lost.
+  frequency: CustomerDraft["frequency"];
+  cleaningType: CustomerDraft["cleaningType"];
   priorities: string[];
   priorityOtherText: string;
   homeInstructions: string;
 };
 
-const HOME_TYPES: { value: HomeType; key: string }[] = [
-  { value: "apartment", key: "homeApartment" },
-  { value: "house", key: "homeHouse" },
-  { value: "guesthouse", key: "homeGuesthouse" },
-  { value: "other", key: "homeOther" },
-];
+const initialAnswers: Answers = {
+  avatarUrl: null, petPhotoUrl: null, photoFile: null, photoPreview: null,
+  firstName: "", lastName: "", phone: "", languages: [], languagesOther: "", aboutMe: "",
+  area: "", locality: null, areaManual: false,
+  homeType: null, bedrooms: "", bathrooms: "", numFloors: "", sizeSqm: "", numPeople: "",
+  petTypes: [], numPets: "", petNote: "", petPhotoFile: null, petPhotoPreview: null,
+  frequency: null, cleaningType: null, priorities: [], priorityOtherText: "", homeInstructions: "",
+};
 
-const FREQUENCIES: { value: Frequency; key: string }[] = [
-  { value: "weekly", key: "freqWeekly" },
-  { value: "twice_monthly", key: "freqTwiceMonthly" },
-  { value: "occasional", key: "freqOccasional" },
-  { value: "one_time", key: "freqOneTime" },
-];
-
-const CLEANING_TYPES: { value: CleaningType; key: string }[] = [
-  { value: "regular", key: "typeRegular" },
-  { value: "deep", key: "typeDeep" },
-];
-
-const PRIORITIES: { value: string; key: string }[] = [
-  { value: "kitchen", key: "priKitchen" },
-  { value: "bathrooms", key: "priBathrooms" },
-  { value: "floors", key: "priFloors" },
-  { value: "dusting", key: "priDusting" },
-  { value: "windows", key: "priWindows" },
-  { value: "linens", key: "priLinens" },
-  { value: "laundry", key: "priLaundry" },
-  { value: "outdoor", key: "priOutdoor" },
-  { value: "other", key: "priOther" },
-];
-
+const STEPS = ["about", "where", "home", "pets", "preview"] as const;
+type StepKey = (typeof STEPS)[number];
+const OPTIONAL: StepKey[] = ["home", "pets"];
+const PREVIEW = STEPS.length - 1;
+const HOME_KEYS: Record<string, string> = {
+  apartment: "homeApartment", house: "homeHouse", villa: "homeVilla", guesthouse: "homeGuesthouse", office: "homeOffice", other: "homeOther",
+};
 const PET_TYPES: { value: string; key: string }[] = [
   { value: "dog", key: "petsDog" },
   { value: "cat", key: "petsCat" },
   { value: "other", key: "petsOther" },
 ];
 
-const initialAnswers: Answers = {
-  avatarUrl: null,
-  petPhotoUrl: null,
-  photoFile: null,
-  photoPreview: null,
-  firstName: "",
-  lastName: "",
-  phone: "",
-  languages: "",
-  aboutMe: "",
-  area: "",
-  locality: null,
-  areaManual: false,
-  homeType: null,
-  bedrooms: "",
-  bathrooms: "",
-  numFloors: "",
-  sizeSqm: "",
-  numPeople: "",
-  petTypes: [],
-  numPets: "",
-  petNote: "",
-  petPhotoFile: null,
-  petPhotoPreview: null,
-  frequency: null,
-  cleaningType: null,
-  priorities: [],
-  priorityOtherText: "",
-  homeInstructions: "",
-};
-
-const STEPS = ["about", "home", "household", "preferences", "preview"] as const;
-type StepKey = (typeof STEPS)[number];
-
-
 // The wizard's answers <-> what the server saves. Only plain values cross to the server.
 function answersToDraft(a: Answers, avatarUrl: string | null, petPhotoUrl: string | null): CustomerDraft {
   return {
-    avatarUrl, petPhotoUrl, firstName: a.firstName, lastName: a.lastName, phone: a.phone, languages: a.languages, aboutMe: a.aboutMe,
+    avatarUrl, petPhotoUrl, firstName: a.firstName, lastName: a.lastName, phone: a.phone,
+    languages: a.languages, languagesOther: a.languagesOther, aboutMe: a.aboutMe,
     localityId: a.locality?.id ?? null, area: a.locality ? "" : a.area,
     homeType: a.homeType, bedrooms: a.bedrooms, bathrooms: a.bathrooms, numFloors: a.numFloors, sizeSqm: a.sizeSqm, numPeople: a.numPeople,
     petTypes: a.petTypes, numPets: a.numPets, petNote: a.petNote,
@@ -137,7 +92,7 @@ function draftToAnswers(d: CustomerDraft, locality: PickedLocality | null): Answ
   return {
     ...initialAnswers,
     avatarUrl: d.avatarUrl, photoPreview: d.avatarUrl, petPhotoUrl: d.petPhotoUrl, petPhotoPreview: d.petPhotoUrl,
-    firstName: d.firstName, lastName: d.lastName, phone: d.phone, languages: d.languages, aboutMe: d.aboutMe,
+    firstName: d.firstName, lastName: d.lastName, phone: d.phone, languages: d.languages, languagesOther: d.languagesOther, aboutMe: d.aboutMe,
     area: d.area, locality, areaManual: !locality && d.area !== "",
     homeType: d.homeType, bedrooms: d.bedrooms, bathrooms: d.bathrooms, numFloors: d.numFloors, sizeSqm: d.sizeSqm, numPeople: d.numPeople,
     petTypes: d.petTypes, numPets: d.numPets, petNote: d.petNote,
@@ -150,16 +105,17 @@ export default function CustomerRegisterPage() {
   const router = useRouter();
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [step, setStep] = useState(0);
+  // Set when a section is opened from the preview: Continue then goes straight back to it.
+  const [returnToPreview, setReturnToPreview] = useState(false);
   const [phase, setPhase] = useState<"flow" | "confirm">("flow");
   const [loading, setLoading] = useState(false);
-  // True while a single screen is being saved (the Continue button shows "Saving…").
   const [saving, setSaving] = useState(false);
   // False until the saved answers have been loaded (so the screen never flashes empty).
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const petPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [showMore, setShowMore] = useState(false);
+  const [namesTouched, setNamesTouched] = useState(false);
+  const tr = (key: string, vars?: Record<string, string | number>) => t(`auth.registerCustomer.${key}`, vars);
 
   // The account already exists (it is created on the first sign-up screen), so load what was
   // saved and continue exactly where the person stopped.
@@ -180,7 +136,9 @@ export default function CustomerRegisterPage() {
         router.replace(`/register/${state.role}`);
         return;
       }
-      setAnswers(draftToAnswers(state.draft as CustomerDraft, state.locality));
+      const loaded = draftToAnswers(state.draft as CustomerDraft, state.locality);
+      setAnswers(loaded);
+      setShowMore(!!(loaded.numFloors || loaded.sizeSqm || loaded.numPeople));
       setStep(Math.min(state.step, STEPS.length - 1));
       setReady(true);
     })();
@@ -190,14 +148,18 @@ export default function CustomerRegisterPage() {
   }, [router]);
 
   const current: StepKey = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-  const progressPct = Math.round(((step + 1) / STEPS.length) * 100);
+  const isLast = step === PREVIEW;
+  const set = (patch: Partial<Answers>) => setAnswers((a) => ({ ...a, ...patch }));
+  const toggleLanguage = (value: string) =>
+    setAnswers((a) => ({ ...a, languages: a.languages.includes(value) ? a.languages.filter((v) => v !== value) : [...a.languages, value] }));
+  const hasPets = answers.petTypes.length > 0;
+  const togglePet = (value: string) =>
+    setAnswers((a) => ({ ...a, petTypes: a.petTypes.includes(value) ? a.petTypes.filter((v) => v !== value) : [...a.petTypes, value] }));
 
-  // Only first/last name and area are required — everything else is
-  // optional and skippable, per the "keep each step short" UX rule.
+  // Only the two names and the town are required — everything else is optional and skippable.
   function isStepValid(key: StepKey): boolean {
     if (key === "about") return answers.firstName.trim().length > 0 && answers.lastName.trim().length > 0;
-    if (key === "home") return answers.locality != null || answers.area.trim().length > 0;
+    if (key === "where") return answers.locality != null || answers.area.trim().length > 0;
     return true;
   }
 
@@ -208,49 +170,25 @@ export default function CustomerRegisterPage() {
       void handleSubmit();
       return;
     }
+    const target = returnToPreview ? PREVIEW : step + 1;
     setSaving(true);
-    const ok = await persist(false, step + 1);
+    const ok = await persist(false, target);
     setSaving(false);
-    if (ok) setStep((s) => s + 1);
-  }
-  function goBack() {
-    if (step > 0) setStep((s) => s - 1);
-  }
-
-  async function handlePhotoPick(mode: "camera" | "library" | "computer") {
-    setPhotoMenuOpen(false);
-    if (fileInputRef.current) {
-      if (mode === "camera") fileInputRef.current.setAttribute("capture", "environment");
-      else fileInputRef.current.removeAttribute("capture");
-      fileInputRef.current.click();
+    if (ok) {
+      setStep(target);
+      setReturnToPreview(false);
     }
   }
-
-  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const normalized = await normalizeImageToJpeg(file);
-    setAnswers((a) => ({ ...a, photoFile: normalized, photoPreview: URL.createObjectURL(normalized) }));
+  function goBack() {
+    if (returnToPreview) {
+      setStep(PREVIEW);
+      setReturnToPreview(false);
+    } else if (step > 0) setStep((s) => s - 1);
   }
-
-  async function onPetPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const normalized = await normalizeImageToJpeg(file);
-    setAnswers((a) => ({ ...a, petPhotoFile: normalized, petPhotoPreview: URL.createObjectURL(normalized) }));
-  }
-
-  function togglePetType(value: string) {
-    setAnswers((a) => {
-      const next = a.petTypes.includes(value) ? a.petTypes.filter((v) => v !== value) : [...a.petTypes, value];
-      return { ...a, petTypes: next };
-    });
-  }
-  function togglePriority(value: string) {
-    setAnswers((a) => {
-      const next = a.priorities.includes(value) ? a.priorities.filter((v) => v !== value) : [...a.priorities, value];
-      return { ...a, priorities: next };
-    });
+  function editSection(target: StepKey) {
+    setError(null);
+    setReturnToPreview(true);
+    setStep(STEPS.indexOf(target));
   }
 
   // Saves everything collected so far. New photos are uploaded first (the account exists, so it
@@ -264,7 +202,7 @@ export default function CustomerRegisterPage() {
     if (answers.photoFile || answers.petPhotoFile) {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) {
-        setError(t("auth.registerCustomer.signUpFailed"));
+        setError(tr("signUpFailed"));
         return false;
       }
       const upload = async (file: File, name: "avatar" | "pet") => {
@@ -313,547 +251,247 @@ export default function CustomerRegisterPage() {
     else setLoading(false);
   }
 
+  const inputCls = "w-full border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const h2 = "text-lg font-semibold text-gray-900";
+  const sub = "text-sm text-gray-500 mt-1 mb-5";
+  const label = "block text-sm font-medium text-gray-800 mb-1.5";
+  const townName = answers.locality ? (lang === "he" ? answers.locality.name_he : answers.locality.name_en || answers.locality.name_he) : answers.area.trim();
   const displayName = `${answers.firstName} ${answers.lastName}`.trim();
+  const langNames = [...answers.languages.map((l) => tr(LANGUAGE_CHIPS.find((c) => c.value === l)?.key ?? "langOther")), ...answers.languagesOther.split(",").map((l) => l.trim()).filter(Boolean)];
+  const notSet = <span className="text-sm text-gray-400">{tr("previewNotSet")}</span>;
 
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <p className="text-sm text-gray-500">{t("auth.registerCustomer.settingUp")}</p>
+        <p className="text-sm text-gray-500">{tr("settingUp")}</p>
       </div>
     );
   }
 
+  if (phase === "confirm") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+        {loading && <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80"><p className="text-sm font-medium text-gray-600">{tr("settingUp")}</p></div>}
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow p-8 flex flex-col items-center text-center gap-4">
+          <p className="text-base font-semibold text-gray-900">{tr("closeConfirmTitle")}</p>
+          <p className="text-sm text-gray-600">{tr("closeConfirmBody", { n: step + 1, total: STEPS.length })}</p>
+          <div className="flex gap-2 w-full mt-2">
+            <button onClick={handleContinueLater} className="flex-1 border border-gray-300 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors">{tr("continueLater")}</button>
+            <button onClick={() => setPhase("flow")} className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors">{tr("keepGoing")}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const nextLabel = saving ? tr("saving") : isLast ? tr("submit") : returnToPreview ? tr("backToPreview") : tr("next");
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+    <>
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-          <svg className="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          <p className="text-sm font-medium text-gray-600">{t("auth.registerCustomer.settingUp")}</p>
+          <p className="text-sm font-medium text-gray-600">{tr("settingUp")}</p>
         </div>
       )}
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow p-8 min-h-[420px] flex flex-col">
-        <div className="flex justify-end mb-3">
-          <LanguageToggle />
-        </div>
-
-        {phase === "confirm" ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
-            <p className="text-base font-semibold text-gray-900">{t("auth.registerCustomer.closeConfirmTitle")}</p>
-            <p className="text-sm text-gray-600">
-              {t("auth.registerCustomer.closeConfirmBody", { pct: progressPct })}
-            </p>
-            <div className="flex gap-2 w-full mt-2">
-              <button
-                onClick={handleContinueLater}
-                className="flex-1 border border-gray-300 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                {t("auth.registerCustomer.continueLater")}
-              </button>
-              <button
-                onClick={() => setPhase("flow")}
-                className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                {t("auth.registerCustomer.keepGoing")}
-              </button>
-            </div>
-          </div>
-        ) : (
+      <WizardShell
+        stepLabel={tr("stepOf", { n: step + 1, total: STEPS.length })}
+        progress={(step + 1) / STEPS.length}
+        topRight={<LanguageToggle />}
+        onClose={() => setPhase("confirm")}
+        closeLabel={tr("close")}
+        error={error}
+        back={{ label: tr("back"), onClick: goBack, hidden: step === 0 && !returnToPreview }}
+        next={{ label: nextLabel, onClick: goNext, disabled: !isStepValid(current) || loading || saving }}
+        skip={OPTIONAL.includes(current) && !returnToPreview ? { label: tr("skip"), onClick: goNext } : undefined}
+      >
+        {current === "about" && (
           <>
-            <div className="flex items-center gap-2.5 mb-6">
-              <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progressPct}%` }} />
+            <h2 className={h2}>{tr("s1Title")}</h2>
+            <p className={sub}>{tr("s1Sub")}</p>
+            <div className="mb-5">
+              <span className={label}>{tr("qPhoto")}</span>
+              <PhotoPicker
+                preview={answers.photoPreview}
+                onPick={(file, url) => set({ photoFile: file, photoPreview: url })}
+                labels={{ camera: tr("photoTakePhoto"), library: tr("photoCameraRoll"), computer: tr("photoChooseComputer") }}
+              />
+              <p className="text-xs text-gray-500 mt-2">{tr("photoTip")}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="h-first" className={label}>{tr("qFirstName")}</label>
+                <input id="h-first" type="text" value={answers.firstName} onChange={(e) => set({ firstName: e.target.value })} onBlur={() => setNamesTouched(true)} placeholder={tr("phFirstName")} className={inputCls} />
               </div>
-              <span className="text-sm font-semibold text-gray-900 min-w-[2.5rem] text-end">{progressPct}%</span>
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={() => setPhase("confirm")}
-                className="p-1 text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+              <div>
+                <label htmlFor="h-last" className={label}>{tr("qLastName")}</label>
+                <input id="h-last" type="text" value={answers.lastName} onChange={(e) => set({ lastName: e.target.value })} onBlur={() => setNamesTouched(true)} placeholder={tr("phLastName")} className={inputCls} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1.5">{tr("lastNameNote")}</p>
+            {namesTouched && (answers.firstName.trim() === "" || answers.lastName.trim() === "") && <p className="text-sm text-red-600 mt-1">{tr("errNames")}</p>}
+
+            <div className="mt-5">
+              <label htmlFor="h-phone" className={label}>{tr("qPhone")} <span className="text-gray-400 font-normal">({tr("optional")})</span></label>
+              <input id="h-phone" type="tel" value={answers.phone} onChange={(e) => set({ phone: e.target.value })} placeholder={tr("phPhone")} className={inputCls} />
+              <p className="text-xs text-gray-500 mt-1.5">{tr("phoneNote")}</p>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center gap-5">
-              {current === "about" && (
-                <>
-                  <p className="text-lg font-semibold text-gray-900">{t("auth.registerCustomer.stepAbout")}</p>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t("auth.registerCustomer.qPhoto")}</p>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setPhotoMenuOpen((o) => !o)}
-                        className="w-20 h-20 rounded-full border border-dashed border-gray-300 bg-gray-50 overflow-hidden flex items-center justify-center"
-                      >
-                        {answers.photoPreview ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={answers.photoPreview} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-2xl text-gray-400">📷</span>
-                        )}
-                      </button>
-                      {photoMenuOpen && (
-                        <div className="absolute top-24 start-0 bg-white border border-gray-200 rounded-xl shadow-lg z-10 min-w-[200px] overflow-hidden">
-                          <button type="button" onClick={() => handlePhotoPick("camera")} className="w-full text-start px-4 py-2.5 text-sm hover:bg-gray-50">
-                            {t("auth.registerCustomer.photoTakePhoto")}
-                          </button>
-                          <button type="button" onClick={() => handlePhotoPick("library")} className="w-full text-start px-4 py-2.5 text-sm hover:bg-gray-50">
-                            {t("auth.registerCustomer.photoCameraRoll")}
-                          </button>
-                          <button type="button" onClick={() => handlePhotoPick("computer")} className="w-full text-start px-4 py-2.5 text-sm hover:bg-gray-50">
-                            {t("auth.registerCustomer.photoChooseComputer")}
-                          </button>
-                        </div>
-                      )}
-                      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">{t("auth.registerCustomer.photoTip")}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qFirstName")}</label>
-                      <input
-                        id="firstName"
-                        type="text"
-                        autoFocus
-                        value={answers.firstName}
-                        onChange={(e) => setAnswers((a) => ({ ...a, firstName: e.target.value }))}
-                        placeholder={t("auth.registerCustomer.phFirstName")}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qLastName")}</label>
-                      <input
-                        id="lastName"
-                        type="text"
-                        value={answers.lastName}
-                        onChange={(e) => setAnswers((a) => ({ ...a, lastName: e.target.value }))}
-                        placeholder={t("auth.registerCustomer.phLastName")}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 -mt-3">{t("auth.registerCustomer.lastNameNote")}</p>
-
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qPhone")}</label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      value={answers.phone}
-                      onChange={(e) => setAnswers((a) => ({ ...a, phone: e.target.value }))}
-                      placeholder={t("auth.registerCustomer.phPhone")}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">{t("auth.registerCustomer.phoneNote")}</p>
-                  </div>
-
-                  <div>
-                    <label htmlFor="languages" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qLanguages")}</label>
-                    <input
-                      id="languages"
-                      type="text"
-                      value={answers.languages}
-                      onChange={(e) => setAnswers((a) => ({ ...a, languages: e.target.value }))}
-                      placeholder={t("auth.registerCustomer.phLanguages")}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="aboutMe" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qAboutMe")}</label>
-                    <textarea
-                      id="aboutMe"
-                      rows={3}
-                      value={answers.aboutMe}
-                      onChange={(e) => setAnswers((a) => ({ ...a, aboutMe: e.target.value }))}
-                      placeholder={t("auth.registerCustomer.aboutMePlaceholder")}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </>
-              )}
-
-              {current === "home" && (
-                <>
-                  <p className="text-lg font-semibold text-gray-900">{t("auth.registerCustomer.stepHome")}</p>
-
-                  <div>
-                    <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qArea")}</label>
-                    <LocalityPicker
-                      id="area"
-                      lang={lang === "he" ? "he" : "en"}
-                      value={answers.locality}
-                      onChange={(l) => setAnswers((a) => ({ ...a, locality: l }))}
-                      autoFocus
-                    />
-                    {!answers.locality && (
-                      <div className="mt-2">
-                        {answers.areaManual ? (
-                          <input
-                            type="text"
-                            value={answers.area}
-                            onChange={(e) => setAnswers((a) => ({ ...a, area: e.target.value }))}
-                            placeholder={t("auth.registerCustomer.phArea")}
-                            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setAnswers((a) => ({ ...a, areaManual: true }))}
-                            className="text-xs text-gray-500 underline"
-                          >
-                            {t("auth.registerCustomer.areaManual")}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">{t("auth.registerCustomer.areaSub")}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t("auth.registerCustomer.qHomeType")}</p>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {HOME_TYPES.map((h) => (
-                        <button
-                          key={h.value}
-                          type="button"
-                          onClick={() => setAnswers((a) => ({ ...a, homeType: h.value }))}
-                          className={`px-3 py-1.5 rounded-full border text-sm ${
-                            answers.homeType === h.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                          }`}
-                        >
-                          {t(`auth.registerCustomer.${h.key}`)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qBedrooms")}</label>
-                      <input
-                        id="bedrooms"
-                        type="number"
-                        min={0}
-                        value={answers.bedrooms}
-                        onChange={(e) => setAnswers((a) => ({ ...a, bedrooms: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qBathrooms")}</label>
-                      <input
-                        id="bathrooms"
-                        type="number"
-                        min={0}
-                        value={answers.bathrooms}
-                        onChange={(e) => setAnswers((a) => ({ ...a, bathrooms: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="numFloors" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qFloors")}</label>
-                      <input
-                        id="numFloors"
-                        type="number"
-                        min={0}
-                        value={answers.numFloors}
-                        onChange={(e) => setAnswers((a) => ({ ...a, numFloors: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="sizeSqm" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qSize")}</label>
-                    <input
-                      id="sizeSqm"
-                      type="number"
-                      min={0}
-                      value={answers.sizeSqm}
-                      onChange={(e) => setAnswers((a) => ({ ...a, sizeSqm: e.target.value }))}
-                      className="w-32 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400">{t("auth.registerCustomer.multiHomeNote")}</p>
-                </>
-              )}
-
-              {current === "household" && (
-                <>
-                  <p className="text-lg font-semibold text-gray-900">{t("auth.registerCustomer.stepHousehold")}</p>
-
-                  <div>
-                    <label htmlFor="numPeople" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qPeople")}</label>
-                    <input
-                      id="numPeople"
-                      type="number"
-                      min={0}
-                      value={answers.numPeople}
-                      onChange={(e) => setAnswers((a) => ({ ...a, numPeople: e.target.value }))}
-                      className="w-32 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t("auth.registerCustomer.qPets")}</p>
-                    <div className="flex gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setAnswers((a) => ({ ...a, petTypes: [], numPets: "", petNote: "", petPhotoFile: null, petPhotoPreview: null }))}
-                        className={`px-3 py-1.5 rounded-full border text-sm ${
-                          answers.petTypes.length === 0 ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                        }`}
-                      >
-                        {t("auth.registerCustomer.petsNone")}
-                      </button>
-                      {PET_TYPES.map((p) => (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() => togglePetType(p.value)}
-                          className={`px-3 py-1.5 rounded-full border text-sm ${
-                            answers.petTypes.includes(p.value) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                          }`}
-                        >
-                          {t(`auth.registerCustomer.${p.key}`)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {answers.petTypes.length > 0 && (
-                    <>
-                      <div>
-                        <label htmlFor="numPets" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qNumPets")}</label>
-                        <input
-                          id="numPets"
-                          type="number"
-                          min={0}
-                          value={answers.numPets}
-                          onChange={(e) => setAnswers((a) => ({ ...a, numPets: e.target.value }))}
-                          className="w-32 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="petNote" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qPetNote")}</label>
-                        <textarea
-                          id="petNote"
-                          rows={2}
-                          value={answers.petNote}
-                          onChange={(e) => setAnswers((a) => ({ ...a, petNote: e.target.value }))}
-                          placeholder={t("auth.registerCustomer.petNotePlaceholder")}
-                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">{t("auth.registerCustomer.qPetPhoto")}</p>
-                        <button
-                          type="button"
-                          onClick={() => petPhotoInputRef.current?.click()}
-                          className="w-16 h-16 rounded-xl border border-dashed border-gray-300 bg-gray-50 overflow-hidden flex items-center justify-center"
-                        >
-                          {answers.petPhotoPreview ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={answers.petPhotoPreview} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-2xl">🐾</span>
-                          )}
-                        </button>
-                        <input ref={petPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={onPetPhotoChange} />
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-
-              {current === "preferences" && (
-                <>
-                  <p className="text-lg font-semibold text-gray-900">{t("auth.registerCustomer.stepPreferences")}</p>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t("auth.registerCustomer.qFrequency")}</p>
-                    <div className="flex flex-col gap-2">
-                      {FREQUENCIES.map((f) => (
-                        <button
-                          key={f.value}
-                          type="button"
-                          onClick={() => setAnswers((a) => ({ ...a, frequency: f.value }))}
-                          className={`text-start px-3.5 py-2.5 rounded-xl border text-sm ${
-                            answers.frequency === f.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                          }`}
-                        >
-                          {t(`auth.registerCustomer.${f.key}`)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t("auth.registerCustomer.qCleaningType")}</p>
-                    <div className="flex gap-2">
-                      {CLEANING_TYPES.map((c) => (
-                        <button
-                          key={c.value}
-                          type="button"
-                          onClick={() => setAnswers((a) => ({ ...a, cleaningType: c.value }))}
-                          className={`flex-1 py-2.5 rounded-xl border text-sm font-medium ${
-                            answers.cleaningType === c.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                          }`}
-                        >
-                          {t(`auth.registerCustomer.${c.key}`)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qPriorities")}</p>
-                    <p className="text-xs text-gray-500 mb-2">{t("auth.registerCustomer.prioritiesSub")}</p>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {PRIORITIES.map((p) => (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() => togglePriority(p.value)}
-                          className={`px-3 py-1.5 rounded-full border text-sm ${
-                            answers.priorities.includes(p.value) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 bg-white text-gray-700"
-                          }`}
-                        >
-                          {t(`auth.registerCustomer.${p.key}`)}
-                        </button>
-                      ))}
-                    </div>
-                    {answers.priorities.includes("other") && (
-                      <input
-                        type="text"
-                        value={answers.priorityOtherText}
-                        onChange={(e) => setAnswers((a) => ({ ...a, priorityOtherText: e.target.value }))}
-                        placeholder={t("auth.registerCustomer.priOtherPh")}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mt-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="homeInstructions" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.registerCustomer.qInstructions")}</label>
-                    <textarea
-                      id="homeInstructions"
-                      rows={3}
-                      value={answers.homeInstructions}
-                      onChange={(e) => setAnswers((a) => ({ ...a, homeInstructions: e.target.value }))}
-                      placeholder={t("auth.registerCustomer.instructionsPlaceholder")}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </>
-              )}
-
-              {current === "preview" && (
-                <>
-                  <p className="text-lg font-semibold text-gray-900 mb-1">{t("auth.registerCustomer.previewTitle")}</p>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center shrink-0">
-                      {answers.photoPreview ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={answers.photoPreview} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xl text-gray-400">{displayName.charAt(0).toUpperCase() || "?"}</span>
-                      )}
-                    </div>
-                    <p className="font-semibold text-gray-900">{displayName || "—"}</p>
-                  </div>
-
-                  <div className="space-y-2 text-sm bg-gray-50 rounded-xl p-4">
-                    {(answers.locality || answers.area) && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500">{t("auth.registerCustomer.previewArea")}</span>
-                        <span className="text-gray-900 text-end">{answers.locality ? answers.locality.name_he : answers.area}</span>
-                      </div>
-                    )}
-                    {answers.homeType && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500">{t("auth.registerCustomer.previewHomeType")}</span>
-                        <span className="text-gray-900">{t(`auth.registerCustomer.${HOME_TYPES.find((h) => h.value === answers.homeType)!.key}`)}</span>
-                      </div>
-                    )}
-                    {(answers.bedrooms || answers.bathrooms) && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500">{t("auth.registerCustomer.qBedrooms")}/{t("auth.registerCustomer.qBathrooms")}</span>
-                        <span className="text-gray-900">
-                          {t("auth.registerCustomer.previewBedsBaths", { beds: answers.bedrooms || "—", baths: answers.bathrooms || "—" })}
-                        </span>
-                      </div>
-                    )}
-                    {answers.numPeople && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500">{t("auth.registerCustomer.previewHousehold")}</span>
-                        <span className="text-gray-900">{t("auth.registerCustomer.previewPeople", { count: answers.numPeople })}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between gap-3">
-                      <span className="text-gray-500">{t("auth.registerCustomer.previewPets")}</span>
-                      <span className="text-gray-900">
-                        {answers.petTypes.length === 0
-                          ? t("auth.registerCustomer.previewNoPets")
-                          : answers.petTypes.map((p) => t(`auth.registerCustomer.${PET_TYPES.find((pt) => pt.value === p)!.key}`)).join(", ")}
-                      </span>
-                    </div>
-                    {answers.cleaningType && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500">{t("auth.registerCustomer.previewCleaningType")}</span>
-                        <span className="text-gray-900">{t(`auth.registerCustomer.${CLEANING_TYPES.find((c) => c.value === answers.cleaningType)!.key}`)}</span>
-                      </div>
-                    )}
-                    {answers.frequency && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500">{t("auth.registerCustomer.previewFrequency")}</span>
-                        <span className="text-gray-900">{t(`auth.registerCustomer.${FREQUENCIES.find((f) => f.value === answers.frequency)!.key}`)}</span>
-                      </div>
-                    )}
-                    {answers.priorities.length > 0 && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-gray-500 shrink-0">{t("auth.registerCustomer.previewPriorities")}</span>
-                        <span className="text-gray-900 text-end">
-                          {answers.priorities.map((p) => (p === "other" ? answers.priorityOtherText : t(`auth.registerCustomer.${PRIORITIES.find((pr) => pr.value === p)!.key}`))).filter(Boolean).join(", ")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+            <div className="mt-5">
+              <span className={label}>{tr("qLanguages")}</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {LANGUAGE_CHIPS.map((l) => (
+                  <Chip key={l.value} selected={answers.languages.includes(l.value)} onClick={() => toggleLanguage(l.value)}>{tr(l.key)}</Chip>
+                ))}
+              </div>
+              <input type="text" value={answers.languagesOther} onChange={(e) => set({ languagesOther: e.target.value })} placeholder={tr("langOtherPh")} aria-label={tr("langOther")} className={`${inputCls} mt-3 text-sm`} />
             </div>
 
-            <div className="flex justify-between items-center mt-6">
-              <button
-                type="button"
-                onClick={goBack}
-                className={`px-3.5 py-2 text-sm text-gray-600 hover:text-gray-900 ${step === 0 ? "invisible" : ""}`}
-              >
-                {t("auth.registerCustomer.back")}
-              </button>
-              <button
-                type="button"
-                disabled={!isStepValid(current) || loading || saving}
-                onClick={goNext}
-                className="bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-              >
-                {saving ? t("auth.registerCustomer.saving") : isLast ? t("auth.registerCustomer.submit") : t("auth.registerCustomer.next")}
-              </button>
+            <div className="mt-5">
+              <GuidedAbout
+                value={answers.aboutMe}
+                onChange={(v) => set({ aboutMe: v })}
+                boxLabel={tr("qAboutMe")}
+                rebuildLabel=""
+                prompts={[{ label: tr("qAboutMe"), starters: [tr("aboutStarter1"), tr("aboutStarter2"), tr("aboutStarter3")], placeholder: tr("aboutMePlaceholder") }]}
+              />
             </div>
           </>
         )}
-      </div>
-    </div>
+
+        {current === "where" && (
+          <>
+            <h2 className={h2}>{tr("s2Title")}</h2>
+            <p className={sub}>{tr("s2Sub")}</p>
+            <label htmlFor="h-town" className={label}>{tr("qArea")}</label>
+            <LocalityPicker id="h-town" lang={lang === "he" ? "he" : "en"} value={answers.locality} onChange={(l) => set({ locality: l })} autoFocus />
+            {!answers.locality && (
+              <div className="mt-3">
+                {answers.areaManual ? (
+                  <input type="text" value={answers.area} onChange={(e) => set({ area: e.target.value })} placeholder={tr("phArea")} className={inputCls} />
+                ) : (
+                  <button type="button" onClick={() => set({ areaManual: true })} className="text-sm text-gray-500 underline">{tr("areaManual")}</button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {current === "home" && (
+          <>
+            <h2 className={h2}>{tr("s3Title")}</h2>
+            <p className={sub}>{tr("s3Sub")}</p>
+            <span className={label}>{tr("qHomeType")}</span>
+            <div className="grid grid-cols-2 gap-2">
+              {HOME_TYPE_CHOICES.map((v) => (
+                <OptionCard key={v} selected={answers.homeType === v} onClick={() => set({ homeType: answers.homeType === v ? null : v })} title={tr(HOME_KEYS[v])} />
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div>
+                <span className={label}>{tr("qBedrooms")}</span>
+                <Stepper value={answers.bedrooms} onChange={(v) => set({ bedrooms: v })} min={0} max={30} label={tr("qBedrooms")} />
+              </div>
+              <div>
+                <span className={label}>{tr("qBathrooms")}</span>
+                <Stepper value={answers.bathrooms} onChange={(v) => set({ bathrooms: v })} min={0} max={30} label={tr("qBathrooms")} />
+              </div>
+            </div>
+            <button type="button" onClick={() => setShowMore((s) => !s)} aria-expanded={showMore} className="text-sm text-blue-600 underline mt-6">
+              {tr("moreDetails")}
+            </button>
+            {showMore && (
+              <div className="grid grid-cols-3 gap-3 mt-3">
+                <div>
+                  <label htmlFor="h-floors" className="block text-xs font-medium text-gray-700 mb-1">{tr("qFloors")}</label>
+                  <input id="h-floors" type="number" inputMode="numeric" min={0} value={answers.numFloors} onChange={(e) => set({ numFloors: e.target.value })} className="w-full border border-gray-300 rounded-xl px-2 py-2 text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="h-size" className="block text-xs font-medium text-gray-700 mb-1">{tr("qSize")}</label>
+                  <input id="h-size" type="number" inputMode="numeric" min={0} value={answers.sizeSqm} onChange={(e) => set({ sizeSqm: e.target.value })} className="w-full border border-gray-300 rounded-xl px-2 py-2 text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="h-people" className="block text-xs font-medium text-gray-700 mb-1">{tr("qPeople")}</label>
+                  <input id="h-people" type="number" inputMode="numeric" min={0} value={answers.numPeople} onChange={(e) => set({ numPeople: e.target.value })} className="w-full border border-gray-300 rounded-xl px-2 py-2 text-sm" />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {current === "pets" && (
+          <>
+            <h2 className={h2}>{tr("s4Title")}</h2>
+            <p className={sub}>{tr("s4Sub")}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <OptionCard selected={!hasPets} onClick={() => set({ petTypes: [], numPets: "", petNote: "", petPhotoFile: null, petPhotoPreview: null, petPhotoUrl: null })} title={tr("petsNone")} />
+              {PET_TYPES.map((p) => (
+                <OptionCard key={p.value} selected={answers.petTypes.includes(p.value)} onClick={() => togglePet(p.value)} title={tr(p.key)} />
+              ))}
+            </div>
+            {hasPets && (
+              <div className="mt-6 space-y-5">
+                <div>
+                  <span className={label}>{tr("qNumPets")}</span>
+                  <Stepper value={answers.numPets} onChange={(v) => set({ numPets: v })} min={1} max={30} label={tr("qNumPets")} />
+                </div>
+                <div>
+                  <label htmlFor="h-petnote" className={label}>{tr("qPetNote")}</label>
+                  <textarea id="h-petnote" rows={2} value={answers.petNote} onChange={(e) => set({ petNote: e.target.value })} placeholder={tr("petNotePlaceholder")} className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <span className={label}>{tr("qPetPhoto")}</span>
+                  <PhotoPicker
+                    preview={answers.petPhotoPreview}
+                    onPick={(file, url) => set({ petPhotoFile: file, petPhotoPreview: url })}
+                    labels={{ camera: tr("photoTakePhoto"), library: tr("photoCameraRoll"), computer: tr("photoChooseComputer") }}
+                    sizeClass="w-20 h-20"
+                    fallback="🐾"
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {current === "preview" && (
+          <>
+            <h2 className={h2}>{tr("s5Title")}</h2>
+            <p className={sub}>{tr("s5Sub")}</p>
+            <PreviewSection editLabel={tr("edit")} onEdit={() => editSection("about")}>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-xl text-gray-400 shrink-0">
+                  {answers.photoPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={answers.photoPreview} alt="" className="w-full h-full object-cover" />
+                  ) : "📷"}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">{displayName}</p>
+                  {langNames.length > 0 && <p className="text-sm text-gray-600">{tr("previewLanguages")}: {langNames.join(", ")}</p>}
+                </div>
+              </div>
+              {answers.aboutMe && <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">{answers.aboutMe}</p>}
+            </PreviewSection>
+            <PreviewSection title={tr("previewTown")} editLabel={tr("edit")} onEdit={() => editSection("where")}>
+              <p className="text-sm text-gray-800">📍 {townName || notSet}</p>
+            </PreviewSection>
+            <PreviewSection title={tr("previewHome")} editLabel={tr("edit")} onEdit={() => editSection("home")}>
+              {answers.homeType || answers.bedrooms || answers.bathrooms ? (
+                <p className="text-sm text-gray-800">
+                  {[answers.homeType ? tr(HOME_KEYS[answers.homeType] ?? "homeOther") : null, answers.bedrooms || answers.bathrooms ? tr("previewBedsBaths", { beds: answers.bedrooms || "–", baths: answers.bathrooms || "–" }) : null].filter(Boolean).join(" · ")}
+                </p>
+              ) : notSet}
+            </PreviewSection>
+            <PreviewSection title={tr("previewPets")} editLabel={tr("edit")} onEdit={() => editSection("pets")}>
+              <p className="text-sm text-gray-800">
+                {hasPets ? answers.petTypes.map((p) => tr(PET_TYPES.find((x) => x.value === p)?.key ?? "petsOther")).join(", ") : tr("previewNoPets")}
+              </p>
+              {hasPets && answers.petNote && <p className="text-sm text-gray-600">{answers.petNote}</p>}
+            </PreviewSection>
+            <p className="text-xs text-gray-500 mt-4">{tr("previewNote")}</p>
+          </>
+        )}
+      </WizardShell>
+    </>
   );
 }

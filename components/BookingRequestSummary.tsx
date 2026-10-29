@@ -25,7 +25,7 @@ export type BookingSummaryData = {
   hourlyRate: number | null;
 };
 
-const EXTRA_KEYS = ["oven", "linens", "windows", "fridge", "laundry", "outdoor"] as const;
+const EXTRA_KEYS = ["oven", "linens", "windows", "fridge", "laundry", "outdoor", "kitchen", "bathrooms", "floors", "dusting"] as const;
 
 const STRINGS = {
   en: {
@@ -41,8 +41,8 @@ const STRINGS = {
     cleaningType: "Cleaning type",
     cleaningTypeRegular: "Regular cleaning",
     cleaningTypeDeep: "Deep cleaning",
-    extras: "Extras",
-    extraLabels: { oven: "Oven", linens: "Change bed linen", windows: "Windows", fridge: "Fridge", laundry: "Laundry", outdoor: "Balcony / outdoor area" },
+    extras: "Extras & focus",
+    extraLabels: { oven: "Oven", linens: "Change bed linen", windows: "Windows", fridge: "Fridge", laundry: "Laundry", outdoor: "Balcony / outdoor area", kitchen: "Kitchen", bathrooms: "Bathrooms", floors: "Floors", dusting: "Dusting" },
     pets: "Pets",
     petsWillBeHome: "Will be home",
     petsAway: "Will not be home",
@@ -66,8 +66,8 @@ const STRINGS = {
     cleaningType: "סוג ניקיון",
     cleaningTypeRegular: "ניקיון רגיל",
     cleaningTypeDeep: "ניקיון יסודי",
-    extras: "תוספות",
-    extraLabels: { oven: "תנור", linens: "החלפת מצעים", windows: "חלונות", fridge: "מקרר", laundry: "כביסה", outdoor: "מרפסת / שטח חוץ" },
+    extras: "תוספות ודגשים",
+    extraLabels: { oven: "תנור", linens: "החלפת מצעים", windows: "חלונות", fridge: "מקרר", laundry: "כביסה", outdoor: "מרפסת / שטח חוץ", kitchen: "מטבח", bathrooms: "חדרי רחצה", floors: "רצפות", dusting: "ניקוי אבק" },
     pets: "חיות מחמד",
     petsWillBeHome: "יהיו בבית",
     petsAway: "לא יהיו בבית",

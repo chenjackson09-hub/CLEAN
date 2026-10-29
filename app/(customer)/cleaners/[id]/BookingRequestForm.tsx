@@ -19,6 +19,8 @@ type HostDefaults = {
   num_pets: number | null
   usual_cleaning_type: 'regular' | 'deep' | null
   address: string | null
+  // What the host said matters (sign-up/profile). Seeds the "what matters this time" chips.
+  cleaning_priorities?: string[] | null
 }
 
 const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -42,7 +44,12 @@ export type RequestPrefill = {
   hostPresent?: boolean | null
 }
 
+// "What matters most this time" (moved here from sign-up: it is about a request, not a profile)
+// is stored in the same list as the extras, so nothing about the booking changes.
+const FOCUS_KEYS = ['kitchen', 'bathrooms', 'floors', 'dusting'] as const
 const EXTRA_KEYS = ['oven', 'linens', 'windows', 'fridge', 'laundry', 'outdoor'] as const
+const KNOWN_KEYS: readonly string[] = [...FOCUS_KEYS, ...EXTRA_KEYS]
+const capital = (k: string) => `${k.charAt(0).toUpperCase()}${k.slice(1)}`
 
 export function BookingRequestForm({
   cleaner,
@@ -113,12 +120,18 @@ export function BookingRequestForm({
       if (!user) return
       const { data } = await supabase
         .from('customers')
-        .select('dwelling_type, bedrooms, num_rooms, bathrooms, pet_types, num_pets, usual_cleaning_type, address')
+        .select('dwelling_type, bedrooms, num_rooms, bathrooms, pet_types, num_pets, usual_cleaning_type, address, cleaning_priorities')
         .eq('id', user.id)
         .single<HostDefaults>()
       if (!data) return
       setHostDefaults(data)
       if (!prefill?.cleaningType) setCleaningType(data.usual_cleaning_type === 'deep' ? 'deep' : 'regular')
+      // Start from what the host usually cares about (still fully editable). A re-request
+      // that carries its own extras keeps those instead.
+      if (!prefill?.extras) {
+        const usual = (data.cleaning_priorities ?? []).filter((p) => KNOWN_KEYS.includes(p))
+        if (usual.length > 0) setExtras((prev) => Array.from(new Set([...prev, ...usual])))
+      }
       setHomeDwelling(data.dwelling_type ?? 'house')
       const bedrooms = data.bedrooms ?? data.num_rooms
       setHomeBedrooms(bedrooms != null ? String(bedrooms) : '')
@@ -381,6 +394,23 @@ export function BookingRequestForm({
         </p>
       </div>
 
+      {/* What matters most this time */}
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.focus')}</span>
+        <div className="flex flex-wrap gap-2">
+          {FOCUS_KEYS.map(key => (
+            <button
+              key={key} type="button" onClick={() => toggleExtra(key)} aria-pressed={extras.includes(key)}
+              className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+                extras.includes(key) ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white text-gray-700'
+              }`}
+            >
+              {t(`bookingRequestForm.extra${capital(key)}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Extras */}
       <div className="flex flex-col gap-2">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('bookingRequestForm.extras')}</span>
@@ -392,10 +422,10 @@ export function BookingRequestForm({
                 extras.includes(key) ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white text-gray-700'
               }`}
             >
-              {t(`bookingRequestForm.extra${key.charAt(0).toUpperCase()}${key.slice(1)}`)}
+              {t(`bookingRequestForm.extra${capital(key)}`)}
             </button>
           ))}
-          {extras.filter(e => !(EXTRA_KEYS as readonly string[]).includes(e)).map(custom => (
+          {extras.filter(e => !KNOWN_KEYS.includes(e)).map(custom => (
             <button
               key={custom} type="button" onClick={() => toggleExtra(custom)}
               className="px-3 py-1.5 rounded-full border border-blue-500 bg-blue-50 text-blue-700 text-sm font-medium"

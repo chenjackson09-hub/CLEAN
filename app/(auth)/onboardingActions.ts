@@ -76,6 +76,11 @@ export async function saveOnboarding(input: { role: OnboardingRole; draft: unkno
       if (p.error) throw p.error
       const c = await supabase.from('cleaners').upsert({ id: user.id, ...rows.cleaner })
       if (c.error) throw c.error
+      if (draft.experience) {
+        // Needs migration 0043. Its own best-effort write: a missing column never fails the sign-up.
+        const exp = await supabase.from('cleaners').update(rows.extras).eq('id', user.id)
+        if (exp.error) console.error('[onboarding] experience range not saved', exp.error.message)
+      }
       if (place.localityId) {
         // Its own best-effort write, as before: a missing column never fails the sign-up.
         const link = await supabase.from('cleaners').update({ locality_id: place.localityId }).eq('id', user.id)

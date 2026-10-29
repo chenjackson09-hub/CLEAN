@@ -1,3 +1,4 @@
+import type { DwellingType } from "@/types/database"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
@@ -72,7 +73,7 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
           num_kids_under_15: numOrEmpty(customer?.num_kids_under_15),
           num_people: numOrEmpty(customer?.num_people),
           house_size_sqm: numOrEmpty(customer?.house_size_sqm),
-          dwelling_type: (customer?.dwelling_type as 'apartment' | 'house' | null) ?? null,
+          dwelling_type: (customer?.dwelling_type as DwellingType | null) ?? null,
           floor: numOrEmpty(customer?.floor),
         }}
       />

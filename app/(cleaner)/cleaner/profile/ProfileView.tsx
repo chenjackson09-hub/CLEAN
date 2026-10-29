@@ -1,5 +1,6 @@
 "use client";
 
+import { experienceLabel } from "@/lib/onboarding/options";
 import { useLang } from "@/context/LangContext";
 import { StarRatingDisplay } from "@/components/StarRating";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
@@ -29,7 +30,7 @@ function ageFromBirthdate(birthdate: string | null): number | null {
 }
 
 export default function ProfileView({ profile, cleaner, onEdit, center = null }: Props) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const age = ageFromBirthdate(cleaner?.birthdate ?? null);
   const lookingFor = lookingForLabels(cleaner?.match_preferences, cleaner?.match_preference_other, {
     recurring: t("prof_match_recurring"),
@@ -116,11 +117,11 @@ export default function ProfileView({ profile, cleaner, onEdit, center = null }:
           <p className="text-xs text-gray-400">{t("prof_houses_cleaned")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.cleans_completed ?? 0}</p>
         </div>
-        {!!cleaner?.years_experience && (
+        {(!!cleaner?.experience_range || !!cleaner?.years_experience) && (
           <div className="bg-gray-50 rounded-xl px-3 py-2.5">
             <p className="text-xs text-gray-400">{t("prof_experience")}</p>
             <p className="text-base font-semibold text-gray-900 mt-0.5">
-              {cleaner.years_experience} {cleaner.years_experience === 1 ? t("prev_year") : t("prev_years")}
+              {experienceLabel(cleaner?.experience_range, lang === "he" ? "he" : "en") ?? `${cleaner?.years_experience} ${cleaner?.years_experience === 1 ? t("prev_year") : t("prev_years")}`}
             </p>
           </div>
         )}

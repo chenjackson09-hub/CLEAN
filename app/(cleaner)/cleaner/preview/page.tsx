@@ -81,6 +81,7 @@ export default async function PreviewPage() {
     has_car: cleaner?.has_car ?? null,
     gas_return_enabled: cleaner?.gas_return_enabled ?? false,
     gas_return_rate: cleaner?.gas_return_rate ?? null,
+    experience_range: (cleaner as { experience_range?: string | null } | null)?.experience_range ?? null,
     cindy_verified: (await fetchCindyVerified(createAdminClient(), 'cleaners', [user.id])).has(user.id),
   };
 

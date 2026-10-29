@@ -1,4 +1,4 @@
-import { CLEANER_SERVICES, MATCH_TYPES } from './options'
+import { EXPERIENCE_RANGES, EXPERIENCE_VALUES, LANGUAGE_VALUES, MATCH_TYPES, SERVICE_VALUES, joinLanguages, normalizeServices, splitLanguages } from './options'
 import { DraftError, bool, birthdateFromParts, listOf, numText, oneOf, ownPhotoUrl, str, uuidOrNull } from './validate'
 
 // What the cleaner wizard has collected so far — plain, serialisable values only (no files,
@@ -27,15 +27,19 @@ export type CleanerDraft = {
   gas: 'yes' | 'no' | null
   gasAmt: string
   bio: string
+  // 'new' | 'under1' | '1_3' | '3_5' | '5plus' (see options.ts); null = not answered.
+  experience: string | null
+  // The ticked language chips, plus anything else typed under "Other" (comma separated).
+  languages: string[]
+  languagesOther: string
 }
 
 export const EMPTY_CLEANER_DRAFT: CleanerDraft = {
   name: '', avatarUrl: null, birthD: '', birthM: '', birthY: '', localityId: null, loc: '', radius: '10',
   freqType: 'num', freqVal: 3, freqOtherText: '', rate: '75', duration: '3', maxDuration: '5', maxDurationNoLimit: false,
   services: [], serviceOtherText: '', matchTypes: [], matchOtherText: '', car: null, gas: null, gasAmt: '1', bio: '',
+  experience: null, languages: [], languagesOther: '',
 }
-
-const SERVICE_VALUES = CLEANER_SERVICES.map((s) => s.value)
 
 // Checks everything the wizard sent. Partial saves ("continue" mid-wizard) only check that
 // what IS there is valid; a submit also requires the required answers. Throws DraftError
@@ -59,7 +63,7 @@ export function validateCleanerDraft(input: unknown, opts: { submit: boolean; us
     duration: numText(i.duration, 'Minimum job length', 0.5, 24),
     maxDuration: numText(i.maxDuration, 'Maximum job length', 0.5, 24),
     maxDurationNoLimit: bool(i.maxDurationNoLimit, 'No limit'),
-    services: listOf(i.services, 'Services', SERVICE_VALUES),
+    services: listOf(normalizeServices(i.services), 'Services', SERVICE_VALUES),
     serviceOtherText: str(i.serviceOtherText, 'Other service', 120),
     matchTypes: listOf(i.matchTypes, 'Work preference', MATCH_TYPES),
     matchOtherText: str(i.matchOtherText, 'Work preference', 200),
@@ -67,6 +71,9 @@ export function validateCleanerDraft(input: unknown, opts: { submit: boolean; us
     gas: oneOf(i.gas, 'Gas returns', ['yes', 'no'] as const),
     gasAmt: numText(i.gasAmt, 'Gas return amount', 0, 100) || '1',
     bio: str(i.bio, 'About me', 2000),
+    experience: oneOf(i.experience, 'Experience', EXPERIENCE_VALUES as readonly string[]),
+    languages: listOf(i.languages, 'Languages', LANGUAGE_VALUES),
+    languagesOther: str(i.languagesOther, 'Languages', 200),
   }
   if (draft.duration && draft.maxDuration && !draft.maxDurationNoLimit && Number(draft.maxDuration) < Number(draft.duration)) {
     throw new DraftError('The longest job cannot be shorter than the shortest job')
@@ -78,7 +85,6 @@ export function validateCleanerDraft(input: unknown, opts: { submit: boolean; us
     if (!draft.birthD || !draft.birthM || !draft.birthY) throw new DraftError('Please enter your date of birth')
     if (!draft.localityId && !draft.loc) throw new DraftError('Please choose where you work')
     if (draft.services.length === 0) throw new DraftError('Please choose at least one type of cleaning')
-    if (draft.matchTypes.length === 0) throw new DraftError('Please choose what kind of work you prefer')
   }
   return draft
 }
@@ -108,9 +114,16 @@ export function cleanerDraftToRows(draft: CleanerDraft, place: Place, now?: Date
       has_car: draft.car === null ? null : draft.car === 'yes',
       gas_return_enabled: gasOn,
       gas_return_rate: gasOn ? Number(draft.gasAmt || '1') : null,
-      match_preferences: draft.matchTypes,
+      // "Either is fine" is the default: nothing ticked means both.
+      match_preferences: draft.matchTypes.length > 0 ? draft.matchTypes : ['recurring', 'occasional'],
       match_preference_other: draft.matchTypes.includes('other') ? draft.matchOtherText || null : null,
+      languages: joinLanguages(draft.languages, draft.languagesOther),
+      // Written as the range's lower bound so sorting and older screens keep working; the
+      // exact range itself is `extras.experience_range` (its own best-effort write).
+      ...(draft.experience ? { years_experience: EXPERIENCE_RANGES.find((r) => r.value === draft.experience)?.years ?? 0 } : {}),
     },
+    // Needs migration 0043; saved separately so a missing column never fails the sign-up.
+    extras: { experience_range: draft.experience },
   }
 }
 
@@ -126,7 +139,7 @@ export function cleanerRowsToDraft(profile: ProfileRow, cleaner: CleanerRow): Cl
   const weeklyOther = typeof c.weekly_clean_other === 'string' ? c.weekly_clean_other : ''
   const freqType: CleanerDraft['freqType'] = weeklyOther === 'monthly' ? 'monthly' : weeklyOther ? 'other' : 'num'
   const maxNull = c.max_hours == null && c.min_hours != null // saved with "no limit"
-  const services = Array.isArray(c.cleaning_categories) ? (c.cleaning_categories as string[]).filter((s) => SERVICE_VALUES.includes(s)) : []
+  const services = normalizeServices(c.cleaning_categories).filter((s) => SERVICE_VALUES.includes(s))
   const matchTypes = Array.isArray(c.match_preferences) ? (c.match_preferences as string[]).filter((m) => (MATCH_TYPES as readonly string[]).includes(m)) : []
   return {
     ...EMPTY_CLEANER_DRAFT,
@@ -153,5 +166,8 @@ export function cleanerRowsToDraft(profile: ProfileRow, cleaner: CleanerRow): Cl
     gas: c.has_car ? (c.gas_return_enabled ? 'yes' : 'no') : null,
     gasAmt: num(c.gas_return_rate, '1'),
     bio: typeof c.bio === 'string' ? c.bio : '',
+    experience: typeof c.experience_range === 'string' && EXPERIENCE_VALUES.includes(c.experience_range) ? c.experience_range : null,
+    languages: splitLanguages(c.languages).chips,
+    languagesOther: splitLanguages(c.languages).other,
   }
 }

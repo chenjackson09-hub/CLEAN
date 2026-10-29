@@ -94,6 +94,8 @@ export interface Cleaner {
   service_radius_km: number;
   status: CleanerStatus;
   years_experience: number | null;
+  // 'new' | 'under1' | '1_3' | '3_5' | '5plus' (migration 0043); null = not answered.
+  experience_range?: string | null;
   languages: string[] | null;
   // Average rating (1-5, 2 decimals) and number of ratings received. Maintained
   // by the ratings trigger; null avg when never rated. See migration 0011.

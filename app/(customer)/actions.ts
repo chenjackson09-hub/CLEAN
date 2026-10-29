@@ -1,4 +1,5 @@
 "use server"
+import { HOME_TYPES } from "@/lib/onboarding/options"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
@@ -64,7 +65,7 @@ export async function updateCustomerProfile(
     : []
   const dwellingTypeRaw = formData.get("dwelling_type") as string
   const dwellingType =
-    dwellingTypeRaw === "apartment" || dwellingTypeRaw === "house" ? dwellingTypeRaw : null
+    (HOME_TYPES as readonly string[]).includes(dwellingTypeRaw) ? (dwellingTypeRaw as (typeof HOME_TYPES)[number]) : null
 
   const numPets = hasPets ? toInt(formData.get("num_pets")) : null
 

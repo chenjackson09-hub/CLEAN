@@ -1,4 +1,6 @@
 'use client'
+import { HOME_TYPE_CHOICES } from '@/lib/onboarding/options'
+import type { DwellingType } from '@/types/database'
 import { useFormState, useFormStatus } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -24,7 +26,7 @@ type DefaultValues = {
   num_kids_under_15: string
   num_people: string
   house_size_sqm: string
-  dwelling_type: 'apartment' | 'house' | null
+  dwelling_type: DwellingType | null
   floor: string
 }
 
@@ -65,7 +67,7 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
     cat: defaultValues.pet_types.includes('cat'),
     other: defaultValues.pet_types.includes('other'),
   })
-  const [dwellingType, setDwellingType] = useState<'apartment' | 'house' | ''>(
+  const [dwellingType, setDwellingType] = useState<DwellingType | ''>(
     defaultValues.dwelling_type ?? ''
   )
   // num_pets has a dynamic minimum: at least the number of selected pet kinds
@@ -232,12 +234,15 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
               id="dwelling_type"
               name="dwelling_type"
               value={dwellingType}
-              onChange={(e) => setDwellingType(e.target.value as 'apartment' | 'house' | '')}
+              onChange={(e) => setDwellingType(e.target.value as DwellingType | '')}
               className={fieldClass}
             >
               <option value="">{t('profile.selectPlaceholder')}</option>
-              <option value="apartment">{t('profile.apartment')}</option>
-              <option value="house">{t('profile.house')}</option>
+              {HOME_TYPE_CHOICES.map((v) => (
+                <option key={v} value={v}>{t(`profile.${v}`)}</option>
+              ))}
+              {/* A saved 'other' is no longer offered, but must not vanish from the list. */}
+              {dwellingType === 'other' && <option value="other">{t('profile.otherHome')}</option>}
             </select>
           </div>
 

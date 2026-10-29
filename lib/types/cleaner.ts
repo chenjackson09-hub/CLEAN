@@ -24,6 +24,8 @@ export type CleanerResult = {
   rating_count?: number
   // True only when an admin has explicitly "Cindy Verified" this cleaner (migration 0042).
   cindy_verified?: boolean
+  // 'new' | 'under1' | '1_3' | '3_5' | '5plus' (migration 0043); shown instead of the years when set.
+  experience_range?: string | null
   // Lifetime count of completed cleans this cleaner has finished. See migration 0015.
   cleans_completed?: number
   // Hours the cleaner will accept a clean for (null = no limit). Constrains the

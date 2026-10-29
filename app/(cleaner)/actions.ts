@@ -1,5 +1,6 @@
 "use server";
 
+import { EXPERIENCE_RANGES } from "@/lib/onboarding/options";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
@@ -79,7 +80,10 @@ export async function updateCleanerProfile(formData: FormData) {
   const bio = formData.get("bio") as string;
   const hourlyRate = parseFloat(formData.get("hourly_rate") as string) || null;
   const serviceRadius = Math.min(100, Math.max(1, parseInt(formData.get("service_radius_km") as string) || 10));
-  const yearsExp = parseInt(formData.get("years_experience") as string) || 0;
+  // Experience is one of five ranges (see lib/onboarding/options.ts). years_experience keeps the
+  // range's lower bound so sorting and older screens work; an unanswered field changes nothing.
+  const experienceRaw = (formData.get("experience_range") as string) || "";
+  const experience = EXPERIENCE_RANGES.find((r) => r.value === experienceRaw) ?? null;
   // min_hours now allows half-hour steps (migration 0018 widened it to
   // numeric) since the signup flow's "minimum job length" question does —
   // parseFloat, not parseInt, or a value like 3.5 would silently truncate to 3.
@@ -160,7 +164,7 @@ export async function updateCleanerProfile(formData: FormData) {
     bio,
     hourly_rate: hourlyRate,
     service_radius_km: serviceRadius,
-    years_experience: yearsExp,
+    ...(experience ? { years_experience: experience.years } : {}),
     min_hours: minHours,
     max_hours: maxHours,
     languages,
@@ -191,6 +195,13 @@ export async function updateCleanerProfile(formData: FormData) {
 
   if (profileResult.error) return { error: profileResult.error.message };
   if (cleanerResult.error) return { error: cleanerResult.error.message };
+
+  // The experience range needs migration 0043: its own best-effort write, so the rest of the
+  // profile has already saved if the column isn't there yet.
+  if (experience) {
+    const { error: expErr } = await supabase.from("cleaners").update({ experience_range: experience.value }).eq("id", user.id);
+    if (expErr) console.error("experience range not saved (migration 0043?)", expErr.message);
+  }
 
   // The locality link is its own best-effort write: if migration 0039 hasn't been
   // applied the rest of the profile has already saved and nothing fails.

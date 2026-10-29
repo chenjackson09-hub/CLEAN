@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CleanerProfile } from './CleanerProfile'
 import { extractArea } from '@/lib/bookingArea'
 import { fetchCindyVerified } from '@/lib/cindyVerified'
+import { fetchExperienceRanges } from '@/lib/experience'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
@@ -85,6 +86,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
     gas_return_enabled: (cleaner as { gas_return_enabled?: boolean }).gas_return_enabled ?? false,
     gas_return_rate: (cleaner as { gas_return_rate?: number | null }).gas_return_rate ?? null,
     cindy_verified: (await fetchCindyVerified(admin, 'cleaners', [cleaner.id])).has(cleaner.id),
+    experience_range: (await fetchExperienceRanges(admin, [cleaner.id])).get(cleaner.id) ?? null,
   }
 
   return (

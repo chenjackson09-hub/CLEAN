@@ -1,4 +1,5 @@
 'use client'
+import { experienceLabel } from '@/lib/onboarding/options'
 import { useState } from 'react'
 import Link from 'next/link'
 import type { CleanerResult } from '@/lib/types/cleaner'
@@ -91,7 +92,7 @@ export function CleanerCard({ cleaner, date, location, cleanGroupId, duration, p
           </div>
           <p className="text-sm text-gray-500">
             {cleaner.distance_km > 0 && <>{t('common.kmAway', { km: cleaner.distance_km.toFixed(1) })} · </>}
-            {t('common.yearsExp', { years: cleaner.years_experience })}
+            {experienceLabel(cleaner.experience_range, lang === 'he' ? 'he' : 'en') ?? t('common.yearsExp', { years: cleaner.years_experience })}
           </p>
           {cleaner.rating_avg != null && (cleaner.rating_count ?? 0) > 0 && (
             <StarRatingDisplay value={cleaner.rating_avg} count={cleaner.rating_count} countText={cleaner.rating_count === 1 ? t('common.cleanRated') : t('common.cleansRated', { n: String(cleaner.rating_count) })} size="sm" className="mt-1" />

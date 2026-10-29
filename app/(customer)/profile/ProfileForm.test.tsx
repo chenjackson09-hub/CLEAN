@@ -21,7 +21,7 @@ const baseProfile = {
   num_kids_under_15: '',
   num_people: '',
   house_size_sqm: '',
-  dwelling_type: null as 'apartment' | 'house' | null,
+  dwelling_type: null as 'apartment' | 'house' | 'villa' | 'guesthouse' | 'office' | 'other' | null,
   floor: '',
 }
 
@@ -65,5 +65,12 @@ describe('ProfileForm', () => {
 
     // Preview is set after the async normalize step resolves.
     expect(await screen.findByRole('img', { name: /profile/i })).toHaveAttribute('src', 'blob:preview')
+  })
+
+  it('keeps a villa, office or guesthouse home type instead of blanking it on save', () => {
+    render(<ProfileForm defaultValues={{ ...baseProfile, dwelling_type: 'villa' }} action={noopAction} />)
+    const select = screen.getByLabelText<HTMLSelectElement>(/property type/i)
+    expect(select.value).toBe('villa')
+    expect(Array.from(select.options).map((o) => o.value)).toEqual(['', 'apartment', 'house', 'villa', 'guesthouse', 'office'])
   })
 })

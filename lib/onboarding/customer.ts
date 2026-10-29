@@ -1,4 +1,5 @@
 import { CLEANING_TYPES, FREQUENCIES, HOME_TYPES, PET_TYPES, PRIORITIES } from './options'
+import { LANGUAGE_VALUES, joinLanguages, splitLanguages } from './options'
 import { DraftError, listOf, numText, oneOf, ownPhotoUrl, str, uuidOrNull } from './validate'
 import type { Place } from './cleaner'
 
@@ -8,7 +9,8 @@ export type CustomerDraft = {
   firstName: string
   lastName: string
   phone: string
-  languages: string // comma separated, as typed
+  languages: string[] // ticked language chips
+  languagesOther: string // anything else, comma separated
   aboutMe: string
   localityId: string | null
   area: string // typed town, only when the official list has no match
@@ -30,7 +32,7 @@ export type CustomerDraft = {
 }
 
 export const EMPTY_CUSTOMER_DRAFT: CustomerDraft = {
-  avatarUrl: null, firstName: '', lastName: '', phone: '', languages: '', aboutMe: '', localityId: null, area: '',
+  avatarUrl: null, firstName: '', lastName: '', phone: '', languages: [], languagesOther: '', aboutMe: '', localityId: null, area: '',
   homeType: null, bedrooms: '', bathrooms: '', numFloors: '', sizeSqm: '', numPeople: '', petTypes: [], numPets: '', petNote: '',
   petPhotoUrl: null, frequency: null, cleaningType: null, priorities: [], priorityOtherText: '', homeInstructions: '',
 }
@@ -43,7 +45,8 @@ export function validateCustomerDraft(input: unknown, opts: { submit: boolean; u
     firstName: str(i.firstName, 'First name', 60),
     lastName: str(i.lastName, 'Last name', 60),
     phone: str(i.phone, 'Phone', 30),
-    languages: str(i.languages, 'Languages', 200),
+    languages: listOf(i.languages, 'Languages', LANGUAGE_VALUES),
+    languagesOther: str(i.languagesOther, 'Languages', 200),
     aboutMe: str(i.aboutMe, 'About me', 2000),
     localityId: uuidOrNull(i.localityId, 'Town'),
     area: str(i.area, 'Town', 120),
@@ -73,7 +76,7 @@ export function validateCustomerDraft(input: unknown, opts: { submit: boolean; u
 export function customerDraftToRows(draft: CustomerDraft, place: Place) {
   // full_name stays "first last" so every existing reader of profiles.full_name is unaffected.
   const fullName = `${draft.firstName} ${draft.lastName}`.trim()
-  const languages = draft.languages.split(',').map((l) => l.trim()).filter(Boolean)
+  const languages = joinLanguages(draft.languages, draft.languagesOther)
   const hasPets = draft.petTypes.length > 0
   return {
     profile: { full_name: fullName || null, phone: draft.phone || null, ...(draft.avatarUrl ? { avatar_url: draft.avatarUrl } : {}) },
@@ -120,7 +123,8 @@ export function customerRowsToDraft(profile: ProfileRow, customer: Record<string
     firstName: txt(c.first_name) || firstFromName || '',
     lastName: txt(c.last_name) || rest.join(' '),
     phone: profile?.phone ?? '',
-    languages: Array.isArray(c.languages) ? (c.languages as string[]).join(', ') : '',
+    languages: splitLanguages(c.languages).chips,
+    languagesOther: splitLanguages(c.languages).other,
     aboutMe: txt(c.bio),
     localityId: typeof c.locality_id === 'string' ? c.locality_id : null,
     area: typeof c.locality_id === 'string' ? '' : txt(c.address),
