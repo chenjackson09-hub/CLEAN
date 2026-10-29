@@ -98,4 +98,32 @@ describe('ApplicationsList', () => {
     expect(screen.getByText('Pending Cleaner')).toBeInTheDocument()
     expect(screen.getByText('Pending Customer')).toBeInTheDocument()
   })
+
+  describe('unfinished sign-ups', () => {
+    const unfinishedApp: UnifiedApplication = { ...customerApp, id: 'u2', personId: 'u2', full_name: 'Half Way', unfinished: true }
+
+    it('keeps them out of All and Pending, and lists them only under Unfinished', async () => {
+      const user = userEvent.setup()
+      render(<ApplicationsList applications={[cleanerApp, unfinishedApp]} />)
+      expect(screen.queryByText('Half Way')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^Pending review \(1\)/ })).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: /^Unfinished \(1\)/ }))
+      expect(screen.getByText('Half Way')).toBeInTheDocument()
+      expect(screen.queryByText('Pending Cleaner')).not.toBeInTheDocument()
+    })
+
+    it('a finished pending sign-up does offer Approve', () => {
+      render(<ApplicationsList applications={[customerApp]} />)
+      expect(screen.getByRole('button', { name: /^approve$/i })).toBeInTheDocument()
+    })
+
+    it('offers no approve / reject until they have finished', async () => {
+      const user = userEvent.setup()
+      render(<ApplicationsList applications={[unfinishedApp]} />)
+      await user.click(screen.getByRole('button', { name: /^Unfinished/ }))
+      expect(screen.queryByRole('button', { name: /^approve$/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^reject$/i })).not.toBeInTheDocument()
+    })
+  })
 })

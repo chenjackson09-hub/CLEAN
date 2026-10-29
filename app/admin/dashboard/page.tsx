@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { DashboardContent } from './DashboardContent'
 import { unstable_noStore as noStore } from 'next/cache'
+import { fetchUnfinishedIds } from '@/lib/onboarding/unfinished'
 
 function startOfWeek(d: Date): Date {
   const copy = new Date(d)
@@ -38,8 +39,9 @@ export default async function AdminDashboardPage() {
     { data: appRows },
     { data: bookingRows },
     { count: disputesOpenCount },
+    unfinished,
   ] = await Promise.all([
-    admin.from('cleaners').select('status, rating_avg, rating_count, birthdate'),
+    admin.from('cleaners').select('id, status, rating_avg, rating_count, birthdate'),
     admin.from('profiles').select('id, created_at').eq('role', 'customer'),
     admin.from('customers').select('rating_avg, rating_count'),
     // Queried separately from the rating fetch above so a stale schema cache
@@ -47,7 +49,7 @@ export default async function AdminDashboardPage() {
     // pre-existing ratings KPI — a failure here just falls back to counting
     // every customer profile as a host, same as before this feature shipped.
     admin.from('customers').select('id, status'),
-    admin.from('cleaner_applications').select('status'),
+    admin.from('cleaner_applications').select('status, cleaner_id'),
     admin
       .from('bookings')
       .select('id, status, address, created_at, responded_at, scheduled_date, cleaner_id, customer_id')
@@ -56,6 +58,9 @@ export default async function AdminDashboardPage() {
     // "Disputes" are open (unresolved) support messages — every user question
     // surfaces here until an admin resolves it from /admin/support.
     admin.from('support_messages').select('id', { count: 'exact', head: true }).eq('resolved', false),
+    // People who haven't submitted their sign-up wizard yet are not applications:
+    // they stay out of every pending-review count (they have their own tab).
+    fetchUnfinishedIds(admin),
   ])
 
   const cleaners = cleanerRows ?? []
@@ -72,7 +77,7 @@ export default async function AdminDashboardPage() {
   // stored flag, so it can never drift.
   const eighteenYearsAgo = new Date(now.getFullYear() - 18, now.getMonth(), now.getDate())
   const minorCleanersPending = cleaners.filter(
-    (c) => c.status === 'pending' && c.birthdate && new Date(c.birthdate) > eighteenYearsAgo,
+    (c) => !unfinished.has(c.id) && c.status === 'pending' && c.birthdate && new Date(c.birthdate) > eighteenYearsAgo,
   ).length
 
   const customers = customerProfileRows ?? []
@@ -87,13 +92,13 @@ export default async function AdminDashboardPage() {
   const approvedCustomers = statusKnown ? customers.filter((c) => customerStatusMap.get(c.id) === 'approved') : customers
   const totalHosts = approvedCustomers.length
   const newHostsThisMonth = approvedCustomers.filter((c) => c.created_at && new Date(c.created_at) >= thisMonthStart).length
-  const pendingCustomers = statusKnown ? customers.filter((c) => customerStatusMap.get(c.id) === 'pending').length : 0
+  const pendingCustomers = statusKnown ? customers.filter((c) => customerStatusMap.get(c.id) === 'pending' && !unfinished.has(c.id)).length : 0
 
   const applications = appRows ?? []
   // Combined with pending customer signups so this KPI (and the sidebar
   // badge fed by the same rule in admin/layout.tsx) matches what "All
   // Applications" actually shows once both categories are unified there.
-  const pendingApplications = applications.filter((a) => a.status === 'pending').length + pendingCustomers
+  const pendingApplications = applications.filter((a) => a.status === 'pending' && !unfinished.has(a.cleaner_id)).length + pendingCustomers
 
   const bookings = bookingRows ?? []
   const matchesThisWeek = bookings.filter(

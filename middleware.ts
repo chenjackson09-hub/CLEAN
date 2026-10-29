@@ -90,9 +90,27 @@ export async function middleware(request: NextRequest) {
 
     const home = role ? (ROLE_HOME[role as UserRole] ?? '/login') : '/login'
 
+    // The account exists from the first sign-up screen now, so a signed-in cleaner/host whose
+    // sign-up isn't submitted yet belongs in THEIR wizard — and only there. Read in its own
+    // query so an un-applied migration (no column) simply means "finished" and nothing breaks.
+    let unfinished = false
+    if ((isAuthPath || isOnboardingPath) && (role === 'cleaner' || role === 'customer')) {
+      const { data: row, error: rowError } = await supabase
+        .from('profiles')
+        .select('onboarding_completed_at')
+        .eq('id', user.id)
+        .maybeSingle<{ onboarding_completed_at: string | null }>()
+      unfinished = !rowError && !!row && row.onboarding_completed_at == null
+    }
+
     // Fix 3: redirect authenticated users away from auth/onboarding pages only if they
     // already have a role — a null role means they're mid-registration and need to continue
     if ((isAuthPath || isOnboardingPath) && role) {
+      if (unfinished) {
+        const wizard = `/register/${role}`
+        if (pathname !== wizard) return NextResponse.redirect(new URL(wizard, request.url))
+        return supabaseResponse
+      }
       return NextResponse.redirect(new URL(home, request.url))
     }
 

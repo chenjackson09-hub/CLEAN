@@ -54,6 +54,13 @@ export async function GET(request: Request) {
     const next = safeNextPath(raw)
     if (next && role) dest = next
     if (jar.get(POST_LOGIN_COOKIE)) jar.delete(POST_LOGIN_COOKIE)
+
+    // A sign-up that was started but never submitted resumes in its wizard (same rule as
+    // password sign-in). Read on its own so a database without the column skips it.
+    if (role === 'cleaner' || role === 'customer') {
+      const { data: done, error: doneErr } = await supabase.from('profiles').select('onboarding_completed_at').eq('id', user.id).maybeSingle()
+      if (!doneErr && done && done.onboarding_completed_at == null) dest = `/register/${role}`
+    }
   }
   return NextResponse.redirect(new URL(dest, url.origin))
 }

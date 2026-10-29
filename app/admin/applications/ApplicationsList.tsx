@@ -20,7 +20,16 @@ import { SeenCheckbox } from '@/app/admin/SeenCheckbox'
 import { SearchInput } from '@/app/admin/SearchInput'
 import type { ApplicationStatus, UnifiedApplication } from '@/lib/types/application'
 
-const TABS: ('all' | ApplicationStatus)[] = ['all', 'pending', 'needs_info', 'approved', 'rejected']
+type Tab = 'all' | ApplicationStatus | 'unfinished'
+const TABS: Tab[] = ['all', 'pending', 'needs_info', 'approved', 'rejected', 'unfinished']
+
+// Unfinished sign-ups aren't applications yet: they appear only on their own tab and
+// never in All / Pending / etc.
+function inTab(a: UnifiedApplication, tab: Tab): boolean {
+  if (tab === 'unfinished') return !!a.unfinished
+  if (a.unfinished) return false
+  return tab === 'all' || a.status === tab
+}
 
 const CATEGORY_BADGE: Record<UnifiedApplication['category'], string> = {
   cleaner: 'bg-[#75C9C8]/15 text-[#2f7d7c]',
@@ -49,7 +58,7 @@ function ApplicationRow({
   const [notes, setNotes] = useState(app.admin_notes ?? '')
   const [busy, setBusy] = useState(false)
 
-  const canAct = app.status === 'pending' || app.status === 'needs_info'
+  const canAct = !app.unfinished && (app.status === 'pending' || app.status === 'needs_info')
   const isCleaner = app.category === 'cleaner'
   const isNew = app.cleans_completed < 5
 
@@ -159,7 +168,7 @@ function ApplicationRow({
 export function ApplicationsList({ applications: initial }: { applications: UnifiedApplication[] }) {
   const { t } = useLanguage()
   const [applications, setApplications] = useState(initial)
-  const [tab, setTab] = useState<'all' | ApplicationStatus>('all')
+  const [tab, setTab] = useState<Tab>('all')
   const [search, setSearch] = useState('')
 
   async function handleSaveNotes(app: UnifiedApplication, notes: string) {
@@ -186,7 +195,7 @@ export function ApplicationsList({ applications: initial }: { applications: Unif
     )
   }
 
-  const byTab = tab === 'all' ? applications : applications.filter(a => a.status === tab)
+  const byTab = applications.filter(a => inTab(a, tab))
   const q = search.trim().toLowerCase()
   const filtered = q
     ? byTab.filter(a => a.full_name.toLowerCase().includes(q) || a.address.toLowerCase().includes(q) || a.submitted_at.toLowerCase().includes(q))
@@ -209,7 +218,7 @@ export function ApplicationsList({ applications: initial }: { applications: Unif
       <SearchInput value={search} onChange={setSearch} />
       <div className="flex gap-2 flex-wrap justify-end">
       {TABS.map(tabKey => {
-        const count = tabKey === 'all' ? applications.length : applications.filter(a => a.status === tabKey).length
+        const count = applications.filter(a => inTab(a, tabKey)).length
         return (
           <button
             key={tabKey}

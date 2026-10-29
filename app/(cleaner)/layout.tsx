@@ -7,6 +7,8 @@ import { sendReminders } from "@/lib/reminders";
 import NavLinks from "./NavLinks";
 import { StatusBadge } from "./StatusBadge";
 import HelpWidget from "@/components/HelpWidget";
+import FinishProfileBanner from "@/components/FinishProfileBanner";
+import { isOwnSignupUnfinished } from "@/lib/onboarding/unfinished";
 
 export default async function CleanerLayout({
   children,
@@ -23,7 +25,7 @@ export default async function CleanerLayout({
   await declineExpiredRequests(user.id);
   await sendReminders(user.id, "cleaner");
 
-  const [{ data: profile }, { count: pendingCount }] = await Promise.all([
+  const [{ data: profile }, { count: pendingCount }, signupUnfinished] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name, role, avatar_url")
@@ -35,6 +37,7 @@ export default async function CleanerLayout({
       .eq("cleaner_id", user.id)
       .eq("status", "pending")
       .gt("response_deadline", now),
+    isOwnSignupUnfinished(supabase, user.id),
   ]);
 
   if (!profile || profile.role !== "cleaner") redirect("/login");
@@ -54,6 +57,7 @@ export default async function CleanerLayout({
         }
       />
       <main className="relative p-3 pt-28">
+        {signupUnfinished && <FinishProfileBanner href="/register/cleaner" />}
         {children}
       </main>
       <HelpWidget />

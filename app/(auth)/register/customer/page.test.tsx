@@ -2,140 +2,111 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithLanguage as render } from '@/lib/i18n/testUtils'
 import CustomerOnboardingPage from './page'
-import { createClient } from '@/lib/supabase/client'
-import { geocodeAddress } from '@/lib/geocode'
+import { EMPTY_CUSTOMER_DRAFT } from '@/lib/onboarding/customer'
 
 const mockPush = jest.fn()
 const mockReplace = jest.fn()
 const mockRouter = { push: mockPush, replace: mockReplace }
-jest.mock('next/navigation', () => ({
-  useRouter: () => mockRouter,
-}))
+jest.mock('next/navigation', () => ({ useRouter: () => mockRouter }))
 
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: jest.fn(),
-}))
+// Photos go straight to storage from the browser; everything else goes through the server.
+jest.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: 'user-1' } } }) }, storage: { from: () => ({ upload: jest.fn(), getPublicUrl: () => ({ data: { publicUrl: 'x' } }) }) } }) }))
 
-jest.mock('@/lib/geocode', () => ({
-  geocodeAddress: jest.fn(),
-}))
-
-const mockedCreateClient = createClient as jest.MockedFunction<typeof createClient>
-const mockedGeocode = geocodeAddress as jest.MockedFunction<typeof geocodeAddress>
-
-const mockSignUp = jest.fn()
-const mockUpsert = jest.fn()
-const mockGetPublicUrl = jest.fn()
-const mockFrom = jest.fn()
-const mockStorageFrom = jest.fn()
+const mockLoad = jest.fn()
+const mockSave = jest.fn()
+const mockSignOut = jest.fn()
+jest.mock('../../onboardingActions', () => ({ loadOnboarding: (...a: unknown[]) => mockLoad(...a), saveOnboarding: (...a: unknown[]) => mockSave(...a) }))
+jest.mock('../../actions', () => ({ signOutToLogin: (...a: unknown[]) => mockSignOut(...a) }))
 
 const LOCALITY = {
   id: 'loc-1', cbs_code: 322, name_he: 'בית הלל', name_en: 'Bet Hillel', locality_type: 'moshav',
   regional_council: 'מבואות החרמון', lat: 33.2085, lng: 35.6058,
 }
+const fresh = () => ({ role: 'customer', step: 0, completed: false, draft: EMPTY_CUSTOMER_DRAFT, locality: null })
 
 beforeEach(() => {
   jest.clearAllMocks()
-  // The area picker's autocomplete endpoint.
   global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ results: [LOCALITY] }) }) as unknown as typeof fetch
   localStorage.clear()
-  mockFrom.mockImplementation(() => ({
-    upsert: mockUpsert,
-    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-  }))
-  mockUpsert.mockResolvedValue({ error: null })
-  mockStorageFrom.mockImplementation(() => ({ upload: jest.fn(), getPublicUrl: mockGetPublicUrl }))
-  mockedCreateClient.mockReturnValue({
-    auth: { signUp: mockSignUp },
-    from: mockFrom,
-    storage: { from: mockStorageFrom },
-  } as unknown as ReturnType<typeof createClient>)
+  mockLoad.mockResolvedValue(fresh())
+  mockSave.mockResolvedValue({ ok: true })
 })
 
-async function fillRequiredStepsAndReachPreview(user: ReturnType<typeof userEvent.setup>) {
-  // Step 1 — About you: only first/last name are required.
-  await user.type(screen.getByLabelText(/first name/i), 'Jane')
-  await user.type(screen.getByLabelText(/last name/i), 'Doe')
-  await user.click(screen.getByRole('button', { name: /next/i }))
-
-  // Step 2 — Your home: only the area is required — picked from the official list.
-  await user.type(screen.getByLabelText(/area \/ town/i), 'Beit Hil')
-  await user.click(await screen.findByRole('option', { name: /Bet Hillel/ }))
-  await user.click(screen.getByRole('button', { name: /next/i }))
-
-  // Step 3 — Household: fully optional, just advance.
-  await user.click(screen.getByRole('button', { name: /next/i }))
-
-  // Step 4 — Preferences: fully optional, just advance to the preview.
-  await user.click(screen.getByRole('button', { name: /next/i }))
-}
-
-describe('CustomerOnboardingPage', () => {
-  it('redirects to /register if no pending signup is found', () => {
+describe('Host wizard (account already exists, answers saved step by step)', () => {
+  it('goes back to /register when nobody is signed in', async () => {
+    mockLoad.mockResolvedValue({ error: 'Not signed in' })
     render(<CustomerOnboardingPage />)
-
-    expect(mockReplace).toHaveBeenCalledWith('/register')
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/register'))
   })
 
-  it('renders the first step (About you) when a pending signup exists', () => {
-    localStorage.setItem('pending_signup', JSON.stringify({ email: 'a@b.com', password: 'pass123' }))
-
+  it('sends an already-submitted sign-up to the schedule instead of showing the questions again', async () => {
+    mockLoad.mockResolvedValue({ ...fresh(), completed: true })
     render(<CustomerOnboardingPage />)
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/browse'))
+  })
 
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument()
-    // Next is disabled until both required fields are filled.
+  it('sends a cleaner who lands on the host wizard to the cleaner wizard', async () => {
+    mockLoad.mockResolvedValue({ ...fresh(), role: 'cleaner' })
+    render(<CustomerOnboardingPage />)
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/register/cleaner'))
+  })
+
+  it('shows About you first, with Next disabled until both names are filled', async () => {
+    render(<CustomerOnboardingPage />)
+    expect(await screen.findByLabelText(/first name/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
   })
 
-  it('walks through the wizard and submits, creating the account and saving profile + customer rows', async () => {
-    localStorage.setItem('pending_signup', JSON.stringify({ email: 'a@b.com', password: 'pass123' }))
-    mockSignUp.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
-    mockedGeocode.mockResolvedValue({ lat: 32.08, lng: 34.78 })
+  it('resumes where the person stopped, with their saved answers filled in', async () => {
+    mockLoad.mockResolvedValue({
+      ...fresh(), step: 1,
+      draft: { ...EMPTY_CUSTOMER_DRAFT, firstName: 'Jane', lastName: 'Doe', localityId: LOCALITY.id },
+      locality: LOCALITY,
+    })
+    render(<CustomerOnboardingPage />)
+    // Step 2 (Your home), with the town already chosen.
+    expect(await screen.findByText(/bet hillel|בית הלל/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next/i })).toBeEnabled()
+  })
 
+  it('saves each screen when Continue is pressed, then the final screen as a submit', async () => {
     const user = userEvent.setup()
     render(<CustomerOnboardingPage />)
+    await user.type(await screen.findByLabelText(/first name/i), 'Jane')
+    await user.type(screen.getByLabelText(/last name/i), 'Doe')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1))
+    expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ role: 'customer', step: 1, submit: false, draft: expect.objectContaining({ firstName: 'Jane', lastName: 'Doe' }) }))
 
-    await fillRequiredStepsAndReachPreview(user)
+    await user.type(await screen.findByLabelText(/area \/ town/i), 'Beit Hil')
+    await user.click(await screen.findByRole('option', { name: /Bet Hillel/ }))
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(2))
+    // The server is told the official town by id — never coordinates or text it must trust.
+    expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ step: 2, draft: expect.objectContaining({ localityId: 'loc-1', area: '' }) }))
 
-    // Final screen — the Next button becomes the submit CTA.
-    await user.click(screen.getByRole('button', { name: /start finding cleaners/i }))
+    await user.click(await screen.findByRole('button', { name: /next/i })) // household
+    await user.click(await screen.findByRole('button', { name: /next/i })) // preferences
+    await user.click(await screen.findByRole('button', { name: /start finding cleaners/i }))
+    await waitFor(() => expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ submit: true })))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/browse'))
+  })
 
-    await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith({
-        email: 'a@b.com',
-        password: 'pass123',
-        options: { data: { role: 'customer' } },
-      })
-    })
+  it('stays on the screen and shows the problem when saving fails', async () => {
+    mockSave.mockResolvedValue({ error: 'Could not save. Please try again.' })
+    const user = userEvent.setup()
+    render(<CustomerOnboardingPage />)
+    await user.type(await screen.findByLabelText(/first name/i), 'Jane')
+    await user.type(screen.getByLabelText(/last name/i), 'Doe')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Could not save. Please try again.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
+  })
 
-    // A picked locality supplies the official coordinates — no free-text geocoding.
-    expect(mockedGeocode).not.toHaveBeenCalled()
-
-    expect(mockFrom).toHaveBeenCalledWith('profiles')
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'user-1',
-        role: 'customer',
-        full_name: 'Jane Doe',
-      }),
-    )
-
-    expect(mockFrom).toHaveBeenCalledWith('customers')
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'user-1',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        address: 'בית הלל',
-        lat: 33.2085,
-        lng: 35.6058,
-      }),
-    )
-
-    await waitFor(() => {
-      expect(localStorage.getItem('pending_signup')).toBeNull()
-    })
-    expect(mockPush).toHaveBeenCalledWith('/browse')
+  it('never keeps a password in the browser', async () => {
+    render(<CustomerOnboardingPage />)
+    await screen.findByLabelText(/first name/i)
+    expect(localStorage.getItem('pending_signup')).toBeNull()
   })
 })

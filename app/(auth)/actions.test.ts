@@ -21,6 +21,7 @@ const mockedRedirect = redirect as jest.MockedFunction<typeof redirect>
 
 const mockSignInWithPassword = jest.fn()
 const mockSingle = jest.fn()
+const mockMaybeSingle = jest.fn()
 const mockEq = jest.fn()
 const mockSelect = jest.fn()
 const mockFrom = jest.fn()
@@ -36,13 +37,42 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockFrom.mockReturnValue({ select: mockSelect })
   mockSelect.mockReturnValue({ eq: mockEq })
-  mockEq.mockReturnValue({ single: mockSingle })
+  mockEq.mockReturnValue({ single: mockSingle, maybeSingle: mockMaybeSingle })
+  // By default the sign-up counts as finished (every existing account is).
+  mockMaybeSingle.mockResolvedValue({ data: { onboarding_completed_at: '2026-10-01T00:00:00Z' }, error: null })
   // signIn reads the authenticated user from signInWithPassword's result.
   mockSignInWithPassword.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
   mockedCreateClient.mockResolvedValue({
     auth: { signInWithPassword: mockSignInWithPassword },
     from: mockFrom,
   } as never)
+})
+
+describe('signIn — unfinished sign-ups resume in their wizard', () => {
+  it('sends a cleaner whose sign-up was never submitted back to the cleaner wizard', async () => {
+    mockSingle.mockResolvedValue({ data: { role: 'cleaner' } })
+    mockMaybeSingle.mockResolvedValue({ data: { onboarding_completed_at: null }, error: null })
+    await signIn(formData('a@b.com', 'pw'))
+    expect(mockedRedirect).toHaveBeenCalledWith('/register/cleaner')
+  })
+  it('sends an unfinished host to the host wizard', async () => {
+    mockSingle.mockResolvedValue({ data: { role: 'customer' } })
+    mockMaybeSingle.mockResolvedValue({ data: { onboarding_completed_at: null }, error: null })
+    await signIn(formData('a@b.com', 'pw'))
+    expect(mockedRedirect).toHaveBeenCalledWith('/register/customer')
+  })
+  it('a database without the column (or any error) never blocks sign-in', async () => {
+    mockSingle.mockResolvedValue({ data: { role: 'customer' } })
+    mockMaybeSingle.mockResolvedValue({ data: null, error: { message: 'column does not exist' } })
+    await signIn(formData('a@b.com', 'pw'))
+    expect(mockedRedirect).toHaveBeenCalledWith('/browse')
+  })
+  it('never sends an admin to a wizard', async () => {
+    mockSingle.mockResolvedValue({ data: { role: 'admin' } })
+    mockMaybeSingle.mockResolvedValue({ data: { onboarding_completed_at: null }, error: null })
+    await signIn(formData('a@b.com', 'pw'))
+    expect(mockedRedirect).toHaveBeenCalledWith('/admin/dashboard')
+  })
 })
 
 describe('signIn', () => {

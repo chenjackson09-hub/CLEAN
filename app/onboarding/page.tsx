@@ -5,7 +5,6 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/lib/i18n/LanguageToggle'
 import { createClient } from '@/lib/supabase/client'
 import { completeOnboarding } from '@/app/(auth)/actions'
-import { ROLE_HOME } from '@/lib/roleHome'
 
 type Role = 'customer' | 'cleaner'
 
@@ -42,8 +41,10 @@ export default function OnboardingPage() {
         return
       }
       // Full-page load so middleware re-evaluates with the newly-written role
-      // (avoids any client-router/session-cache races).
-      window.location.href = ROLE_HOME[role]
+      // (avoids any client-router/session-cache races). A Google sign-up now goes through the
+      // SAME wizard as an email sign-up (already signed in), so they end up with a real
+      // profile — a town included — instead of a thin one.
+      window.location.href = `/register/${role}`
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setLoading(false)

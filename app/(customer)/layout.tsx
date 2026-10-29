@@ -6,6 +6,8 @@ import CustomerNav from "./CustomerNav";
 import RealtimeCustomerBookings from "./RealtimeCustomerBookings";
 import HelpWidget from "@/components/HelpWidget";
 import { sendReminders } from "@/lib/reminders";
+import FinishProfileBanner from "@/components/FinishProfileBanner";
+import { isOwnSignupUnfinished } from "@/lib/onboarding/unfinished";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()])
@@ -34,7 +36,10 @@ export default async function CustomerLayout({ children }: { children: React.Rea
     .eq("customer_id", user.id)
     .eq("status", "accepted")
   if (seenAt) acceptedQuery = acceptedQuery.gt("responded_at", seenAt)
-  const { count: acceptedCount } = await acceptedQuery
+  const [{ count: acceptedCount }, signupUnfinished] = await Promise.all([
+    acceptedQuery,
+    profile.role === "customer" ? isOwnSignupUnfinished(supabase, user.id) : Promise.resolve(false),
+  ])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,7 +51,10 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         avatarUrl={profile.avatar_url ?? null}
         acceptedCount={acceptedCount ?? 0}
       />
-      <main className="px-3 pb-4 pt-28 sm:px-8 sm:pb-8">{children}</main>
+      <main className="px-3 pb-4 pt-28 sm:px-8 sm:pb-8">
+        {signupUnfinished && <FinishProfileBanner href="/register/customer" />}
+        {children}
+      </main>
       <HelpWidget />
     </div>
   )

@@ -91,6 +91,17 @@ export async function signIn(formData: FormData) {
     .eq("id", user.id)
     .single();
 
+  // A sign-up that was started but never submitted resumes in its wizard (the answers were
+  // saved step by step). Read on its own: a database without the column just skips this.
+  if (profile?.role === "cleaner" || profile?.role === "customer") {
+    const { data: done, error: doneErr } = await supabase
+      .from("profiles")
+      .select("onboarding_completed_at")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!doneErr && done && done.onboarding_completed_at == null) redirect(`/register/${profile.role}`);
+  }
+
   // Back to the page they were trying to open (e.g. a booking link), if any.
   // The middleware still enforces role access, so a wrong-role link lands on their home.
   const next = safeNextPath(formData.get("next"));

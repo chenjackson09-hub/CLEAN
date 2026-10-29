@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ApplicationsList } from './ApplicationsList'
 import { fetchSeenMap } from '@/app/admin/seenItems'
+import { fetchUnfinishedIds } from '@/lib/onboarding/unfinished'
 import type { UnifiedApplication } from '@/lib/types/application'
 
 // Reads live admin data (listUsers); render on demand like the other admin pages.
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function ApplicationsPage() {
   const admin = createAdminClient()
 
-  const [{ data: appRows }, { data: cleanerRows }, { data: customerRows }, { data: profileRows }, authData] = await Promise.all([
+  const [{ data: appRows }, { data: cleanerRows }, { data: customerRows }, { data: profileRows }, authData, unfinished] = await Promise.all([
     admin.from('cleaner_applications').select('id, status, submitted_at, reviewed_at, cleaner_id, id_document_url, admin_notes').order('submitted_at', { ascending: false }),
     admin.from('cleaners').select('id, bio, service_types, hourly_rate, years_experience, languages, address, cleans_completed'),
     // Customers have no separate "applications" table — their own row IS the
@@ -17,6 +18,7 @@ export default async function ApplicationsPage() {
     admin.from('customers').select('id, address, status, status_reviewed_at, admin_notes'),
     admin.from('profiles').select('id, full_name, phone, avatar_url'),
     admin.auth.admin.listUsers({ perPage: 1000 }),
+    fetchUnfinishedIds(admin),
   ])
 
   const cleanerMap = new Map((cleanerRows ?? []).map(c => [c.id, c]))
@@ -50,6 +52,7 @@ export default async function ApplicationsPage() {
       admin_notes: row.admin_notes ?? null,
       cleans_completed: (cleaner as { cleans_completed?: number } | undefined)?.cleans_completed ?? 0,
       seen: cleanerSeenMap.get(row.id) ?? false,
+      unfinished: unfinished.has(row.cleaner_id),
       sortKey: row.submitted_at ?? '',
     }
   })
@@ -74,6 +77,7 @@ export default async function ApplicationsPage() {
       admin_notes: row.admin_notes ?? null,
       cleans_completed: 0,
       seen: customerSeenMap.get(row.id) ?? false,
+      unfinished: unfinished.has(row.id),
       sortKey: createdAt ?? '',
     }
   })

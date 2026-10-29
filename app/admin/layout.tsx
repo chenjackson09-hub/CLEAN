@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { countUnseen } from './seenItems'
+import { fetchUnfinishedIds } from '@/lib/onboarding/unfinished'
 import { Nav } from './Nav'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,12 +30,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const admin = createAdminClient()
   const [
     { data: pendingCleanerApps },
+    unfinished,
     { data: pendingCustomers },
     { data: pendingBookings },
     { data: matchedBookings },
     { data: openSupportMessages },
   ] = await Promise.all([
-    admin.from('cleaner_applications').select('id').eq('status', 'pending'),
+    admin.from('cleaner_applications').select('id, cleaner_id').eq('status', 'pending'),
+    fetchUnfinishedIds(admin),
     admin.from('customers').select('id').eq('status', 'pending'),
     admin.from('bookings').select('id').eq('status', 'pending'),
     admin.from('bookings').select('id').in('status', ['accepted', 'completed']),
@@ -42,8 +45,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ])
 
   const [unseenCleanerApps, unseenCustomerApps, unseenBookingRequests, unseenMatches, unseenSupport] = await Promise.all([
-    countUnseen('cleaner_application', (pendingCleanerApps ?? []).map((r) => r.id)),
-    countUnseen('customer_application', (pendingCustomers ?? []).map((r) => r.id)),
+    countUnseen('cleaner_application', (pendingCleanerApps ?? []).filter((r) => !unfinished.has(r.cleaner_id)).map((r) => r.id)),
+    countUnseen('customer_application', (pendingCustomers ?? []).filter((r) => !unfinished.has(r.id)).map((r) => r.id)),
     countUnseen('booking', (pendingBookings ?? []).map((r) => r.id)),
     countUnseen('booking', (matchedBookings ?? []).map((r) => r.id)),
     countUnseen('support_message', (openSupportMessages ?? []).map((r) => r.id)),

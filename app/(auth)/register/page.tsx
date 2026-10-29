@@ -94,10 +94,16 @@ export default function RegisterPage() {
       return;
     }
 
-    // Hold credentials in localStorage — the Supabase account is created only
-    // when the user completes and submits the role-specific onboarding form.
-    // This way pressing "Go back" never leaves a half-created account behind.
-    localStorage.setItem("pending_signup", JSON.stringify({ email, password }));
+    // The account is created RIGHT HERE (the role goes in as metadata so the signup trigger
+    // builds the right profile rows). Everything the wizard collects next is saved step by
+    // step, so a closed tab or a dropped connection never loses answers — and the password is
+    // never kept in the browser. The person is approved by an admin only after they submit.
+    const { data: created, error: signUpErr } = await supabase.auth.signUp({ email, password, options: { data: { role } } });
+    if (signUpErr || !created.session) {
+      setError(signUpErr?.message ?? t("auth.register.signUpFailed"));
+      setLoading(false);
+      return;
+    }
     router.push(`/register/${role}`);
   }
 

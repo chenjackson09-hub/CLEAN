@@ -28,6 +28,9 @@ export type UnifiedApplication = {
   // Shared admin "seen/unseen" worklist flag (migration 0024). See
   // app/admin/seenItems.ts.
   seen: boolean
+  // Created an account but hasn't submitted the sign-up wizard yet
+  // (profiles.onboarding_completed_at is null). Shown only on the Unfinished tab.
+  unfinished?: boolean
 }
 
 export type CleanerApplicationResult = {

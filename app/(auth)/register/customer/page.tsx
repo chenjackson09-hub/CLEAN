@@ -3,19 +3,24 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { geocodeAddress } from "@/lib/geocode";
 import LocalityPicker from "@/components/LocalityPicker";
 import type { PickedLocality } from "@/lib/localities/address";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { signOutToLogin } from "../../actions";
+import { loadOnboarding, saveOnboarding } from "../../onboardingActions";
+import type { CustomerDraft } from "@/lib/onboarding/customer";
+import { ROLE_HOME } from "@/lib/roleHome";
 
 type HomeType = "apartment" | "house" | "guesthouse" | "other";
 type Frequency = "weekly" | "twice_monthly" | "occasional" | "one_time";
 type CleaningType = "regular" | "deep";
 
 type Answers = {
+  // Photos already saved to the account; `photoFile` / `petPhotoFile` are NEW picks not yet uploaded.
+  avatarUrl: string | null;
+  petPhotoUrl: string | null;
   photoFile: File | null;
   photoPreview: string | null;
   firstName: string;
@@ -83,6 +88,8 @@ const PET_TYPES: { value: string; key: string }[] = [
 ];
 
 const initialAnswers: Answers = {
+  avatarUrl: null,
+  petPhotoUrl: null,
   photoFile: null,
   photoPreview: null,
   firstName: "",
@@ -114,26 +121,72 @@ const initialAnswers: Answers = {
 const STEPS = ["about", "home", "household", "preferences", "preview"] as const;
 type StepKey = (typeof STEPS)[number];
 
+
+// The wizard's answers <-> what the server saves. Only plain values cross to the server.
+function answersToDraft(a: Answers, avatarUrl: string | null, petPhotoUrl: string | null): CustomerDraft {
+  return {
+    avatarUrl, petPhotoUrl, firstName: a.firstName, lastName: a.lastName, phone: a.phone, languages: a.languages, aboutMe: a.aboutMe,
+    localityId: a.locality?.id ?? null, area: a.locality ? "" : a.area,
+    homeType: a.homeType, bedrooms: a.bedrooms, bathrooms: a.bathrooms, numFloors: a.numFloors, sizeSqm: a.sizeSqm, numPeople: a.numPeople,
+    petTypes: a.petTypes, numPets: a.numPets, petNote: a.petNote,
+    frequency: a.frequency, cleaningType: a.cleaningType, priorities: a.priorities, priorityOtherText: a.priorityOtherText, homeInstructions: a.homeInstructions,
+  };
+}
+
+function draftToAnswers(d: CustomerDraft, locality: PickedLocality | null): Answers {
+  return {
+    ...initialAnswers,
+    avatarUrl: d.avatarUrl, photoPreview: d.avatarUrl, petPhotoUrl: d.petPhotoUrl, petPhotoPreview: d.petPhotoUrl,
+    firstName: d.firstName, lastName: d.lastName, phone: d.phone, languages: d.languages, aboutMe: d.aboutMe,
+    area: d.area, locality, areaManual: !locality && d.area !== "",
+    homeType: d.homeType, bedrooms: d.bedrooms, bathrooms: d.bathrooms, numFloors: d.numFloors, sizeSqm: d.sizeSqm, numPeople: d.numPeople,
+    petTypes: d.petTypes, numPets: d.numPets, petNote: d.petNote,
+    frequency: d.frequency, cleaningType: d.cleaningType, priorities: d.priorities, priorityOtherText: d.priorityOtherText, homeInstructions: d.homeInstructions,
+  };
+}
+
 export default function CustomerRegisterPage() {
   const { t, lang } = useLanguage();
   const router = useRouter();
-  const [creds, setCreds] = useState<{ email: string; password: string } | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<"flow" | "confirm">("flow");
   const [loading, setLoading] = useState(false);
+  // True while a single screen is being saved (the Continue button shows "Saving…").
+  const [saving, setSaving] = useState(false);
+  // False until the saved answers have been loaded (so the screen never flashes empty).
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const petPhotoInputRef = useRef<HTMLInputElement>(null);
 
+  // The account already exists (it is created on the first sign-up screen), so load what was
+  // saved and continue exactly where the person stopped.
   useEffect(() => {
-    const raw = localStorage.getItem("pending_signup");
-    if (!raw) {
-      router.replace("/register");
-      return;
-    }
-    setCreds(JSON.parse(raw));
+    let alive = true;
+    (async () => {
+      const state = await loadOnboarding();
+      if (!alive) return;
+      if ("error" in state) {
+        router.replace("/register");
+        return;
+      }
+      if (state.completed) {
+        router.replace(ROLE_HOME[state.role]);
+        return;
+      }
+      if (state.role !== "customer") {
+        router.replace(`/register/${state.role}`);
+        return;
+      }
+      setAnswers(draftToAnswers(state.draft as CustomerDraft, state.locality));
+      setStep(Math.min(state.step, STEPS.length - 1));
+      setReady(true);
+    })();
+    return () => {
+      alive = false;
+    };
   }, [router]);
 
   const current: StepKey = STEPS[step];
@@ -148,13 +201,17 @@ export default function CustomerRegisterPage() {
     return true;
   }
 
-  function goNext() {
-    if (!isStepValid(current)) return;
+  // Every Continue saves that screen first, so nothing is lost if the person leaves.
+  async function goNext() {
+    if (!isStepValid(current) || saving) return;
     if (isLast) {
       void handleSubmit();
       return;
     }
-    setStep((s) => s + 1);
+    setSaving(true);
+    const ok = await persist(false, step + 1);
+    setSaving(false);
+    if (ok) setStep((s) => s + 1);
   }
   function goBack() {
     if (step > 0) setStep((s) => s - 1);
@@ -196,152 +253,75 @@ export default function CustomerRegisterPage() {
     });
   }
 
-  // Signs up (or reuses the pending account), uploads the photo if any, and
-  // upserts everything collected so far — mirrors the cleaner wizard's
-  // saveAndFinish, including the "continue later" partial-save path.
-  async function saveAndFinish() {
-    if (!creds) return false;
-    setLoading(true);
+  // Saves everything collected so far. New photos are uploaded first (the account exists, so it
+  // has its own storage folder); the server then checks and writes the answers. With `submit`
+  // it also checks the required answers and marks the sign-up finished.
+  async function persist(submit: boolean, nextStep: number = step): Promise<boolean> {
     setError(null);
-
     const supabase = createClient();
-
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-      email: creds.email,
-      password: creds.password,
-      options: { data: { role: "customer" } },
-    });
-    if (signUpErr) {
-      setError(signUpErr.message);
-      setLoading(false);
-      return false;
-    }
-    const user = signUpData.user;
-    if (!user) {
-      setError(t("auth.registerCustomer.signUpFailed"));
-      setLoading(false);
-      return false;
-    }
-
-    let avatarUrl: string | undefined;
-    if (answers.photoFile) {
-      const ext = answers.photoFile.name.split(".").pop();
-      const path = `${user.id}/avatar.${ext}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, answers.photoFile, { upsert: true, contentType: answers.photoFile.type });
-      if (!uploadErr) {
-        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-        avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+    let avatarUrl = answers.avatarUrl;
+    let petPhotoUrl = answers.petPhotoUrl;
+    if (answers.photoFile || answers.petPhotoFile) {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) {
+        setError(t("auth.registerCustomer.signUpFailed"));
+        return false;
+      }
+      const upload = async (file: File, name: "avatar" | "pet") => {
+        const ext = file.name.split(".").pop();
+        const path = `${auth.user!.id}/${name}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+        if (uploadErr) return null;
+        return `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+      };
+      if (answers.photoFile) {
+        const url = await upload(answers.photoFile, "avatar");
+        if (url) {
+          avatarUrl = url;
+          setAnswers((a) => ({ ...a, avatarUrl: url, photoFile: null, photoPreview: url }));
+        }
+      }
+      if (answers.petPhotoFile) {
+        const url = await upload(answers.petPhotoFile, "pet");
+        if (url) {
+          petPhotoUrl = url;
+          setAnswers((a) => ({ ...a, petPhotoUrl: url, petPhotoFile: null, petPhotoPreview: url }));
+        }
       }
     }
-
-    let petPhotoUrl: string | undefined;
-    if (answers.petPhotoFile) {
-      const ext = answers.petPhotoFile.name.split(".").pop();
-      const path = `${user.id}/pet.${ext}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, answers.petPhotoFile, { upsert: true, contentType: answers.petPhotoFile.type });
-      if (!uploadErr) {
-        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-        petPhotoUrl = `${urlData.publicUrl}?v=${Date.now()}`;
-      }
-    }
-
-    // full_name keeps being written as "first last" so every existing reader
-    // of profiles.full_name (bookings, admin lists, the cleaner's view of a
-    // customer, ...) is unaffected — first_name/last_name on customers below
-    // are additive, groundwork for a future "hide last name from cleaners"
-    // display rule that isn't enforced anywhere yet.
-    const fullName = `${answers.firstName.trim()} ${answers.lastName.trim()}`.trim();
-
-    const { error: profileErr } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "customer",
-      full_name: fullName || null,
-      phone: answers.phone || null,
-      ...(avatarUrl && { avatar_url: avatarUrl }),
-    });
-    if (profileErr) {
-      setError(profileErr.message);
-      setLoading(false);
+    const res = await saveOnboarding({ role: "customer", draft: answersToDraft(answers, avatarUrl, petPhotoUrl), step: nextStep, submit });
+    if ("error" in res) {
+      setError(res.error);
       return false;
     }
-
-    // A picked locality supplies the address text and the official coordinates;
-    // typed text (the "can't find it" fallback) is geocoded as before.
-    const pickedLocality = answers.locality;
-    const addressText = pickedLocality ? pickedLocality.name_he : answers.area.trim();
-    const location =
-      pickedLocality && pickedLocality.lat != null && pickedLocality.lng != null
-        ? { lat: pickedLocality.lat, lng: pickedLocality.lng }
-        : addressText
-          ? await geocodeAddress(addressText)
-          : null;
-
-    const languagesArr = answers.languages
-      .split(",")
-      .map((l) => l.trim())
-      .filter(Boolean);
-
-    const { error: customerErr } = await supabase.from("customers").upsert({
-      id: user.id,
-      first_name: answers.firstName.trim() || null,
-      last_name: answers.lastName.trim() || null,
-      languages: languagesArr,
-      bio: answers.aboutMe || null,
-      address: addressText || null,
-      lat: location?.lat ?? null,
-      lng: location?.lng ?? null,
-      dwelling_type: answers.homeType,
-      bedrooms: answers.bedrooms ? Number(answers.bedrooms) : null,
-      bathrooms: answers.bathrooms ? Number(answers.bathrooms) : null,
-      num_floors: answers.numFloors ? Number(answers.numFloors) : null,
-      house_size_sqm: answers.sizeSqm ? Number(answers.sizeSqm) : null,
-      num_people: answers.numPeople ? Number(answers.numPeople) : null,
-      pet_types: answers.petTypes,
-      num_pets: answers.petTypes.length > 0 && answers.numPets ? Number(answers.numPets) : null,
-      pet_note: answers.petTypes.length > 0 && answers.petNote ? answers.petNote.trim() || null : null,
-      ...(petPhotoUrl && { pet_photo_url: petPhotoUrl }),
-      usage_frequency: answers.frequency,
-      usual_cleaning_type: answers.cleaningType,
-      cleaning_priorities: answers.priorities,
-      cleaning_priorities_other: answers.priorities.includes("other") ? answers.priorityOtherText || null : null,
-      home_instructions: answers.homeInstructions || null,
-    });
-    if (customerErr) {
-      setError(customerErr.message);
-      setLoading(false);
-      return false;
-    }
-
-    // The locality link is its own best-effort write: if migration 0039 hasn't been
-    // applied the profile above has already saved, so registration never fails on it.
-    if (answers.locality) {
-      try {
-        await supabase.from("customers").update({ locality_id: answers.locality.id }).eq("id", user.id);
-      } catch {
-        /* best-effort only */
-      }
-    }
-
-    localStorage.removeItem("pending_signup");
-    setLoading(false);
     return true;
   }
 
   async function handleSubmit() {
-    const ok = await saveAndFinish();
+    setLoading(true);
+    const ok = await persist(true);
+    setLoading(false);
     if (ok) router.push("/browse");
   }
 
   async function handleContinueLater() {
-    const ok = await saveAndFinish();
+    setLoading(true);
+    const ok = await persist(false);
+    // Their answers are saved — sign them out and send them to /login. Signing back in
+    // resumes this wizard where they stopped.
     if (ok) await signOutToLogin();
+    else setLoading(false);
   }
 
   const displayName = `${answers.firstName} ${answers.lastName}`.trim();
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <p className="text-sm text-gray-500">{t("auth.registerCustomer.settingUp")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
@@ -864,11 +844,11 @@ export default function CustomerRegisterPage() {
               </button>
               <button
                 type="button"
-                disabled={!isStepValid(current) || loading}
+                disabled={!isStepValid(current) || loading || saving}
                 onClick={goNext}
                 className="bg-blue-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {isLast ? t("auth.registerCustomer.submit") : t("auth.registerCustomer.next")}
+                {saving ? t("auth.registerCustomer.saving") : isLast ? t("auth.registerCustomer.submit") : t("auth.registerCustomer.next")}
               </button>
             </div>
           </>

@@ -3,19 +3,24 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { geocodeAddress } from "@/lib/geocode";
 import LocalityPicker from "@/components/LocalityPicker";
 import type { PickedLocality } from "@/lib/localities/address";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { signOutToLogin } from "../../actions";
+import { loadOnboarding, saveOnboarding } from "../../onboardingActions";
+import { CLEANER_SERVICES } from "@/lib/onboarding/options";
+import type { CleanerDraft } from "@/lib/onboarding/cleaner";
+import { ROLE_HOME } from "@/lib/roleHome";
 
 type FreqType = "num" | "monthly" | "other";
 type MatchType = "recurring" | "occasional" | "other";
 
 type Answers = {
   name: string;
+  // The photo already saved to the account (if any); `photoFile` is a NEW pick not yet uploaded.
+  avatarUrl: string | null;
   photoFile: File | null;
   photoPreview: string | null;
   birthD: string;
@@ -40,28 +45,10 @@ type Answers = {
   car: "yes" | "no" | null;
   gas: "yes" | "no" | null;
   gasAmt: string;
-  areas: string[];
   bio: string;
 };
 
-const SERVICE_KEYS: { value: string; key: string }[] = [
-  { value: "General home cleaning", key: "svcGeneral" },
-  { value: "Deep cleaning", key: "svcDeep" },
-  { value: "Closets", key: "svcClosets" },
-  { value: "Windows", key: "svcWindows" },
-  { value: "Laundry", key: "svcLaundry" },
-  { value: "Pesach", key: "svcPesach" },
-  { value: "Move-in", key: "svcMoveIn" },
-  { value: "Move-out", key: "svcMoveOut" },
-  { value: "Airbnb", key: "svcAirbnb" },
-  { value: "Organization", key: "svcOrganization" },
-  { value: "Newly renovated", key: "svcRenovated" },
-  { value: "Pet friendly", key: "svcPetFriendly" },
-  { value: "Residential cleaning", key: "svcResidential" },
-  { value: "Commercial cleaning", key: "svcCommercial" },
-  { value: "Offices", key: "svcOffices" },
-  { value: "Other", key: "svcOther" },
-];
+const SERVICE_KEYS = CLEANER_SERVICES;
 
 const MATCH_OPTS: { value: MatchType; key: string }[] = [
   { value: "recurring", key: "matchRecurring" },
@@ -74,6 +61,7 @@ const REQUIRED_KEYS = ["name", "birth", "loc", "services", "match"];
 
 const initialAnswers: Answers = {
   name: "",
+  avatarUrl: null,
   photoFile: null,
   photoPreview: null,
   birthD: "",
@@ -97,7 +85,6 @@ const initialAnswers: Answers = {
   car: null,
   gas: null,
   gasAmt: "1",
-  areas: [],
   bio: "",
 };
 
@@ -116,29 +103,34 @@ function fmt2(v: string): string {
   return Number.isNaN(n) ? "1.00" : n.toFixed(2);
 }
 
-export default function CleanerRegisterPage() {
-  const { t, lang } = useLanguage();
-  const router = useRouter();
-  const [creds, setCreds] = useState<{ email: string; password: string } | null>(null);
-  const [answers, setAnswers] = useState<Answers>(initialAnswers);
-  const [step, setStep] = useState(0);
-  const [visited, setVisited] = useState<Set<string>>(new Set());
-  const [phase, setPhase] = useState<"flow" | "confirm" | "congrats">("flow");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const raw = localStorage.getItem("pending_signup");
-    if (!raw) {
-      router.replace("/register");
-      return;
-    }
-    setCreds(JSON.parse(raw));
-  }, [router]);
+// The wizard's answers <-> what the server saves. Only plain values cross to the server.
+function answersToDraft(a: Answers, avatarUrl: string | null): CleanerDraft {
+  return {
+    name: a.name, avatarUrl, birthD: a.birthD, birthM: a.birthM, birthY: a.birthY,
+    localityId: a.locality?.id ?? null, loc: a.locality ? "" : a.loc, radius: a.radius,
+    freqType: a.freqType, freqVal: a.freqVal, freqOtherText: a.freqOtherText,
+    rate: a.rate, duration: a.duration, maxDuration: a.maxDuration, maxDurationNoLimit: a.maxDurationNoLimit,
+    services: a.services, serviceOtherText: a.serviceOtherText, matchTypes: a.matchTypes, matchOtherText: a.matchOtherText,
+    car: a.car, gas: a.gas, gasAmt: a.gasAmt, bio: a.bio,
+  };
+}
 
-  const steps = [
+function draftToAnswers(d: CleanerDraft, locality: PickedLocality | null): Answers {
+  return {
+    ...initialAnswers,
+    name: d.name, avatarUrl: d.avatarUrl, photoPreview: d.avatarUrl,
+    birthD: d.birthD, birthM: d.birthM, birthY: d.birthY,
+    loc: d.loc, locality, locManual: !locality && d.loc !== "",
+    radius: d.radius, freqType: d.freqType, freqVal: d.freqVal, freqOtherText: d.freqOtherText,
+    rate: d.rate, duration: d.duration, maxDuration: d.maxDuration, maxDurationNoLimit: d.maxDurationNoLimit,
+    services: d.services, serviceOtherText: d.serviceOtherText, matchTypes: d.matchTypes, matchOtherText: d.matchOtherText,
+    car: d.car, gas: d.gas, gasAmt: d.gasAmt, bio: d.bio,
+  };
+}
+
+function buildSteps(a: Answers): { key: string }[] {
+  return [
     { key: "name" },
     { key: "photo" },
     { key: "birth" },
@@ -151,10 +143,61 @@ export default function CleanerRegisterPage() {
     { key: "services" },
     { key: "match" },
     { key: "car" },
-    ...(answers.car === "yes" ? [{ key: "gas" }] : []),
-    ...(answers.car === "yes" && answers.gas === "yes" ? [{ key: "gasrate" }] : []),
+    ...(a.car === "yes" ? [{ key: "gas" }] : []),
+    ...(a.car === "yes" && a.gas === "yes" ? [{ key: "gasrate" }] : []),
     { key: "bio" },
   ];
+}
+
+export default function CleanerRegisterPage() {
+  const { t, lang } = useLanguage();
+  const router = useRouter();
+  const [answers, setAnswers] = useState<Answers>(initialAnswers);
+  const [step, setStep] = useState(0);
+  const [visited, setVisited] = useState<Set<string>>(new Set());
+  const [phase, setPhase] = useState<"flow" | "confirm" | "congrats">("flow");
+  const [loading, setLoading] = useState(false);
+  // True while a single screen is being saved (the Continue button shows "Saving…").
+  const [saving, setSaving] = useState(false);
+  // False until the saved answers have been loaded (so the screen never flashes empty).
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // The account already exists (it is created on the first sign-up screen), so load what was
+  // saved and continue exactly where the person stopped.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const state = await loadOnboarding();
+      if (!alive) return;
+      if ("error" in state) {
+        router.replace("/register");
+        return;
+      }
+      if (state.completed) {
+        router.replace(ROLE_HOME[state.role]);
+        return;
+      }
+      if (state.role !== "cleaner") {
+        router.replace(`/register/${state.role}`);
+        return;
+      }
+      const loaded = draftToAnswers(state.draft as CleanerDraft, state.locality);
+      const keys = buildSteps(loaded);
+      const start = Math.min(state.step, keys.length - 1);
+      setAnswers(loaded);
+      setStep(start);
+      setVisited(new Set(keys.slice(0, start).map((k) => k.key)));
+      setReady(true);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [router]);
+
+  const steps = buildSteps(answers);
 
   function markVisited(key: string) {
     setVisited((prev) => new Set(prev).add(key));
@@ -177,8 +220,6 @@ export default function CleanerRegisterPage() {
         return answers.matchTypes.length > 0;
       case "car":
         return answers.car !== null;
-      case "areas":
-        return answers.areas.length > 0;
       case "gas":
         return answers.gas !== null;
       case "bio":
@@ -201,13 +242,17 @@ export default function CleanerRegisterPage() {
   const current = steps[step];
   const isLast = step === steps.length - 1;
 
-  function goNext() {
-    if (!isStepValid(current.key)) return;
+  // Every Continue saves that screen first, so nothing is lost if the person leaves.
+  async function goNext() {
+    if (!isStepValid(current.key) || saving) return;
     if (isLast) {
       void handleSubmit();
       return;
     }
-    setStep((s) => s + 1);
+    setSaving(true);
+    const ok = await persist(false, step + 1);
+    setSaving(false);
+    if (ok) setStep((s) => s + 1);
   }
   function goBack() {
     if (step > 0) setStep((s) => s - 1);
@@ -234,7 +279,7 @@ export default function CleanerRegisterPage() {
     setAnswers((a) => ({ ...a, photoFile: normalized, photoPreview: URL.createObjectURL(normalized) }));
   }
 
-  function toggleArrayValue(key: "services" | "areas" | "matchTypes", value: string) {
+  function toggleArrayValue(key: "services" | "matchTypes", value: string) {
     setAnswers((a) => {
       const arr = a[key];
       const next = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
@@ -242,138 +287,52 @@ export default function CleanerRegisterPage() {
     });
   }
 
-  // Signs up (or reuses the pending account), uploads the photo if any, and
-  // upserts everything collected so far. Used both by the final "Submit" and
-  // by "Yes, continue later" on partial exit — an incomplete application is
-  // fine; /cleaner/profile shows what's still missing afterward.
-  async function saveAndFinish() {
-    if (!creds) return;
-    setLoading(true);
+  // Saves everything collected so far. A new photo is uploaded first (the account exists, so
+  // it has its own storage folder); the server then checks and writes the answers. With
+  // `submit` it also checks the required answers and marks the sign-up finished.
+  async function persist(submit: boolean, nextStep: number = step): Promise<boolean> {
     setError(null);
-
     const supabase = createClient();
-
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-      email: creds.email,
-      password: creds.password,
-      options: { data: { role: "cleaner" } },
-    });
-    if (signUpErr) {
-      setError(signUpErr.message);
-      setLoading(false);
-      return false;
-    }
-    const user = signUpData.user;
-    if (!user) {
-      setError("Sign up failed. Please try again.");
-      setLoading(false);
-      return false;
-    }
-
-    let avatarUrl: string | undefined;
+    let avatarUrl = answers.avatarUrl;
     if (answers.photoFile) {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) {
+        setError(t("auth.registerCleaner.signUpFailed"));
+        return false;
+      }
       const ext = answers.photoFile.name.split(".").pop();
-      const path = `${user.id}/avatar.${ext}`;
+      const path = `${auth.user.id}/avatar.${ext}`;
       const { error: uploadErr } = await supabase.storage
         .from("avatars")
         .upload(path, answers.photoFile, { upsert: true, contentType: answers.photoFile.type });
       if (!uploadErr) {
         const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
         avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+        setAnswers((a) => ({ ...a, avatarUrl, photoFile: null, photoPreview: avatarUrl }));
       }
     }
-
-    const { error: profileErr } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "cleaner",
-      full_name: answers.name || null,
-      ...(avatarUrl && { avatar_url: avatarUrl }),
-    });
-    if (profileErr) {
-      setError(profileErr.message);
-      setLoading(false);
+    const res = await saveOnboarding({ role: "cleaner", draft: answersToDraft(answers, avatarUrl), step: nextStep, submit });
+    if ("error" in res) {
+      setError(res.error);
       return false;
     }
-
-    // A picked locality supplies the address text and the official coordinates;
-    // typed text (the "can't find it" fallback) is geocoded as before.
-    const pickedLocality = answers.locality;
-    const addressText = pickedLocality ? pickedLocality.name_he : answers.loc.trim();
-    const location =
-      pickedLocality && pickedLocality.lat != null && pickedLocality.lng != null
-        ? { lat: pickedLocality.lat, lng: pickedLocality.lng }
-        : addressText
-          ? await geocodeAddress(addressText)
-          : null;
-
-    const birthdate =
-      answers.birthD && answers.birthM && answers.birthY
-        ? `${answers.birthY}-${String(answers.birthM).padStart(2, "0")}-${String(answers.birthD).padStart(2, "0")}`
-        : null;
-
-    // weekly_clean_target holds the numeric answer; weekly_clean_other carries
-    // the free-text description when the cleaner picked "a few times a month"
-    // or wrote in their own answer instead of a number.
-    const weeklyCleanTarget = answers.freqType === "num" ? answers.freqVal : 0;
-    const weeklyCleanOther =
-      answers.freqType === "monthly"
-        ? t("auth.registerCleaner.freqMonthly")
-        : answers.freqType === "other"
-          ? answers.freqOtherText || null
-          : null;
-
-    const { error: cleanerErr } = await supabase.from("cleaners").upsert({
-      id: user.id,
-      bio: answers.bio || null,
-      cleaning_categories: answers.services,
-      cleaning_category_other: answers.services.includes("Other") ? answers.serviceOtherText || null : null,
-      hourly_rate: answers.rate ? Number(answers.rate) : null,
-      min_hours: answers.duration ? Number(answers.duration) : null,
-      max_hours: answers.maxDurationNoLimit ? null : answers.maxDuration ? Number(answers.maxDuration) : null,
-      address: addressText || null,
-      service_radius_km: Math.min(100, Math.max(1, Number(answers.radius) || 10)),
-      ...(location && { location: `POINT(${location.lng} ${location.lat})` }),
-      birthdate,
-      weekly_clean_target: weeklyCleanTarget,
-      weekly_clean_other: weeklyCleanOther,
-      has_car: answers.car,
-      gas_return_enabled: answers.car === "yes" && answers.gas === "yes",
-      gas_return_rate: answers.car === "yes" && answers.gas === "yes" ? Number(answers.gasAmt || "1") : null,
-      match_preferences: answers.matchTypes,
-      match_preference_other: answers.matchTypes.includes("other") ? answers.matchOtherText || null : null,
-    });
-    if (cleanerErr) {
-      setError(cleanerErr.message);
-      setLoading(false);
-      return false;
-    }
-
-    // The locality link is its own best-effort write: if migration 0039 hasn't been
-    // applied the profile above has already saved, so registration never fails on it.
-    if (answers.locality) {
-      try {
-        await supabase.from("cleaners").update({ locality_id: answers.locality.id }).eq("id", user.id);
-      } catch {
-        /* best-effort only */
-      }
-    }
-
-    localStorage.removeItem("pending_signup");
-    setLoading(false);
     return true;
   }
 
   async function handleSubmit() {
-    const ok = await saveAndFinish();
+    setLoading(true);
+    const ok = await persist(true);
+    setLoading(false);
     if (ok) setPhase("congrats");
   }
 
   async function handleContinueLater() {
-    const ok = await saveAndFinish();
-    // Their partial answers are already saved — sign them out and send them
-    // to /login rather than the dashboard, since "continue later" means they
-    // pick this back up on their next visit.
+    setLoading(true);
+    const ok = await persist(false);
+    // Their answers are saved — sign them out and send them to /login. Signing back in
+    // resumes this wizard where they stopped.
     if (ok) await signOutToLogin();
+    else setLoading(false);
   }
 
   const ageDisplay = ageFromParts(answers.birthD, answers.birthM, answers.birthY);
@@ -381,6 +340,14 @@ export default function CleanerRegisterPage() {
     new Intl.DateTimeFormat(lang === "he" ? "he" : "en", { month: "short" }).format(new Date(2020, i, 1))
   );
   const curYear = new Date().getFullYear();
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <p className="text-sm text-gray-500">{t("auth.registerCleaner.settingUp")}</p>
+      </div>
+    );
+  }
 
   if (phase === "congrats") {
     return (
@@ -866,11 +833,11 @@ export default function CleanerRegisterPage() {
               </button>
               <button
                 type="button"
-                disabled={!isStepValid(current.key) || loading}
+                disabled={!isStepValid(current.key) || loading || saving}
                 onClick={goNext}
                 className="w-28 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {isLast ? t("auth.registerCleaner.submit") : t("auth.registerCleaner.next")}
+                {saving ? t("auth.registerCleaner.saving") : isLast ? t("auth.registerCleaner.submit") : t("auth.registerCleaner.next")}
               </button>
             </div>
           </>
