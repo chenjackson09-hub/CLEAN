@@ -27,7 +27,7 @@ export default function WelcomeBubble({ name }: { name: string }) {
 
   return (
     <div className="px-6 md:px-0 md:w-[45vw] md:mx-auto mb-2">
-      <div className="relative bg-white border border-gray-200 rounded-2xl shadow-lg p-5">
+      <div className="relative bg-white border border-gray-200 rounded-2xl shadow-lg p-4">
         <button
           type="button"
           onClick={dismiss}
@@ -38,8 +38,8 @@ export default function WelcomeBubble({ name }: { name: string }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <p className="font-semibold text-gray-900 pe-6 mb-2">{t("avail_welcome_title", { name })}</p>
-        <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{t("avail_welcome_body")}</p>
+        <p className="font-semibold text-gray-900 pe-6 mb-1">{t("avail_welcome_title", { name })}</p>
+        <p className="text-sm text-gray-600 whitespace-pre-line leading-snug">{t("avail_welcome_body")}</p>
         {/* Tail pointing down toward the calendar below. */}
         <div className="absolute start-8 -bottom-2 w-4 h-4 bg-white border-b border-e border-gray-200 rotate-45" />
       </div>

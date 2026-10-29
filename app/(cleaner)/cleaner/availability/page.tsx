@@ -84,9 +84,11 @@ export default async function AvailabilityPage() {
   });
 
   return (
-    // A fixed-height column (the viewport minus the header), so the whole month and
-    // its key fit on screen with no scrolling.
-    <div className="-mx-2 md:mx-0 flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+    // At least the viewport minus the header, so with nothing above it the whole month and
+    // its key fit on screen. The calendar below keeps a minimum height: when the notices on
+    // top (listing checklist, welcome note) are showing, the page scrolls to the schedule
+    // instead of squeezing it.
+    <div className="-mx-2 md:mx-0 flex flex-col min-h-[calc(100dvh-8rem)]">
       <div className="shrink-0">
         <ListingChecklist checklist={checklist} />
         <Suspense fallback={null}>
@@ -94,7 +96,7 @@ export default async function AvailabilityPage() {
         </Suspense>
       </div>
 
-      <div className="flex flex-col flex-1 min-h-0 w-full md:w-[45vw] md:mx-auto">
+      <div className="flex flex-col flex-1 min-h-[30rem] w-full md:w-[45vw] md:mx-auto">
         <CalendarGrid slots={specificSlots ?? []} weeklySlots={weeklySlots ?? []} bookings={bookings ?? []} pendingBookings={pendingBookings ?? []} />
       </div>
     </div>
