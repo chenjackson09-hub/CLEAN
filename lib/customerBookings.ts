@@ -115,6 +115,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       home_info: homeRow ?? null,
       area: hostArea,
       created_at: b.created_at,
+      response_deadline: b.response_deadline ?? null,
       cleaner_address: cleanerAddressMap[b.cleaner_id] ?? null,
       status_reason: (scheduleMap.get(b.id)?.status_reason ?? null) as 'cleaner_unavailable' | null,
       availability_notice: scheduleMap.get(b.id)?.availability_notice ?? null,

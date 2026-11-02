@@ -1,14 +1,16 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { BookingDetailModal } from '@/app/(customer)/bookings/BookingDetailModal'
 import { NextUpStrip, ScheduleBox, ScheduleRow } from '@/components/home/ScheduleParts'
 import { extractArea } from '@/lib/bookingArea'
 import { daysBetween } from '@/lib/dateMath'
 import { countdownLabel } from '@/lib/countdown'
+import type { DeadlineLabel } from '@/lib/deadline'
 import type { BookingResult } from '@/lib/types/booking'
 
-type PendingBooking = BookingResult & { daysAgo: number }
+type PendingBooking = BookingResult & { daysAgo: number; left?: DeadlineLabel | null }
 
 type Props = {
   firstName: string
@@ -66,11 +68,13 @@ function HomeBookingRow({
   )
 }
 
-// Greeting, then: Confirmed (its own scrolling box), a highlighted Today &
-// tomorrow strip, Pending requests, and Past cleans (its own scrolling box).
-// Today/tomorrow confirmed cleans live only in the strip so nothing shows twice.
+// Greeting, then everything in order of what needs attention: today & tomorrow (highlighted),
+// requests still waiting for an answer, what's coming up, and past cleans (collapsed). The page
+// just grows with its content, so nothing is pushed to the bottom and empty sections stay small
+// (a waiting-for-an-answer box that is empty doesn't show at all).
 export function HomeContent({ firstName, todayStr, confirmed, pending, past }: Props) {
   const { t, lang } = useLanguage()
+  const [showPast, setShowPast] = useState(false)
 
   // The cleaner's own area (e.g. "Beit Hillel"), not this booking's clean
   // address (the host's own place) — the point of showing a location is
@@ -80,15 +84,61 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
     const area = areaOf(b)
     return area ? `${b.cleaner_name} — ${area}` : b.cleaner_name
   }
+  const leftText = (l?: DeadlineLabel | null) =>
+    !l || l.kind === 'expired' ? '' : l.kind === 'hours' ? t('home.leftHours', { n: String(l.n) }) : t('home.leftMinutes', { n: String(l.n) })
 
   const nextUp = confirmed.filter(b => daysBetween(todayStr, b.scheduled_date) <= 1)
   const later = confirmed.filter(b => daysBetween(todayStr, b.scheduled_date) > 1)
 
   return (
-    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4 flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4 shrink-0">{t('home.greeting', { name: firstName })}</h1>
+    <div className="max-w-xl -mx-1.5 sm:mx-auto pt-4 pb-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('home.greeting', { name: firstName })}</h1>
 
-      <ScheduleBox fill title={t('home.confirmed')} count={later.length} empty={t('home.noConfirmed')}>
+      <NextUpStrip title={t('home.todayTomorrow')} count={nextUp.length}>
+        {nextUp.map(b => (
+          <HomeBookingRow
+            key={b.id}
+            booking={b}
+            todayStr={todayStr}
+            chipTone="accent"
+            title={titleOf(b)}
+            subtitle={`${daysBetween(todayStr, b.scheduled_date) <= 0 ? t('scheduleCard.today') : t('scheduleCard.tomorrow')} · ${b.scheduled_start.slice(0, 5)}`}
+          />
+        ))}
+      </NextUpStrip>
+
+      {/* Waiting for an answer: only when there is something to wait for. */}
+      {pending.length > 0 && (
+        <ScheduleBox maxH="max-h-[40vh]" title={t('home.waiting')} count={pending.length} empty="">
+          {pending.map(b => {
+            const left = leftText(b.left)
+            const hours = b.duration_flexible ? '' : ` · ${b.duration_hours} h`
+            return (
+              <HomeBookingRow
+                key={b.id}
+                booking={b}
+                todayStr={todayStr}
+                chipTone="amber"
+                title={`${t('home.requestSent')} · ${b.scheduled_start.slice(0, 5)}${hours}`}
+                subtitle={[b.availability_notice ? t('bookingCard.noticeBadge') : t('home.waitingForAnswer'), left].filter(Boolean).join(' · ')}
+                badge={b.availability_notice ? { text: '!', className: 'bg-amber-300 text-amber-950 w-6 h-6 !p-0 flex items-center justify-center' } : undefined}
+              />
+            )
+          })}
+        </ScheduleBox>
+      )}
+
+      <ScheduleBox
+        maxH="max-h-[50vh]"
+        title={t('home.comingUp')}
+        count={later.length}
+        empty={t('home.noConfirmed')}
+        emptyAction={
+          <Link href="/browse" className="inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+            {t('home.findCleaner')}
+          </Link>
+        }
+      >
         {later.map(b => (
           <HomeBookingRow
             key={b.id}
@@ -102,46 +152,29 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
         ))}
       </ScheduleBox>
 
-      {/* Strip, Pending and Past sit together at the bottom of the screen; Past
-          is secondary information, so it's held to two rows. */}
-      <div className="mt-auto shrink-0">
-        <NextUpStrip title={t('home.todayTomorrow')} count={nextUp.length}>
-          {nextUp.map(b => (
-            <HomeBookingRow
-              key={b.id}
-              booking={b}
-              todayStr={todayStr}
-              chipTone="accent"
-              title={titleOf(b)}
-              subtitle={`${daysBetween(todayStr, b.scheduled_date) <= 0 ? t('scheduleCard.today') : t('scheduleCard.tomorrow')} · ${b.scheduled_start.slice(0, 5)}`}
-            />
-          ))}
-        </NextUpStrip>
-
-        <ScheduleBox maxH="max-h-[12vh]" title={t('home.pending')} count={pending.length} empty={t('home.noPending')}>
-          {pending.map(b => {
-            const requested =
-              b.daysAgo <= 0 ? t('home.requestedToday') : b.daysAgo === 1 ? t('home.requestedYesterday') : t('home.requestedDaysAgo', { n: String(b.daysAgo) })
-            return (
-              <HomeBookingRow
-                key={b.id}
-                booking={b}
-                todayStr={todayStr}
-                chipTone="amber"
-                title={t('home.awaitingResponse')}
-                subtitle={b.availability_notice ? `${requested} · ${t('bookingCard.noticeBadge')}` : requested}
-                badge={b.availability_notice ? { text: '!', className: 'bg-amber-300 text-amber-950 w-6 h-6 !p-0 flex items-center justify-center' } : undefined}
-              />
-            )
-          })}
-        </ScheduleBox>
-
-        <ScheduleBox maxH="max-h-[9.4rem]" title={t('home.past')} count={past.length} empty={t('home.noPast')}>
-          {past.map(b => (
-            <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} faded title={b.cleaner_name} subtitle={areaOf(b)} />
-          ))}
-        </ScheduleBox>
-      </div>
+      {/* Past cleans: secondary, so it's one quiet line until you open it. */}
+      {past.length > 0 ? (
+        <section>
+          <button
+            type="button"
+            onClick={() => setShowPast(o => !o)}
+            aria-expanded={showPast}
+            className="flex items-center gap-1 px-1 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+          >
+            {t('home.pastWithCount', { n: String(past.length) })}
+            <span aria-hidden>{showPast ? '▴' : '▾'}</span>
+          </button>
+          {showPast && (
+            <div className="mt-1.5 max-h-[40vh] overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-sm divide-y divide-gray-100">
+              {past.map(b => (
+                <HomeBookingRow key={b.id} booking={b} todayStr={todayStr} faded title={b.cleaner_name} subtitle={areaOf(b)} />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : (
+        <p className="px-1 text-xs text-gray-400">{t('home.pastWithCount', { n: '0' })}</p>
+      )}
     </div>
   )
 }

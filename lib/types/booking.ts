@@ -72,6 +72,8 @@ export type BookingResult = {
   // customer's /home pending section. Optional since older call sites don't
   // select it.
   created_at?: string
+  // When a still-pending request lapses unanswered (24 h after it was sent).
+  response_deadline?: string | null
   // Why a request ended without the host doing it. 'cleaner_unavailable' =
   // the cleaner deleted the availability slot it depended on (migration 0033).
   status_reason?: 'cleaner_unavailable' | null

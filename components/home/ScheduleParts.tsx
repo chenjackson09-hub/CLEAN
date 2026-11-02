@@ -95,6 +95,7 @@ export function ScheduleBox({
   empty,
   fill = false,
   maxH = "max-h-[20vh]",
+  emptyAction,
   children,
 }: {
   title: string;
@@ -102,6 +103,8 @@ export function ScheduleBox({
   empty: string;
   fill?: boolean;
   maxH?: string;
+  // Shown under the empty-state text (e.g. a "Find a cleaner" button).
+  emptyAction?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -115,7 +118,10 @@ export function ScheduleBox({
           {children}
         </div>
       ) : (
-        <div className="rounded-2xl bg-white shadow-sm py-4 text-center text-sm text-gray-400">{empty}</div>
+        <div className="rounded-2xl bg-white shadow-sm py-4 text-center text-sm text-gray-400">
+          {empty}
+          {emptyAction && <div className="mt-3">{emptyAction}</div>}
+        </div>
       )}
     </section>
   );

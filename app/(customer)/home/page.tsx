@@ -1,6 +1,7 @@
 import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { fetchCustomerBookingResults } from '@/lib/customerBookings'
 import { daysBetween } from '@/lib/dateMath'
+import { deadlineLabel } from '@/lib/deadline'
 import { HomeContent } from './HomeContent'
 
 function ymd(d: Date): string {
@@ -37,6 +38,9 @@ export default async function CustomerHomePage() {
       // already YYYY-MM-DD, so no Date parsing (and no timezone ambiguity)
       // is needed to get "how many days ago was this requested".
       daysAgo: daysBetween(b.created_at?.slice(0, 10) ?? todayStr, todayStr),
+      // How long the cleaner has left to answer, worked out here (not in the browser) so the
+      // number can never differ between the server's and the browser's first render.
+      left: b.response_deadline ? deadlineLabel(new Date(b.response_deadline).getTime() - Date.now()) : null,
     }))
   const past = bookings
     .filter(b => b.status === 'completed')
