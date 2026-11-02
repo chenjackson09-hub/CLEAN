@@ -30,7 +30,7 @@ describe('cleaner home', () => {
     expect(screen.queryByText(/Rothschild/)).not.toBeInTheDocument()
   })
 
-  it('moves today/tomorrow cleans into a highlighted strip between Upcoming and Past, not both', () => {
+  it('moves today/tomorrow cleans into a highlighted strip above Upcoming, not both', () => {
     render(
       <DashboardLists
         {...base}
@@ -39,13 +39,11 @@ describe('cleaner home', () => {
           b({ id: 'u2', daysUntil: 1, scheduled_date: '2026-10-06', profiles: { full_name: 'Tomorrow Person' } }) as never,
           b({ id: 'u3', daysUntil: 15, profiles: { full_name: 'Later Person' } }) as never,
         ]}
-        past={[b({ id: 'p1', scheduled_date: '2026-09-16', status: 'completed', profiles: { full_name: 'Past Person' } }) as never]}
       />,
     )
     const sections = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
-    expect(sections[0]).toMatch(/Upcoming cleans/)
-    expect(sections[1]).toBe('Today & tomorrow')
-    expect(sections[2]).toMatch(/Past cleans/)
+    expect(sections[0]).toBe('Today & tomorrow')
+    expect(sections[1]).toMatch(/Upcoming cleans/)
 
     const strip = screen.getByText('Today & tomorrow').closest('section')!
     expect(within(strip).getByText('Today Person')).toBeInTheDocument()
@@ -71,7 +69,7 @@ describe('cleaner home', () => {
     expect(screen.getByText('in two weeks')).toBeInTheDocument()
   })
 
-  it('upcoming date chips are the darker grey; past ones stay light', () => {
+  it('upcoming date chips are the darker grey; past ones stay light', async () => {
     render(
       <DashboardLists
         {...base}
@@ -79,23 +77,22 @@ describe('cleaner home', () => {
         past={[b({ id: 'p1', scheduled_date: '2026-09-16', status: 'completed', profiles: { full_name: 'Past' } }) as never]}
       />,
     )
+    await userEvent.click(screen.getByRole('button', { name: /Past cleans \(1\)/ }))
     expect(screen.getByText('Up').closest('div.flex')!.querySelector('.bg-gray-300')).not.toBeNull()
     expect(screen.getByText('Past').closest('div.flex')!.querySelector('.bg-gray-300')).toBeNull()
   })
 
-  it('holds Past cleans to two rows at the bottom of the screen, with the strip just above it', () => {
-    render(
-      <DashboardLists
-        {...base}
-        upcoming={[b({ id: 'u0', daysUntil: 0, scheduled_date: '2026-10-05', profiles: { full_name: 'Today Person' } }) as never]}
-        past={[b({ id: 'p1', scheduled_date: '2026-09-16', status: 'completed', profiles: { full_name: 'Past' } }) as never]}
-      />,
-    )
-    const bottom = screen.getByText('Today & tomorrow').closest('section')!.parentElement!
-    expect(bottom.className).toContain('mt-auto')
-    const past = screen.getByText(/^Past cleans/).closest('section')!
-    expect(bottom.contains(past)).toBe(true)
-    expect(past.querySelector('.overflow-y-auto')!.className).toContain('max-h-[9.4rem]')
+  it('is one growing page: no fixed-height column, no sections pushed to the bottom', () => {
+    const { container } = render(<DashboardLists {...base} />)
+    expect(container.innerHTML).not.toContain('mt-auto')
+    expect(container.innerHTML).not.toContain('100dvh')
+  })
+
+  it('keeps finished history collapsed until it is opened', async () => {
+    render(<DashboardLists {...base} past={[b({ id: 'p1', scheduled_date: '2026-09-16', status: 'completed', profiles: { full_name: 'Old One' } }) as never]} />)
+    expect(screen.queryByText('Old One')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Past cleans \(1\)/ }))
+    expect(screen.getByText('Old One')).toBeInTheDocument()
   })
 
   it('hides the strip when nothing is today or tomorrow', () => {
@@ -103,7 +100,7 @@ describe('cleaner home', () => {
     expect(screen.queryByText('Today & tomorrow')).not.toBeInTheDocument()
   })
 
-  it('past cleans that still need marking complete get a Complete button; completed ones are faded without one', async () => {
+  it('a clean that happened but is not marked complete is shown up front with a Complete button, never hidden in the collapsed history', async () => {
     render(
       <DashboardLists
         {...base}
@@ -113,11 +110,30 @@ describe('cleaner home', () => {
         ]}
       />,
     )
+    const box = screen.getByText('Finished? Mark as complete').closest('section')!
+    expect(within(box).getByText('Needs Complete')).toBeInTheDocument()
     const buttons = screen.getAllByRole('button', { name: 'Complete' })
     expect(buttons).toHaveLength(1)
     await userEvent.click(buttons[0])
     expect(mockComplete).toHaveBeenCalledWith('p1')
+    // The finished one is history: collapsed, then faded without a button once opened.
+    expect(screen.queryByText('Already Done')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Past cleans \(1\)/ }))
     expect(screen.getByText('Already Done').closest('.opacity-60')).not.toBeNull()
+  })
+
+  it('points at requests waiting for an answer first, and says nothing when there are none', () => {
+    const { rerender } = render(<DashboardLists {...base} waitingRequests={0} />)
+    expect(screen.queryByText(/waiting for your answer/)).not.toBeInTheDocument()
+    rerender(<DashboardLists {...base} waitingRequests={1} />)
+    expect(screen.getByRole('link', { name: /1 request is waiting for your answer/ })).toHaveAttribute('href', '/cleaner/requests')
+    rerender(<DashboardLists {...base} waitingRequests={3} />)
+    expect(screen.getByRole('link', { name: /3 requests are waiting for your answer/ })).toBeInTheDocument()
+  })
+
+  it('with no upcoming cleans it offers the way to get some: set available days', () => {
+    render(<DashboardLists {...base} />)
+    expect(screen.getByRole('link', { name: /Set your available days/ })).toHaveAttribute('href', '/cleaner/availability')
   })
 
   it('greets with a comma and puts the search bar right under the name', () => {
@@ -143,9 +159,9 @@ describe('cleaner home', () => {
     expect(screen.queryByText('Roni Tyroler')).not.toBeInTheDocument()
   })
 
-  it('shows the empty message in each box', () => {
+  it('shows the empty message and a quiet past-cleans line when there is nothing yet', () => {
     render(<DashboardLists {...base} />)
     expect(screen.getByText('No upcoming cleans.')).toBeInTheDocument()
-    expect(screen.getByText('No past cleans yet.')).toBeInTheDocument()
+    expect(screen.getByText('Past cleans (0)')).toBeInTheDocument()
   })
 })

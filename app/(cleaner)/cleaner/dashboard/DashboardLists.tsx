@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useLang } from "@/context/LangContext";
 import { NextUpStrip, ScheduleBox } from "@/components/home/ScheduleParts";
 import { PastCleanRow, UpcomingCleanRow } from "./CleanRows";
@@ -20,8 +21,9 @@ function matchesSearch(booking: BookingWithCustomer, query: string): boolean {
   return name.includes(q) || address.includes(q);
 }
 
-// Greeting, the search bar under the name, then three zones in this order: Upcoming (its own scrolling box),
-// a highlighted Today & tomorrow strip, and Past (its own scrolling box, held to two rows).
+// Greeting, the search bar under the name, then everything in order of what needs attention: requests
+// waiting for an answer, finished cleans to mark complete, today & tomorrow (highlighted), upcoming cleans,
+// and past cleans (collapsed). The page just grows with its content, so nothing is pushed to the bottom.
 // Today/tomorrow cleans live only in the strip so nothing shows twice.
 export default function DashboardLists({
   name,
@@ -29,21 +31,31 @@ export default function DashboardLists({
   upcoming,
   past,
   hourlyRate,
+  waitingRequests = 0,
 }: {
   name: string;
   todayStr: string;
   upcoming: UpcomingBooking[];
   past: BookingWithCustomer[];
   hourlyRate: number | null;
+  // Requests this cleaner has not answered yet (they are answered on the Requests tab).
+  waitingRequests?: number;
 }) {
   const { t } = useLang();
   const [query, setQuery] = useState("");
+  const [showPast, setShowPast] = useState(false);
 
   const filteredUpcoming = useMemo(() => upcoming.filter((b) => matchesSearch(b, query)), [upcoming, query]);
   const filteredPast = useMemo(() => past.filter((b) => matchesSearch(b, query)), [past, query]);
   const nextUp = filteredUpcoming.filter((b) => b.daysUntil <= 1);
   const later = filteredUpcoming.filter((b) => b.daysUntil > 1);
   const noResults = t("dash_no_search_results");
+  // A clean that has happened but is not marked complete yet is something to DO, so it never hides in the
+  // collapsed past list; completed and cancelled ones are history.
+  const toComplete = filteredPast.filter((b) => b.status === "accepted");
+  const history = filteredPast.filter((b) => b.status !== "accepted");
+  // Searching opens the history so a match is never hidden behind a closed section.
+  const historyOpen = showPast || query.trim() !== "";
 
   return (
     <>
@@ -70,32 +82,71 @@ export default function DashboardLists({
         />
       </div>
 
+      {waitingRequests > 0 && !query && (
+        <Link
+          href="/cleaner/requests"
+          className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100"
+        >
+          <span>{waitingRequests === 1 ? t("dash_waiting_one") : t("dash_waiting_many", { n: waitingRequests })}</span>
+          <span aria-hidden>→</span>
+        </Link>
+      )}
+
+      {toComplete.length > 0 && (
+        <ScheduleBox maxH="max-h-[40vh]" title={t("dash_to_complete")} count={toComplete.length} empty="">
+          {toComplete.map((b) => (
+            <PastCleanRow key={b.id} booking={b} todayStr={todayStr} hourlyRate={hourlyRate} />
+          ))}
+        </ScheduleBox>
+      )}
+
+      <NextUpStrip title={t("dash_today_tomorrow")} count={nextUp.length}>
+        {nextUp.map((b) => (
+          <UpcomingCleanRow key={b.id} booking={b} todayStr={todayStr} daysUntil={b.daysUntil} hourlyRate={hourlyRate} inStrip />
+        ))}
+      </NextUpStrip>
+
       <ScheduleBox
-        fill
+        maxH="max-h-[50vh]"
         title={t("dash_upcoming")}
         count={later.length}
         empty={query ? noResults : t("dash_no_upcoming")}
+        emptyAction={
+          !query && (
+            <Link href="/cleaner/availability" className="inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+              {t("dash_find_days")}
+            </Link>
+          )
+        }
       >
         {later.map((b) => (
           <UpcomingCleanRow key={b.id} booking={b} todayStr={todayStr} daysUntil={b.daysUntil} hourlyRate={hourlyRate} />
         ))}
       </ScheduleBox>
 
-      {/* The strip and Past cleans sit together at the bottom of the screen. Past
-          is secondary information, so it's held to two rows. */}
-      <div className="mt-auto shrink-0">
-        <NextUpStrip title={t("dash_today_tomorrow")} count={nextUp.length}>
-          {nextUp.map((b) => (
-            <UpcomingCleanRow key={b.id} booking={b} todayStr={todayStr} daysUntil={b.daysUntil} hourlyRate={hourlyRate} inStrip />
-          ))}
-        </NextUpStrip>
-
-        <ScheduleBox maxH="max-h-[9.4rem]" title={t("dash_past")} count={filteredPast.length} empty={query ? noResults : t("dash_no_past")}>
-          {filteredPast.map((b) => (
-            <PastCleanRow key={b.id} booking={b} todayStr={todayStr} hourlyRate={hourlyRate} />
-          ))}
-        </ScheduleBox>
-      </div>
+      {/* History is secondary: one quiet line until it is opened (or searched). */}
+      {history.length > 0 ? (
+        <section>
+          <button
+            type="button"
+            onClick={() => setShowPast((o) => !o)}
+            aria-expanded={historyOpen}
+            className="flex items-center gap-1 px-1 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+          >
+            {t("dash_past_count", { n: history.length })}
+            <span aria-hidden>{historyOpen ? "▴" : "▾"}</span>
+          </button>
+          {historyOpen && (
+            <div className="mt-1.5 max-h-[40vh] overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-sm divide-y divide-gray-100">
+              {history.map((b) => (
+                <PastCleanRow key={b.id} booking={b} todayStr={todayStr} hourlyRate={hourlyRate} />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : toComplete.length === 0 ? (
+        <p className="px-1 text-xs text-gray-400">{query ? noResults : t("dash_past_count", { n: 0 })}</p>
+      ) : null}
     </>
   );
 }

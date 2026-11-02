@@ -4,8 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import CalendarGrid from "./CalendarGrid";
 import WelcomeBubble from "./WelcomeBubble";
-import ListingChecklist from "./ListingChecklist";
-import { listingChecklist } from "@/lib/listing";
 import { declineExpiredRequests } from "@/lib/expireRequests";
 import type { CleanerAvailability, CleanerWeeklyAvailability, BookingWithCustomer } from "@/types/database";
 
@@ -31,7 +29,7 @@ export default async function AvailabilityPage() {
   const to = fmtDate(new Date(today.getFullYear(), today.getMonth() + 4, 0));
 
   const [{ data: profile }, { data: weeklySlots }, { data: specificSlots }, { data: bookings }, { data: pendingBookings }] = await Promise.all([
-    supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single<{ full_name: string | null; avatar_url: string | null }>(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
     supabase
       .from("cleaner_weekly_availability")
       .select("*")
@@ -72,17 +70,6 @@ export default async function AvailabilityPage() {
 
   const firstName = (profile?.full_name ?? "").trim().split(" ")[0] ?? "";
 
-  // "Listed" = a photo, a rate and at least one day hosts can book (a recurring weekly slot or
-  // a dated slot that is not in the past). The rate is read on its own so this card can never
-  // take the schedule down.
-  const { data: rateRow } = await supabase.from("cleaners").select("hourly_rate").eq("id", user.id).maybeSingle<{ hourly_rate: number | null }>();
-  const todayStr = fmtDate(today);
-  const checklist = listingChecklist({
-    avatarUrl: profile?.avatar_url,
-    hourlyRate: rateRow?.hourly_rate,
-    hasAvailableDay: (weeklySlots ?? []).length > 0 || (specificSlots ?? []).some((s) => s.date >= todayStr),
-  });
-
   return (
     // At least the viewport minus the header, so with nothing above it the whole month and
     // its key fit on screen. The calendar below keeps a minimum height: when the notices on
@@ -90,7 +77,6 @@ export default async function AvailabilityPage() {
     // instead of squeezing it.
     <div className="-mx-2 md:mx-0 flex flex-col min-h-[calc(100dvh-8rem)]">
       <div className="shrink-0">
-        <ListingChecklist checklist={checklist} />
         <Suspense fallback={null}>
           <WelcomeBubble name={firstName} />
         </Suspense>

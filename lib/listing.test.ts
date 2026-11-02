@@ -1,14 +1,4 @@
-import { listingChecklist, onlyListed } from './listing'
-
-describe('listingChecklist', () => {
-  it('is listed only with a photo, a rate and an available day', () => {
-    expect(listingChecklist({ avatarUrl: 'x.jpg', hourlyRate: 80, hasAvailableDay: true })).toEqual({ photo: true, rate: true, days: true, listed: true })
-    expect(listingChecklist({ avatarUrl: null, hourlyRate: 80, hasAvailableDay: true }).listed).toBe(false)
-    expect(listingChecklist({ avatarUrl: 'x.jpg', hourlyRate: 0, hasAvailableDay: true }).listed).toBe(false)
-    expect(listingChecklist({ avatarUrl: 'x.jpg', hourlyRate: null, hasAvailableDay: true }).rate).toBe(false)
-    expect(listingChecklist({ avatarUrl: 'x.jpg', hourlyRate: 80, hasAvailableDay: false }).listed).toBe(false)
-  })
-})
+import { onlyListed } from './listing'
 
 const admin = (result: { data: unknown; error: unknown }) =>
   ({ from: () => ({ select: () => ({ in: async () => result }) }) }) as never

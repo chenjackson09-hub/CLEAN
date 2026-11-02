@@ -1,16 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { REQUIRE_LISTING_CHECKLIST } from '@/lib/features'
 
-// "Listed" = what a host needs to act on a cleaner: a face, a price and a day to book.
-export type ListingChecklist = { photo: boolean; rate: boolean; days: boolean; listed: boolean }
-
-export function listingChecklist(input: { avatarUrl?: string | null; hourlyRate?: number | null; hasAvailableDay: boolean }): ListingChecklist {
-  const photo = !!input.avatarUrl
-  const rate = typeof input.hourlyRate === 'number' && input.hourlyRate > 0
-  const days = input.hasAvailableDay
-  return { photo, rate, days, listed: photo && rate && days }
-}
-
 // Of these approved cleaners, keep the ones that have a photo and a rate (the availability
 // part is already how the schedule finds them: no available day, no day to show). Fails open:
 // if the photos cannot be read, nobody is hidden.

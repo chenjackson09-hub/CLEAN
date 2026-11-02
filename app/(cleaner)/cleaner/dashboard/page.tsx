@@ -68,6 +68,15 @@ export default async function CleanerDashboardPage() {
 
   const hourlyRate = cleanerRow?.hourly_rate ?? null;
 
+  // Requests still waiting for this cleaner's answer: the home page points at them first.
+  // Its own count query, so a hiccup here can only hide the banner, never the page.
+  const { count: waitingCount } = await admin
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("cleaner_id", user.id)
+    .eq("status", "pending")
+    .gt("response_deadline", now.toISOString());
+
   // Cleans that were confirmed and then cancelled (by either side) stay in this
   // cleaner's history as "Cancelled" — never as completed. Read on its own so a
   // missing migration-0036 column just means none show.
@@ -175,9 +184,8 @@ export default async function CleanerDashboardPage() {
   }
 
   return (
-    // A fixed-height column (the viewport minus the header) so only the Past
-    // cleans box flexes and scrolls — the page itself doesn't scroll.
-    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+    // One growing page, in order of what needs attention (see DashboardLists).
+    <div className="max-w-3xl mx-auto pb-8">
       <RealtimeBookings cleanerId={user.id} />
       <DashboardLists
         name={profile?.full_name ?? user.email ?? ""}
@@ -185,6 +193,7 @@ export default async function CleanerDashboardPage() {
         upcoming={upcomingWithHome}
         past={pastWithHome}
         hourlyRate={hourlyRate}
+        waitingRequests={waitingCount ?? 0}
       />
     </div>
   );
