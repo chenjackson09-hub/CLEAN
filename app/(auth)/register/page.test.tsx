@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from '@/lib/legal/content'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithLanguage as render } from '@/lib/i18n/testUtils'
@@ -21,6 +22,7 @@ async function fill(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/^email/i), 'a@b.com')
   await user.type(screen.getByLabelText(/^password/i), 'secret123')
   await user.type(screen.getByLabelText(/confirm password/i), 'secret123')
+  await user.click(screen.getByRole('checkbox', { name: /terms of use/i }))
 }
 
 describe('Register (account is created on the first screen)', () => {
@@ -30,7 +32,7 @@ describe('Register (account is created on the first screen)', () => {
     await fill(user)
     await user.click(screen.getByText('Cleaner'))
     await user.click(screen.getByRole('button', { name: 'Continue' }))
-    await waitFor(() => expect(mockSignUp).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret123', options: { data: { role: 'cleaner' } } }))
+    await waitFor(() => expect(mockSignUp).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret123', options: { data: { role: 'cleaner', terms_version: TERMS_VERSION, terms_accepted_at: expect.any(String) } } }))
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/register/cleaner'))
     // The password is never parked in the browser any more.
     expect(localStorage.getItem('pending_signup')).toBeNull()
@@ -45,5 +47,22 @@ describe('Register (account is created on the first screen)', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockSignUp).toHaveBeenCalled())
     expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('will not create the account until the Terms and Privacy Policy are agreed to', async () => {
+    const user = userEvent.setup()
+    render(<RegisterPage />)
+    await user.type(screen.getByLabelText(/^email/i), 'a@b.com')
+    await user.type(screen.getByLabelText(/^password/i), 'secret123')
+    await user.type(screen.getByLabelText(/confirm password/i), 'secret123')
+    await user.click(screen.getByText('Cleaner'))
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
+    expect(mockSignUp).not.toHaveBeenCalled()
+    // The links go to the real pages and open in a new tab, so nothing typed is lost.
+    expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', '/terms')
+    expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('target', '_blank')
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy')
+    await user.click(screen.getByRole('checkbox', { name: /terms of use/i }))
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
   })
 })

@@ -156,6 +156,10 @@ export default function LoginPage() {
             {t("auth.login.register")}
           </Link>
         </p>
+        <p className="mt-3 flex justify-center gap-3 text-xs text-gray-400">
+          <Link href="/terms" className="hover:underline">{t("legal.termsTitle")}</Link>
+          <Link href="/privacy" className="hover:underline">{t("legal.privacyTitle")}</Link>
+        </p>
       </div>
     </div>
   );

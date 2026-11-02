@@ -1,5 +1,6 @@
 "use server";
 
+import { TERMS_VERSION } from "@/lib/legal/content";
 import { safeNextPath } from "@/lib/safeRedirect";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,6 +17,8 @@ export async function completeOnboarding(input: {
   role: "customer" | "cleaner";
   full_name: string;
   phone: string;
+  // The version of the Terms the person agreed to (they must tick the box to get here).
+  termsVersion: string;
 }): Promise<{ error?: string; success?: boolean }> {
   const supabase = await createClient();
   const {
@@ -39,6 +42,7 @@ export async function completeOnboarding(input: {
   const phone = input.phone.trim();
   if (role !== "customer" && role !== "cleaner") return { error: "Invalid role" };
   if (!full_name) return { error: "Name is required" };
+  if (input.termsVersion !== TERMS_VERSION) return { error: "Please agree to the Terms of Use and Privacy Policy to continue." };
 
   const admin = createAdminClient();
 
@@ -70,7 +74,7 @@ export async function completeOnboarding(input: {
 
   // Mark onboarding complete so they aren't re-routed here.
   const { error: metaErr } = await admin.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...(user.user_metadata ?? {}), onboarded: true },
+    user_metadata: { ...(user.user_metadata ?? {}), onboarded: true, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
   });
   if (metaErr) return { error: metaErr.message };
 

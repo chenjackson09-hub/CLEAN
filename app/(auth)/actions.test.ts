@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from '@/lib/legal/content'
 import { signIn, completeOnboarding } from './actions'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -154,7 +155,7 @@ describe('completeOnboarding', () => {
       data: { user: { id: 'u1', app_metadata: { providers: ['email'] }, user_metadata: {} } },
     })
 
-    const result = await completeOnboarding({ role: 'customer', full_name: 'A', phone: '' })
+    const result = await completeOnboarding({ role: 'customer', full_name: 'A', phone: '', termsVersion: TERMS_VERSION })
 
     expect(result.error).toMatch(/already been completed/)
     expect(mockUpsert).not.toHaveBeenCalled()
@@ -165,7 +166,7 @@ describe('completeOnboarding', () => {
       data: { user: googleUser({ user_metadata: { onboarded: true } }) },
     })
 
-    const result = await completeOnboarding({ role: 'cleaner', full_name: 'A', phone: '' })
+    const result = await completeOnboarding({ role: 'cleaner', full_name: 'A', phone: '', termsVersion: TERMS_VERSION })
 
     expect(result.error).toMatch(/already been completed/)
     expect(mockUpsert).not.toHaveBeenCalled()
@@ -174,9 +175,16 @@ describe('completeOnboarding', () => {
   it('allows a fresh Google-only user who has not onboarded yet', async () => {
     mockGetUser.mockResolvedValue({ data: { user: googleUser() } })
 
-    const result = await completeOnboarding({ role: 'customer', full_name: 'A', phone: '' })
+    const result = await completeOnboarding({ role: 'customer', full_name: 'A', phone: '', termsVersion: TERMS_VERSION })
 
     expect(result).toEqual({ success: true })
     expect(mockUpsert).toHaveBeenCalled()
+  })
+
+  it('does not onboard anyone who has not agreed to the current Terms', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: googleUser() } })
+    const result = await completeOnboarding({ role: 'customer', full_name: 'A', phone: '', termsVersion: '' })
+    expect(result.error).toMatch(/agree to the Terms/)
+    expect(mockUpsert).not.toHaveBeenCalled()
   })
 })

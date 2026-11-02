@@ -1,5 +1,7 @@
 'use client'
 
+import TermsConsent from '@/components/legal/TermsConsent'
+import { TERMS_VERSION } from '@/lib/legal/content'
 import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/lib/i18n/LanguageToggle'
@@ -15,6 +17,7 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [agreed, setAgreed] = useState(false)
 
   // Prefill the name Google gave us.
   useEffect(() => {
@@ -31,10 +34,14 @@ export default function OnboardingPage() {
       setError(t('onboarding.chooseRole'))
       return
     }
+    if (!agreed) {
+      setError(t('legal.consentRequired'))
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      const result = await completeOnboarding({ role, full_name: fullName, phone })
+      const result = await completeOnboarding({ role, full_name: fullName, phone, termsVersion: TERMS_VERSION })
       if (result?.error) {
         setError(result.error)
         setLoading(false)
@@ -111,11 +118,13 @@ export default function OnboardingPage() {
             />
           </div>
 
+          <TermsConsent checked={agreed} onChange={(v) => { setAgreed(v); if (error) setError(null) }} disabled={loading} />
+
           {error && <p className="text-sm text-red-600 bg-red-50 rounded-full px-3 py-2">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreed}
             className="w-full bg-[#75C9C8] text-white rounded-full py-2.5 text-sm font-semibold hover:brightness-95 disabled:opacity-50 transition"
           >
             {loading ? t('onboarding.finishing') : t('onboarding.finish')}

@@ -55,13 +55,15 @@ export async function middleware(request: NextRequest) {
   const isOnboardingPath = pathname.startsWith('/register/')
   // Public post-logout screen — reachable without a session.
   const isSignedOutPath = pathname === '/signed-out'
+  // Terms of Use / Privacy Policy: people read them before they have an account.
+  const isLegalPath = pathname === '/terms' || pathname === '/privacy'
   // OAuth callback must run while still unauthenticated (it sets the session).
   const isCallbackPath = pathname.startsWith('/auth/')
   // Read-only locality autocomplete — used on the registration screens, before
   // an account exists. Returns geography only.
   const isLocalitySearch = pathname === '/api/localities/search'
 
-  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isCallbackPath && !isLocalitySearch) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isCallbackPath && !isLocalitySearch) {
     // Remember where they were headed (e.g. a booking link from a calendar event)
     // so sign-in can take them straight back. Validated again when it's used.
     const loginUrl = new URL('/login', request.url)

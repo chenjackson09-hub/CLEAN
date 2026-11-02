@@ -29,6 +29,7 @@
 Open the site → **Register** → choose **Cleaner**, enter the email + password (twice).
 
 - [ ] **1.1** Wrong confirm-password shows a message and does not continue. An email that already exists is blocked with a link to log in.
+- [ ] **1.1b** The **Continue** button stays grey until you tick *"I agree to the Terms of Use and the Privacy Policy"*. Tap the two links: each opens its page in a **new tab** (English and Hebrew both readable, with a "test version" note), and your sign-up form is still filled in when you come back.
 - [ ] **1.2** After "Continue" you land on **Step 1 of 9** (no long wait).
 
 **Step 1 – You.** Add a photo (try the camera or library). Type a name. Pick a birth date.

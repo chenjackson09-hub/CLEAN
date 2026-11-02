@@ -1,5 +1,6 @@
 "use client";
 
+import LegalLinks from "@/components/legal/LegalLinks";
 import { useState } from "react";
 import { useLang } from "@/context/LangContext";
 import AppHeader from "@/components/AppHeader";
@@ -106,6 +107,7 @@ export default function NavLinks({ signOut, userId, userName, avatarUrl = null, 
               <p className="text-xs text-gray-400 mb-1.5">{lang === "he" ? "שפה" : "Language"}</p>
               {LangButtons}
             </div>
+            <LegalLinks lang={lang === "he" ? "he" : "en"} />
             <button
               onClick={() => { close(); setConfirmSignOut(true); }}
               className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"

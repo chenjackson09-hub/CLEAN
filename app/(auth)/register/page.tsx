@@ -1,5 +1,7 @@
 "use client";
 
+import TermsConsent from "@/components/legal/TermsConsent";
+import { TERMS_VERSION } from "@/lib/legal/content";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -51,6 +53,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailTaken, setEmailTaken] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
 
   async function handleEmailBlur(e: React.FocusEvent<HTMLInputElement>) {
@@ -67,6 +70,10 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!role) return;
     setError(null);
+    if (!agreed) {
+      setError(t("legal.consentRequired"));
+      return;
+    }
 
     const formData = new FormData(e.currentTarget);
     const email = (formData.get("email") as string).trim();
@@ -98,7 +105,7 @@ export default function RegisterPage() {
     // builds the right profile rows). Everything the wizard collects next is saved step by
     // step, so a closed tab or a dropped connection never loses answers — and the password is
     // never kept in the browser. The person is approved by an admin only after they submit.
-    const { data: created, error: signUpErr } = await supabase.auth.signUp({ email, password, options: { data: { role } } });
+    const { data: created, error: signUpErr } = await supabase.auth.signUp({ email, password, options: { data: { role, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() } } });
     if (signUpErr || !created.session) {
       setError(signUpErr?.message ?? t("auth.register.signUpFailed"));
       setLoading(false);
@@ -246,13 +253,15 @@ export default function RegisterPage() {
             />
           </div>
 
+          <TermsConsent checked={agreed} onChange={(v) => { setAgreed(v); if (error) setError(null); }} disabled={loading} />
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={!role || loading || emailTaken}
+            disabled={!role || loading || emailTaken || !agreed}
             className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
             {loading ? (
