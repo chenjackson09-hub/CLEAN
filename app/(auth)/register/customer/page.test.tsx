@@ -107,6 +107,14 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/browse'))
   })
 
+  it('shows the language names, not raw translation keys', async () => {
+    render(<CustomerOnboardingPage />)
+    for (const name of ['Hebrew', 'English', 'Russian', 'Arabic', 'Amharic', 'French', 'Spanish']) {
+      expect(await screen.findByRole('button', { name })).toBeInTheDocument()
+    }
+    expect(document.body.textContent).not.toMatch(/auth\.registerCustomer\./)
+  })
+
   it('no longer asks for priorities, frequency or home instructions', async () => {
     const user = userEvent.setup()
     mockLoad.mockResolvedValue({ ...fresh(), step: 2 })
