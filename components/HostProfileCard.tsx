@@ -40,6 +40,7 @@ export default function HostProfileCard({
   town,
   cindyVerified = false,
   homeNotesLocked = false,
+  homePhotos = [],
 }: {
   fullName: string;
   avatarUrl: string | null;
@@ -54,6 +55,9 @@ export default function HostProfileCard({
   // private booking detail, shared once the cleaner accepts. The caller must also leave the
   // text out of `customer`, so it never reaches the cleaner's browser.
   homeNotesLocked?: boolean;
+  // Short-lived signed links to the host's PRIVATE home photos. Only the cleaner-facing page
+  // passes them, and only while that cleaner has a live request from the host.
+  homePhotos?: string[];
 }) {
   const ratingCount = customer?.rating_count ?? 0;
   const ratingAvg = customer?.rating_avg != null ? Number(customer.rating_avg) : null;
@@ -71,8 +75,8 @@ export default function HostProfileCard({
     ? [
         bedrooms != null ? { label: customer.bedrooms != null ? "Bedrooms" : "Rooms", value: String(bedrooms) } : null,
         customer.bathrooms != null ? { label: "Bathrooms", value: String(customer.bathrooms) } : null,
-        customer.floor != null ? { label: "Floor", value: String(customer.floor) } : null,
-        customer.num_floors != null ? { label: "Floors", value: String(customer.num_floors) } : null,
+        customer.floor != null ? { label: "Apartment floor", value: String(customer.floor) } : null,
+        customer.num_floors != null ? { label: "Floors in the home", value: String(customer.num_floors) } : null,
         customer.house_size_sqm != null ? { label: "Size", value: `~${customer.house_size_sqm} m²` } : null,
         customer.num_people != null ? { label: "People", value: String(customer.num_people) } : null,
         customer.num_kids_under_15 != null ? { label: "Kids under 15", value: String(customer.num_kids_under_15) } : null,
@@ -135,6 +139,24 @@ export default function HostProfileCard({
           </div>
         ))}
       </div>
+
+      {homePhotos.length > 0 && (
+        <div className="mb-4">
+          <p className={LABEL}>Photos of the home</p>
+          <ul className="grid grid-cols-3 gap-2">
+            {homePhotos.map((url) => (
+              <li key={url} className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                {/* A plain <img>: private, short-lived links must not go through the public image optimizer cache. */}
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="Photo of the home" className="w-full h-full object-cover" />
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-gray-400 mt-1.5">Shared by the host with you because you have a request from them. Please don&apos;t share them.</p>
+        </div>
+      )}
 
       {(customer?.languages ?? []).length > 0 && (
         <div className="mb-4">

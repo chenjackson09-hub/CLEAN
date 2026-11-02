@@ -156,6 +156,8 @@ export async function updateCustomerProfile(
       // no longer edit them, and omitting them from the upsert preserves any value
       // already stored (the columns remain in the DB and on the cleaner's view).
       house_size_sqm: toInt(formData.get("house_size_sqm")),
+      // How many floors the home has; only written when the form sent it (never wiped by another caller).
+      ...(formData.has("num_floors") && { num_floors: toInt(formData.get("num_floors")) }),
       dwelling_type: dwellingType,
       floor: dwellingType === "apartment" ? toIntSigned(formData.get("floor")) : null,
     })

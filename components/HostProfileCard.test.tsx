@@ -42,4 +42,19 @@ describe('HostProfileCard privacy and honesty', () => {
     render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} homeNotesLocked />)
     expect(screen.getByText(/Home notes are shared once you accept/)).toBeInTheDocument()
   })
+
+  it('shows the home photos a cleaner has been given links to, and nothing without them', () => {
+    const { rerender } = render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} />)
+    expect(screen.queryByText('Photos of the home')).not.toBeInTheDocument()
+    rerender(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} homePhotos={['https://signed/a', 'https://signed/b']} />)
+    expect(screen.getByText('Photos of the home')).toBeInTheDocument()
+    expect(screen.getAllByAltText('Photo of the home')).toHaveLength(2)
+    expect(screen.getByText(/because you have a request from them/)).toBeInTheDocument()
+  })
+
+  it('shows how many floors the home has, and which floor an apartment is on, with different labels', () => {
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={{ ...customer, num_floors: 2, floor: 3 } as Customer} reviews={[]} />)
+    expect(screen.getByText('Floors in the home')).toBeInTheDocument()
+    expect(screen.getByText('Apartment floor')).toBeInTheDocument()
+  })
 })

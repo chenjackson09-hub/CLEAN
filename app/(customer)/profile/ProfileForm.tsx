@@ -28,6 +28,8 @@ type DefaultValues = {
   house_size_sqm: string
   dwelling_type: DwellingType | null
   floor: string
+  // How many floors the home has (a house over two levels, a duplex...). Not the same as `floor`.
+  num_floors?: string
 }
 
 type Props = {
@@ -253,6 +255,12 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
                 defaultValue={defaultValues.floor} className={fieldClass} />
             </div>
           )}
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="num_floors" className={labelClass}>{t('profile.floorsInHome')}</label>
+            <input id="num_floors" name="num_floors" type="number" inputMode="numeric" min={1} max={50}
+              defaultValue={defaultValues.num_floors ?? ''} className={fieldClass} />
+          </div>
 
           <div className="flex flex-col gap-1">
             <label htmlFor="num_rooms" className={labelClass}>{t('profile.rooms')}</label>

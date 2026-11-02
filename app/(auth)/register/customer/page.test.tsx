@@ -12,6 +12,13 @@ jest.mock('next/navigation', () => ({ useRouter: () => mockRouter }))
 // Photos go straight to storage from the browser; everything else goes through the server.
 jest.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: 'user-1' } } }) }, storage: { from: () => ({ upload: jest.fn(), getPublicUrl: () => ({ data: { publicUrl: 'x' } }) }) } }) }))
 
+// Home photos are saved by their own actions (and need a signed-in server); nothing to list here.
+jest.mock('@/lib/actions/homePhotos', () => ({
+  listMyHomePhotos: async () => ({ ok: true, photos: [] }),
+  addHomePhoto: jest.fn(),
+  removeHomePhoto: jest.fn(),
+}))
+
 const mockLoad = jest.fn()
 const mockSave = jest.fn()
 const mockSignOut = jest.fn()
@@ -113,6 +120,28 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
       expect(await screen.findByRole('button', { name })).toBeInTheDocument()
     }
     expect(document.body.textContent).not.toMatch(/auth\.registerCustomer\./)
+  })
+
+  it('asks how many floors the home has right on the home screen, and saves it', async () => {
+    mockLoad.mockResolvedValue({ ...fresh(), step: 2, draft: { ...EMPTY_CUSTOMER_DRAFT, firstName: 'Jane', lastName: 'Doe' } })
+    const user = userEvent.setup()
+    render(<CustomerOnboardingPage />)
+    await screen.findByText('Your home')
+    await user.click(screen.getByRole('button', { name: 'Floors in the home +' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => expect(mockSave).toHaveBeenCalled())
+    expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ draft: expect.objectContaining({ numFloors: '1' }) }))
+  })
+
+  it('offers optional, private home photos on the home screen, with the privacy line', async () => {
+    mockLoad.mockResolvedValue({ ...fresh(), step: 2 })
+    render(<CustomerOnboardingPage />)
+    expect(await screen.findByText('Photos of your home')).toBeInTheDocument()
+    expect(screen.getByText('Optional · recommended')).toBeInTheDocument()
+    expect(screen.getByText(/Only a cleaner you send a request to can see these photos/)).toBeInTheDocument()
+    expect(screen.getByText(/not public and not shown to anyone else/)).toBeInTheDocument()
+    // Optional: Continue stays available without any photo.
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
   })
 
   it('no longer asks for priorities, frequency or home instructions', async () => {

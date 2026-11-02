@@ -6,6 +6,7 @@ import BackLink from "./BackLink";
 import HostProfileCard from "@/components/HostProfileCard";
 import { fetchCustomerAreas } from "@/lib/localities/areaNames";
 import { fetchCindyVerified } from "@/lib/cindyVerified";
+import { homePhotoLinksForCleaner } from "@/lib/homePhotosForCleaner";
 import type { ReviewItem } from "@/components/HostProfileReviews";
 
 export default async function CustomerProfilePage({
@@ -39,11 +40,11 @@ export default async function CustomerProfilePage({
       .single<Customer>(),
     supabase
       .from("bookings")
-      .select("id, status")
+      .select("id, status, response_deadline")
       .eq("cleaner_id", user.id)
       .eq("customer_id", id)
       .limit(50)
-      .returns<{ id: string; status: string }[]>(),
+      .returns<{ id: string; status: string; response_deadline: string | null }[]>(),
     // "Reviews from cleaners" — every cleaner's rating of this host that
     // includes a free-text review (see migration 0028), not just this
     // cleaner's own. Uses the admin client since RLS ("Participants read
@@ -66,6 +67,10 @@ export default async function CustomerProfilePage({
   const confirmed = bookings.some((b) => b.status === "accepted" || b.status === "completed");
   const visibleCustomer = confirmed || !customer ? customer : { ...customer, home_instructions: null };
 
+  // The host's private home photos: signed, short-lived links, and only while this cleaner has a
+  // live request from the host (pending, accepted or completed). Anything else gets none.
+  const homePhotos = await homePhotoLinksForCleaner(supabase, id, bookings);
+
   // The host's town only — the card never shows a street.
   const town = (await fetchCustomerAreas(supabase, [id])).get(id)?.en ?? null;
   const cindyVerified = (await fetchCindyVerified(supabase, "customers", [id])).has(id);
@@ -86,6 +91,7 @@ export default async function CustomerProfilePage({
         avatarUrl={profile.avatar_url}
         customer={visibleCustomer}
         homeNotesLocked={!confirmed}
+        homePhotos={homePhotos}
         reviews={reviews}
         town={town}
         cindyVerified={cindyVerified}

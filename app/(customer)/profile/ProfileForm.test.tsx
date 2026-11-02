@@ -73,4 +73,11 @@ describe('ProfileForm', () => {
     expect(select.value).toBe('villa')
     expect(Array.from(select.options).map((o) => o.value)).toEqual(['', 'apartment', 'house', 'villa', 'guesthouse', 'office'])
   })
+
+  it('lets the host say how many floors the home has', () => {
+    render(<ProfileForm defaultValues={{ ...baseProfile, num_floors: '2' }} action={noopAction} />)
+    const floors = screen.getByLabelText<HTMLInputElement>(/floors in the home/i)
+    expect(floors.name).toBe('num_floors')
+    expect(floors.value).toBe('2')
+  })
 })

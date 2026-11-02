@@ -1,3 +1,4 @@
+import HomePhotosManager from "@/components/HomePhotosManager"
 import type { DwellingType } from "@/types/database"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -49,7 +50,7 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
   }))
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto flex flex-col gap-4">
       <ProfileViewEdit
         action={updateCustomerProfile}
         fullName={profile?.full_name ?? "Customer"}
@@ -75,8 +76,11 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
           house_size_sqm: numOrEmpty(customer?.house_size_sqm),
           dwelling_type: (customer?.dwelling_type as DwellingType | null) ?? null,
           floor: numOrEmpty(customer?.floor),
+          num_floors: numOrEmpty(customer?.num_floors),
         }}
       />
+      {/* Private home photos: only a cleaner this host sends a request to can see them. */}
+      <HomePhotosManager />
     </div>
   )
 }

@@ -27,9 +27,9 @@ export function Stepper({ value, onChange, min = 0, max = 50, step = 1, label, s
   const set = (next: number) => onChange(String(Math.min(max, Math.max(min, next))))
   return (
     <div className="inline-flex items-center gap-2" role="group" aria-label={label}>
-      <button type="button" aria-label={`${label} −`} onClick={() => set((n ?? min) - step)} className="w-9 h-9 rounded-full border border-gray-300 text-lg leading-none text-gray-700 hover:bg-gray-50">−</button>
+      <button type="button" aria-label={`${label} −`} onClick={() => set(n === null ? min : n - step)} className="w-9 h-9 rounded-full border border-gray-300 text-lg leading-none text-gray-700 hover:bg-gray-50">−</button>
       <span className="min-w-[3.5rem] text-center text-base font-semibold text-gray-900">{n === null ? "–" : n}{suffix ? ` ${suffix}` : ""}</span>
-      <button type="button" aria-label={`${label} +`} onClick={() => set((n ?? min) + step)} className="w-9 h-9 rounded-full border border-gray-300 text-lg leading-none text-gray-700 hover:bg-gray-50">+</button>
+      <button type="button" aria-label={`${label} +`} onClick={() => set(n === null ? Math.max(min, step) : n + step)} className="w-9 h-9 rounded-full border border-gray-300 text-lg leading-none text-gray-700 hover:bg-gray-50">+</button>
     </div>
   )
 }

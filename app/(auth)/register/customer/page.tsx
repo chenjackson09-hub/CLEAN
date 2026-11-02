@@ -9,6 +9,7 @@ import { useSaveQueue } from "@/components/onboarding/useSaveQueue";
 import PhotoPicker from "@/components/onboarding/PhotoPicker";
 import PreviewSection from "@/components/onboarding/PreviewSection";
 import GuidedAbout from "@/components/onboarding/GuidedAbout";
+import HomePhotosManager from "@/components/HomePhotosManager";
 import { Chip, OptionCard, Stepper } from "@/components/onboarding/Choice";
 import type { PickedLocality } from "@/lib/localities/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -139,7 +140,7 @@ export default function CustomerRegisterPage() {
       }
       const loaded = draftToAnswers(state.draft as CustomerDraft, state.locality);
       setAnswers(loaded);
-      setShowMore(!!(loaded.numFloors || loaded.sizeSqm || loaded.numPeople));
+      setShowMore(!!(loaded.sizeSqm || loaded.numPeople));
       setStep(Math.min(state.step, STEPS.length - 1));
       setReady(true);
     })();
@@ -397,15 +398,15 @@ export default function CustomerRegisterPage() {
                 <Stepper value={answers.bathrooms} onChange={(v) => set({ bathrooms: v })} min={0} max={30} label={tr("qBathrooms")} />
               </div>
             </div>
+            <div className="mt-6">
+              <span className={label}>{tr("qFloors")}</span>
+              <Stepper value={answers.numFloors} onChange={(v) => set({ numFloors: v })} min={1} max={20} label={tr("qFloors")} />
+            </div>
             <button type="button" onClick={() => setShowMore((s) => !s)} aria-expanded={showMore} className="text-sm text-blue-600 underline mt-6">
               {tr("moreDetails")}
             </button>
             {showMore && (
-              <div className="grid grid-cols-3 gap-3 mt-3">
-                <div>
-                  <label htmlFor="h-floors" className="block text-xs font-medium text-gray-700 mb-1">{tr("qFloors")}</label>
-                  <input id="h-floors" type="number" inputMode="numeric" min={0} value={answers.numFloors} onChange={(e) => set({ numFloors: e.target.value })} className="w-full border border-gray-300 rounded-xl px-2 py-2 text-sm" />
-                </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
                 <div>
                   <label htmlFor="h-size" className="block text-xs font-medium text-gray-700 mb-1">{tr("qSize")}</label>
                   <input id="h-size" type="number" inputMode="numeric" min={0} value={answers.sizeSqm} onChange={(e) => set({ sizeSqm: e.target.value })} className="w-full border border-gray-300 rounded-xl px-2 py-2 text-sm" />
@@ -416,6 +417,11 @@ export default function CustomerRegisterPage() {
                 </div>
               </div>
             )}
+
+            {/* Optional, private: saved the moment a photo is added, so it never touches the wizard's own answers. */}
+            <div className="mt-6">
+              <HomePhotosManager />
+            </div>
           </>
         )}
 
@@ -477,9 +483,9 @@ export default function CustomerRegisterPage() {
               <p className="text-sm text-gray-800">📍 {townName || notSet}</p>
             </PreviewSection>
             <PreviewSection title={tr("previewHome")} editLabel={tr("edit")} onEdit={() => editSection("home")}>
-              {answers.homeType || answers.bedrooms || answers.bathrooms ? (
+              {answers.homeType || answers.bedrooms || answers.bathrooms || answers.numFloors ? (
                 <p className="text-sm text-gray-800">
-                  {[answers.homeType ? tr(HOME_KEYS[answers.homeType] ?? "homeOther") : null, answers.bedrooms || answers.bathrooms ? tr("previewBedsBaths", { beds: answers.bedrooms || "–", baths: answers.bathrooms || "–" }) : null].filter(Boolean).join(" · ")}
+                  {[answers.homeType ? tr(HOME_KEYS[answers.homeType] ?? "homeOther") : null, answers.bedrooms || answers.bathrooms ? tr("previewBedsBaths", { beds: answers.bedrooms || "–", baths: answers.bathrooms || "–" }) : null, answers.numFloors ? tr("previewFloors", { n: answers.numFloors }) : null].filter(Boolean).join(" · ")}
                 </p>
               ) : notSet}
             </PreviewSection>
