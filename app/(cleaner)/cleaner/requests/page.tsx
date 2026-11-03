@@ -8,6 +8,7 @@ import type { CustomerHomeInfo } from "@/lib/bookingSummary";
 import type { BookingWithCustomer } from "@/types/database";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
+import { fetchCustomerAreas } from "@/lib/localities/areaNames";
 
 export default async function RequestsPage() {
   const user = await getCurrentUser();
@@ -47,6 +48,9 @@ export default async function RequestsPage() {
         .returns<(CustomerHomeInfo & { id: string })[]>()
     : { data: [] as (CustomerHomeInfo & { id: string })[] };
   const homeInfoMap = new Map((homeRows ?? []).map((r) => [r.id, r]));
+  // Each host's general area (chosen town, never the street) for the calendar event offered once a
+  // request is accepted.
+  const areaMap = await fetchCustomerAreas(supabase, customerIds);
 
   if (!pending || pending.length === 0) {
     return (
@@ -69,7 +73,8 @@ export default async function RequestsPage() {
   // the same host are one need too, which is also how accepting one closes the
   // rest). The soonest day comes first, so groups are ordered by it.
   const groups = new Map<string, RequestGroup>();
-  for (const b of pending) {
+  for (const booking of pending) {
+    const b = { ...booking, area: areaMap.get(booking.customer_id) ?? null };
     const key = `${b.customer_id}:${b.clean_group_id ?? ""}`;
     const group = groups.get(key) ?? {
       key,

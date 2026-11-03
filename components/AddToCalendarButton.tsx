@@ -19,7 +19,7 @@ const envOrigin = /^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(rawOr
 // saved by us, and we never assume the person pressed Save. The event holds only
 // the general area, never the street address (see lib/googleCalendar.ts).
 // i18n-agnostic (a plain `lang` prop) because it sits in both i18n systems.
-export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate, otherUserId }: {
+export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate, otherUserId, fullWidth = false }: {
   booking: {
     id: string
     status: string
@@ -36,6 +36,8 @@ export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate,
   withName?: string | null
   // The other person's user id — for the private-chat link in the event.
   otherUserId?: string | null
+  // A full-width centred button (for the "request accepted" panel) instead of the compact one.
+  fullWidth?: boolean
 }) {
   // The production URL when configured, else wherever the app is open right now.
   const [origin, setOrigin] = useState(envOrigin)
@@ -69,14 +71,14 @@ export function AddToCalendarButton({ booking, role, lang, withName, hourlyRate,
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors"
+        className={`${fullWidth ? "flex w-full justify-center rounded-full py-3 text-lg" : "inline-flex rounded-xl px-4 py-2.5 text-sm"} items-center gap-2 border border-gray-200 bg-white font-semibold text-gray-800 hover:bg-gray-50 transition-colors`}
       >
         <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         {s.label}
       </a>
-      <p className="mt-1.5 text-xs text-gray-400">{s.hint}</p>
+      <p className={`mt-1.5 text-xs text-gray-400 ${fullWidth ? "text-center" : ""}`}>{s.hint}</p>
     </div>
   )
 }

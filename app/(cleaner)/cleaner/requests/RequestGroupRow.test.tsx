@@ -47,6 +47,26 @@ describe('RequestGroupRow', () => {
     expect(screen.queryByText(/phone/i)).not.toBeInTheDocument()
   })
 
+  it('after accepting, offers Add to Google Calendar for that clean — with the town but never the street', async () => {
+    const hostArea = { en: 'Beit Hillel', he: 'בית הלל' }
+    render(<RequestGroupRow group={group([bk('a', '2099-10-15', { area: hostArea })])} hourlyRate={90} />)
+    await userEvent.click(screen.getByRole('button', { name: /Host One/ }))
+    expect(screen.queryByRole('link', { name: /Add to Google Calendar/ })).not.toBeInTheDocument() // not before it is accepted
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
+
+    const link = await screen.findByRole('link', { name: /Add to Google Calendar/ })
+    const href = link.getAttribute('href') ?? ''
+    expect(href).toMatch(/^https:\/\/calendar\.google\.com\/calendar\/render\?/)
+    const decoded = decodeURIComponent(href).replace(/\+/g, ' ')
+    expect(decoded).toContain('Host One')
+    expect(decoded).toContain('Beit Hillel')
+    expect(decoded).toContain('/cleaner/chat/host-1')
+    expect(decoded).not.toContain("Ha'adarim")
+    expect(link).toHaveAttribute('target', '_blank')
+    // The chat button is still the first choice.
+    expect(screen.getByRole('link', { name: 'Open chat' })).toBeInTheDocument()
+  })
+
   it('has no edit button — changes happen in the chat', async () => {
     render(<RequestGroupRow group={group([bk('a', '2026-10-15')])} />)
     await userEvent.click(screen.getByRole('button', { name: /Host One/ }))

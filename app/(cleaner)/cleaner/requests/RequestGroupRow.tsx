@@ -11,6 +11,7 @@ import BookingRequestSummary from "@/components/BookingRequestSummary";
 import { buildBookingSummaryData, type CustomerHomeInfo } from "@/lib/bookingSummary";
 import type { BookingWithCustomer } from "@/types/database";
 import { shortDateLabel } from "@/lib/dateLabels";
+import { AddToCalendarButton } from "@/components/AddToCalendarButton";
 
 // One host's still-pending requests for this cleaner. A host who opened up
 // several candidate days for one clean sends one request per day; the cleaner
@@ -178,6 +179,17 @@ export default function RequestGroupRow({
                 >
                   {t("req_open_chat")}
                 </Link>
+                {/* The same "Add to Google Calendar" the confirmed clean offers later, right here. The booking
+                    in this list still says pending, so it is shown as the accepted clean it now is. */}
+                <AddToCalendarButton
+                  booking={{ ...accepted, status: "accepted" }}
+                  role="cleaner"
+                  lang={lang === "he" ? "he" : "en"}
+                  withName={group.name}
+                  hourlyRate={hourlyRate}
+                  otherUserId={group.customerId}
+                  fullWidth
+                />
                 <button onClick={close} className="w-full rounded-full bg-gray-100 py-3 text-lg font-semibold text-gray-700 hover:bg-gray-200">
                   {t("req_done")}
                 </button>
