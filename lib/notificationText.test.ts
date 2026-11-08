@@ -72,6 +72,8 @@ describe('choose-area notification', () => {
   it('asks the person to pick their area', () => {
     expect(describeNotification('choose_area', {}, 'en')).toContain('Choose your area')
     expect(describeNotification('choose_area', {}, 'he')).toContain('בחרו את האזור')
+    expect(describeNotification('complete_host_profile', {}, 'en')).toContain('new questions')
+    expect(describeNotification('complete_host_profile', {}, 'he')).toContain('שאלות חדשות')
   })
 })
 

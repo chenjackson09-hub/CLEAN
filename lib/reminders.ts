@@ -10,6 +10,8 @@ const EXPIRING_WITHIN_MS = 6 * 60 * 60 * 1000
 // lib/expireRequests.ts uses. Every one is `once` per booking, so repeated loads
 // never notify twice. Best-effort: never throws.
 //   • both roles: pick your locality (once, if none is chosen yet)
+//   • hosts: fill in the household / cleaning-needs questions added later (once,
+//     only if none of them is answered and sign-up is finished)
 //   • both roles: a matched clean is tomorrow
 //   • cleaners: a pending request lapses within 6 hours
 export async function sendReminders(userId: string, role: 'host' | 'cleaner'): Promise<void> {
@@ -33,6 +35,49 @@ export async function sendReminders(userId: string, role: 'host' | 'cleaner'): P
         href: role === 'host' ? '/profile?edit=1' : '/cleaner/profile?edit=1',
         dedupeKey: `choose_area:${userId}`,
       })
+    }
+
+    // Existing hosts are asked once to answer the household / cleaning-needs
+    // questions that were added after they signed up. Skipped on any error (e.g.
+    // migration 0045 not applied) and while their sign-up wizard is unfinished
+    // (they'll meet the questions there).
+    if (role === 'host') {
+      const { data: needs, error: needsErr } = await admin
+        .from('customers')
+        .select('household_type, usage_frequency, typical_hours, preferred_days, flexibility, extra_note')
+        .eq('id', userId)
+        .maybeSingle<{
+          household_type: string | null
+          usage_frequency: string | null
+          typical_hours: number | null
+          preferred_days: string[] | null
+          flexibility: string | null
+          extra_note: string | null
+        }>()
+      if (!needsErr && needs) {
+        const { data: prof, error: profErr } = await admin
+          .from('profiles')
+          .select('onboarding_completed_at')
+          .eq('id', userId)
+          .maybeSingle<{ onboarding_completed_at: string | null }>()
+        const unfinished = !profErr && !!prof && prof.onboarding_completed_at == null
+        const answered =
+          needs.household_type != null ||
+          needs.usage_frequency != null ||
+          needs.typical_hours != null ||
+          needs.flexibility != null ||
+          (needs.extra_note ?? '').trim() !== '' ||
+          (needs.preferred_days ?? []).length > 0
+        if (!unfinished && !answered) {
+          await notify(admin, {
+            userId,
+            kind: 'complete_host_profile',
+            data: {},
+            href: '/profile?edit=1',
+            dedupeKey: `complete_host_profile:${userId}`,
+          })
+        }
+      }
     }
 
     const mine = role === 'host' ? 'customer_id' : 'cleaner_id'

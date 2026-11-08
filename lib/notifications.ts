@@ -12,6 +12,7 @@ export type NotificationKind =
   | 'clean_tomorrow' // either: reminder the day before a matched clean
   | 'chat_message' // either: new chat message(s), grouped per conversation
   | 'choose_area' // either: pick your locality from the official list
+  | 'complete_host_profile' // host: new household / cleaning-needs questions to fill in
   | 'area_opened' // either: an admin opened the area they live in
   | 'cindy_verified' // either: an admin Cindy-verified this person (the badge now shows)
   | 'request_taken' // cleaner: the host got matched with someone else
