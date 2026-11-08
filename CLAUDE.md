@@ -538,6 +538,10 @@ Source documents: `docs/onboarding-review-2026-10.md` (the full review, change I
 
 **Planned phases (not built yet):** none left in this overhaul except the parked C23/C24 — original plan text follows for reference: **5** visibility & trust: host profile sections (C15, modified because C4 was rejected: only *home notes* stay locked until accept), first name + initial until a booking is confirmed (C23), host written reviews of cleaners (C22), one person with two roles (C24, design first — touches auth/middleware), verification architecture doc + gate switch (C20, C21), remove/define the dead admin ID-document link (C26).
 
+### Auto-refresh (host and cleaner pages)
+
+`components/AutoRefresh.tsx` (headless, mounted in both `(cleaner)/layout.tsx` and `(customer)/layout.tsx`) calls `router.refresh()` every **2 minutes** while the tab is visible, and straight away when someone returns to a tab that has been idle longer than that. `router.refresh()` only re-reads server data — scroll position, open modals and typed text stay. The rules live in `lib/autoRefresh.ts` (`shouldAutoRefresh`, tested): skipped when the tab is hidden, offline, on `/chat`, `/cleaner/chat`, `/register`, `/onboarding` (chat already updates live; sign-up is mid-form), and while a text box/select/textarea is focused. Navigating restarts the clock. Not mounted in the admin layout. Change `AUTO_REFRESH_MS` to tune it.
+
 ### Server Actions pattern
 
 All mutations are Next.js Server Actions (`"use server"`) in `actions.ts` files co-located with their route group. They always:

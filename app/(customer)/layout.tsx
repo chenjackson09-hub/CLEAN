@@ -6,6 +6,7 @@ import CustomerNav from "./CustomerNav";
 import RealtimeCustomerBookings from "./RealtimeCustomerBookings";
 import HelpWidget from "@/components/HelpWidget";
 import { sendReminders } from "@/lib/reminders";
+import AutoRefresh from "@/components/AutoRefresh";
 import FinishProfileBanner from "@/components/FinishProfileBanner";
 import { isOwnSignupUnfinished } from "@/lib/onboarding/unfinished";
 
@@ -55,6 +56,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         {signupUnfinished && <FinishProfileBanner href="/register/customer" />}
         {children}
       </main>
+      <AutoRefresh />
       <HelpWidget />
     </div>
   )

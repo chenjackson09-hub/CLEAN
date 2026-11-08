@@ -7,6 +7,7 @@ import { sendReminders } from "@/lib/reminders";
 import NavLinks from "./NavLinks";
 import { StatusBadge } from "./StatusBadge";
 import HelpWidget from "@/components/HelpWidget";
+import AutoRefresh from "@/components/AutoRefresh";
 import FinishProfileBanner from "@/components/FinishProfileBanner";
 import { isOwnSignupUnfinished } from "@/lib/onboarding/unfinished";
 
@@ -60,6 +61,7 @@ export default async function CleanerLayout({
         {signupUnfinished && <FinishProfileBanner href="/register/cleaner" />}
         {children}
       </main>
+      <AutoRefresh />
       <HelpWidget />
     </div>
   );
