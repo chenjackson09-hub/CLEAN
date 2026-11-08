@@ -58,10 +58,11 @@ describe('Register (account is created on the first screen)', () => {
     await user.click(screen.getByText('Cleaner'))
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
     expect(mockSignUp).not.toHaveBeenCalled()
-    // The links go to the real pages and open in a new tab, so nothing typed is lost.
-    expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', '/terms')
-    expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('target', '_blank')
-    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy')
+    // The names open the text in a reader over the page, so nothing typed is lost.
+    await user.click(screen.getByRole('button', { name: 'Terms of Use' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Close and keep signing up/ }))
+    expect(screen.getByLabelText(/^email/i)).toHaveValue('a@b.com')
     await user.click(screen.getByRole('checkbox', { name: /terms of use/i }))
     expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
   })
