@@ -35,7 +35,7 @@ const en = {
   qFlexibility: 'How flexible are you about timing and the amount of work?',
   flexibility: { fixed: 'Fairly fixed', somewhat: 'Somewhat flexible', very: 'Very flexible' },
   qExtra: 'Anything else you would like a cleaner to know?',
-  phExtra: 'e.g. we prefer eco-friendly products',
+  phExtra: 'e.g. If you could send us a list of what you need, so we can check if we have it before you arrive, that would be great',
   extraHint: 'Cleaners you send a request to can read this. Please keep door codes and entry details out of it.',
 
   storyTitle: 'About us',
@@ -83,7 +83,7 @@ const he: typeof en = {
   qFlexibility: 'עד כמה אתם גמישים לגבי התזמון והיקף העבודה?',
   flexibility: { fixed: 'די קבוע', somewhat: 'גמישות מסוימת', very: 'גמישים מאוד' },
   qExtra: 'משהו נוסף שחשוב לכם שמנקה/ת ידעו?',
-  phExtra: 'למשל: אנחנו מעדיפים חומרי ניקוי ידידותיים לסביבה',
+  phExtra: 'למשל: נשמח אם תשלחו לנו רשימה של מה שאתם צריכים, כדי שנבדוק אם יש לנו לפני שתגיעו',
   extraHint: 'מנקים שתשלחו להם בקשה יוכלו לקרוא את זה. נא לא לכתוב כאן קודי כניסה או פרטי גישה.',
 
   storyTitle: 'עלינו',
