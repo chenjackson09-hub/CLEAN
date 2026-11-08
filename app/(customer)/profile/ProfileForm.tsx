@@ -8,6 +8,9 @@ import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { normalizeImageToJpeg } from '@/lib/image/normalizeImage'
 import LocalityPicker from '@/components/LocalityPicker'
 import type { PickedLocality } from '@/lib/localities/address'
+import { HomeVibeFields, HostIntroEditor, HouseholdFields, NeedsFields } from '@/components/onboarding/HostNeedsFields'
+import { EMPTY_HOST_NEEDS, type HostNeeds } from '@/lib/onboarding/hostProfile'
+import { hostStrings } from '@/lib/onboarding/hostProfileStrings'
 
 type ActionResult = { error?: string; success?: boolean; avatarUrl?: string; petPhotoUrl?: string } | null
 
@@ -30,6 +33,8 @@ type DefaultValues = {
   floor: string
   // How many floors the home has (a house over two levels, a duplex...). Not the same as `floor`.
   num_floors?: string
+  // Household and cleaning-needs answers behind the 'About us' paragraph (migration 0045).
+  needs?: HostNeeds
 }
 
 type Props = {
@@ -69,6 +74,13 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
     cat: defaultValues.pet_types.includes('cat'),
     other: defaultValues.pet_types.includes('other'),
   })
+  const hl = lang === 'he' ? 'he' : 'en'
+  const hs = hostStrings(hl)
+  const [needs, setNeeds] = useState<HostNeeds>(defaultValues.needs ?? EMPTY_HOST_NEEDS)
+  const [about, setAbout] = useState(defaultValues.bio)
+  // The paragraph is written from these too; they are plain inputs below, so mirror them here.
+  const [floors, setFloors] = useState(defaultValues.num_floors ?? '')
+  const [numPetsValue, setNumPetsValue] = useState(defaultValues.num_pets)
   const [dwellingType, setDwellingType] = useState<DwellingType | ''>(
     defaultValues.dwelling_type ?? ''
   )
@@ -189,16 +201,6 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="bio" className={labelClass}>{t('profile.aboutMe')}</label>
-          <textarea
-            id="bio"
-            name="bio"
-            rows={3}
-            defaultValue={defaultValues.bio}
-            className={`${fieldClass} resize-none`}
-          />
-        </div>
 
         {/* Where you live: pick your town / kibbutz / moshav from the official list
             (Hebrew or English), then optionally add the street. */}
@@ -259,7 +261,7 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
           <div className="flex flex-col gap-1">
             <label htmlFor="num_floors" className={labelClass}>{t('profile.floorsInHome')}</label>
             <input id="num_floors" name="num_floors" type="number" inputMode="numeric" min={1} max={50}
-              defaultValue={defaultValues.num_floors ?? ''} className={fieldClass} />
+              defaultValue={defaultValues.num_floors ?? ''} onChange={(e) => setFloors(e.target.value)} className={fieldClass} />
           </div>
 
           <div className="flex flex-col gap-1">
@@ -309,7 +311,7 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
               <div className="flex flex-col gap-1">
                 <label htmlFor="num_pets" className={labelClass}>{t('profile.totalPets')}</label>
                 <input id="num_pets" name="num_pets" type="number" inputMode="numeric"
-                  min={minPets} required defaultValue={defaultValues.num_pets} className={`${fieldClass} w-28`} />
+                  min={minPets} required defaultValue={defaultValues.num_pets} onChange={(e) => setNumPetsValue(e.target.value)} className={`${fieldClass} w-28`} />
               </div>
 
               <div className="flex flex-col gap-1">
@@ -338,6 +340,40 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
             </div>
           )}
         </div>
+
+        {/* ── Household and cleaning needs → the "About us" paragraph cleaners read ── */}
+        <div className="border-t border-gray-100 pt-4 mt-1">
+          <h2 className="text-sm font-bold text-gray-900">{hs.householdTitle}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{hs.householdSub}</p>
+        </div>
+        <HouseholdFields value={needs} onChange={(p) => setNeeds((n) => ({ ...n, ...p }))} lang={hl} />
+        <HomeVibeFields value={needs} onChange={(p) => setNeeds((n) => ({ ...n, ...p }))} lang={hl} />
+
+        <div className="border-t border-gray-100 pt-4 mt-1">
+          <h2 className="text-sm font-bold text-gray-900">{hs.needsTitle}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{hs.needsSub}</p>
+        </div>
+        <NeedsFields value={needs} onChange={(p) => setNeeds((n) => ({ ...n, ...p }))} lang={hl} />
+        <input type="hidden" name="host_extras" value={JSON.stringify(needs)} />
+
+        <div className="border-t border-gray-100 pt-4 mt-1">
+          <h2 className="text-sm font-bold text-gray-900">{hs.storyTitle}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{hs.storySub}</p>
+        </div>
+        <HostIntroEditor
+          name="bio"
+          value={about}
+          onChange={setAbout}
+          lang={hl}
+          input={{
+            ...needs,
+            homeType: dwellingType || null,
+            numFloors: floors,
+            numPeople: defaultValues.num_people,
+            petTypes: hasPets ? (['dog', 'cat', 'other'] as const).filter((k) => pets[k]) : [],
+            numPets: hasPets ? numPetsValue : '',
+          }}
+        />
 
         {state?.error && (
           <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">

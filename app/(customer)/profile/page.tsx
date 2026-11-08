@@ -10,6 +10,7 @@ import type { ReviewItem } from "@/components/HostProfileReviews"
 import { getLocality } from "@/lib/localities/resolve"
 import { fetchCustomerAreas } from "@/lib/localities/areaNames"
 import { fetchCindyVerified } from "@/lib/cindyVerified"
+import { hostNeedsFromRow } from "@/lib/onboarding/hostProfile"
 
 export default async function ProfilePage({ searchParams }: { searchParams?: { edit?: string } }) {
   const supabase = await createClient()
@@ -77,6 +78,7 @@ export default async function ProfilePage({ searchParams }: { searchParams?: { e
           dwelling_type: (customer?.dwelling_type as DwellingType | null) ?? null,
           floor: numOrEmpty(customer?.floor),
           num_floors: numOrEmpty(customer?.num_floors),
+          needs: hostNeedsFromRow((customer ?? {}) as unknown as Record<string, unknown>),
         }}
       />
       {/* Private home photos: only a cleaner this host sends a request to can see them. */}

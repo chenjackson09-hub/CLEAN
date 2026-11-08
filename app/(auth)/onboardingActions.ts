@@ -93,6 +93,8 @@ export async function saveOnboarding(input: { role: OnboardingRole; draft: unkno
       const rows = customerDraftToRows(draft as CustomerDraft, place)
       row = rows.customer
       profileRow = rows.profile
+      // Household / cleaning-needs answers (migration 0045), written best-effort below.
+      extras = rows.extras
     }
 
     // The two main writes touch different tables: together.
@@ -107,8 +109,8 @@ export async function saveOnboarding(input: { role: OnboardingRole; draft: unkno
     // sign-up), so it all runs at once instead of one round trip after another.
     const tail: PromiseLike<unknown>[] = []
     if (extras) {
-      // Needs migration 0043.
-      tail.push(supabase.from('cleaners').update(extras).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] experience range not saved', r.error.message) }))
+      // Needs migration 0043 (cleaner experience range) / 0045 (host household and cleaning needs).
+      tail.push(supabase.from(table).update(extras).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] extra answers not saved (migration 0043/0045?)', r.error.message) }))
     }
     if (place.localityId) {
       tail.push(supabase.from(table).update({ locality_id: place.localityId }).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] locality link not saved', r.error.message) }))

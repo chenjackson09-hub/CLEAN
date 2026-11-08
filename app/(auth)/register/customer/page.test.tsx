@@ -61,7 +61,7 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
   it('shows About you first as step 1 of 5, with Continue disabled until both names are filled', async () => {
     render(<CustomerOnboardingPage />)
     expect(await screen.findByLabelText(/first name/i)).toBeInTheDocument()
-    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument()
+    expect(screen.getByText('Step 1 of 7')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
   })
 
@@ -74,7 +74,7 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     render(<CustomerOnboardingPage />)
     // Step 2 (Where is your home?), with the town already chosen.
     expect(await screen.findByText(/bet hillel|בית הלל/i)).toBeInTheDocument()
-    expect(screen.getByText('Step 2 of 5')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 7')).toBeInTheDocument()
     expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
   })
@@ -107,6 +107,9 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(3))
     expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ draft: expect.objectContaining({ homeType: 'villa', bedrooms: '1' }) }))
+    // Household + pets, cleaning needs and "About us" are all skippable.
+    await user.click(await screen.findByRole('button', { name: 'Skip for now' }))
+    await user.click(await screen.findByRole('button', { name: 'Skip for now' }))
     await user.click(await screen.findByRole('button', { name: 'Skip for now' }))
     expect(await screen.findByText('Your profile')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Start finding cleaners' }))
@@ -144,7 +147,7 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
   })
 
-  it('no longer asks for priorities, frequency or home instructions', async () => {
+  it('does not ask for private home notes at sign-up (they are added later, from the profile)', async () => {
     const user = userEvent.setup()
     mockLoad.mockResolvedValue({ ...fresh(), step: 2 })
     render(<CustomerOnboardingPage />)
@@ -152,13 +155,13 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     expect(screen.queryByText(/important to you/i)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await user.click(await screen.findByRole('button', { name: 'Continue' }))
-    expect(screen.queryByText(/how often/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/home notes|instructions/i)).not.toBeInTheDocument()
   })
 
   it('the preview offers Edit on each section and returns to the preview after it', async () => {
     const user = userEvent.setup()
     mockLoad.mockResolvedValue({
-      ...fresh(), step: 4,
+      ...fresh(), step: 6,
       draft: { ...EMPTY_CUSTOMER_DRAFT, firstName: 'Jane', lastName: 'Doe', localityId: LOCALITY.id },
       locality: LOCALITY,
     })
@@ -178,7 +181,7 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     await user.type(await screen.findByLabelText(/first name/i), 'Jane')
     await user.type(screen.getByLabelText(/last name/i), 'Doe')
     await user.click(screen.getByRole('button', { name: 'Continue' }))
-    expect(await screen.findByText('Step 2 of 5')).toBeInTheDocument()
+    expect(await screen.findByText('Step 2 of 7')).toBeInTheDocument()
     expect(await screen.findByText('Could not save. Please try again.')).toBeInTheDocument()
   })
 
@@ -186,5 +189,40 @@ describe('Host wizard (account already exists, answers saved step by step)', () 
     render(<CustomerOnboardingPage />)
     await screen.findByLabelText(/first name/i)
     expect(localStorage.getItem('pending_signup')).toBeNull()
+  })
+
+  it('asks the household, cleaning-needs and About-us questions, and writes the paragraph from the answers', async () => {
+    const user = userEvent.setup()
+    mockLoad.mockResolvedValue({ ...fresh(), step: 3, draft: { ...EMPTY_CUSTOMER_DRAFT, firstName: 'Jane', lastName: 'Doe', localityId: LOCALITY.id, homeType: 'house', numFloors: '2' }, locality: LOCALITY })
+    render(<CustomerOnboardingPage />)
+    // Household and pets screen.
+    expect(await screen.findByText('Who lives in your home?')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'A family with kids' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    // Cleaning needs screen.
+    expect(await screen.findByText('How often do you usually need help?')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Weekly' }))
+    await user.click(screen.getByRole('button', { name: 'Kitchen' }))
+    await user.click(screen.getByRole('button', { name: 'Tue' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    // About us: filled from the answers, nothing invented.
+    const box = (await screen.findByLabelText('Your introduction')) as HTMLTextAreaElement
+    expect(box.value).toContain("We're a family with kids.")
+    expect(box.value).toContain('We live in a two-story house.')
+    expect(box.value).toContain("We'd love help once a week.")
+    expect(box.value).toContain('Tuesdays work best for us.')
+    expect(box.value).not.toMatch(/dog|cat|pets/)
+    // It can be edited and is what gets saved.
+    await user.clear(box)
+    await user.type(box, 'Hello from us')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => expect(mockSave).toHaveBeenLastCalledWith(expect.objectContaining({ draft: expect.objectContaining({ aboutMe: 'Hello from us', frequency: 'weekly', priorities: ['kitchen'], preferredDays: ['tue'], householdType: 'family_kids' }) })))
+  })
+
+  it('shows the household and needs questions in Hebrew', async () => {
+    mockLoad.mockResolvedValue({ ...fresh(), step: 4 })
+    localStorage.setItem('clean_lang', 'he')
+    render(<CustomerOnboardingPage />)
+    expect(await screen.findByText('באיזו תדירות אתם בדרך כלל צריכים עזרה?')).toBeInTheDocument()
   })
 })

@@ -57,4 +57,29 @@ describe('HostProfileCard privacy and honesty', () => {
     expect(screen.getByText('Floors in the home')).toBeInTheDocument()
     expect(screen.getByText('Apartment floor')).toBeInTheDocument()
   })
+
+  it('shows the About us paragraph first and the typical needs, with a note that each request can differ', () => {
+    const c = {
+      ...customer, bio: "We are a family of five. We'd love help once a week.",
+      usage_frequency: 'twice_monthly', typical_hours: '4.5', preferred_days: ['thu', 'tue'], days_flexible: true,
+      cleaning_priorities: ['kitchen', 'dishes'], usual_cleaning_type: 'both',
+    } as unknown as Customer
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={c} reviews={[]} />)
+    expect(screen.getByText('About us')).toBeInTheDocument()
+    expect(screen.getByText(/family of five/)).toBeInTheDocument()
+    expect(screen.getByText('Typical needs')).toBeInTheDocument()
+    expect(screen.getByText('Twice a month')).toBeInTheDocument()
+    expect(screen.getByText('~4.5 hours')).toBeInTheDocument()
+    expect(screen.getByText('Tue, Thu')).toBeInTheDocument() // in week order
+    expect(screen.getByText('Days · flexible')).toBeInTheDocument()
+    expect(screen.getByText('Dishes')).toBeInTheDocument()
+    expect(screen.getByText('Regular and deep cleaning')).toBeInTheDocument()
+    expect(screen.getByText('Each request may differ from this profile.')).toBeInTheDocument()
+  })
+
+  it('shows no About us or Typical needs block for a host who has not filled them in', () => {
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} />)
+    expect(screen.queryByText('About us')).not.toBeInTheDocument()
+    expect(screen.queryByText('Typical needs')).not.toBeInTheDocument()
+  })
 })

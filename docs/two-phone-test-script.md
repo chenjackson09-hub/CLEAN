@@ -89,25 +89,37 @@ Go to **Schedule**.
 
 **Register → Host**, new email.
 
-**Step 1 – About you.** Add a photo, first and last name, a phone number (optional), tick languages, tap an intro starter.
-- [ ] **4.1** Language chips show **real names** and wrap into rows. "Cleaners see your full name once you send a request" is visible.
+**Step 1 – About you.** Add a photo, first and last name, a phone number (optional), tick languages.
+- [ ] **4.1** Language chips show **real names** and wrap into rows. "Cleaners see your full name once you send a request" is visible. There is **no intro box** on this screen any more (it moved to the About us screen).
 
 **Step 2 – Where.** Pick the same town as the cleaner.
 - [ ] **4.2** The text says cleaners see only your town on your profile, and your street is shared when you send a request.
 
-**Step 3 – Your home.** Pick a home type, use +/− for bedrooms and bathrooms, and **floors in the home**. Open "More details". Scroll to **Photos of your home** and add one or two photos.
+**Step 3 – Your home.** Pick a home type, use +/− for bedrooms and bathrooms, and **floors in the home**. Tap a few words for **what your home is like** (e.g. Large, Newly renovated). Open "More details" and set **people living in the home**. Scroll to **Photos of your home** and add one or two photos.
 - [ ] **4.3** The photos section says **Optional · recommended** and, clearly, *"Only a cleaner you send a request to can see these photos. They are not public…"*. A photo appears right after you add it; ✕ removes it.
 - [ ] **4.4** Pressing "+" on an empty counter goes to **1** (not 2).
 
-**Step 4 – Pets.** Try "No pets", then Dog; with a pet a count, a note and a photo field appear.
+**Step 4 – Your household and pets.** At the top choose **who lives in your home** (e.g. A family with kids) and add a short line. Then try "No pets", then Dog; with a pet a count, a note and a photo field appear.
 
-**Step 5 – Preview.**
-- [ ] **4.5** Shows your home line including the number of floors, pets, languages, intro. **Edit** jumps to the right screen and returns.
+**Step 5 – Your cleaning needs** (every question optional; "Skip for now" works). Pick how often (Weekly), cleaning type, a few tasks (include **Dishes**), set the hours with +/− (goes in half hours), pick two days, choose how flexible you are, and type something in "anything else".
+- [ ] **4.9** The "anything else" box warns: cleaners can read this, keep door codes out of it.
+
+**Step 6 – About us.** The box is already filled with a paragraph in your own voice.
+- [ ] **4.10** The paragraph mentions **only what you answered** (no pets if you said none, no days if you picked none). Hours shows as "about N hours", days as "Tuesdays and Thursdays work best for us".
+- [ ] **4.11** Edit a few words, go **Back**, change an answer, come forward again: your edited words are still there. Press **Write it again**: it asks before replacing your edit. Say No → unchanged; Yes → rewritten from the answers.
+- [ ] **4.12** Switch the app to **Hebrew** (language toggle) and press **Write it again**: the paragraph is in Hebrew and reads naturally (note anything that sounds wrong — the Hebrew is unreviewed).
+
+**Step 7 – Preview.**
+- [ ] **4.5** Shows your home line including the number of floors, pets, languages, an **About us** block and a **Cleaning needs** line. **Edit** on each jumps to the right screen and returns.
 - [ ] **4.6** Tap **Start finding cleaners** → you land on the **Schedule** page.
 - [ ] **4.7** Before the admin approves you, you see the **waitlist message** instead of the calendar.
 
 **Admin laptop:**
 - [ ] **4.8** **Applications**: the host is in Pending review (customer). **Approve**. On Phone A refresh: the calendar appears.
+
+**Existing host (an account made before this feature):** open **Profile → edit**.
+- [ ] **4.13** The new household / cleaning-needs questions and a **Your introduction** box are there; the old About text is still in the box. Press **Write it for me** (it asks before replacing the old text), then **Save**. The profile view shows the paragraph under "About us" and a **Typical needs** block.
+- [ ] **4.14** Changing the profile does **not** change a request already sent.
 
 ---
 
@@ -122,6 +134,8 @@ Go to **Schedule**.
 ---
 
 ## 6. Cleaner answers — Phone B (10 min)
+
+(When you open the host's profile from the request, check: **About us** paragraph at the top, then **Typical needs** — how often, per visit, days, task pills, and "Each request may differ from this profile." Floors show with the home details.)
 
 - [ ] **6.1** The **bell** shows "new request"; the **Requests** tab shows a badge. The row shows the host's name, day, time and **time left to answer**.
 - [ ] **6.2** Open it. The summary shows date, start time (no made-up end time), "about N h", extras/focus, home + pets.

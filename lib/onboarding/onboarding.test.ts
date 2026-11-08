@@ -126,8 +126,30 @@ describe('customer draft', () => {
   it('round-trips the host answers', () => {
     const d = validateCustomerDraft({ ...good, phone: '050', homeType: 'villa', bedrooms: '3', petTypes: ['dog'], numPets: '1', petNote: 'shy', frequency: 'weekly', cleaningType: 'deep', priorities: ['kitchen', 'other'], priorityOtherText: 'Balcony', homeInstructions: 'No bleach' }, opts(true))
     const rows = customerDraftToRows(d, place)
-    const back = customerRowsToDraft(rows.profile, { ...rows.customer, locality_id: d.localityId })
+    const back = customerRowsToDraft(rows.profile, { ...rows.customer, ...rows.extras, locality_id: d.localityId })
     expect(back).toMatchObject({ firstName: 'Dana', lastName: 'Cohen', phone: '050', homeType: 'villa', bedrooms: '3', petTypes: ['dog'], numPets: '1', petNote: 'shy', frequency: 'weekly', cleaningType: 'deep', priorities: ['kitchen', 'other'], priorityOtherText: 'Balcony', homeInstructions: 'No bleach', localityId: d.localityId, area: '' })
+  })
+  it('keeps the household and cleaning-needs answers in a separate best-effort write', () => {
+    const d = validateCustomerDraft({
+      ...good, householdType: 'family_kids', householdNote: 'three kids', homeVibe: ['large', 'renovated'], homeNote: 'lots of glass',
+      frequency: 'monthly', cleaningType: 'both', priorities: ['dishes', 'other'], priorityOtherText: 'Balcony', typicalHours: '4.5',
+      preferredDays: ['tue', 'thu'], daysFlexible: true, flexibility: 'somewhat', extraNote: 'We prefer eco products',
+    }, opts(true))
+    const rows = customerDraftToRows(d, place)
+    // Not in the main row — a database without migration 0045 must never block the sign-up.
+    expect(rows.customer).not.toHaveProperty('household_type')
+    expect(rows.customer).not.toHaveProperty('usage_frequency')
+    expect(rows.extras).toMatchObject({
+      household_type: 'family_kids', household_note: 'three kids', home_vibe: ['large', 'renovated'], home_note: 'lots of glass',
+      usage_frequency: 'monthly', usual_cleaning_type: 'both', cleaning_priorities: ['dishes', 'other'], cleaning_priorities_other: 'Balcony',
+      typical_hours: 4.5, preferred_days: ['tue', 'thu'], days_flexible: true, flexibility: 'somewhat', extra_note: 'We prefer eco products',
+    })
+    expect(customerRowsToDraft(rows.profile, { ...rows.customer, ...rows.extras })).toMatchObject({ householdType: 'family_kids', typicalHours: '4.5', preferredDays: ['tue', 'thu'], flexibility: 'somewhat', cleaningType: 'both' })
+  })
+  it('rejects invalid household and needs answers', () => {
+    for (const bad of [{ householdType: 'tribe' }, { homeVibe: ['haunted'] }, { frequency: 'daily' }, { cleaningType: 'magic' }, { typicalHours: '40' }, { preferredDays: ['someday'] }, { flexibility: 'wild' }, { householdNote: 'x'.repeat(201) }]) {
+      expect(() => validateCustomerDraft({ ...good, ...bad }, opts(false))).toThrow(DraftError)
+    }
   })
   it('a brand-new account fills the name from the profile when the host columns are empty', () => {
     expect(customerRowsToDraft({ full_name: 'Dana Cohen', phone: null, avatar_url: null }, {})).toMatchObject({ firstName: 'Dana', lastName: 'Cohen' })

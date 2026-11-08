@@ -39,7 +39,7 @@ describe('ProfileForm', () => {
 
     expect(screen.getByLabelText<HTMLInputElement>(/full name/i).value).toBe('Maya Cohen')
     expect(screen.getByLabelText<HTMLInputElement>(/phone/i).value).toBe('050-1234567')
-    expect(screen.getByLabelText<HTMLTextAreaElement>(/about me/i).value).toBe('Looking for a reliable cleaner for my apartment.')
+    expect(screen.getByLabelText<HTMLTextAreaElement>('Your introduction').value).toBe('Looking for a reliable cleaner for my apartment.')
     expect(screen.getByLabelText<HTMLInputElement>(/street and number/i).value).toBe('12 Rothschild Blvd, Tel Aviv')
   })
 
@@ -79,5 +79,32 @@ describe('ProfileForm', () => {
     const floors = screen.getByLabelText<HTMLInputElement>(/floors in the home/i)
     expect(floors.name).toBe('num_floors')
     expect(floors.value).toBe('2')
+  })
+
+  it('writes the About us paragraph from the answers, and keeps edits unless confirmed', () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<ProfileForm defaultValues={{ ...baseProfile, bio: '', dwelling_type: 'house', num_floors: '2' }} action={noopAction} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Weekly' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }))
+    const box = screen.getByLabelText<HTMLTextAreaElement>('Your introduction')
+    expect(box.name).toBe('bio')
+    expect(box.value).toContain('We live in a two-story house.')
+    expect(box.value).toContain("We'd love help once a week.")
+    // The host edits it; writing again asks before replacing their words.
+    fireEvent.change(box, { target: { value: 'My own words' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Write it again' }))
+    expect(confirm).toHaveBeenCalled()
+    expect(box.value).toBe('My own words')
+    confirm.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Write it again' }))
+    expect(box.value).toContain("We'd love help once a week.")
+    confirm.mockRestore()
+  })
+
+  it('sends the household and needs answers with the form', () => {
+    const { container } = render(<ProfileForm defaultValues={baseProfile} action={noopAction} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Tue' }))
+    const hidden = container.querySelector<HTMLInputElement>('input[name="host_extras"]')!
+    expect(JSON.parse(hidden.value)).toMatchObject({ preferredDays: ['tue'] })
   })
 })

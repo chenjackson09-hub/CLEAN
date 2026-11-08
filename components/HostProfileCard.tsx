@@ -21,8 +21,27 @@ const PRIORITY_LABELS: Record<string, string> = {
   windows: "Windows",
   linens: "Linens",
   laundry: "Laundry",
+  dishes: "Dishes",
   outdoor: "Outdoor",
 };
+
+const FREQUENCY_LABELS: Record<string, string> = {
+  weekly: "Weekly",
+  twice_monthly: "Twice a month",
+  monthly: "Monthly",
+  occasional: "Occasionally",
+  one_time: "Just once",
+  other: "Other",
+};
+
+const CLEANING_TYPE_LABELS: Record<string, string> = {
+  regular: "Regular cleaning",
+  deep: "Deep cleaning",
+  both: "Regular and deep cleaning",
+};
+
+const DAY_LABELS: Record<string, string> = { sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat" };
+const DAY_ORDER = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const LABEL = "text-xs text-gray-400 mb-1.5";
 const PILL = "px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs";
@@ -93,6 +112,21 @@ export default function HostProfileCard({
     p === "other" ? customer?.cleaning_priorities_other || "Other" : PRIORITY_LABELS[p] ?? p
   );
 
+  // "Typical needs": what this household usually asks for. Each request can still differ.
+  const hours = customer?.typical_hours != null && customer.typical_hours !== "" ? Number(customer.typical_hours) : null;
+  const dayList = DAY_ORDER.filter((d) => (customer?.preferred_days ?? []).includes(d)).map((d) => DAY_LABELS[d]);
+  const needTiles: { label: string; value: string }[] = [
+    customer?.usage_frequency ? { label: "How often", value: FREQUENCY_LABELS[customer.usage_frequency] ?? customer.usage_frequency } : null,
+    hours != null && Number.isFinite(hours) && hours > 0 ? { label: "Per visit", value: `~${hours} ${hours === 1 ? "hour" : "hours"}` } : null,
+    dayList.length > 0
+      ? { label: customer?.days_flexible ? "Days · flexible" : "Days", value: dayList.join(", ") }
+      : customer?.days_flexible
+        ? { label: "Days", value: "Flexible" }
+        : null,
+  ].filter((t): t is { label: string; value: string } => t !== null);
+  const cleaningTypeLabel = customer?.usual_cleaning_type ? CLEANING_TYPE_LABELS[customer.usual_cleaning_type] ?? null : null;
+  const hasNeeds = needTiles.length > 0 || priorityBubbles.length > 0 || cleaningTypeLabel !== null;
+
   return (
     <div className="bg-white rounded-3xl shadow-md p-6">
       {action && <div className="flex justify-end mb-2">{action}</div>}
@@ -119,7 +153,12 @@ export default function HostProfileCard({
         </div>
       </div>
 
-      {customer?.bio && <p className="text-sm text-gray-700 leading-relaxed mb-4 whitespace-pre-line">{customer.bio}</p>}
+      {customer?.bio && (
+        <div className="mb-4">
+          <p className={LABEL}>About us</p>
+          <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line bg-blue-50/60 rounded-xl px-3 py-2.5">{customer.bio}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-gray-50 rounded-xl px-3 py-2.5">
@@ -186,14 +225,28 @@ export default function HostProfileCard({
         </div>
       )}
 
-      {priorityBubbles.length > 0 && (
+      {hasNeeds && (
         <div className="mb-4">
-          <p className={LABEL}>Usually clean</p>
-          <div className="flex flex-wrap gap-1.5">
-            {priorityBubbles.map((label) => (
-              <span key={label} className={PILL}>{label}</span>
-            ))}
-          </div>
+          <p className={LABEL}>Typical needs</p>
+          {needTiles.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {needTiles.map((t) => (
+                <div key={t.label} className="bg-gray-50 rounded-xl px-3 py-2.5">
+                  <p className="text-sm font-semibold text-gray-900 leading-snug">{t.value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {(priorityBubbles.length > 0 || cleaningTypeLabel) && (
+            <div className="flex flex-wrap gap-1.5">
+              {priorityBubbles.map((label) => (
+                <span key={label} className={PILL}>{label}</span>
+              ))}
+              {cleaningTypeLabel && <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs">{cleaningTypeLabel}</span>}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-2">Each request may differ from this profile.</p>
         </div>
       )}
 

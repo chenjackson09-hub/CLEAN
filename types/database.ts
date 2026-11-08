@@ -20,9 +20,9 @@ export interface Profile {
 
 export type DwellingType = "apartment" | "house" | "guesthouse" | "office" | "villa" | "other";
 export type PetType = "dog" | "cat" | "other";
-export type UsageFrequency = "weekly" | "twice_monthly" | "occasional" | "one_time";
-export type UsualCleaningType = "regular" | "deep";
-export type CleaningPriority = "kitchen" | "bathrooms" | "floors" | "dusting" | "windows" | "linens" | "laundry" | "outdoor" | "other";
+export type UsageFrequency = "weekly" | "twice_monthly" | "monthly" | "occasional" | "one_time" | "other";
+export type UsualCleaningType = "regular" | "deep" | "both";
+export type CleaningPriority = "kitchen" | "bathrooms" | "floors" | "dusting" | "windows" | "linens" | "laundry" | "dishes" | "outdoor" | "other";
 // Mirrors CleanerStatus's pending/approved/rejected (no 'suspended' — a
 // blocked customer is hard-deleted, see blocked_users). See migration 0023.
 export type CustomerStatus = "pending" | "approved" | "rejected";
@@ -72,6 +72,16 @@ export interface Customer {
   cleaning_priorities: CleaningPriority[];
   cleaning_priorities_other: string | null;
   home_instructions: string | null;
+  // Household and cleaning-needs details behind the 'About us' paragraph (migration 0045).
+  household_type: string | null;
+  household_note: string | null;
+  home_vibe: string[] | null;
+  home_note: string | null;
+  typical_hours: number | string | null;
+  preferred_days: string[] | null;
+  days_flexible: boolean | null;
+  flexibility: string | null;
+  extra_note: string | null;
   // Free-text note about the customer's pets, collected in the wizard's
   // household step. See migration 0026.
   pet_note: string | null;

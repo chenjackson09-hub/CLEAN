@@ -17,7 +17,7 @@ type HostDefaults = {
   bathrooms: number | null
   pet_types: ('dog' | 'cat' | 'other')[]
   num_pets: number | null
-  usual_cleaning_type: 'regular' | 'deep' | null
+  usual_cleaning_type: 'regular' | 'deep' | 'both' | null
   address: string | null
   // What the host said matters (sign-up/profile). Seeds the "what matters this time" chips.
   cleaning_priorities?: string[] | null

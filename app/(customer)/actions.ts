@@ -1,6 +1,7 @@
 "use server"
 import { contactVerificationBlock } from "@/lib/verification"
 import { HOME_TYPES } from "@/lib/onboarding/options"
+import { DraftError, hostNeedsToRow, validateHostNeeds } from "@/lib/onboarding/hostProfile"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
@@ -44,6 +45,18 @@ export async function updateCustomerProfile(
   const phone = formData.get("phone") as string
   const bio = formData.get("bio") as string
   const address = formData.get("address") as string
+
+  // Household / cleaning-needs answers behind the "About us" paragraph. Checked first, before
+  // anything is written, so a bad value never leaves the profile half-saved.
+  let needsRow: ReturnType<typeof hostNeedsToRow> | null = null
+  const rawNeeds = formData.get("host_extras")
+  if (typeof rawNeeds === "string" && rawNeeds !== "") {
+    try {
+      needsRow = hostNeedsToRow(validateHostNeeds(JSON.parse(rawNeeds)))
+    } catch (e) {
+      return { error: e instanceof DraftError ? e.message : "Those answers could not be read. Please try again." }
+    }
+  }
 
   // Household details — all optional. Numbers come from keyboard inputs, so parse
   // leniently and store null when blank/invalid. toInt rejects negatives (counts
@@ -168,6 +181,17 @@ export async function updateCustomerProfile(
   if (place.localityId) {
     const { error: linkErr } = await supabase.from("customers").update({ locality_id: place.localityId }).eq("id", user.id)
     if (linkErr) console.error("locality link not saved (migration 0039?)", linkErr.message)
+  }
+
+  // Saved on its own (needs migration 0045). The rest of the profile is already saved, so if this
+  // fails we say so plainly instead of pretending everything worked.
+  if (needsRow) {
+    const { error: needsErr } = await supabase.from("customers").update(needsRow).eq("id", user.id)
+    if (needsErr) {
+      console.error("household/needs answers not saved (migration 0045?)", needsErr.message)
+      revalidatePath("/profile")
+      return { error: "Your profile was saved, but the household and cleaning-needs answers could not be saved yet. Please try again later." }
+    }
   }
 
   revalidatePath("/profile")

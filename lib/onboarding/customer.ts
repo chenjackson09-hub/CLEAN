@@ -1,10 +1,11 @@
-import { CLEANING_TYPES, FREQUENCIES, HOME_TYPES, PET_TYPES, PRIORITIES } from './options'
+import { HOME_TYPES, PET_TYPES } from './options'
+import { EMPTY_HOST_NEEDS, hostNeedsFromRow, hostNeedsToRow, validateHostNeeds, type HostNeeds } from './hostProfile'
 import { LANGUAGE_VALUES, joinLanguages, splitLanguages } from './options'
 import { DraftError, listOf, numText, oneOf, ownPhotoUrl, str, uuidOrNull } from './validate'
 import type { Place } from './cleaner'
 
 // What the host wizard has collected so far — plain, serialisable values only.
-export type CustomerDraft = {
+export type CustomerDraft = HostNeeds & {
   avatarUrl: string | null
   firstName: string
   lastName: string
@@ -24,17 +25,13 @@ export type CustomerDraft = {
   numPets: string
   petNote: string
   petPhotoUrl: string | null
-  frequency: (typeof FREQUENCIES)[number] | null
-  cleaningType: (typeof CLEANING_TYPES)[number] | null
-  priorities: string[]
-  priorityOtherText: string
   homeInstructions: string
 }
 
 export const EMPTY_CUSTOMER_DRAFT: CustomerDraft = {
   avatarUrl: null, firstName: '', lastName: '', phone: '', languages: [], languagesOther: '', aboutMe: '', localityId: null, area: '',
   homeType: null, bedrooms: '', bathrooms: '', numFloors: '', sizeSqm: '', numPeople: '', petTypes: [], numPets: '', petNote: '',
-  petPhotoUrl: null, frequency: null, cleaningType: null, priorities: [], priorityOtherText: '', homeInstructions: '',
+  petPhotoUrl: null, homeInstructions: '', ...EMPTY_HOST_NEEDS,
 }
 
 export function validateCustomerDraft(input: unknown, opts: { submit: boolean; userId: string; supabaseUrl: string }): CustomerDraft {
@@ -60,11 +57,8 @@ export function validateCustomerDraft(input: unknown, opts: { submit: boolean; u
     numPets: numText(i.numPets, 'Number of pets', 0, 100),
     petNote: str(i.petNote, 'Pet note', 1000),
     petPhotoUrl: ownPhotoUrl(i.petPhotoUrl, 'Pet photo', opts.userId, opts.supabaseUrl),
-    frequency: oneOf(i.frequency, 'Frequency', FREQUENCIES),
-    cleaningType: oneOf(i.cleaningType, 'Cleaning type', CLEANING_TYPES),
-    priorities: listOf(i.priorities, 'Priorities', PRIORITIES),
-    priorityOtherText: str(i.priorityOtherText, 'Priority', 200),
     homeInstructions: str(i.homeInstructions, 'Home notes', 2000),
+    ...validateHostNeeds(i),
   }
   if (opts.submit) {
     if (!draft.firstName || !draft.lastName) throw new DraftError('Please enter your first and last name')
@@ -98,12 +92,11 @@ export function customerDraftToRows(draft: CustomerDraft, place: Place) {
       num_pets: hasPets && draft.numPets ? Number(draft.numPets) : null,
       pet_note: hasPets && draft.petNote ? draft.petNote : null,
       ...(draft.petPhotoUrl ? { pet_photo_url: draft.petPhotoUrl } : {}),
-      usage_frequency: draft.frequency,
-      usual_cleaning_type: draft.cleaningType,
-      cleaning_priorities: draft.priorities,
-      cleaning_priorities_other: draft.priorities.includes('other') ? draft.priorityOtherText || null : null,
       home_instructions: draft.homeInstructions || null,
     },
+    // Household and cleaning-needs answers: written separately and best-effort (see
+    // saveOnboarding), so a database without migration 0045 never blocks the sign-up.
+    extras: hostNeedsToRow(draft),
   }
 }
 
@@ -138,10 +131,7 @@ export function customerRowsToDraft(profile: ProfileRow, customer: Record<string
     numPets: n(c.num_pets),
     petNote: txt(c.pet_note),
     petPhotoUrl: typeof c.pet_photo_url === 'string' ? c.pet_photo_url : null,
-    frequency: pick(c.usage_frequency, FREQUENCIES),
-    cleaningType: pick(c.usual_cleaning_type, CLEANING_TYPES),
-    priorities: list(c.cleaning_priorities, PRIORITIES),
-    priorityOtherText: txt(c.cleaning_priorities_other),
     homeInstructions: txt(c.home_instructions),
+    ...hostNeedsFromRow(c),
   }
 }

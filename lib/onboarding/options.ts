@@ -95,7 +95,7 @@ export const MATCH_TYPES = ['recurring', 'occasional', 'other'] as const
 // Host home types. 'other' is no longer offered but stays valid for rows that already have it.
 export const HOME_TYPES = ['apartment', 'house', 'villa', 'guesthouse', 'office', 'other'] as const
 export const HOME_TYPE_CHOICES = ['apartment', 'house', 'villa', 'guesthouse', 'office'] as const
-export const FREQUENCIES = ['weekly', 'twice_monthly', 'occasional', 'one_time'] as const
-export const CLEANING_TYPES = ['regular', 'deep'] as const
-export const PRIORITIES = ['kitchen', 'bathrooms', 'floors', 'dusting', 'windows', 'linens', 'laundry', 'outdoor', 'other'] as const
+export const FREQUENCIES = ['weekly', 'twice_monthly', 'monthly', 'occasional', 'one_time', 'other'] as const
+export const CLEANING_TYPES = ['regular', 'deep', 'both'] as const
+export const PRIORITIES = ['kitchen', 'bathrooms', 'floors', 'dusting', 'windows', 'linens', 'laundry', 'dishes', 'outdoor', 'other'] as const
 export const PET_TYPES = ['dog', 'cat', 'other'] as const

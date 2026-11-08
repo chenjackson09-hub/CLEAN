@@ -8,7 +8,7 @@ import WizardShell from "@/components/onboarding/WizardShell";
 import { useSaveQueue } from "@/components/onboarding/useSaveQueue";
 import PhotoPicker from "@/components/onboarding/PhotoPicker";
 import PreviewSection from "@/components/onboarding/PreviewSection";
-import GuidedAbout from "@/components/onboarding/GuidedAbout";
+import { HomeVibeFields, HostIntroEditor, HouseholdFields, NeedsFields } from "@/components/onboarding/HostNeedsFields";
 import HomePhotosManager from "@/components/HomePhotosManager";
 import { Chip, OptionCard, Stepper } from "@/components/onboarding/Choice";
 import type { PickedLocality } from "@/lib/localities/address";
@@ -18,9 +18,12 @@ import { signOutToLogin } from "../../actions";
 import { loadOnboarding, saveOnboarding } from "../../onboardingActions";
 import { HOME_TYPE_CHOICES, LANGUAGE_CHIPS } from "@/lib/onboarding/options";
 import type { CustomerDraft } from "@/lib/onboarding/customer";
+import { DAYS, EMPTY_HOST_NEEDS, type HostNeeds } from "@/lib/onboarding/hostProfile";
+import type { HostIntroInput } from "@/lib/onboarding/hostIntro";
+import { hostStrings, type HostLang } from "@/lib/onboarding/hostProfileStrings";
 import { ROLE_HOME } from "@/lib/roleHome";
 
-type Answers = {
+type Answers = HostNeeds & {
   // Photos already saved to the account; `photoFile` / `petPhotoFile` are NEW picks not yet uploaded.
   avatarUrl: string | null;
   petPhotoUrl: string | null;
@@ -47,12 +50,7 @@ type Answers = {
   petNote: string;
   petPhotoFile: File | null;
   petPhotoPreview: string | null;
-  // No longer asked at sign-up (they belong to the request, not the profile) but kept so a
-  // value saved earlier is never lost.
-  frequency: CustomerDraft["frequency"];
-  cleaningType: CustomerDraft["cleaningType"];
-  priorities: string[];
-  priorityOtherText: string;
+  // Not asked at sign-up (private home notes are added later) but kept so a saved value is never lost.
   homeInstructions: string;
 };
 
@@ -62,12 +60,21 @@ const initialAnswers: Answers = {
   area: "", locality: null, areaManual: false,
   homeType: null, bedrooms: "", bathrooms: "", numFloors: "", sizeSqm: "", numPeople: "",
   petTypes: [], numPets: "", petNote: "", petPhotoFile: null, petPhotoPreview: null,
-  frequency: null, cleaningType: null, priorities: [], priorityOtherText: "", homeInstructions: "",
+  homeInstructions: "", ...EMPTY_HOST_NEEDS,
 };
 
-const STEPS = ["about", "where", "home", "pets", "preview"] as const;
+// The household / cleaning-needs answers, copied out of the wizard's answers.
+const pickNeeds = (a: HostNeeds): HostNeeds => ({
+  householdType: a.householdType, householdNote: a.householdNote, homeVibe: a.homeVibe, homeNote: a.homeNote,
+  frequency: a.frequency, cleaningType: a.cleaningType, priorities: a.priorities, priorityOtherText: a.priorityOtherText,
+  typicalHours: a.typicalHours, preferredDays: a.preferredDays, daysFlexible: a.daysFlexible, flexibility: a.flexibility, extraNote: a.extraNote,
+});
+
+// "pets" is the household screen (who lives there + pets); "needs" and "story" are the new cleaning-needs
+// and "About us" screens. All three, like "home", can be skipped.
+const STEPS = ["about", "where", "home", "pets", "needs", "story", "preview"] as const;
 type StepKey = (typeof STEPS)[number];
-const OPTIONAL: StepKey[] = ["home", "pets"];
+const OPTIONAL: StepKey[] = ["home", "pets", "needs", "story"];
 const PREVIEW = STEPS.length - 1;
 const HOME_KEYS: Record<string, string> = {
   apartment: "homeApartment", house: "homeHouse", villa: "homeVilla", guesthouse: "homeGuesthouse", office: "homeOffice", other: "homeOther",
@@ -86,7 +93,7 @@ function answersToDraft(a: Answers, avatarUrl: string | null, petPhotoUrl: strin
     localityId: a.locality?.id ?? null, area: a.locality ? "" : a.area,
     homeType: a.homeType, bedrooms: a.bedrooms, bathrooms: a.bathrooms, numFloors: a.numFloors, sizeSqm: a.sizeSqm, numPeople: a.numPeople,
     petTypes: a.petTypes, numPets: a.numPets, petNote: a.petNote,
-    frequency: a.frequency, cleaningType: a.cleaningType, priorities: a.priorities, priorityOtherText: a.priorityOtherText, homeInstructions: a.homeInstructions,
+    homeInstructions: a.homeInstructions, ...pickNeeds(a),
   };
 }
 
@@ -98,7 +105,7 @@ function draftToAnswers(d: CustomerDraft, locality: PickedLocality | null): Answ
     area: d.area, locality, areaManual: !locality && d.area !== "",
     homeType: d.homeType, bedrooms: d.bedrooms, bathrooms: d.bathrooms, numFloors: d.numFloors, sizeSqm: d.sizeSqm, numPeople: d.numPeople,
     petTypes: d.petTypes, numPets: d.numPets, petNote: d.petNote,
-    frequency: d.frequency, cleaningType: d.cleaningType, priorities: d.priorities, priorityOtherText: d.priorityOtherText, homeInstructions: d.homeInstructions,
+    homeInstructions: d.homeInstructions, ...pickNeeds(d),
   };
 }
 
@@ -261,6 +268,17 @@ export default function CustomerRegisterPage() {
   const displayName = `${answers.firstName} ${answers.lastName}`.trim();
   const langNames = [...answers.languages.map((l) => tr(LANGUAGE_CHIPS.find((c) => c.value === l)?.key ?? "langOther")), ...answers.languagesOther.split(",").map((l) => l.trim()).filter(Boolean)];
   const notSet = <span className="text-sm text-gray-400">{tr("previewNotSet")}</span>;
+  const hl: HostLang = lang === "he" ? "he" : "en";
+  const hs = hostStrings(hl);
+  const introInput: HostIntroInput = {
+    ...pickNeeds(answers), homeType: answers.homeType, numFloors: answers.numFloors, numPeople: answers.numPeople,
+    petTypes: answers.petTypes, numPets: answers.numPets,
+  };
+  const needsSummary = [
+    answers.frequency ? hs.frequency[answers.frequency] : null,
+    answers.typicalHours ? `~${answers.typicalHours} ${hs.hoursUnit}` : null,
+    answers.preferredDays.length ? DAYS.filter((d) => answers.preferredDays.includes(d)).map((d) => hs.days[d]).join(", ") : null,
+  ].filter(Boolean).join(" · ");
 
   if (!ready) {
     return (
@@ -347,16 +365,6 @@ export default function CustomerRegisterPage() {
               </div>
               <input type="text" value={answers.languagesOther} onChange={(e) => set({ languagesOther: e.target.value })} placeholder={tr("langOtherPh")} aria-label={tr("langOther")} className={`${inputCls} mt-3 text-sm`} />
             </div>
-
-            <div className="mt-5">
-              <GuidedAbout
-                value={answers.aboutMe}
-                onChange={(v) => set({ aboutMe: v })}
-                boxLabel={tr("qAboutMe")}
-                rebuildLabel=""
-                prompts={[{ label: tr("qAboutMe"), starters: [tr("aboutStarter1"), tr("aboutStarter2"), tr("aboutStarter3")], placeholder: tr("aboutMePlaceholder") }]}
-              />
-            </div>
           </>
         )}
 
@@ -402,6 +410,9 @@ export default function CustomerRegisterPage() {
               <span className={label}>{tr("qFloors")}</span>
               <Stepper value={answers.numFloors} onChange={(v) => set({ numFloors: v })} min={1} max={20} label={tr("qFloors")} />
             </div>
+            <div className="mt-6">
+              <HomeVibeFields value={answers} onChange={set} lang={hl} />
+            </div>
             <button type="button" onClick={() => setShowMore((s) => !s)} aria-expanded={showMore} className="text-sm text-blue-600 underline mt-6">
               {tr("moreDetails")}
             </button>
@@ -427,7 +438,10 @@ export default function CustomerRegisterPage() {
 
         {current === "pets" && (
           <>
-            <h2 className={h2}>{tr("s4Title")}</h2>
+            <h2 className={h2}>{hs.householdTitle}</h2>
+            <p className={sub}>{hs.householdSub}</p>
+            <HouseholdFields value={answers} onChange={set} lang={hl} />
+            <h3 className="text-base font-semibold text-gray-900 mt-8">{tr("s4Title")}</h3>
             <p className={sub}>{tr("s4Sub")}</p>
             <div className="grid grid-cols-2 gap-2">
               <OptionCard selected={!hasPets} onClick={() => set({ petTypes: [], numPets: "", petNote: "", petPhotoFile: null, petPhotoPreview: null, petPhotoUrl: null })} title={tr("petsNone")} />
@@ -460,6 +474,22 @@ export default function CustomerRegisterPage() {
           </>
         )}
 
+        {current === "needs" && (
+          <>
+            <h2 className={h2}>{hs.needsTitle}</h2>
+            <p className={sub}>{hs.needsSub}</p>
+            <NeedsFields value={answers} onChange={set} lang={hl} />
+          </>
+        )}
+
+        {current === "story" && (
+          <>
+            <h2 className={h2}>{hs.storyTitle}</h2>
+            <p className={sub}>{hs.storySub}</p>
+            <HostIntroEditor value={answers.aboutMe} onChange={(v) => set({ aboutMe: v })} input={introInput} lang={hl} autoFill />
+          </>
+        )}
+
         {current === "preview" && (
           <>
             <h2 className={h2}>{tr("s5Title")}</h2>
@@ -477,7 +507,9 @@ export default function CustomerRegisterPage() {
                   {langNames.length > 0 && <p className="text-sm text-gray-600">{tr("previewLanguages")}: {langNames.join(", ")}</p>}
                 </div>
               </div>
-              {answers.aboutMe && <p className="text-sm text-gray-700 mt-2 whitespace-pre-line">{answers.aboutMe}</p>}
+            </PreviewSection>
+            <PreviewSection title={hs.previewAbout} editLabel={tr("edit")} onEdit={() => editSection("story")}>
+              {answers.aboutMe ? <p className="text-sm text-gray-700 whitespace-pre-line">{answers.aboutMe}</p> : notSet}
             </PreviewSection>
             <PreviewSection title={tr("previewTown")} editLabel={tr("edit")} onEdit={() => editSection("where")}>
               <p className="text-sm text-gray-800">📍 {townName || notSet}</p>
@@ -488,6 +520,9 @@ export default function CustomerRegisterPage() {
                   {[answers.homeType ? tr(HOME_KEYS[answers.homeType] ?? "homeOther") : null, answers.bedrooms || answers.bathrooms ? tr("previewBedsBaths", { beds: answers.bedrooms || "–", baths: answers.bathrooms || "–" }) : null, answers.numFloors ? tr("previewFloors", { n: answers.numFloors }) : null].filter(Boolean).join(" · ")}
                 </p>
               ) : notSet}
+            </PreviewSection>
+            <PreviewSection title={hs.previewNeeds} editLabel={tr("edit")} onEdit={() => editSection("needs")}>
+              {needsSummary ? <p className="text-sm text-gray-800">{needsSummary}</p> : notSet}
             </PreviewSection>
             <PreviewSection title={tr("previewPets")} editLabel={tr("edit")} onEdit={() => editSection("pets")}>
               <p className="text-sm text-gray-800">
