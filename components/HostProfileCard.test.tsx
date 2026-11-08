@@ -54,8 +54,8 @@ describe('HostProfileCard privacy and honesty', () => {
 
   it('shows how many floors the home has, and which floor an apartment is on, with different labels', () => {
     render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={{ ...customer, num_floors: 2, floor: 3 } as Customer} reviews={[]} />)
-    expect(screen.getByText('Floors in the home')).toBeInTheDocument()
-    expect(screen.getByText('Apartment floor')).toBeInTheDocument()
+    expect(screen.getByText('2 floors in the home')).toBeInTheDocument()
+    expect(screen.getByText('Apartment on floor 3')).toBeInTheDocument()
   })
 
   it('shows the About us paragraph first and the typical needs, with a note that each request can differ', () => {
@@ -81,5 +81,20 @@ describe('HostProfileCard privacy and honesty', () => {
     render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={customer} reviews={[]} />)
     expect(screen.queryByText('About us')).not.toBeInTheDocument()
     expect(screen.queryByText('Typical needs')).not.toBeInTheDocument()
+  })
+
+  it('shows the home as compact chips, not one big box per number', () => {
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={{ ...customer, bedrooms: 1, bathrooms: 1, house_size_sqm: 41, num_people: 2 } as Customer} reviews={[]} />)
+    expect(screen.getByText('The home')).toBeInTheDocument()
+    expect(screen.getByText('Apartment')).toBeInTheDocument()
+    expect(screen.getByText('1 bedroom')).toBeInTheDocument()
+    expect(screen.getByText('1 bathroom')).toBeInTheDocument()
+    expect(screen.getByText('~41 m²')).toBeInTheDocument()
+    expect(screen.getByText('2 people')).toBeInTheDocument()
+  })
+
+  it('keeps the completed-cleans count (including zero) in the header', () => {
+    render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={{ ...customer, cleans_completed: 0 } as Customer} reviews={[]} />)
+    expect(screen.getByText('0 cleans completed')).toBeInTheDocument()
   })
 })

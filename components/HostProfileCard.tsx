@@ -86,20 +86,21 @@ export default function HostProfileCard({
     ? DWELLING_LABELS[customer.dwelling_type] ?? customer.dwelling_type
     : null;
 
-  // Home stats as label/value tiles (same format as the cleaner profile's stats
-  // grid). Merges the older num_rooms/floor fields with the newer
-  // bedrooms/bathrooms/num_floors ones, since a customer may only have one set.
+  // Home facts as compact chips ("3 bedrooms", "~41 m²") instead of one big tile per number.
+  // Merges the older num_rooms/floor fields with the newer bedrooms/bathrooms/num_floors ones,
+  // since a customer may only have one set.
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const bedrooms = customer?.bedrooms ?? customer?.num_rooms ?? null;
-  const homeFields: { label: string; value: string }[] = customer
+  const homeFacts: string[] = customer
     ? [
-        bedrooms != null ? { label: customer.bedrooms != null ? "Bedrooms" : "Rooms", value: String(bedrooms) } : null,
-        customer.bathrooms != null ? { label: "Bathrooms", value: String(customer.bathrooms) } : null,
-        customer.floor != null ? { label: "Apartment floor", value: String(customer.floor) } : null,
-        customer.num_floors != null ? { label: "Floors in the home", value: String(customer.num_floors) } : null,
-        customer.house_size_sqm != null ? { label: "Size", value: `~${customer.house_size_sqm} m²` } : null,
-        customer.num_people != null ? { label: "People", value: String(customer.num_people) } : null,
-        customer.num_kids_under_15 != null ? { label: "Kids under 15", value: String(customer.num_kids_under_15) } : null,
-      ].filter((f): f is { label: string; value: string } => f !== null)
+        bedrooms != null ? plural(Number(bedrooms), customer.bedrooms != null ? "bedroom" : "room", customer.bedrooms != null ? "bedrooms" : "rooms") : null,
+        customer.bathrooms != null ? plural(Number(customer.bathrooms), "bathroom", "bathrooms") : null,
+        customer.num_floors != null ? plural(Number(customer.num_floors), "floor in the home", "floors in the home") : null,
+        customer.floor != null ? `Apartment on floor ${customer.floor}` : null,
+        customer.house_size_sqm != null ? `~${customer.house_size_sqm} m²` : null,
+        customer.num_people != null ? plural(Number(customer.num_people), "person", "people") : null,
+        customer.num_kids_under_15 != null ? plural(Number(customer.num_kids_under_15), "kid under 15", "kids under 15") : null,
+      ].filter((f): f is string => f !== null)
     : [];
 
   const hasPets = (customer?.pet_types?.length ?? 0) > 0;
@@ -115,7 +116,7 @@ export default function HostProfileCard({
   // "Typical needs": what this household usually asks for. Each request can still differ.
   const hours = customer?.typical_hours != null && customer.typical_hours !== "" ? Number(customer.typical_hours) : null;
   const dayList = DAY_ORDER.filter((d) => (customer?.preferred_days ?? []).includes(d)).map((d) => DAY_LABELS[d]);
-  const needTiles: { label: string; value: string }[] = [
+  const needRows: { label: string; value: string }[] = [
     customer?.usage_frequency ? { label: "How often", value: FREQUENCY_LABELS[customer.usage_frequency] ?? customer.usage_frequency } : null,
     hours != null && Number.isFinite(hours) && hours > 0 ? { label: "Per visit", value: `~${hours} ${hours === 1 ? "hour" : "hours"}` } : null,
     dayList.length > 0
@@ -125,7 +126,7 @@ export default function HostProfileCard({
         : null,
   ].filter((t): t is { label: string; value: string } => t !== null);
   const cleaningTypeLabel = customer?.usual_cleaning_type ? CLEANING_TYPE_LABELS[customer.usual_cleaning_type] ?? null : null;
-  const hasNeeds = needTiles.length > 0 || priorityBubbles.length > 0 || cleaningTypeLabel !== null;
+  const hasNeeds = needRows.length > 0 || priorityBubbles.length > 0 || cleaningTypeLabel !== null;
 
   return (
     <div className="bg-white rounded-3xl shadow-md p-6">
@@ -149,6 +150,7 @@ export default function HostProfileCard({
             </div>
           )}
           {town && <p className="text-sm text-gray-500 mt-1 truncate">{town}</p>}
+          <p className="text-xs text-gray-400 mt-0.5">{cleansCompleted === 1 ? "1 clean completed" : `${cleansCompleted} cleans completed`}</p>
           {cindyVerified && <p className="mt-1.5"><CindyVerifiedBadge /></p>}
         </div>
       </div>
@@ -160,24 +162,17 @@ export default function HostProfileCard({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-          <p className="text-xs text-gray-400">Cleans completed</p>
-          <p className="text-base font-semibold text-gray-900 mt-0.5">{cleansCompleted}</p>
+      {(dwellingLabel || homeFacts.length > 0) && (
+        <div className="mb-4">
+          <p className={LABEL}>The home</p>
+          <div className="flex flex-wrap gap-1.5">
+            {dwellingLabel && <span className="px-2.5 py-1 rounded-full bg-gray-800 text-white text-xs font-medium">{dwellingLabel}</span>}
+            {homeFacts.map((f) => (
+              <span key={f} className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">{f}</span>
+            ))}
+          </div>
         </div>
-        {dwellingLabel && (
-          <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-            <p className="text-xs text-gray-400">Home type</p>
-            <p className="text-base font-semibold text-gray-900 mt-0.5">{dwellingLabel}</p>
-          </div>
-        )}
-        {homeFields.map((f) => (
-          <div key={f.label} className="bg-gray-50 rounded-xl px-3 py-2.5">
-            <p className="text-xs text-gray-400">{f.label}</p>
-            <p className="text-base font-semibold text-gray-900 mt-0.5">{f.value}</p>
-          </div>
-        ))}
-      </div>
+      )}
 
       {homePhotos.length > 0 && (
         <div className="mb-4">
@@ -228,15 +223,15 @@ export default function HostProfileCard({
       {hasNeeds && (
         <div className="mb-4">
           <p className={LABEL}>Typical needs</p>
-          {needTiles.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              {needTiles.map((t) => (
-                <div key={t.label} className="bg-gray-50 rounded-xl px-3 py-2.5">
-                  <p className="text-sm font-semibold text-gray-900 leading-snug">{t.value}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t.label}</p>
+          {needRows.length > 0 && (
+            <dl className="bg-gray-50 rounded-xl px-3 divide-y divide-gray-100 mb-2">
+              {needRows.map((t) => (
+                <div key={t.label} className="flex items-baseline justify-between gap-4 py-2">
+                  <dt className="text-xs text-gray-400 shrink-0">{t.label}</dt>
+                  <dd className="text-sm font-semibold text-gray-900 text-end">{t.value}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           )}
           {(priorityBubbles.length > 0 || cleaningTypeLabel) && (
             <div className="flex flex-wrap gap-1.5">
