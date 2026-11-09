@@ -36,7 +36,7 @@ export default function ReviewsList({ reviews, seeAllLabel = "See all reviews" }
         <div key={r.id} className={`flex flex-col gap-1 py-3 ${i > 0 ? "border-t border-gray-100" : "pt-0"}`}>
           <FilledStars score={r.score} />
           <p className="text-sm text-gray-700">&ldquo;{r.reviewText}&rdquo;</p>
-          <p className="text-xs text-gray-400">— {r.reviewerName}</p>
+          {r.reviewerName && <p className="text-xs text-gray-400">— {r.reviewerName}</p>}
         </div>
       ))}
       {!expanded && remaining > 0 && (

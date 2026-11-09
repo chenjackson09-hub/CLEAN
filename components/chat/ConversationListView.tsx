@@ -8,7 +8,7 @@ import { useDocLang } from "./useDocLang";
 
 const STRINGS = {
   en: { title: "Chat", empty: "No conversations yet. Once a cleaner accepts a booking, your chat appears here.", noMessages: "Say hello 👋" },
-  he: { title: "צ'אט", empty: "אין שיחות עדיין. ברגע שמנקה מאשרת הזמנה, הצ'אט יופיע כאן.", noMessages: "אפשר להגיד שלום 👋" },
+  he: { title: "צ'אט", empty: "אין שיחות עדיין. ברגע שמנקה מאשר/ת הזמנה, הצ'אט יופיע כאן.", noMessages: "אפשר להגיד שלום 👋" },
 } as const;
 
 export default function ConversationListView({

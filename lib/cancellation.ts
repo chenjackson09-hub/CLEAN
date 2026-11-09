@@ -81,9 +81,9 @@ export function describeLead(minutes: number, lang: Lang = 'en'): string {
   const days = Math.floor(minutes / 1440)
   const hours = Math.floor(minutes / 60)
   if (lang === 'he') {
-    if (days >= 1) return `${days} ימים לפני`
-    if (hours >= 1) return `${hours} שעות לפני`
-    return `${minutes} דקות לפני`
+    if (days >= 1) return days === 1 ? 'יום לפני' : `${days} ימים לפני`
+    if (hours >= 1) return hours === 1 ? 'שעה לפני' : `${hours} שעות לפני`
+    return minutes === 1 ? 'דקה לפני' : `${minutes} דקות לפני`
   }
   if (days >= 1) return `${days} day${days === 1 ? '' : 's'} before`
   if (hours >= 1) return `${hours} hour${hours === 1 ? '' : 's'} before`

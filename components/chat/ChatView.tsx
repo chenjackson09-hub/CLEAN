@@ -48,8 +48,8 @@ const STRINGS = {
     collapse: "Hide details",
   },
   he: {
-    matchedCleaner: "מנקה מותאמת",
-    matchedHost: "מארח מותאם",
+    matchedCleaner: "המנקה שלכם",
+    matchedHost: "המארח שלכם",
     placeholder: "הודעה ל{name}…",
     send: "שליחת הודעה",
     back: "חזרה להודעות",

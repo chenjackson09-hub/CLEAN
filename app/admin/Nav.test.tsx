@@ -97,6 +97,6 @@ describe('Nav', () => {
     expect(screen.getByRole('link', { name: 'בקשות הזמנה' })).toHaveAttribute('href', '/admin/bookings')
     expect(screen.getByRole('link', { name: 'התאמות' })).toHaveAttribute('href', '/admin/matches')
     expect(screen.getByRole('link', { name: 'מנקים' })).toHaveAttribute('href', '/admin/cleaners')
-    expect(screen.getByRole('link', { name: 'לקוחות' })).toHaveAttribute('href', '/admin/customers')
+    expect(screen.getByRole('link', { name: 'מארחים' })).toHaveAttribute('href', '/admin/customers')
   })
 })

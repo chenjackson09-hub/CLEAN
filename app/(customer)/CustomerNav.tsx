@@ -110,7 +110,7 @@ export default function CustomerNav({ signOut, userId, userName, avatarUrl = nul
               onClick={() => { close(); setConfirmSignOut(true); }}
               className="w-full text-sm text-white bg-[#dc2626] hover:bg-red-700 transition-colors rounded-lg px-3 py-2 font-medium"
             >
-              {lang === "he" ? "התנתק" : "Sign out"}
+              {lang === "he" ? "התנתקות" : "Sign out"}
             </button>
           </>
         )}
@@ -124,7 +124,7 @@ export default function CustomerNav({ signOut, userId, userName, avatarUrl = nul
             </p>
             <form action={signOut} className="flex flex-col gap-2">
               <button type="submit" className="w-full bg-[#dc2626] hover:bg-red-700 text-white font-semibold rounded-xl py-2.5 transition-colors">
-                {lang === "he" ? "כן, התנתק" : "Yes, sign out"}
+                {lang === "he" ? "כן, להתנתק" : "Yes, sign out"}
               </button>
               <button type="button" onClick={() => setConfirmSignOut(false)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl py-2.5 transition-colors">
                 {lang === "he" ? "ביטול" : "Cancel"}

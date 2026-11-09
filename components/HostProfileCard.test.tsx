@@ -97,4 +97,24 @@ describe('HostProfileCard privacy and honesty', () => {
     render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={{ ...customer, cleans_completed: 0 } as Customer} reviews={[]} />)
     expect(screen.getByText('0 cleans completed')).toBeInTheDocument()
   })
+
+  it('shows the whole card in Hebrew when the page is right-to-left', async () => {
+    document.documentElement.dir = 'rtl'
+    try {
+      const c = {
+        ...customer, bio: 'אנחנו משפחה.', bedrooms: 1, bathrooms: 2, num_floors: 1, house_size_sqm: 41, num_people: 1,
+        usage_frequency: 'twice_monthly', typical_hours: '3', preferred_days: ['tue', 'thu'], cleaning_priorities: ['kitchen'], usual_cleaning_type: 'both',
+        pet_types: ['dog'], num_pets: 2, cleans_completed: 1,
+      } as unknown as Customer
+      render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={c} reviews={[]} homeNotesLocked />)
+      expect(await screen.findByText('עלינו')).toBeInTheDocument()
+      for (const t of ['הבית', 'דירה', 'חדר שינה אחד', '2 חדרי אמבטיה', 'קומה אחת בבית', 'נפש אחת', 'צרכים אופייניים', 'פעמיים בחודש', 'בערך 3 שעות', 'ג׳, ה׳', 'מטבח', 'ניקיון רגיל ויסודי', 'כלב (2)', 'ניקיון אחד הושלם', 'אין חוות דעת עדיין.']) {
+        expect(screen.getByText(t)).toBeInTheDocument()
+      }
+      expect(screen.getByText(/נחשפות אחרי שמאשרים בקשה/)).toBeInTheDocument()
+      expect(screen.queryByText('About us')).not.toBeInTheDocument()
+    } finally {
+      document.documentElement.dir = 'ltr'
+    }
+  })
 })

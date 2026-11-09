@@ -14,7 +14,7 @@ const TEXT: Record<NotificationKind | 'chat_messages', Record<Lang, string>> = {
   request_declined: { en: '{name} declined your request for {date}', he: '{name} דחה/תה את הבקשה שלך ל-{date}' },
   request_expired: { en: '{name} didn’t respond to your request for {date}', he: '{name} לא הגיב/ה לבקשה שלך ל-{date}' },
   request_cancelled_by_host: { en: '{name} cancelled their request for {date}', he: '{name} ביטל/ה את הבקשה ל-{date}' },
-  request_taken: { en: '{name}’s request for {date} was closed — they were matched with another cleaner', he: 'הבקשה של {name} ל-{date} נסגרה — הם הותאמו למנקה אחר/ת' },
+  request_taken: { en: '{name}’s request for {date} was closed — they were matched with another cleaner', he: 'הבקשה של {name} ל-{date} נסגרה — המארח הותאם למנקה אחר/ת' },
   request_cleaner_unavailable: { en: '{name} is no longer available on {date} — your request was cancelled', he: '{name} כבר לא זמין/ה ב-{date} — הבקשה שלך בוטלה' },
   availability_changed: { en: '{name} changed their available times to {times} — is your request for {date} still relevant?', he: 'השעות של {name} השתנו ל-{times} — האם הבקשה שלך ל-{date} עדיין רלוונטית?' },
   host_kept_request: { en: '{name} confirmed their request for {date} is still relevant', he: '{name} אישר/ה שהבקשה ל-{date} עדיין רלוונטית' },
@@ -30,8 +30,8 @@ const TEXT: Record<NotificationKind | 'chat_messages', Record<Lang, string>> = {
   complete_host_profile: { en: 'We added new questions about your household and cleaning needs, so cleaners can get to know you — tap to fill them in', he: 'הוספנו שאלות חדשות על משק הבית והצרכים שלכם, כדי שמנקות ומנקים יכירו אתכם — הקישו כדי למלא' },
   cindy_verified: { en: 'You are now Cindy Verified ✓ — the badge now shows on your profile', he: 'קיבלת את תג Cindy Verified ✓ — התג מוצג עכשיו בפרופיל שלך' },
   area_opened: { en: 'Good news — Clean is now open in {place}!', he: 'חדשות טובות — Clean נפתחה עכשיו ב{place}!' },
-  account_approved: { en: 'You’re approved — welcome to Clean!', he: 'אושרת — ברוכים הבאים ל-Clean!' },
-  account_rejected: { en: 'Your account wasn’t approved', he: 'החשבון שלך לא אושר' },
+  account_approved: { en: 'You’re approved — welcome to Clean!', he: 'החשבון שלכם אושר — ברוכים הבאים ל-Clean!' },
+  account_rejected: { en: 'Your account wasn’t approved', he: 'החשבון שלכם לא אושר' },
 }
 
 export function describeNotification(kind: string, data: NotificationData, lang: Lang): string {

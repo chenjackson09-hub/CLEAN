@@ -164,7 +164,7 @@ function buildHe(i: HostIntroInput): string[] {
 
   const nouns: Record<string, { n: string; fem: boolean }> = {
     house: { n: 'בית', fem: false }, apartment: { n: 'דירה', fem: true }, villa: { n: 'וילה', fem: true },
-    guesthouse: { n: 'יחידת אירוח', fem: true }, office: { n: 'משרד', fem: false },
+    guesthouse: { n: 'צימר', fem: false }, office: { n: 'משרד', fem: false },
   }
   const hasFloors = floors != null && floors >= 2
   const floorsHe = floors === 2 ? 'שתי קומות' : `${floors} קומות`

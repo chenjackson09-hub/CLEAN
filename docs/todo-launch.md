@@ -1,15 +1,15 @@
-# To-do list before the pilot — updated 2026-11-08
+# To-do list before the pilot — updated 2026-11-09
 
 ## Done
 - GitHub: pushing works through GitHub Desktop (repo folder `~/Documents/CLEAN`, NOT the old `~/Documents/GitHub/CLEAN`). Live site deploys from `main` on Vercel.
 - Auto-refresh every 2 minutes on host and cleaner pages.
+- Pushing now works over SSH (I can push when you say so). Migration 0045 applied. All fake hosts/cleaners deleted (only the admin account remains).
+- Hebrew pass: "מארח" is the single word for host everywhere; plural/gender/terminology fixes across the app (still needs a native read, see A3).
 - Improved host profile: household and cleaning-needs questions, generated "About us" paragraph (EN/HE), Typical needs block, 7-screen host wizard, bell notification asking existing hosts to fill in the new answers.
 
 ## A. Needs you
-1. **Run migration `supabase/migrations/0045_host_household_needs.sql`** in the Supabase SQL Editor. Until then the new answers (and the bell notification) don't work.
 2. **Test the new host flow in a browser:** fresh host sign-up (7 screens, close the tab and sign in again to resume), edit an existing host's profile, "Write it for me" paragraph in English and Hebrew, the bell notification for an existing host.
 3. **Hebrew review:** a native speaker should read all new Hebrew text (host questions, generated paragraph, notifications, legal pages).
-4. **Delete all existing test hosts and cleaners (they are not real)** — keep the admin account(s). The admin "delete" only soft-suspends cleaners and adds people to the blocked list, so do it from Supabase (Authentication → Users + related rows/storage) or with a script that has a dry-run. At launch also make new accounts `is_test_account = false`.
 5. **Make sure Google sign-in works on the live site** — Supabase Google provider on; Google Cloud OAuth redirect URI `https://<project>.supabase.co/auth/v1/callback`; `https://clean-roan.vercel.app/auth/callback` in Supabase Auth → Redirect URLs; Vercel `NEXT_PUBLIC_SITE_URL` = the real site address. Then test a brand-new Google account end to end (role screen with the agreement box → wizard).
 6. **Attach the final agreement** — send the real Terms / Privacy text (lawyer-reviewed) → replace `lib/legal/content.ts` and set `LEGAL_DRAFT = false`.
 7. **Delete the GitHub Personal Access Tokens** created earlier (GitHub → Settings → Developer settings → Personal access tokens). Not needed any more.

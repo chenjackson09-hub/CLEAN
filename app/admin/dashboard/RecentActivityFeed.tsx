@@ -156,7 +156,7 @@ export function RecentActivityFeed({ bookings, events = [] }: { bookings: Bookin
                   const b = item.booking
                   const statusText = STATUS_TEXT[b.status]?.[lang] ?? b.status
                   const cleaner = b.cleaner_name ?? (lang === 'he' ? 'מנקה' : 'A cleaner')
-                  const customer = b.customer_name ?? (lang === 'he' ? 'לקוח' : 'a customer')
+                  const customer = b.customer_name ?? (lang === 'he' ? 'מארח' : 'a host')
                   return (
                     <li key={b.id} className="flex items-start gap-2.5 text-sm">
                       <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${DOT[b.status] ?? 'bg-gray-300'}`} />

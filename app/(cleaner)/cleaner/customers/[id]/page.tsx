@@ -79,7 +79,7 @@ export default async function CustomerProfilePage({
     id: r.id,
     score: r.score,
     reviewText: r.review_text,
-    reviewerName: r.rater?.full_name ?? "A cleaner",
+    reviewerName: r.rater?.full_name ?? "",
   }));
 
   return (
