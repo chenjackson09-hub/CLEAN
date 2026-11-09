@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "../actions";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -30,6 +31,7 @@ function Spinner() {
 
 export default function LoginPage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Where to go after signing in (set by the middleware when a link needed a login).
@@ -48,6 +50,11 @@ export default function LoginPage() {
     setError(null);
     const formData = new FormData(e.currentTarget);
     const result = await signIn(formData);
+    // Signed up by email but never entered the emailed code: send a fresh code and ask for it.
+    if (result && "needsVerification" in result && result.needsVerification) {
+      router.push(`/register/verify?resend=1&email=${encodeURIComponent(result.email)}`);
+      return;
+    }
     if (result?.error) {
       setError(result.error);
       setLoading(false);

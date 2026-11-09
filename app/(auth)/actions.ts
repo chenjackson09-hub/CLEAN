@@ -87,7 +87,13 @@ export async function signIn(formData: FormData) {
   const password = formData.get("password") as string;
 
   const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !user) return { error: error?.message ?? "Authentication failed." };
+  if (error || !user) {
+    // Signed up with email + password but never entered the emailed code.
+    const unverified = error?.code === "email_not_confirmed" || /not confirmed/i.test(error?.message ?? "");
+    const message = error?.message ?? "Authentication failed.";
+    if (unverified) return { error: message, needsVerification: true as const, email: email.trim() };
+    return { error: message };
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

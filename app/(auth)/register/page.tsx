@@ -106,9 +106,16 @@ export default function RegisterPage() {
     // step, so a closed tab or a dropped connection never loses answers — and the password is
     // never kept in the browser. The person is approved by an admin only after they submit.
     const { data: created, error: signUpErr } = await supabase.auth.signUp({ email, password, options: { data: { role, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() } } });
-    if (signUpErr || !created.session) {
+    if (signUpErr || !created.user) {
       setError(signUpErr?.message ?? t("auth.register.signUpFailed"));
       setLoading(false);
+      return;
+    }
+    // When the project requires confirmed emails there is no session yet: Supabase has emailed
+    // a code, and the person enters it on the next screen. (With confirmation off there is a
+    // session straight away and they go directly into the wizard, as before.)
+    if (!created.session) {
+      router.push(`/register/verify?email=${encodeURIComponent(email)}`);
       return;
     }
     router.push(`/register/${role}`);

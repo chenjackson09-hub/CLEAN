@@ -38,6 +38,16 @@ describe('Register (account is created on the first screen)', () => {
     expect(localStorage.getItem('pending_signup')).toBeNull()
   })
 
+  it('goes to the code screen when the email still has to be confirmed (no session yet)', async () => {
+    mockSignUp.mockResolvedValue({ data: { session: null, user: { id: 'u1' } }, error: null })
+    const user = userEvent.setup()
+    render(<RegisterPage />)
+    await fill(user)
+    await user.click(screen.getByText('Cleaner'))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/register/verify?email=a%40b.com'))
+  })
+
   it('stays on the page with a message when the account cannot be created', async () => {
     mockSignUp.mockResolvedValue({ data: { session: null, user: null }, error: { message: 'boom' } })
     const user = userEvent.setup()

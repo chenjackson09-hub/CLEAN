@@ -16,7 +16,7 @@
 
 ## B. Not built yet — decide
 - **Reset password** (issues #8 / #28, marked "!!" and "wontfix"): people need it for a real launch.
-- **Email check with a code when registering:** needs Supabase "Confirm email" ON with a code (OTP) in the email template, a real email sender (Resend + verified domain), and a new "enter the code" screen in /register before the wizard. Today email confirmation is OFF, so these must be done together.
+- **Email check with a code when registering:** the app side is BUILT (code screen `/register/verify`, login resume). It stays dormant until you do the Supabase side: (1) custom SMTP with a real sender (Resend needs a verified domain), (2) Confirm email ON, (3) "Confirm signup" template shows `{{ .Token }}`. Then test with a real address. SMS not built (needs Twilio).
 - **Areas:** do NOT open the Northern Hula Valley region without an explicit go-ahead.
 
 ## C. Open GitHub issues — what they are
