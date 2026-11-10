@@ -154,6 +154,45 @@ export async function signOutToRegister() {
   redirect("/register");
 }
 
+// "Cancel my registration": for someone who started signing up and wants out for good (typed the
+// wrong email, picked the wrong role, wants to start over). It deletes THEIR OWN account, but only
+// while the sign-up is still unfinished — an account that was submitted (or is an admin, or whose
+// state can't be read) is never touched here. Freeing the email lets them register again.
+export async function cancelUnfinishedRegistration(): Promise<{ error: string } | never> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const admin = createAdminClient();
+  const { data: profile, error: pErr } = await admin
+    .from("profiles")
+    .select("role, onboarding_completed_at")
+    .eq("id", user.id)
+    .maybeSingle();
+  // Fail closed: anything unclear means "don't delete".
+  if (pErr || !profile) return { error: "We couldn't check your account, so nothing was deleted." };
+  if (profile.role !== "customer" && profile.role !== "cleaner") return { error: "This account can't be cancelled here." };
+  if (profile.onboarding_completed_at != null) return { error: "Your registration was already submitted, so it can't be cancelled here." };
+
+  // Uploaded files first (a photo chosen during sign-up), then the account itself — the profile
+  // and role rows go with the auth user.
+  for (const bucket of ["avatars", "gallery", "home-photos"]) {
+    try {
+      const { data: files } = await admin.storage.from(bucket).list(user.id, { limit: 1000 });
+      const paths = (files ?? []).map((f) => `${user.id}/${f.name}`);
+      if (paths.length) await admin.storage.from(bucket).remove(paths);
+    } catch {
+      // a missing bucket or folder must not block cancelling
+    }
+  }
+  const { error: delErr } = await admin.auth.admin.deleteUser(user.id);
+  if (delErr) return { error: delErr.message };
+
+  await supabase.auth.signOut();
+  redirect("/register");
+}
+
+
 // Used when a cleaner picks "Yes, continue later" partway through the
 // registration wizard: their partial answers are already saved, so signing
 // them out and landing on /login (rather than the dashboard) makes clear

@@ -15,6 +15,7 @@ import type { PickedLocality } from "@/lib/localities/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { signOutToLogin } from "../../actions";
+import CancelRegistration from "@/components/onboarding/CancelRegistration";
 import { loadOnboarding, saveOnboarding } from "../../onboardingActions";
 import { HOME_TYPE_CHOICES, LANGUAGE_CHIPS } from "@/lib/onboarding/options";
 import type { CustomerDraft } from "@/lib/onboarding/customer";
@@ -299,6 +300,7 @@ export default function CustomerRegisterPage() {
             <button onClick={handleContinueLater} className="flex-1 border border-gray-300 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors">{tr("continueLater")}</button>
             <button onClick={() => setPhase("flow")} className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors">{tr("keepGoing")}</button>
           </div>
+          <CancelRegistration labels={{ cancel: tr("cancelReg"), warn: tr("cancelRegWarn"), yes: tr("cancelRegYes"), no: tr("cancelRegNo") }} />
         </div>
       </div>
     );

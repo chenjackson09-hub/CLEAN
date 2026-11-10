@@ -14,7 +14,7 @@ const mockLoad = jest.fn()
 const mockSave = jest.fn()
 const mockSignOut = jest.fn()
 jest.mock('../../onboardingActions', () => ({ loadOnboarding: (...a: unknown[]) => mockLoad(...a), saveOnboarding: (...a: unknown[]) => mockSave(...a) }))
-jest.mock('../../actions', () => ({ signOutToLogin: (...a: unknown[]) => mockSignOut(...a) }))
+jest.mock('../../actions', () => ({ signOutToLogin: (...a: unknown[]) => mockSignOut(...a), cancelUnfinishedRegistration: jest.fn() }))
 
 const LOCALITY = {
   id: 'loc-1', cbs_code: 322, name_he: 'בית הלל', name_en: 'Bet Hillel', locality_type: 'moshav',
