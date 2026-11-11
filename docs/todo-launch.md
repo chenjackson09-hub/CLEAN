@@ -1,4 +1,4 @@
-# To-do list before the pilot — updated 2026-11-09
+# To-do list before the pilot — updated 2026-11-11
 
 ## Done
 - GitHub: pushing works through GitHub Desktop (repo folder `~/Documents/CLEAN`, NOT the old `~/Documents/GitHub/CLEAN`). Live site deploys from `main` on Vercel.
@@ -7,16 +7,19 @@
 - Hebrew pass: "מארח" is the single word for host everywhere; plural/gender/terminology fixes across the app (still needs a native read, see A3).
 - Improved host profile: household and cleaning-needs questions, generated "About us" paragraph (EN/HE), Typical needs block, 7-screen host wizard, bell notification asking existing hosts to fill in the new answers.
 
+- Email-code sign-up is LIVE (Supabase Confirm email ON, Gmail SMTP, sender "Cindy") and tested end to end by the owner. Google sign-in tested on the live site. New host flow tested in a browser.
+- "Cancel registration" in the sign-up wizards (deletes your own unfinished account, back to /register).
+- `scripts/delete-test-users.mjs --only <email>` removes one unfinished account (refuses admins and submitted sign-ups). The unfinished test account taibh050@gmail.com was deleted.
+
 ## A. Needs you
-2. **Test the new host flow in a browser:** fresh host sign-up (7 screens, close the tab and sign in again to resume), edit an existing host's profile, "Write it for me" paragraph in English and Hebrew, the bell notification for an existing host.
-3. **Hebrew review:** a native speaker should read all new Hebrew text (host questions, generated paragraph, notifications, legal pages).
-5. **Make sure Google sign-in works on the live site** — Supabase Google provider on; Google Cloud OAuth redirect URI `https://<project>.supabase.co/auth/v1/callback`; `https://clean-roan.vercel.app/auth/callback` in Supabase Auth → Redirect URLs; Vercel `NEXT_PUBLIC_SITE_URL` = the real site address. Then test a brand-new Google account end to end (role screen with the agreement box → wizard).
+3. **Hebrew review:** a native speaker should read all new Hebrew text (host questions, generated paragraph, notifications, the email-code and cancel-registration text, legal pages).
 6. **Attach the final agreement** — send the real Terms / Privacy text (lawyer-reviewed) → replace `lib/legal/content.ts` and set `LEGAL_DRAFT = false`.
-7. **Delete the GitHub Personal Access Tokens** created earlier (GitHub → Settings → Developer settings → Personal access tokens). Not needed any more.
+7. **Reset the owner's password** (it was shared in chat earlier).
+8. **Delete the GitHub Personal Access Tokens** created earlier (GitHub → Settings → Developer settings → Personal access tokens). Not needed any more.
 
 ## B. Not built yet — decide
 - **Reset password** (issues #8 / #28, marked "!!" and "wontfix"): people need it for a real launch.
-- **Email check with a code when registering:** the app side is BUILT (code screen `/register/verify`, login resume). It stays dormant until you do the Supabase side: (1) custom SMTP with a real sender (Resend needs a verified domain), (2) Confirm email ON, (3) "Confirm signup" template shows `{{ .Token }}`. Then test with a real address. SMS not built (needs Twilio).
+- **Email sender:** the code emails currently go out through the owner's own Gmail. Before real users: move to a dedicated sender (a Gmail account made for the app, or a domain + Resend). SMS not built (needs Twilio).
 - **Areas:** do NOT open the Northern Hula Valley region without an explicit go-ahead.
 
 ## C. Open GitHub issues — what they are
