@@ -18,7 +18,7 @@
 8. **Delete the GitHub Personal Access Tokens** created earlier (GitHub → Settings → Developer settings → Personal access tokens). Not needed any more.
 
 ## B. Not built yet — decide
-- **Reset password** (issues #8 / #28, marked "!!" and "wontfix"): people need it for a real launch.
+- ~~Reset password~~ BUILT (code by email: /forgot-password → /reset-password). Needs the Supabase "Reset password" email template to show `{{ .Token }}`, then a real test (issues #8 / #28 can be closed after that).
 - **Email sender:** the code emails currently go out through the owner's own Gmail. Before real users: move to a dedicated sender (a Gmail account made for the app, or a domain + Resend). SMS not built (needs Twilio).
 - **Areas:** do NOT open the Northern Hula Valley region without an explicit go-ahead.
 

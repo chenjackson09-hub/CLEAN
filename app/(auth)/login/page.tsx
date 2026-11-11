@@ -36,12 +36,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   // Where to go after signing in (set by the middleware when a link needed a login).
   const [next, setNext] = useState<string | null>(null);
+  // Shown after a password was just changed (?reset=1).
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Surface an error passed back from the OAuth callback (?error=...).
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get("error");
     if (err) setError(err);
+    if (new URLSearchParams(window.location.search).get("reset") === "1") setNotice(t("auth.login.resetDone"));
     setNext(safeNextPath(new URLSearchParams(window.location.search).get("next")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -125,6 +129,14 @@ export default function LoginPage() {
               className="w-full border border-gray-300 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          <p className="text-end -mt-2">
+            <Link href="/forgot-password" className="text-xs text-blue-600 hover:underline">{t("auth.login.forgot")}</Link>
+          </p>
+
+          {notice && !error && (
+            <p className="text-sm text-green-700 bg-green-50 rounded-full px-3 py-2">{notice}</p>
+          )}
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-full px-3 py-2">

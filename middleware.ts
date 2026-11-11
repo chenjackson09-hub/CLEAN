@@ -57,13 +57,17 @@ export async function middleware(request: NextRequest) {
   const isSignedOutPath = pathname === '/signed-out'
   // Terms of Use / Privacy Policy: people read them before they have an account.
   const isLegalPath = pathname === '/terms' || pathname === '/privacy'
+  // "Forgot password": reachable without a session. The reset page also has to keep working in
+  // the moment between entering the emailed code (which signs the person in) and the new
+  // password being saved, so it is deliberately not treated as a sign-in-only page.
+  const isPasswordResetPath = pathname === '/forgot-password' || pathname === '/reset-password'
   // OAuth callback must run while still unauthenticated (it sets the session).
   const isCallbackPath = pathname.startsWith('/auth/')
   // Read-only locality autocomplete — used on the registration screens, before
   // an account exists. Returns geography only.
   const isLocalitySearch = pathname === '/api/localities/search'
 
-  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isCallbackPath && !isLocalitySearch) {
+  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isPasswordResetPath && !isCallbackPath && !isLocalitySearch) {
     // Remember where they were headed (e.g. a booking link from a calendar event)
     // so sign-in can take them straight back. Validated again when it's used.
     const loginUrl = new URL('/login', request.url)
