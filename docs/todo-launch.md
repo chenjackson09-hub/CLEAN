@@ -1,4 +1,4 @@
-# To-do list before the pilot — updated 2026-11-11
+# To-do list before the pilot — updated 2026-11-15
 
 ## Done
 - GitHub: pushing works through GitHub Desktop (repo folder `~/Documents/CLEAN`, NOT the old `~/Documents/GitHub/CLEAN`). Live site deploys from `main` on Vercel.
@@ -10,6 +10,7 @@
 - Email-code sign-up is LIVE (Supabase Confirm email ON, Gmail SMTP, sender "Cindy") and tested end to end by the owner. Google sign-in tested on the live site. New host flow tested in a browser.
 - "Cancel registration" in the sign-up wizards (deletes your own unfinished account, back to /register).
 - `scripts/delete-test-users.mjs --only <email>` removes one unfinished account (refuses admins and submitted sign-ups). The unfinished test account taibh050@gmail.com was deleted.
+- Forgot password is LIVE and tested by the owner (code by email: /forgot-password → /reset-password; Supabase "Reset password" template shows the code). Issues #8 / #28 can be closed.
 
 ## A. Needs you
 3. **Hebrew review:** a native speaker should read all new Hebrew text (host questions, generated paragraph, notifications, the email-code and cancel-registration text, legal pages).
@@ -18,13 +19,11 @@
 8. **Delete the GitHub Personal Access Tokens** created earlier (GitHub → Settings → Developer settings → Personal access tokens). Not needed any more.
 
 ## B. Not built yet — decide
-- ~~Reset password~~ BUILT (code by email: /forgot-password → /reset-password). Needs the Supabase "Reset password" email template to show `{{ .Token }}`, then a real test (issues #8 / #28 can be closed after that).
 - **Email sender:** the code emails currently go out through the owner's own Gmail. Before real users: move to a dedicated sender (a Gmail account made for the app, or a domain + Resend). SMS not built (needs Twilio).
 - **Areas:** do NOT open the Northern Hula Valley region without an explicit go-ahead.
 
 ## C. Open GitHub issues — what they are
 Still real:
-- #8 / #28 Reset password (see B).
 - #12 Legality of the website — terms/privacy are a DRAFT; a lawyer / Israeli-law check is still needed.
 - #11 Translate — Hebrew exists everywhere new; needs native review (A3).
 - #41 Gallery on the customer profile too — gallery is off for now (`GALLERY_ENABLED=false`); host home photos exist (private).
