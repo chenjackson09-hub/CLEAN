@@ -13,6 +13,7 @@ import { saveRating } from "@/lib/ratings";
 import { resolvePlace } from "@/lib/localities/resolve";
 import { notify, profileNames } from "@/lib/notifications";
 import { shortName } from "@/lib/chatFormat";
+import { sendCancellationEmail } from "@/lib/cancellationEmail";
 import {
   sendBookingAccepted,
   sendBookingDeclined,
@@ -895,12 +896,15 @@ export async function cancelClean(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
 
-  const result = await cancelBookingCore(createAdminClient(), { bookingId, actorId: user.id, input });
+  const admin = createAdminClient();
+  const result = await cancelBookingCore(admin, { bookingId, actorId: user.id, input });
   if (!result.ok) {
     return result.code === "already_cancelled"
       ? { error: result.error, alreadyCancelled: true as const }
       : { error: result.error };
   }
+  // The host also gets an email (best-effort, never blocks the cancel).
+  await sendCancellationEmail(admin, result);
 
   revalidatePath("/cleaner/availability");
   revalidatePath("/cleaner/dashboard");

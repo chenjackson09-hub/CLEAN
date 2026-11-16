@@ -9,6 +9,7 @@ import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
 import { sendNewBookingRequest } from "@/lib/resend"
 import { cancelBookingCore } from "@/lib/cancellation"
+import { sendCancellationEmail } from "@/lib/cancellationEmail"
 import { saveRating } from "@/lib/ratings"
 import { resolvePlace } from "@/lib/localities/resolve"
 import { hostServiceArea } from "@/lib/localities/serviceArea"
@@ -411,12 +412,15 @@ export async function cancelBooking(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
-  const result = await cancelBookingCore(createAdminClient(), { bookingId, actorId: user.id, input })
+  const admin = createAdminClient()
+  const result = await cancelBookingCore(admin, { bookingId, actorId: user.id, input })
   if (!result.ok) {
     return result.code === 'already_cancelled'
       ? { error: result.error, alreadyCancelled: true }
       : { error: result.error }
   }
+  // A confirmed clean: the cleaner also gets an email (best-effort, never blocks the cancel).
+  await sendCancellationEmail(admin, result)
 
   revalidatePath("/bookings")
   revalidatePath("/home")
