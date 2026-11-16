@@ -1,4 +1,4 @@
-# To-do list before the pilot — updated 2026-11-15
+# To-do list before the pilot — updated 2026-11-16
 
 ## Done
 - GitHub: pushing works through GitHub Desktop (repo folder `~/Documents/CLEAN`, NOT the old `~/Documents/GitHub/CLEAN`). Live site deploys from `main` on Vercel.
@@ -11,12 +11,12 @@
 - "Cancel registration" in the sign-up wizards (deletes your own unfinished account, back to /register).
 - `scripts/delete-test-users.mjs --only <email>` removes one unfinished account (refuses admins and submitted sign-ups). The unfinished test account taibh050@gmail.com was deleted.
 - Forgot password is LIVE and tested by the owner (code by email: /forgot-password → /reset-password; Supabase "Reset password" template shows the code). Issues #8 / #28 can be closed.
+- Admin accounts: the owner's own admin is `chenjackson09+admin@gmail.com` (reset codes arrive in the personal inbox), spare admin `cindyclean.noreply@gmail.com`. The old `dror@admin` account (no real inbox, password once shared) was deleted, which also closes the "reset the owner's password" item.
+- The three old GitHub Personal Access Tokens were deleted.
 
 ## A. Needs you
 3. **Hebrew review:** a native speaker should read all new Hebrew text (host questions, generated paragraph, notifications, the email-code and cancel-registration text, legal pages).
 6. **Attach the final agreement** — send the real Terms / Privacy text (lawyer-reviewed) → replace `lib/legal/content.ts` and set `LEGAL_DRAFT = false`.
-7. **Reset the owner's password** (it was shared in chat earlier).
-8. **Delete the GitHub Personal Access Tokens** created earlier (GitHub → Settings → Developer settings → Personal access tokens). Not needed any more.
 
 ## B. Not built yet — decide
 - **Email sender:** the code emails currently go out through the owner's own Gmail. Before real users: move to a dedicated sender (a Gmail account made for the app, or a domain + Resend). SMS not built (needs Twilio).
