@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { emailAdminsSupportMessage } from "@/lib/appEmails";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -34,6 +36,14 @@ export async function sendSupportMessage(message: string): Promise<SupportResult
   });
 
   if (error) return { error: "Could not send your message. Please try again." };
+
+  // Tell the admins by email too, so a message isn't left waiting until someone opens the
+  // admin panel (best-effort: the message is already saved).
+  try {
+    await emailAdminsSupportMessage(createAdminClient(), { userId: user.id, role: profile?.role ?? "", message: trimmed });
+  } catch (e) {
+    console.error("support: admin email failed", e);
+  }
 
   return { success: true };
 }

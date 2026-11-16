@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 jest.mock('@/lib/supabase/server', () => ({ createClient: jest.fn() }))
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/geocode', () => ({ geocodeAddress: jest.fn() }))
-jest.mock('@/lib/resend', () => ({ sendBookingAccepted: jest.fn(), sendBookingDeclined: jest.fn() }))
+jest.mock('@/lib/appEmails', () => ({ emailRequestAnswered: jest.fn().mockResolvedValue({ sent: false, reason: 'skipped' }) }))
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }))
 
 type Op = [string, unknown[]]

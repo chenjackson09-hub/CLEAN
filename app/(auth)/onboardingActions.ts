@@ -6,6 +6,7 @@ import type { PickedLocality } from '@/lib/localities/address'
 import { DraftError } from '@/lib/onboarding/validate'
 import { cleanerDraftToRows, cleanerRowsToDraft, validateCleanerDraft, type CleanerDraft } from '@/lib/onboarding/cleaner'
 import { customerDraftToRows, customerRowsToDraft, validateCustomerDraft, type CustomerDraft } from '@/lib/onboarding/customer'
+import { emailAdminsNewSignup } from '@/lib/appEmails'
 
 export type OnboardingRole = 'cleaner' | 'customer'
 
@@ -121,6 +122,8 @@ export async function saveOnboarding(input: { role: OnboardingRole; draft: unkno
       tail.push(supabase.from('profiles').update({ onboarding_completed_at: new Date().toISOString() }).eq('id', user.id).then((r) => { if (r.error) console.error('[onboarding] could not mark the sign-up finished', r.error.message) }))
     }
     await Promise.all(tail)
+    // Tell the admins there is someone to approve (best-effort; never fails the sign-up).
+    if (submit) await emailAdminsNewSignup(admin, { userId: user.id, role: input.role })
     return { ok: true }
   } catch (e) {
     if (e instanceof DraftError) return { error: e.message }

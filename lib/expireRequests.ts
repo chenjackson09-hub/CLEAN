@@ -2,20 +2,21 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, profileNames } from "@/lib/notifications";
 import { shortName } from "@/lib/chatFormat";
+import { emailRequestAnswered } from "@/lib/appEmails";
 
 // Marks a cleaner's pending requests whose 24h response deadline has passed as
 // "declined", so they stop showing as actionable pending across the app. Runs
 // as a lazy sweep on cleaner page loads (the project has no scheduled jobs).
 // Idempotent — a no-op when nothing has expired. Each host whose request just
 // lapsed is told in their bell (once per booking, so concurrent sweeps can't
-// double-notify).
+// double-notify) and by email.
 export async function declineExpiredRequests(cleanerId: string) {
   const supabase = await createClient();
   const now = new Date().toISOString();
 
   const { data: expiring } = await supabase
     .from("bookings")
-    .select("id, customer_id, scheduled_date")
+    .select("id, customer_id, scheduled_date, scheduled_start")
     .eq("cleaner_id", cleanerId)
     .eq("status", "pending")
     .lt("response_deadline", now);
@@ -42,4 +43,15 @@ export async function declineExpiredRequests(cleanerId: string) {
       once: true,
     })),
   );
+  // ...and by email (best-effort), since a host waiting for an answer may not open the app.
+  for (const b of expiring) {
+    await emailRequestAnswered(admin, {
+      kind: "expired",
+      bookingId: b.id as string,
+      hostId: b.customer_id as string,
+      cleanerId,
+      date: b.scheduled_date as string,
+      time: b.scheduled_start as string | null,
+    });
+  }
 }

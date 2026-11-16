@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient, getCurrentUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
-import { sendApplicationApproved, sendApplicationRejected, sendApplicationNeedsInfo } from '@/lib/resend'
+import { emailAccountDecision } from '@/lib/appEmails'
 import { notify } from '@/lib/notifications'
 
 type ActionResult = { error?: string }
@@ -88,8 +88,9 @@ export async function updateApplicationStatus(
     revalidatePath('/admin/blocked')
   }
 
-  // Notify the cleaner of the decision — fire and forget, never block the action.
-  notifyApplicationDecision(admin, cleanerId, status, notes).catch(() => {})
+  // Email the cleaner the decision (best-effort). The admin notes are for admins only and
+  // are never put in the email.
+  await emailAccountDecision(admin, { userId: cleanerId, role: 'cleaner', status })
 
   if (status === 'approved' || status === 'rejected') {
     await notify(admin, {
@@ -101,29 +102,6 @@ export async function updateApplicationStatus(
 
   revalidatePath('/admin/applications')
   return {}
-}
-
-async function notifyApplicationDecision(
-  admin: ReturnType<typeof createAdminClient>,
-  cleanerId: string,
-  status: 'approved' | 'rejected' | 'needs_info',
-  notes?: string,
-) {
-  const [{ data: cleanerAuth }, { data: profile }] = await Promise.all([
-    admin.auth.admin.getUserById(cleanerId),
-    admin.from('profiles').select('full_name').eq('id', cleanerId).single(),
-  ])
-  const cleanerEmail = cleanerAuth?.user?.email
-  if (!cleanerEmail) return
-  const cleanerName = profile?.full_name ?? 'there'
-
-  if (status === 'approved') {
-    await sendApplicationApproved({ cleanerEmail, cleanerName })
-  } else if (status === 'needs_info') {
-    await sendApplicationNeedsInfo({ cleanerEmail, cleanerName, notes })
-  } else {
-    await sendApplicationRejected({ cleanerEmail, cleanerName, notes })
-  }
 }
 
 export async function updateApplicationNotes(applicationId: string, notes: string): Promise<ActionResult> {
@@ -160,6 +138,7 @@ export async function updateCustomerApprovalStatus(
     kind: status === 'approved' ? 'account_approved' : 'account_rejected',
     href: '/browse',
   })
+  await emailAccountDecision(admin, { userId: customerId, role: 'host', status })
   revalidatePath('/admin/applications')
   revalidatePath('/admin/customers')
   return {}

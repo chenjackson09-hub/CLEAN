@@ -28,7 +28,14 @@ describe('mailer', () => {
     mockSend.mockResolvedValue({})
     await expect(sendMail(msg)).resolves.toEqual({ sent: true })
     expect(mockCreate.mock.calls[0][0]).toMatchObject({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: 'me@gmail.com', pass: 'abcdefghijklmnop' } })
-    expect(mockSend.mock.calls[0][0]).toMatchObject({ to: 'a@b.com', from: { name: 'Clean', address: 'me@gmail.com' } })
+    expect(mockSend.mock.calls[0][0]).toMatchObject({ to: ['a@b.com'], from: { name: 'Clean', address: 'me@gmail.com' } })
+  })
+
+  it('sends one message to several people and leaves out anything that is not an email', async () => {
+    process.env.SMTP_USER = 'me@gmail.com'; process.env.SMTP_PASS = 'x'
+    mockSend.mockResolvedValue({})
+    await expect(sendMail({ ...msg, to: ['a@b.com', 'dror@admin', ' c@d.org '] })).resolves.toEqual({ sent: true })
+    expect(mockSend.mock.calls[0][0].to).toEqual(['a@b.com', 'c@d.org'])
   })
 
   it('reports a failure instead of throwing', async () => {

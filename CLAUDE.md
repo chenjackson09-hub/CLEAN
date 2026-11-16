@@ -19,7 +19,7 @@ npm run regeocode  # Re-geocode cleaners that have an address (supports --dry-ru
 
 Colocated `*.test.tsx` / `*.test.ts` run under Jest + Testing Library (jsdom). `jest.setup.ts` polyfills React Server Component / form APIs that the jsdom runtime lacks (`cache`, `useFormState`, `useFormStatus`) and provides a default `next/navigation` mock.
 
-The whole suite is green. `jest.setup.ts` sets a dummy `RESEND_API_KEY` when the env one is empty — `lib/resend.ts` builds `new Resend(key)` at import time and throws on an empty key, which used to silently take down every suite that imported the booking/chat/profile component chain (a dev `.env.local` has it empty). Add/refresh a colocated test when you change a component's behavior.
+The whole suite is green. Add/refresh a colocated test when you change a component's behavior.
 
 ## Architecture
 
@@ -549,13 +549,19 @@ New email/password accounts can be required to prove they own the address by ent
 
 `/login` has a "Forgot password?" link → `/forgot-password` (email → `supabase.auth.resetPasswordForEmail(email)`, then always on to `/reset-password?email=…`, whether or not the address has an account, so it can't be used to find out who is registered; only a rate limit / server error is shown) → `/reset-password` (the emailed 6-digit code + new password twice → `verifyOtp({type:'recovery'})` → `updateUser({password})` → `signOut()` → `/login?reset=1`, which shows a green "password changed" line). Minimum 6 characters (same as sign-up); wrong code, same-as-old and weak-password errors have their own messages; resend has a 60 s cooldown. Both pages are public in `middleware.ts` (`isPasswordResetPath`) and deliberately not "sign-in-only" paths, because entering the code signs the person in for a moment. **It is a code, not a link, so it works when the email is opened on a different device — but it needs the Supabase template: Authentication → Email Templates → "Reset password" must contain `{{ .Token }}`** (the default sends a link, which this flow doesn't use). Strings: `auth.login.forgot/resetDone`, `auth.forgot.*`, `auth.reset.*` (EN + HE; the Hebrew is unreviewed). Google-only accounts can use it too (it adds a password).
 
-### Cancellation emails (the app's own email; needs SMTP_USER / SMTP_PASS in Vercel)
+### App emails: cancellations, requests, account decisions, admin alerts (need SMTP_USER / SMTP_PASS in Vercel)
 
 When a **confirmed** clean is cancelled, the OTHER person also gets an email (host cancels → cleaner; cleaner cancels → host). A withdrawn pending request, an auto-closed sibling or a slot-delete cancel only gets the bell notification. `cancelBooking` (host) and `cancelClean` (cleaner) call `lib/cancellationEmail.ts` `sendCancellationEmail(admin, result)` right after `cancelBookingCore` succeeds — it is called from the two actions, **not** from `lib/cancellation.ts`, because that file is also imported by client components and the mailer loads Node network modules. Best-effort: never throws, the cancel is done whether or not the email goes out (it is awaited, so a cancel takes a second or two longer).
 - **Two separate email systems exist.** Sign-up / password codes are sent by **Supabase itself** (its SMTP settings in the dashboard). The app's own messages go through **`lib/mailer.ts`** (`sendMail`, plain SMTP via `nodemailer`): env `SMTP_USER` + `SMTP_PASS` (required; a Gmail address + app password works, spaces in the app password are stripped), optional `SMTP_HOST` (default `smtp.gmail.com`), `SMTP_PORT` (465), `MAIL_FROM_NAME` ("Clean"). Not set → `{ sent: false, reason: 'not_configured' }` and nothing is sent. Moving to a domain sender later = change the env vars only.
 - **The message** (`buildCancellationEmail`, pure, tested) is ONE email in **both languages, Hebrew first** (the server doesn't know the recipient's language): who cancelled (a host sees the cleaner as "First L."), date and start time, the reason label, the canceller's own note, and links — chat, the cancelled booking, and for a host whose cleaner cancelled an upcoming clean "find another cleaner" (`/browse?rebook=<id>`). **PRIVACY: never the street address or the booking notes.** Everything typed by a person is HTML-escaped. Links use `lib/siteOrigin.ts` `publicOrigin()` (`NEXT_PUBLIC_SITE_URL` unless it is localhost, else Vercel's production URL; unknown → no links). An account whose "email" isn't a real address is skipped.
 - **Check it is set up:** signed in as an admin, open `/api/admin/mail-test` — it sends one test message to that admin's own address and returns JSON (`configured`, `sent`, `error`).
-- **The older `lib/resend.ts` emails (booking accepted/declined, new request, application approved/rejected) are untouched and almost certainly NOT being delivered** (sender `noreply@resend.dev`, no verified domain) — and their text is out of date (the "accepted" one still prints the cleaner's phone number and the street). Don't simply point them at the new mailer; rewrite them first.
+- **The other emails (`lib/appEmails.ts`, layout in `lib/emailLayout.ts`; all bilingual, Hebrew first, best-effort, awaited):**
+  - cleaner ← **new request** (`createBooking` → `emailNewRequest`; "you have 24 hours"; a flexible-days frame sends ONE email for the clean, not one per day — skipped when another pending request with the same `clean_group_id` already exists);
+  - host ← **accepted / declined** (`respondToBooking` → `emailRequestAnswered`) and **no answer in 24 h** (`lib/expireRequests.ts`, lazily like the bell; two sweeps racing could send it twice);
+  - cleaner / host ← **account approved / not approved / needs info** (`updateApplicationStatus`, `updateCustomerApprovalStatus` → `emailAccountDecision`). **Admin notes are never put in an email** (the old code did; they are admin-only);
+  - every admin ← **a finished sign-up waiting for approval** (`saveOnboarding` on submit → `emailAdminsNewSignup`) and **a new support message** (`sendSupportMessage` → `emailAdminsSupportMessage`, first 600 characters). One message to all admin accounts with a real address.
+  - PRIVACY for all of them: no street address, no phone number, no booking notes. Adding one = a pure `build…Email` + a `email…` sender in `lib/appEmails.ts` (wrapped in `safely`), called from the server action.
+  - Not emailed (bell only): withdrawn pending requests, auto-closed sibling requests, slot changes, ratings, chat messages, "clean tomorrow". `lib/resend.ts` (the old, never-delivered emails that printed the phone number and street) is deleted.
 - Hebrew text is mine and unreviewed. No test drives the two actions end to end; the real Gmail send is unverified until the env vars are set (the library was exercised against a local test SMTP server).
 
 ### Auto-refresh (host and cleaner pages)
@@ -596,7 +602,7 @@ Cleaners enter a free-text `address` (persisted in `cleaners.address`) plus a `s
 
 ### Email notifications
 
-`lib/resend.ts` exports typed functions for each notification event (booking accepted/declined, application approved/rejected, new booking request). These are called from Server Actions. Email failure is caught and swallowed — it must not block the primary mutation.
+The app's own emails go through `lib/mailer.ts` (SMTP, see "App emails" below) — `lib/resend.ts` and the `resend` package were removed. Email failure is caught and swallowed: it must never block the action that caused it.
 
 ### Support / help widget
 
@@ -644,7 +650,7 @@ Required in `.env`:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_SITE_URL`
-- `RESEND_API_KEY`
+- `SMTP_USER`, `SMTP_PASS` (the app's own emails; optional `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM_NAME`)
 
 - **`next.config.js` derives the `next/image` allowed host from `NEXT_PUBLIC_SUPABASE_URL`** (parses its hostname into `images.remotePatterns`), so avatars/gallery load without a hard-coded host. A stale hard-coded host here previously blocked every Supabase image with *"hostname … is not configured under images"*. There must be **only one** Next config file — a redundant empty `next.config.mjs` was removed because, if picked up, it would wipe this image config and the WSL webpack-polling. Changing `next.config.js` requires a dev-server **restart** (not just hot reload). It also sets `experimental.serverActions.bodySizeLimit: '10mb'` (see the avatar note below).
 

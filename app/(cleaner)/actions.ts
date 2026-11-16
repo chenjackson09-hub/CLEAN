@@ -14,10 +14,7 @@ import { resolvePlace } from "@/lib/localities/resolve";
 import { notify, profileNames } from "@/lib/notifications";
 import { shortName } from "@/lib/chatFormat";
 import { sendCancellationEmail } from "@/lib/cancellationEmail";
-import {
-  sendBookingAccepted,
-  sendBookingDeclined,
-} from "@/lib/resend";
+import { emailRequestAnswered } from "@/lib/appEmails";
 
 function timeToMinutes(t: string): number {
   const [h, m] = t.slice(0, 5).split(":").map(Number);
@@ -586,44 +583,6 @@ export async function updateAvailability(id: string, startTime: string, endTime:
   return { success: true };
 }
 
-async function sendBookingEmail(
-  booking: { customer_id: string; scheduled_date: string; scheduled_start: string; address: string },
-  response: "accepted" | "declined",
-  cleanerId: string,
-) {
-  const supabase = await createClient();
-  const admin = createAdminClient();
-
-  const [{ data: customerAuth }, { data: customerProfile }, { data: cleanerProfile }] =
-    await Promise.all([
-      admin.auth.admin.getUserById(booking.customer_id),
-      supabase.from("profiles").select("full_name").eq("id", booking.customer_id).single(),
-      supabase.from("profiles").select("full_name, phone").eq("id", cleanerId).single(),
-    ]);
-
-  const customerEmail = customerAuth?.user?.email;
-  if (!customerEmail || !customerProfile || !cleanerProfile) return;
-
-  if (response === "accepted") {
-    await sendBookingAccepted({
-      customerEmail,
-      customerName: customerProfile.full_name ?? "there",
-      cleanerName: cleanerProfile.full_name ?? "Your cleaner",
-      cleanerPhone: cleanerProfile.phone ?? "",
-      scheduledDate: booking.scheduled_date,
-      scheduledStart: booking.scheduled_start,
-      address: booking.address,
-    });
-  } else {
-    await sendBookingDeclined({
-      customerEmail,
-      customerName: customerProfile.full_name ?? "there",
-      cleanerName: cleanerProfile.full_name ?? "Your cleaner",
-      scheduledDate: booking.scheduled_date,
-    });
-  }
-}
-
 export async function respondToBooking(
   bookingId: string,
   response: "accepted" | "declined"
@@ -820,8 +779,15 @@ export async function respondToBooking(
     }
   }
 
-  // Fire and forget — email failure must not delay the booking response
-  sendBookingEmail(booking, response, user.id).catch(() => {});
+  // The host also gets an email with the answer (best-effort, never fails the response).
+  await emailRequestAnswered(createAdminClient(), {
+    kind: response,
+    bookingId,
+    hostId: booking.customer_id,
+    cleanerId: user.id,
+    date: booking.scheduled_date,
+    time: booking.scheduled_start,
+  });
 
   // Note: intentionally NOT calling revalidatePath here at all. Any revalidatePath
   // inside a Server Action forces the *current* route (/cleaner/requests) to refetch

@@ -13,7 +13,8 @@ export type MailResult =
   | { sent: true }
   | { sent: false; reason: 'not_configured' | 'bad_recipient' | 'failed'; error?: string }
 
-export type MailMessage = { to: string; subject: string; html: string; text: string }
+// `to` may be several addresses (one message to all of them, e.g. every admin).
+export type MailMessage = { to: string | string[]; subject: string; html: string; text: string }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const SEND_TIMEOUT_MS = 10_000
@@ -41,7 +42,8 @@ export function isEmailAddress(value: string | null | undefined): value is strin
 export async function sendMail(message: MailMessage): Promise<MailResult> {
   const c = config()
   if (!c.user || !c.pass) return { sent: false, reason: 'not_configured' }
-  if (!isEmailAddress(message.to)) return { sent: false, reason: 'bad_recipient' }
+  const recipients = (Array.isArray(message.to) ? message.to : [message.to]).filter(isEmailAddress).map((a) => a.trim())
+  if (recipients.length === 0) return { sent: false, reason: 'bad_recipient' }
   try {
     // Loaded only when a message is really sent, so nothing else pays for it.
     const mod = await import('nodemailer')
@@ -58,7 +60,7 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
     })
     const send = transport.sendMail({
       from: { name: c.fromName, address: c.user },
-      to: message.to.trim(),
+      to: recipients,
       subject: message.subject,
       html: message.html,
       text: message.text,

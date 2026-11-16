@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { geocodeAddress } from "@/lib/geocode"
-import { sendNewBookingRequest } from "@/lib/resend"
+import { emailNewRequest } from "@/lib/appEmails"
 import { cancelBookingCore } from "@/lib/cancellation"
 import { sendCancellationEmail } from "@/lib/cancellationEmail"
 import { saveRating } from "@/lib/ratings"
@@ -380,10 +380,6 @@ export async function createBooking(data: {
 
   if (error) return { error: error.message }
 
-  // Notify the cleaner of the new request — fire and forget, must not block or
-  // fail the booking if email delivery has a problem.
-  notifyCleanerOfBooking(adminClient, supabase, data.cleaner_id, user.id, data).catch(() => {})
-
   // In-app bell for the cleaner.
   const hostNames = await profileNames(adminClient, [user.id])
   await notify(adminClient, {
@@ -392,6 +388,14 @@ export async function createBooking(data: {
     actorId: user.id,
     data: { name: hostNames.get(user.id) ?? '', date: data.scheduled_date, time: data.scheduled_start.slice(0, 5) },
     href: '/cleaner/requests',
+  })
+  // ...and an email, because they have 24 hours and may not open the app (best-effort).
+  await emailNewRequest(adminClient, {
+    hostId: user.id,
+    cleanerId: data.cleaner_id,
+    date: data.scheduled_date,
+    time: data.scheduled_start,
+    groupId: data.clean_group_id ?? null,
   })
 
   revalidatePath("/bookings")
@@ -534,34 +538,6 @@ export async function acknowledgeAllBookingsSeen(bookingIds: string[]): Promise<
 
   revalidatePath("/bookings")
   return { success: true }
-}
-
-async function notifyCleanerOfBooking(
-  adminClient: ReturnType<typeof createAdminClient>,
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  cleanerId: string,
-  customerId: string,
-  data: { service_type: string; scheduled_date: string; scheduled_start: string; address: string },
-) {
-  const [{ data: cleanerAuth }, { data: cleanerProfile }, { data: customerProfile }] =
-    await Promise.all([
-      adminClient.auth.admin.getUserById(cleanerId),
-      supabase.from("profiles").select("full_name").eq("id", cleanerId).single(),
-      supabase.from("profiles").select("full_name").eq("id", customerId).single(),
-    ])
-
-  const cleanerEmail = cleanerAuth?.user?.email
-  if (!cleanerEmail) return
-
-  await sendNewBookingRequest({
-    cleanerEmail,
-    cleanerName: cleanerProfile?.full_name ?? "there",
-    customerName: customerProfile?.full_name ?? "A customer",
-    scheduledDate: data.scheduled_date,
-    scheduledStart: data.scheduled_start,
-    address: data.address,
-    serviceType: data.service_type,
-  })
 }
 
 // Customer rates the cleaner of a completed booking (1-5, numbers only for now).

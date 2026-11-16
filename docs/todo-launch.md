@@ -15,12 +15,11 @@
 - The three old GitHub Personal Access Tokens were deleted.
 
 ## A. Needs you
-1. **Turn on cancellation emails (built, waiting for you):** in Vercel → the CLEAN project → Settings → Environment Variables add `SMTP_USER` (the Gmail address that sends the codes) and `SMTP_PASS` (a Gmail app password), then redeploy. Check by opening `/api/admin/mail-test` while signed in as an admin, then cancel a confirmed test clean and look for the email.
+1. **Turn on the app's emails (built, waiting for you):** in Vercel → the CLEAN project → Settings → Environment Variables add `SMTP_USER` (the Gmail address that sends the codes) and `SMTP_PASS` (a Gmail app password), then push/redeploy. Check by opening `/api/admin/mail-test` while signed in as an admin. This switches on: cancellation emails, new request → cleaner, accepted / declined / no answer → host, account approved / not approved → the person, and admin alerts for new sign-ups and support messages.
 3. **Hebrew review:** a native speaker should read all new Hebrew text (host questions, generated paragraph, notifications, the email-code and cancel-registration text, legal pages).
 6. **Attach the final agreement** — send the real Terms / Privacy text (lawyer-reviewed) → replace `lib/legal/content.ts` and set `LEGAL_DRAFT = false`.
 
 ## B. Not built yet — decide
-- **Older app emails** (booking accepted / declined, new request, application approved / rejected in `lib/resend.ts`) are probably not being delivered and their text is out of date. Decide whether to rewrite them onto the new mailer.
 - **Email sender:** the code emails currently go out through the owner's own Gmail. Before real users: move to a dedicated sender (a Gmail account made for the app, or a domain + Resend). SMS not built (needs Twilio).
 - **Areas:** do NOT open the Northern Hula Valley region without an explicit go-ahead.
 
