@@ -87,7 +87,7 @@ export default async function CustomerProfilePage({
       <BackLink fromDashboard={fromDashboard} />
 
       <HostProfileCard
-        fullName={profile.full_name ?? "Customer"}
+        fullName={profile.full_name ?? "Host"}
         avatarUrl={profile.avatar_url}
         customer={visibleCustomer}
         homeNotesLocked={!confirmed}

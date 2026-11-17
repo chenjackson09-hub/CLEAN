@@ -70,6 +70,40 @@ export async function notify(admin: SupabaseClient, inputs: NotifyInput | Notify
   }
 }
 
+// Like notify() for ONE one-shot notification, but says whether it was really new (true) or had
+// already been written (false) — so a follow-up such as an email is sent exactly once, by
+// whoever wrote the bell entry first. Needs `once` + `bookingId`, or a `dedupeKey`. Never throws.
+export async function notifyNew(admin: SupabaseClient, input: NotifyInput): Promise<boolean> {
+  const dedupe = input.dedupeKey ?? (input.once && input.bookingId ? `${input.kind}:${input.bookingId}` : null)
+  if (!input.userId || !dedupe) return false
+  try {
+    const avatars = await avatarsFor(admin, [input.actorId])
+    const { data, error } = await admin
+      .from('notifications')
+      .upsert(
+        [{
+          user_id: input.userId,
+          kind: input.kind,
+          actor_id: input.actorId ?? null,
+          booking_id: input.bookingId ?? null,
+          data: { ...(input.data ?? {}), ...(input.actorId && avatars.get(input.actorId) ? { avatar: avatars.get(input.actorId) as string } : {}) },
+          href: input.href,
+          dedupe_key: dedupe,
+        }],
+        { onConflict: 'user_id,dedupe_key', ignoreDuplicates: true },
+      )
+      .select('id')
+    if (error) {
+      console.error('notifyNew: insert failed', error.message)
+      return false
+    }
+    return (data ?? []).length > 0
+  } catch (e) {
+    console.error('notifyNew: failed', e)
+    return false
+  }
+}
+
 // id -> avatar_url for the people a batch of notifications is about. Never throws.
 async function avatarsFor(admin: SupabaseClient, ids: (string | null | undefined)[]): Promise<Map<string, string>> {
   const unique = Array.from(new Set(ids.filter((x): x is string => !!x)))

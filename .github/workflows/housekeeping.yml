@@ -1,0 +1,30 @@
+# Calls the app's housekeeping every half hour, so that requests with no answer close on time and
+# reminders go out even when nobody has the app open (see lib/housekeeping.ts).
+#
+# Optional hardening: add a repository secret CRON_SECRET here (Settings → Secrets and variables →
+# Actions) AND the same value as an environment variable CRON_SECRET in Vercel. Without it the
+# address is open but harmless to call (everything it does is once-only).
+# When the site moves to its own domain, set a repository variable SITE_URL (same Settings page).
+#
+# Note: GitHub pauses scheduled workflows in a repository with no activity for 60 days, and runs
+# can start a few minutes late. Opening the app still does the same work as a backstop.
+name: Housekeeping
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+jobs:
+  housekeeping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call the app
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          curl --fail --silent --show-error --max-time 90 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL:-https://clean-roan.vercel.app}/api/cron/housekeeping"

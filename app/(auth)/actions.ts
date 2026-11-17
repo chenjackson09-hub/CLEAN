@@ -120,38 +120,12 @@ export async function signIn(formData: FormData) {
   redirect(profile?.role ? (ROLE_HOME[profile.role as UserRole] ?? "/login") : "/login");
 }
 
-export async function signUp(
-  formData: FormData,
-  role: UserRole
-) {
-  const supabase = await createClient();
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-
-  const { error } = await supabase.auth.signUp({ email, password });
-  if (error) return { error: error.message };
-
-  if (role === "cleaner") {
-    redirect("/register/cleaner");
-  }
-
-  // Customer: profile row will be created on first sign-in via database trigger.
-  // Send them to login so they can confirm email and sign in.
-  redirect("/login");
-}
-
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   // Land on the shared "signed out" screen (public route) instead of jumping
   // straight to /login — used by the cleaner/customer/admin nav sign-out.
   redirect("/signed-out");
-}
-
-export async function signOutToRegister() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/register");
 }
 
 // "Cancel my registration": for someone who started signing up and wants out for good (typed the

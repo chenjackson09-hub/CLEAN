@@ -1,4 +1,4 @@
-# To-do list before the pilot — updated 2026-11-16
+# To-do list before the pilot — updated 2026-11-17
 
 ## Done
 - GitHub: pushing works through GitHub Desktop (repo folder `~/Documents/CLEAN`, NOT the old `~/Documents/GitHub/CLEAN`). Live site deploys from `main` on Vercel.
@@ -13,6 +13,7 @@
 - Forgot password is LIVE and tested by the owner (code by email: /forgot-password → /reset-password; Supabase "Reset password" template shows the code). Issues #8 / #28 can be closed.
 - Admin accounts: the owner's own admin is `chenjackson09+admin@gmail.com` (reset codes arrive in the personal inbox), spare admin `cindyclean.noreply@gmail.com`. The old `dror@admin` account (no real inbox, password once shared) was deleted, which also closes the "reset the owner's password" item.
 - The three old GitHub Personal Access Tokens were deleted.
+- Emails for the core loop (new request, accepted / declined / no answer, account decisions, admin alerts, cancellations), a scheduled housekeeping job (GitHub Actions, every half hour), friendly error pages, "Host" wording in English, app name on the signed-out screens, 8-character minimum password, dead code removed.
 
 ## A. Needs you
 1. **Turn on the app's emails (built, waiting for you):** in Vercel → the CLEAN project → Settings → Environment Variables add `SMTP_USER` (the Gmail address that sends the codes) and `SMTP_PASS` (a Gmail app password), then push/redeploy. Check by opening `/api/admin/mail-test` while signed in as an admin. This switches on: cancellation emails, new request → cleaner, accepted / declined / no answer → host, account approved / not approved → the person, and admin alerts for new sign-ups and support messages.

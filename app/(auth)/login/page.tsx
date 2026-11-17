@@ -6,6 +6,7 @@ import { signIn } from "../actions";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
+import { BrandMark } from "@/components/BrandMark";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath, POST_LOGIN_COOKIE } from "@/lib/safeRedirect";
 
@@ -95,7 +96,8 @@ export default function LoginPage() {
         </div>
       )}
       <div className="w-full max-w-md bg-white rounded-3xl shadow p-8">
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <BrandMark />
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.login.title")}</h1>

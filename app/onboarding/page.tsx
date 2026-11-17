@@ -5,6 +5,7 @@ import { TERMS_VERSION } from '@/lib/legal/content'
 import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/lib/i18n/LanguageToggle'
+import { BrandMark } from '@/components/BrandMark'
 import { createClient } from '@/lib/supabase/client'
 import { completeOnboarding } from '@/app/(auth)/actions'
 
@@ -74,7 +75,8 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#75C9C8]/20 via-white to-[#80A1D4]/20">
       <div className="w-full max-w-md bg-white rounded-3xl shadow p-8">
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <BrandMark />
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('onboarding.title')}</h1>

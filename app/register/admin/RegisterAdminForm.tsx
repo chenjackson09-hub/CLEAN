@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/lib/i18n/LanguageToggle'
+import { BrandMark } from '@/components/BrandMark'
+import { MIN_PASSWORD_LENGTH } from '@/lib/passwordRules'
 import { redeemAdminInvite } from './actions'
 
 export function RegisterAdminForm() {
@@ -67,7 +69,8 @@ export function RegisterAdminForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow p-8">
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <BrandMark />
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.registerAdmin.title')}</h1>
@@ -112,7 +115,7 @@ export function RegisterAdminForm() {
               type="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               disabled={loading}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -128,7 +131,7 @@ export function RegisterAdminForm() {
               type="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               disabled={loading}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

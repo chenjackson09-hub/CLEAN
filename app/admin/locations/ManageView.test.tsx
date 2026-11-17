@@ -42,12 +42,12 @@ describe('ManageView', () => {
     expect(screen.getByRole('button', { name: /Total locations/ })).toHaveTextContent('1,264')
     expect(screen.getByRole('button', { name: /Open locations/ })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: /Registered cleaners/ })).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByText(/2 customers and 0 cleaners haven’t chosen their area/)).toBeInTheDocument()
+    expect(screen.getByText(/2 hosts and 0 cleaners haven’t chosen their area/)).toBeInTheDocument()
   })
 
   it('a card filters the table through the URL', () => {
     setup([row({})])
-    fireEvent.click(screen.getByRole('button', { name: /Waiting customers/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Waiting hosts/ }))
     expect(push).toHaveBeenCalledWith(expect.stringContaining('users=waiting_customers'))
     expect(push.mock.calls[0][0]).not.toContain('status=')
   })
@@ -79,7 +79,7 @@ describe('ManageView', () => {
   it('links the details panel to the existing Customers and Cleaners pages, remembering this view', () => {
     setup([row({})])
     fireEvent.click(screen.getByRole('button', { expanded: false }))
-    const customers = screen.getByRole('link', { name: /View customers/ })
+    const customers = screen.getByRole('link', { name: /View hosts/ })
     expect(customers.getAttribute('href')).toMatch(/^\/admin\/customers\?locality=l1&back=/)
     expect(decodeURIComponent(customers.getAttribute('href')!.split('back=')[1])).toBe('/admin/locations?status=open')
   })

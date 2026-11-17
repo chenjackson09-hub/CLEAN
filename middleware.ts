@@ -67,7 +67,10 @@ export async function middleware(request: NextRequest) {
   // an account exists. Returns geography only.
   const isLocalitySearch = pathname === '/api/localities/search'
 
-  if (!user && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isPasswordResetPath && !isCallbackPath && !isLocalitySearch) {
+  // The scheduled housekeeping job has no signed-in person; the route checks its own secret.
+  const isCronPath = pathname.startsWith('/api/cron/')
+
+  if (!user && !isCronPath && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isPasswordResetPath && !isCallbackPath && !isLocalitySearch) {
     // Remember where they were headed (e.g. a booking link from a calendar event)
     // so sign-in can take them straight back. Validated again when it's used.
     const loginUrl = new URL('/login', request.url)

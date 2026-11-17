@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "CLEAN",
+  title: "Clean",
   description: "Clean — book verified cleaners near you.",
 };
 

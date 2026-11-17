@@ -66,7 +66,7 @@ describe('ApplicationsList', () => {
     expect(screen.getByText('Pending Customer')).toBeInTheDocument()
     expect(screen.queryByText('Pending Customer')?.closest('a')).toBeNull()
     expect(screen.getByText('Cleaner')).toBeInTheDocument()
-    expect(screen.getByText('Customer')).toBeInTheDocument()
+    expect(screen.getByText('Host')).toBeInTheDocument()
   })
 
   it('shows inline approve/reject buttons for a pending application without needing to expand the row', () => {

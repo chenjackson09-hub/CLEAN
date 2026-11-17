@@ -8,6 +8,8 @@ import Link from "next/link";
 import type { UserRole } from "@/types/database";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
+import { BrandMark } from "@/components/BrandMark";
+import { MIN_PASSWORD_LENGTH } from "@/lib/passwordRules";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -80,6 +82,10 @@ export default function RegisterPage() {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(t("auth.register.passwordTooShort", { n: MIN_PASSWORD_LENGTH }));
+      return;
+    }
     if (password !== confirmPassword) {
       setError(t("auth.register.passwordMismatch"));
       return;
@@ -169,7 +175,8 @@ export default function RegisterPage() {
       )}
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow p-8">
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <BrandMark />
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.register.title")}</h1>
@@ -241,10 +248,11 @@ export default function RegisterPage() {
               name="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               disabled={loading}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
+            <p className="mt-1 text-xs text-gray-500">{t("auth.register.passwordHint", { n: MIN_PASSWORD_LENGTH })}</p>
           </div>
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.confirmPassword")}</label>
@@ -254,7 +262,7 @@ export default function RegisterPage() {
               name="confirmPassword"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               disabled={loading}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />

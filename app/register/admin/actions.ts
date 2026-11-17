@@ -1,5 +1,6 @@
 'use server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { MIN_PASSWORD_LENGTH } from '@/lib/passwordRules'
 
 export async function redeemAdminInvite(input: {
   token: string
@@ -13,8 +14,8 @@ export async function redeemAdminInvite(input: {
   if (!token) return { error: 'Missing invite token.' }
   if (!email) return { error: 'Email is required.' }
   if (!full_name) return { error: 'Name is required.' }
-  if (!input.password || input.password.length < 6) {
-    return { error: 'Password must be at least 6 characters.' }
+  if (!input.password || input.password.length < MIN_PASSWORD_LENGTH) {
+    return { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` }
   }
 
   const admin = createAdminClient()

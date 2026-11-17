@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
+import { BrandMark } from "@/components/BrandMark";
 import { createClient } from "@/lib/supabase/client";
 
 // Step 1 of "I forgot my password": ask for the email and have Supabase email a code
@@ -43,7 +44,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow p-8">
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <BrandMark />
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.forgot.title")}</h1>

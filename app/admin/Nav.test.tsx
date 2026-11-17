@@ -12,14 +12,14 @@ describe('Nav', () => {
     window.localStorage.clear()
   })
 
-  it('renders links for all applications, booking requests, matches, cleaners, and customers', () => {
+  it('renders links for all applications, booking requests, matches, cleaners, and hosts', () => {
     render(<LanguageProvider><Nav currentUserName="Test Admin" /></LanguageProvider>)
 
     expect(screen.getByRole('link', { name: 'All Applications' })).toHaveAttribute('href', '/admin/applications')
     expect(screen.getByRole('link', { name: 'Booking Requests' })).toHaveAttribute('href', '/admin/bookings')
     expect(screen.getByRole('link', { name: 'Matches' })).toHaveAttribute('href', '/admin/matches')
     expect(screen.getByRole('link', { name: 'Cleaners' })).toHaveAttribute('href', '/admin/cleaners')
-    expect(screen.getByRole('link', { name: 'Customers' })).toHaveAttribute('href', '/admin/customers')
+    expect(screen.getByRole('link', { name: 'Hosts' })).toHaveAttribute('href', '/admin/customers')
   })
 
   it('renders the Ads, Push Notifications, and Ratings links, and Support before Ratings', () => {

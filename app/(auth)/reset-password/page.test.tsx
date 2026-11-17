@@ -59,7 +59,7 @@ describe('ResetPasswordPage', () => {
   it('does not call Supabase when the password is too short', async () => {
     render(<ResetPasswordPage />)
     await fill('123456', 'abc', 'abc')
-    expect(await screen.findByText(/at least 6 characters/i)).toBeInTheDocument()
+    expect(await screen.findByText(/at least 8 characters/i)).toBeInTheDocument()
     expect(mockVerify).not.toHaveBeenCalled()
   })
 

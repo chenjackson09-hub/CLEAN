@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
+import { BrandMark } from "@/components/BrandMark";
+import { MIN_PASSWORD_LENGTH } from "@/lib/passwordRules";
 import { createClient } from "@/lib/supabase/client";
 
 const RESEND_SECONDS = 60;
-const MIN_PASSWORD = 6; // same minimum as sign-up
+const MIN_PASSWORD = MIN_PASSWORD_LENGTH; // same minimum as sign-up
 
 // Step 2: the emailed code + a new password. Entering the code (type "recovery") signs the
 // person in for a moment; we set the new password and then sign them out again, so they log in
@@ -96,7 +98,8 @@ function ResetForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow p-8">
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <BrandMark />
           <LanguageToggle />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("auth.reset.title")}</h1>

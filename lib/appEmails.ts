@@ -12,6 +12,7 @@ import { bilingualEmail, hello } from '@/lib/emailLayout'
 //   host     ← their request was accepted / declined / got no answer
 //   anyone   ← their account was approved / not approved / needs more information
 //   admins   ← someone finished signing up and waits for approval; a new support message
+//   reminders (from the scheduled job only): a request about to close; a clean tomorrow
 // (A cancelled confirmed clean has its own file, lib/cancellationEmail.ts.)
 // SERVER ONLY. Every sender is best-effort and never throws: an email that can't be sent must
 // never fail the action that caused it. PRIVACY: no street address, no phone number, no booking
@@ -163,6 +164,54 @@ export function buildAccountDecisionEmail(i: { name: string; role: 'cleaner' | '
     {
       hello: hi.en,
       lines: ["We can't approve your Clean account at this time.", 'If you have questions, reach us with the Help button in the app.'],
+    },
+  )
+}
+
+export function buildCleanTomorrowEmail(i: {
+  recipientRole: 'host' | 'cleaner'
+  recipientName: string
+  otherName: string
+  date: string
+  time: string
+  origin: string | null
+  otherUserId: string
+  bookingId: string
+}): Built {
+  const hi = hello(i.recipientName)
+  const other = i.otherName.trim()
+  const chat = i.origin ? chatLink(i.recipientRole, i.otherUserId, i.origin) : ''
+  const details = i.origin ? bookingLink(i.recipientRole, i.bookingId, i.origin) : ''
+  return bilingualEmail(
+    `Clean: תזכורת, ניקיון מחר / Reminder: cleaning tomorrow (${shortDateLabel(i.date, 'en')}, ${i.time})`,
+    {
+      hello: hi.he,
+      lines: [`תזכורת: הניקיון${other ? ` עם ${other}` : ''} מחר, ${shortDateLabel(i.date, 'he')} בשעה ${i.time}.`, 'לתיאום פרטים אחרונים אפשר להשתמש בצ׳אט באפליקציה.'],
+      links: [{ href: chat, label: other ? `לשיחה עם ${other}` : 'לשיחה באפליקציה' }, { href: details, label: 'לפרטי הניקיון' }],
+    },
+    {
+      hello: hi.en,
+      lines: [`Reminder: your cleaning${other ? ` with ${other}` : ''} is tomorrow, ${shortDateLabel(i.date, 'en')} at ${i.time}.`, "For any last details, use the app's chat."],
+      links: [{ href: chat, label: other ? `Open your chat with ${other}` : 'Open the chat' }, { href: details, label: 'See the cleaning' }],
+    },
+  )
+}
+
+export function buildRequestExpiringEmail(i: { cleanerName: string; hostName: string; date: string; time: string; origin: string | null }): Built {
+  const hi = hello(i.cleanerName)
+  const host = i.hostName.trim()
+  const link = i.origin ? `${i.origin}/cleaner/requests` : ''
+  return bilingualEmail(
+    `Clean: בקשה עומדת להיסגר / A request is about to close (${shortDateLabel(i.date, 'en')})`,
+    {
+      hello: hi.he,
+      lines: [`הבקשה${host ? ` מאת ${host}` : ''} ל${shortDateLabel(i.date, 'he')} בשעה ${i.time} תיסגר בעוד כמה שעות.`, 'נא לאשר או לדחות אותה לפני כן.'],
+      links: [{ href: link, label: 'לצפייה בבקשה' }],
+    },
+    {
+      hello: hi.en,
+      lines: [`${host ? `${host}'s request` : 'A request'} for ${shortDateLabel(i.date, 'en')} at ${i.time} closes in a few hours.`, 'Please accept or decline it before then.'],
+      links: [{ href: link, label: 'See the request' }],
     },
   )
 }
@@ -324,5 +373,50 @@ export function emailAdminsSupportMessage(admin: SupabaseClient, o: { userId: st
     if (to.length === 0) return { sent: false, reason: 'bad_recipient' }
     const names = await profileNames(admin, [o.userId])
     return sendMail({ to, ...buildAdminSupportEmail({ name: names.get(o.userId) ?? '', role: o.role, message: o.message, origin: publicOrigin() }) })
+  })
+}
+
+// Either side ← "your cleaning is tomorrow" (sent by the scheduled job, once per booking and person).
+export function emailCleanTomorrow(
+  admin: SupabaseClient,
+  o: { recipientId: string; recipientRole: 'host' | 'cleaner'; otherId: string; bookingId: string; date: string; time: string },
+): Promise<EmailOutcome> {
+  return safely('clean tomorrow', async () => {
+    const to = await emailOf(admin, o.recipientId)
+    if (!to) return { sent: false, reason: 'bad_recipient' }
+    const names = await profileNames(admin, [o.recipientId, o.otherId])
+    const other = names.get(o.otherId) ?? ''
+    return sendMail({
+      to,
+      ...buildCleanTomorrowEmail({
+        recipientRole: o.recipientRole,
+        recipientName: names.get(o.recipientId) ?? '',
+        otherName: o.recipientRole === 'host' ? shortName(other) : other,
+        date: o.date,
+        time: o.time.slice(0, 5),
+        origin: publicOrigin(),
+        otherUserId: o.otherId,
+        bookingId: o.bookingId,
+      }),
+    })
+  })
+}
+
+// Cleaner ← a request they haven't answered closes within a few hours (scheduled job, once).
+export function emailRequestExpiring(admin: SupabaseClient, o: { cleanerId: string; hostId: string; date: string; time: string }): Promise<EmailOutcome> {
+  return safely('request expiring', async () => {
+    const to = await emailOf(admin, o.cleanerId)
+    if (!to) return { sent: false, reason: 'bad_recipient' }
+    const names = await profileNames(admin, [o.cleanerId, o.hostId])
+    return sendMail({
+      to,
+      ...buildRequestExpiringEmail({
+        cleanerName: names.get(o.cleanerId) ?? '',
+        hostName: names.get(o.hostId) ?? '',
+        date: o.date,
+        time: (o.time ?? '').slice(0, 5),
+        origin: publicOrigin(),
+      }),
+    })
   })
 }
