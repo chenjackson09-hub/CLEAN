@@ -225,6 +225,7 @@ export default function RequestGroupRow({
                   data={buildBookingSummaryData(selected, homeInfo, hourlyRate)}
                   cleanerName={group.name}
                   lang={lang}
+                  readerIsHost={false}
                 />
 
                 {selected.duration_flexible && <p className="text-sm font-semibold text-red-600">{t("req_duration_not_sure")}</p>}

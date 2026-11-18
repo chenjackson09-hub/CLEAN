@@ -21,3 +21,20 @@ describe('BookingRequestSummary typography', () => {
     }
   })
 })
+
+describe('BookingRequestSummary wording for who is reading', () => {
+  it('speaks to the host as "you" by default', () => {
+    render(<BookingRequestSummary data={data} cleanerName="Noa R." lang="en" />)
+    expect(screen.getByText('Your home')).toBeInTheDocument()
+    expect(screen.getByText('Will you be home?')).toBeInTheDocument()
+    expect(screen.getByText('Note for Noa R.')).toBeInTheDocument()
+  })
+
+  it('says "the host" when a cleaner or admin reads it', () => {
+    render(<BookingRequestSummary data={data} cleanerName="Host One" lang="en" readerIsHost={false} />)
+    expect(screen.getByText('The home')).toBeInTheDocument()
+    expect(screen.getByText('Will the host be home?')).toBeInTheDocument()
+    expect(screen.getByText('Note from the host')).toBeInTheDocument()
+    expect(screen.queryByText('Your home')).toBeNull()
+  })
+})

@@ -64,7 +64,7 @@ export function BookingDetailCard({ booking, onClose }: { booking: BookingResult
             </div>
           )}
 
-          <BookingRequestSummary data={summaryData} cleanerName={booking.cleaner_name} lang={lang} />
+          <BookingRequestSummary data={summaryData} cleanerName={booking.cleaner_name} lang={lang} readerIsHost={false} />
           {booking.duration_flexible && (
             <p className="text-sm font-semibold text-amber-600">{t('admin.bookings.notSure')}</p>
           )}

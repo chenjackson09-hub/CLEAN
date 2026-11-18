@@ -47,6 +47,9 @@ const STRINGS = {
     petsWillBeHome: "Will be home",
     petsAway: "Will not be home",
     willYouBeHome: "Will you be home?",
+    hostHome: "The home",
+    hostWillBeHome: "Will the host be home?",
+    hostNote: "Note from the host",
     yes: "Yes",
     no: "No",
     note: (name: string) => `Note for ${name}`,
@@ -72,6 +75,9 @@ const STRINGS = {
     petsWillBeHome: "יהיו בבית",
     petsAway: "לא יהיו בבית",
     willYouBeHome: "האם תהיו בבית?",
+    hostHome: "הבית",
+    hostWillBeHome: "האם המארח יהיה בבית?",
+    hostNote: "הערה מהמארח",
     yes: "כן",
     no: "לא",
     note: (name: string) => `הערה עבור ${name}`,
@@ -95,12 +101,16 @@ export default function BookingRequestSummary({
   data,
   cleanerName,
   lang = "en",
+  readerIsHost = true,
 }: {
   data: BookingSummaryData;
   cleanerName: string;
   lang?: "en" | "he";
+  /** False for a cleaner or admin reading it: labels say "the host" instead of "you". */
+  readerIsHost?: boolean;
 }) {
   const s = STRINGS[lang];
+  const fromHost = !readerIsHost;
   const dateFormatted = new Date(data.scheduledDate + "T00:00:00").toLocaleDateString(
     lang === "he" ? "he-IL" : "en-US",
     { weekday: "short", day: "numeric", month: "short", year: "numeric" }
@@ -131,7 +141,7 @@ export default function BookingRequestSummary({
       </div>
 
       {(homeLine || homeDetails) && (
-        <Row label={s.yourHome}>
+        <Row label={fromHost ? s.hostHome : s.yourHome}>
           {homeLine && <p>{homeLine}</p>}
           {homeDetails && <p className="text-sm text-gray-500">{homeDetails}</p>}
         </Row>
@@ -160,17 +170,17 @@ export default function BookingRequestSummary({
             )}
           </Row>
           {data.hostPresent != null && (
-            <Row label={s.willYouBeHome}>{data.hostPresent ? s.yes : s.no}</Row>
+            <Row label={fromHost ? s.hostWillBeHome : s.willYouBeHome}>{data.hostPresent ? s.yes : s.no}</Row>
           )}
         </div>
       )}
 
       {!data.petsLabel && data.hostPresent != null && (
-        <Row label={s.willYouBeHome}>{data.hostPresent ? s.yes : s.no}</Row>
+        <Row label={fromHost ? s.hostWillBeHome : s.willYouBeHome}>{data.hostPresent ? s.yes : s.no}</Row>
       )}
 
       {data.notes && (
-        <Row label={s.note(cleanerName)}>
+        <Row label={fromHost ? s.hostNote : s.note(cleanerName)}>
           <p className="text-gray-700 bg-gray-50 rounded-xl px-3 py-2.5 whitespace-pre-line">{data.notes}</p>
         </Row>
       )}

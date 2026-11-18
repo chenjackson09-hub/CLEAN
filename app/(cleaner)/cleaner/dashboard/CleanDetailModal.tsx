@@ -158,6 +158,7 @@ export default function CleanDetailModal({
             data={summaryData}
             cleanerName={booking.profiles?.full_name ?? t("req_customer")}
             lang={lang}
+            readerIsHost={false}
           />
           {booking.duration_flexible && (
             <p className="text-sm font-semibold text-red-600">{t("req_duration_not_sure")}</p>
