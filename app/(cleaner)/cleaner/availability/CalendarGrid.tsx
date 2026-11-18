@@ -505,6 +505,7 @@ export default function CalendarGrid({ slots: initialSlots, weeklySlots, booking
                 <button
                   key={dateStr}
                   data-date={dateStr}
+                  aria-label={`${day.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}${items.length ? `, ${items.length}` : ""}`}
                   onClick={() => openPanel(day)}
                   className={`flex flex-col items-center px-0.5 py-1.5 min-h-0 overflow-hidden rounded-xl shadow-md transition-colors ${today ? "ring-2 ring-black" : ""} ${colorClass}`}
                 >

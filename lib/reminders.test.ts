@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 
 // Chainable stand-in: `from(table)` answers by table, recording notification inserts.
-function fakeAdmin(opts: { localityId: string | null; placeError?: boolean; needs?: 'empty' | 'filled' | 'error'; unfinished?: boolean }) {
+function fakeAdmin(opts: { localityId: string | null; placeError?: boolean; needs?: 'empty' | 'filled' | 'error'; unfinished?: boolean; justFinished?: boolean }) {
   const inserted: Record<string, unknown>[] = []
   const chain = (data: unknown, error: unknown = null) => {
     const c: Record<string, unknown> = {}
@@ -21,7 +21,7 @@ function fakeAdmin(opts: { localityId: string | null; placeError?: boolean; need
           return { upsert: (rows: Record<string, unknown>[]) => { inserted.push(...rows); return Promise.resolve({ error: null }) } }
         }
         if (table === 'profiles') {
-          return chain({ onboarding_completed_at: opts.unfinished ? null : '2026-01-01T00:00:00Z' })
+          return chain({ onboarding_completed_at: opts.unfinished ? null : opts.justFinished ? new Date().toISOString() : '2026-01-01T00:00:00Z' })
         }
         if (table === 'customers' || table === 'cleaners') {
           if (opts.placeError) return chain(null, { message: 'column locality_id does not exist' })
@@ -81,6 +81,7 @@ describe('sendReminders — fill in the new household details', () => {
   it('says nothing once any answer exists, mid-sign-up, to cleaners, or without migration 0045', async () => {
     expect(await run({ localityId: 'loc-1', needs: 'filled' })).toHaveLength(0)
     expect(await run({ localityId: 'loc-1', needs: 'empty', unfinished: true })).toHaveLength(0)
+    expect(await run({ localityId: 'loc-1', needs: 'empty', justFinished: true })).toHaveLength(0)
     expect(await run({ localityId: 'loc-1', needs: 'empty' }, 'cleaner')).toHaveLength(0)
     expect(await run({ localityId: 'loc-1', needs: 'error' })).toHaveLength(0)
   })

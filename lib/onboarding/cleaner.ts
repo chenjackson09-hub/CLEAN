@@ -36,7 +36,7 @@ export type CleanerDraft = {
 
 export const EMPTY_CLEANER_DRAFT: CleanerDraft = {
   name: '', avatarUrl: null, birthD: '', birthM: '', birthY: '', localityId: null, loc: '', radius: '10',
-  freqType: 'num', freqVal: 3, freqOtherText: '', rate: '75', duration: '3', maxDuration: '5', maxDurationNoLimit: false,
+  freqType: 'num', freqVal: 3, freqOtherText: '', rate: '', duration: '3', maxDuration: '5', maxDurationNoLimit: false,
   services: [], serviceOtherText: '', matchTypes: [], matchOtherText: '', car: null, gas: null, gasAmt: '1', bio: '',
   experience: null, languages: [], languagesOther: '',
 }
@@ -154,7 +154,7 @@ export function cleanerRowsToDraft(profile: ProfileRow, cleaner: CleanerRow): Cl
     freqType,
     freqVal: typeof c.weekly_clean_target === 'number' && c.weekly_clean_target > 0 ? c.weekly_clean_target : 3,
     freqOtherText: freqType === 'other' ? weeklyOther : '',
-    rate: num(c.hourly_rate, '75'),
+    rate: num(c.hourly_rate, ''),
     duration: num(c.min_hours, '3'),
     maxDuration: num(c.max_hours, '5'),
     maxDurationNoLimit: maxNull,

@@ -4,6 +4,7 @@ import { shortName } from '@/lib/chatFormat'
 
 const ISRAEL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' })
 const EXPIRING_WITHIN_MS = 6 * 60 * 60 * 1000
+const NEW_HOST_GRACE_MS = 7 * 24 * 60 * 60 * 1000
 
 // Reminders can't come from a scheduled job (the project has none), so they are
 // raised lazily on each page load of the person they are for — the same trick
@@ -61,6 +62,10 @@ export async function sendReminders(userId: string, role: 'host' | 'cleaner'): P
           .eq('id', userId)
           .maybeSingle<{ onboarding_completed_at: string | null }>()
         const unfinished = !profErr && !!prof && prof.onboarding_completed_at == null
+        // Someone who only just finished sign-up has just seen (and maybe skipped)
+        // these questions — leave them alone for a week before asking again.
+        const finishedAt = prof?.onboarding_completed_at ? Date.parse(prof.onboarding_completed_at) : NaN
+        const justFinished = Number.isFinite(finishedAt) && Date.now() - finishedAt < NEW_HOST_GRACE_MS
         const answered =
           needs.household_type != null ||
           needs.usage_frequency != null ||
@@ -68,7 +73,7 @@ export async function sendReminders(userId: string, role: 'host' | 'cleaner'): P
           needs.flexibility != null ||
           (needs.extra_note ?? '').trim() !== '' ||
           (needs.preferred_days ?? []).length > 0
-        if (!unfinished && !answered) {
+        if (!unfinished && !justFinished && !answered) {
           await notify(admin, {
             userId,
             kind: 'complete_host_profile',

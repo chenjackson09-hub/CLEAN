@@ -68,7 +68,7 @@ const PREVIEW = STEPS.length - 1;
 const initialAnswers: Answers = {
   name: "", avatarUrl: null, photoFile: null, photoPreview: null, birthD: "", birthM: "", birthY: "",
   loc: "", locality: null, locManual: false, freqType: "num", freqVal: 3, freqOtherText: "",
-  rate: "75", duration: "3", maxDuration: "5", radius: "10", maxDurationNoLimit: false,
+  rate: "", duration: "3", maxDuration: "5", radius: "10", maxDurationNoLimit: false,
   services: [], serviceOtherText: "", matchTypes: [], matchOtherText: "", car: null, gas: null, gasAmt: "1", bio: "",
   experience: null, languages: [], languagesOther: "",
 };
@@ -465,7 +465,7 @@ export default function CleanerRegisterPage() {
             <label htmlFor="c-rate" className={label}>{tr("qRate")}</label>
             <div className="flex items-center gap-2">
               <span className="text-gray-500">₪</span>
-              <input id="c-rate" type="number" inputMode="decimal" value={answers.rate} onChange={(e) => set({ rate: e.target.value })} className="w-28 border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input id="c-rate" type="number" inputMode="decimal" placeholder="75" value={answers.rate} onChange={(e) => set({ rate: e.target.value })} className="w-28 border border-gray-300 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <span className="text-sm text-gray-500">/ {tr("perHour")}</span>
             </div>
             <p className="text-xs text-gray-500 mt-2">{tr("rateHint")}</p>

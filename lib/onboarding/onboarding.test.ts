@@ -97,7 +97,7 @@ describe('cleaner draft', () => {
   })
   it('a brand-new account (empty rows) resumes with the wizard defaults', () => {
     const back = cleanerRowsToDraft({ full_name: null, avatar_url: null }, {})
-    expect(back).toMatchObject({ name: '', rate: '75', duration: '3', maxDuration: '5', radius: '10', freqType: 'num', freqVal: 3, services: [] })
+    expect(back).toMatchObject({ name: '', rate: '', duration: '3', maxDuration: '5', radius: '10', freqType: 'num', freqVal: 3, services: [] })
     expect(cleanerRowsToDraft(null, null).name).toBe('')
   })
 })

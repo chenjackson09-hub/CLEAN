@@ -150,6 +150,7 @@ export function HostCalendar({ areaClosed, todayStr, hasLocation, locationError,
                   key={ci}
                   type="button"
                   data-date={date}
+                  aria-label={`${new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}${label ? `, ${label}` : ''}`}
                   aria-pressed={frameMode ? picked : undefined}
                   onClick={() => tap(date)}
                   className={`flex flex-col items-center px-0.5 py-1.5 min-h-0 overflow-hidden rounded-xl shadow-md transition-colors ${tone} ${ring} ${picked ? 'bg-blue-50' : ''}`}
