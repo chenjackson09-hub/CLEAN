@@ -8,6 +8,7 @@ import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
 import { hoursToMinutes } from "@/lib/hours";
+import DurationInput from "@/components/DurationInput";
 import dynamic from "next/dynamic";
 import LocalityPicker from "@/components/LocalityPicker";
 import type { PickedLocality } from "@/lib/localities/address";
@@ -166,36 +167,23 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
       {/* Min/max job length — paired side by side, one shared hint below both
           rather than each field carrying its own copy of the same sentence. */}
       <div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="min_job_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_min_job_length")}</label>
-            <input
-              id="min_job_hours"
-              type="number"
-              name="min_minutes"
-              inputMode="numeric"
-              step="5"
-              min="20"
-              max="1440"
-              defaultValue={hoursToMinutes(Number(cleaner?.min_hours ?? 3))}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="max_hours" className="block text-base font-medium text-gray-700 mb-1">{t("prof_max_hours")}</label>
-            <input
-              id="max_hours"
-              type="number"
-              name="max_minutes"
-              inputMode="numeric"
-              step="5"
-              min="20"
-              max="1440"
-              defaultValue={cleaner?.max_hours != null ? hoursToMinutes(Number(cleaner.max_hours)) : ""}
-              placeholder={t("prof_no_limit")}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DurationInput
+            id="min_job"
+            name="min_minutes"
+            label={t("prof_min_job_length")}
+            lang={lang === "he" ? "he" : "en"}
+            defaultMinutes={hoursToMinutes(Number(cleaner?.min_hours ?? 3))}
+          />
+          <DurationInput
+            id="max_job"
+            name="max_minutes"
+            label={t("prof_max_hours")}
+            lang={lang === "he" ? "he" : "en"}
+            defaultMinutes={cleaner?.max_hours != null ? hoursToMinutes(Number(cleaner.max_hours)) : null}
+            allowNone
+            noneLabel={t("prof_no_limit")}
+          />
         </div>
         <p className="text-sm text-gray-400 mt-1">{t("prof_min_job_length_hint")}</p>
       </div>
