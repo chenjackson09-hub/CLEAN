@@ -79,7 +79,10 @@ export function HomeContent({ firstName, todayStr, confirmed, pending, past }: P
   // The cleaner's own area (e.g. "Beit Hillel"), not this booking's clean
   // address (the host's own place) — the point of showing a location is
   // "which cleaner is this," not "where does this booking happen."
-  const areaOf = (b: BookingResult) => (b.cleaner_address ? extractArea(b.cleaner_address) : null) ?? b.cleaner_address ?? ''
+  const areaOf = (b: BookingResult) =>
+    b.cleaner_area
+      ? (lang === 'he' ? b.cleaner_area.he : b.cleaner_area.en)
+      : (b.cleaner_address ? extractArea(b.cleaner_address) : null) ?? b.cleaner_address ?? ''
   const titleOf = (b: BookingResult) => {
     const area = areaOf(b)
     return area ? `${b.cleaner_name} — ${area}` : b.cleaner_name

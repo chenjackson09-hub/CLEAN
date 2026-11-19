@@ -5,6 +5,7 @@ import ProfileView from "./ProfileView";
 import ProfileForm from "./ProfileForm";
 import type { Profile, Cleaner } from "@/types/database";
 import type { PickedLocality } from "@/lib/localities/address";
+import type { AreaName } from "@/lib/localities/areaNames";
 
 interface Props {
   profile: Profile | null;
@@ -16,13 +17,15 @@ interface Props {
   // The cleaner's saved home point (geocoded from their address), for the work-area map.
   center?: { lat: number; lng: number } | null;
   locality?: PickedLocality | null;
+  // The chosen town in both languages, for the read-only view.
+  town?: AreaName | null;
 }
 
-export default function ProfileViewEdit({ profile, cleaner, startInEdit = false, center = null, locality = null }: Props) {
+export default function ProfileViewEdit({ profile, cleaner, startInEdit = false, center = null, locality = null, town = null }: Props) {
   const [editing, setEditing] = useState(startInEdit);
 
   if (editing) {
     return <ProfileForm profile={profile} cleaner={cleaner} center={center} locality={locality} onSaved={() => setEditing(false)} />;
   }
-  return <ProfileView profile={profile} cleaner={cleaner} center={center} onEdit={() => setEditing(true)} />;
+  return <ProfileView profile={profile} cleaner={cleaner} center={center} town={town} onEdit={() => setEditing(true)} />;
 }

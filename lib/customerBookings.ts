@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { BookingResult } from '@/lib/types/booking'
 import type { CustomerHomeInfo } from '@/lib/bookingSummary'
 import { closedReasonFor } from '@/lib/hostCalendar'
-import { fetchCustomerAreas } from '@/lib/localities/areaNames'
+import { fetchCleanerAreas, fetchCustomerAreas } from '@/lib/localities/areaNames'
 
 // Shared by /bookings and /home so the two pages' booking data can't drift —
 // same query, same cleaner-profile join, same rating lookup, same "expired
@@ -84,6 +84,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
   const profileMap = Object.fromEntries((cleanerProfiles ?? []).map(p => [p.id, p]))
   const rateMap = Object.fromEntries((cleanerRows ?? []).map(c => [c.id, c.hourly_rate]))
   const cleanerAddressMap = Object.fromEntries((cleanerRows ?? []).map(c => [c.id, c.address]))
+  const cleanerAreaMap = await fetchCleanerAreas(admin, cleanerIds)
 
   return (rawBookings ?? []).map(b => {
     const cleaner = profileMap[b.cleaner_id]
@@ -117,6 +118,7 @@ export async function fetchCustomerBookingResults(userId: string): Promise<Booki
       created_at: b.created_at,
       response_deadline: b.response_deadline ?? null,
       cleaner_address: cleanerAddressMap[b.cleaner_id] ?? null,
+      cleaner_area: cleanerAreaMap.get(b.cleaner_id) ?? null,
       status_reason: (scheduleMap.get(b.id)?.status_reason ?? null) as 'cleaner_unavailable' | null,
       availability_notice: scheduleMap.get(b.id)?.availability_notice ?? null,
       cancelled_by: cancelMap.get(b.id)?.cancelled_by ?? null,

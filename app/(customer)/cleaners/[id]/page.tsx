@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CleanerProfile } from './CleanerProfile'
 import { extractArea } from '@/lib/bookingArea'
+import { fetchCleanerAreas } from '@/lib/localities/areaNames'
 import { fetchCindyVerified } from '@/lib/cindyVerified'
 import { fetchExperienceRanges } from '@/lib/experience'
 import { fetchCleanerReviews } from '@/lib/cleanerReviews'
@@ -62,6 +63,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
     : NaN
   const presetDuration = Number.isFinite(parsedDuration) ? parsedDuration : undefined
 
+  const town = (await fetchCleanerAreas(admin, [cleaner.id])).get(cleaner.id)
   const cleanerResult: CleanerResult = {
     id: cleaner.id,
     full_name: profile?.full_name ?? 'Cleaner',
@@ -72,6 +74,7 @@ export default async function CleanerProfilePage({ params, searchParams }: Props
     years_experience: cleaner.years_experience ?? 0,
     languages: (cleaner.languages ?? []) as string[],
     area: extractArea((cleaner as { address?: string | null }).address ?? '') ?? undefined,
+    area_en: town?.en,
     distance_km: 0,
     rating_avg: (cleaner as { rating_avg?: number | null }).rating_avg ?? null,
     rating_count: (cleaner as { rating_count?: number }).rating_count ?? 0,

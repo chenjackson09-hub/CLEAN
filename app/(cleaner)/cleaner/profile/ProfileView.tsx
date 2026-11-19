@@ -9,6 +9,7 @@ import { lookingForLabels } from "@/lib/matchPreferences";
 import { extractArea } from "@/lib/bookingArea";
 import dynamic from "next/dynamic";
 import type { Profile, Cleaner } from "@/types/database";
+import { areaFor, type AreaName } from "@/lib/localities/areaNames";
 
 // Leaflet touches `window`, so the map is only ever loaded in the browser.
 const WorkAreaMap = dynamic(() => import("@/components/WorkAreaMap"), { ssr: false });
@@ -18,6 +19,7 @@ interface Props {
   cleaner: Cleaner | null;
   onEdit: () => void;
   center?: { lat: number; lng: number } | null;
+  town?: AreaName | null;
 }
 
 function ageFromBirthdate(birthdate: string | null): number | null {
@@ -30,7 +32,7 @@ function ageFromBirthdate(birthdate: string | null): number | null {
   return age;
 }
 
-export default function ProfileView({ profile, cleaner, onEdit, center = null }: Props) {
+export default function ProfileView({ profile, cleaner, onEdit, center = null, town = null }: Props) {
   const { t, lang } = useLang();
   const age = ageFromBirthdate(cleaner?.birthdate ?? null);
   const lookingFor = lookingForLabels(cleaner?.match_preferences, cleaner?.match_preference_other, {
@@ -40,7 +42,9 @@ export default function ProfileView({ profile, cleaner, onEdit, center = null }:
   });
   const missing = computeProfileMissing(t, cleaner, profile);
   const pct = profileCompletionPct(missing.length);
-  const area = cleaner?.address ? extractArea(cleaner.address) ?? cleaner.address : null;
+  const area = town
+    ? areaFor(town, lang === "he" ? "he" : "en")
+    : cleaner?.address ? extractArea(cleaner.address) ?? cleaner.address : null;
 
   return (
     <div className="bg-white rounded-3xl shadow-md p-6">

@@ -8,13 +8,11 @@ const mockPush = jest.fn()
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush, replace: jest.fn() }) }))
 
 const mockSignUp = jest.fn()
-const mockRpc = jest.fn()
-jest.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { signUp: (...a: unknown[]) => mockSignUp(...a), signInWithOAuth: jest.fn() }, rpc: (...a: unknown[]) => mockRpc(...a) }) }))
+jest.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { signUp: (...a: unknown[]) => mockSignUp(...a), signInWithOAuth: jest.fn() } }) }))
 
 beforeEach(() => {
   jest.clearAllMocks()
   localStorage.clear()
-  mockRpc.mockResolvedValue({ data: false, error: null })
   mockSignUp.mockResolvedValue({ data: { session: { access_token: 't' }, user: { id: 'u1' } }, error: null })
 })
 
@@ -46,6 +44,37 @@ describe('Register (account is created on the first screen)', () => {
     await user.click(screen.getByText('Cleaner'))
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/register/verify?email=a%40b.com'))
+  })
+
+  it('never says whether an email already has an account: it looks the same as a new one', async () => {
+    // Supabase answers a sign-up for a registered address with no error and no identities.
+    mockSignUp.mockResolvedValue({ data: { session: null, user: { id: 'fake', identities: [] } }, error: null })
+    const user = userEvent.setup()
+    render(<RegisterPage />)
+    await fill(user)
+    await user.click(screen.getByText('Cleaner'))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/register/verify?email=a%40b.com'))
+    expect(screen.queryByText(/already registered/i)).not.toBeInTheDocument()
+  })
+
+  it('treats an "already registered" error the same way (confirmation switched off)', async () => {
+    mockSignUp.mockResolvedValue({ data: { session: null, user: null }, error: { message: 'User already registered' } })
+    const user = userEvent.setup()
+    render(<RegisterPage />)
+    await fill(user)
+    await user.click(screen.getByText('Cleaner'))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/register/verify?email=a%40b.com'))
+    expect(screen.queryByText(/already registered/i)).not.toBeInTheDocument()
+  })
+
+  it('does not look the email up while typing', async () => {
+    const user = userEvent.setup()
+    render(<RegisterPage />)
+    await user.type(screen.getByLabelText(/^email/i), 'a@b.com')
+    await user.tab()
+    expect(screen.queryByText(/checking/i)).not.toBeInTheDocument()
   })
 
   it('stays on the page with a message when the account cannot be created', async () => {

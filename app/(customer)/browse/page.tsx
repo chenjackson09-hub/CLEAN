@@ -12,6 +12,7 @@ import { geocodeAddress } from '@/lib/geocode'
 import { parsePoint, distanceKm } from '@/lib/geo'
 import { estimateRoadKm } from '@/lib/roadDistance'
 import { extractArea } from '@/lib/bookingArea'
+import { fetchCleanerAreas } from '@/lib/localities/areaNames'
 import type { CleanerResult } from '@/lib/types/cleaner'
 import { closedReasonFor, type DayAvailEntry, type HostBooking, type HostBookingStatus, type RebookInfo } from '@/lib/hostCalendar'
 
@@ -248,6 +249,7 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
       const profileMap = new Map((profileRows ?? []).map(p => [p.id, p]))
       const verified = await fetchCindyVerified(admin, 'cleaners', ids)
       const experienceRanges = await fetchExperienceRanges(admin, ids)
+      const towns = await fetchCleanerAreas(admin, ids)
 
       // Every in-range cleaner once (nearest first); a day's list just points at them.
       cleaners = sortCleaners(
@@ -263,6 +265,7 @@ export default async function BrowsePage({ searchParams }: { searchParams?: { re
             years_experience: c.years_experience ?? 0,
             languages: (c.languages ?? []) as string[],
             area: extractArea((c as { address?: string | null }).address ?? '') ?? undefined,
+            area_en: towns.get(c.id)?.en,
             distance_km: distanceById.get(c.id) ?? 0,
             rating_avg: (c as { rating_avg?: number | null }).rating_avg ?? null,
             rating_count: (c as { rating_count?: number }).rating_count ?? 0,

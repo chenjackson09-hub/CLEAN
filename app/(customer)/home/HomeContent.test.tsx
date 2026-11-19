@@ -45,6 +45,17 @@ describe('HomeContent', () => {
     expect(container.innerHTML).not.toContain('100dvh')
   })
 
+  it('shows the cleaner’s town in English when they chose it from the list (not the Hebrew name in the address)', () => {
+    render(
+      <HomeContent
+        {...props}
+        confirmed={[booking({ id: 'c2', cleaner_name: 'Noa R.', cleaner_address: 'רחוב הגפן 3, בית הלל', cleaner_area: { he: 'בית הלל', en: 'Beit Hillel' }, scheduled_date: '2026-10-20' })]}
+      />,
+    )
+    expect(screen.getByText('Noa R. — Beit Hillel')).toBeInTheDocument()
+    expect(screen.queryByText(/בית הלל/)).not.toBeInTheDocument()
+  })
+
   it("shows the cleaner's own area (not the booking's clean address) on a later confirmed clean, with a month chip", () => {
     render(
       <HomeContent

@@ -54,19 +54,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [emailTaken, setEmailTaken] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
-
-  async function handleEmailBlur(e: React.FocusEvent<HTMLInputElement>) {
-    const email = e.target.value.trim();
-    if (!email || !email.includes("@")) return;
-    setCheckingEmail(true);
-    const supabase = createClient();
-    const { data: exists } = await supabase.rpc("email_exists", { check_email: email });
-    setCheckingEmail(false);
-    setEmailTaken(!!exists);
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,24 +82,24 @@ export default function RegisterPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { data: exists, error: checkErr } = await supabase.rpc("email_exists", { check_email: email });
-    if (checkErr) {
-      setError(checkErr.message);
-      setLoading(false);
-      return;
-    }
-    if (exists) {
-      setEmailTaken(true);
-      setError(t("auth.register.emailTaken"));
-      setLoading(false);
-      return;
-    }
 
     // The account is created RIGHT HERE (the role goes in as metadata so the signup trigger
     // builds the right profile rows). Everything the wizard collects next is saved step by
     // step, so a closed tab or a dropped connection never loses answers — and the password is
     // never kept in the browser. The person is approved by an admin only after they submit.
     const { data: created, error: signUpErr } = await supabase.auth.signUp({ email, password, options: { data: { role, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() } } });
+    // This page must never tell a stranger whether an email already has an account (that would
+    // let anyone list our users). An address that is already registered looks exactly like a new
+    // one: Supabase answers with no error and no identities (or, with confirmation off, an
+    // "already registered" error), and we send the person to the same code screen. That screen
+    // says what to do if no code arrives (log in, or reset the password).
+    const alreadyRegistered =
+      (!!created?.user && Array.isArray(created.user.identities) && created.user.identities.length === 0) ||
+      /already (been )?registered|already exists/i.test(signUpErr?.message ?? "");
+    if (alreadyRegistered) {
+      router.push(`/register/verify?email=${encodeURIComponent(email)}`);
+      return;
+    }
     if (signUpErr || !created.user) {
       setError(signUpErr?.message ?? t("auth.register.signUpFailed"));
       setLoading(false);
@@ -224,21 +212,10 @@ export default function RegisterPage() {
               required
               disabled={loading}
               onChange={() => {
-                if (emailTaken) setEmailTaken(false);
                 if (error) setError(null);
               }}
-              onBlur={handleEmailBlur}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
             />
-            {checkingEmail && (
-              <p className="text-xs text-gray-400 mt-1">{t("auth.register.checkingEmail")}</p>
-            )}
-            {emailTaken && !checkingEmail && (
-              <p className="text-sm text-red-600 mt-1">
-                {t("auth.register.emailTaken")}{" "}
-                <Link href="/login" className="underline font-medium">{t("auth.register.signIn")}</Link>
-              </p>
-            )}
           </div>
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">{t("auth.register.password")}</label>
@@ -276,7 +253,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={!role || loading || emailTaken || !agreed}
+            disabled={!role || loading || !agreed}
             className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
           >
             {loading ? (

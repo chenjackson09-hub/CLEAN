@@ -135,6 +135,12 @@ function VerifyForm() {
           </button>
           <Link href="/register" className="text-gray-500 hover:underline">{t("auth.verify.startOver")}</Link>
         </div>
+        <p className="mt-5 text-xs text-gray-500 text-center">
+          {t("auth.verify.noCodeHint")}{" "}
+          <Link href="/login" className="underline">{t("auth.register.signIn")}</Link>
+          {" · "}
+          <Link href="/forgot-password" className="underline">{t("auth.verify.forgot")}</Link>
+        </p>
       </div>
     </div>
   );

@@ -17,8 +17,8 @@ function useChipLang(): "en" | "he" {
 
 // "09:00 · 3h · Beit Hillel" — the area, not the full street address, keeps the
 // line short enough to fit on a phone.
-function detailLine(b: BookingWithCustomer, hoursUnit: string): string {
-  const area = extractArea(b.address ?? "") ?? b.address ?? "";
+function detailLine(b: BookingWithCustomer, hoursUnit: string, lang: "en" | "he"): string {
+  const area = b.area ? b.area[lang] : extractArea(b.address ?? "") ?? b.address ?? "";
   return [b.scheduled_start?.slice(0, 5), `${b.duration_hours}${hoursUnit}`, area].filter(Boolean).join(" · ");
 }
 
@@ -43,7 +43,7 @@ export function UpcomingCleanRow({
   const [open, setOpen] = useState(useSearchParams().get("booking") === booking.id);
 
   const day = daysUntil <= 0 ? t("dash_in_today") : t("dash_in_tomorrow");
-  const detail = detailLine(booking, t("req_h"));
+  const detail = detailLine(booking, t("req_h"), lang);
 
   return (
     <>
@@ -116,7 +116,7 @@ export function PastCleanRow({
         lang={lang}
         faded={completed || cancelled}
         title={booking.profiles?.full_name ?? t("req_customer")}
-        subtitle={detailLine(booking, t("req_h"))}
+        subtitle={detailLine(booking, t("req_h"), lang)}
         trailing={
           cancelled ? (
             <span className="inline-block rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-600 whitespace-nowrap">

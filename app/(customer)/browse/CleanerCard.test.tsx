@@ -28,6 +28,12 @@ describe('CleanerCard', () => {
     expect(screen.getByText('Tel Aviv')).toBeInTheDocument()
   })
 
+  it('shows the English spelling of the town in English, not the Hebrew name stored in the address', () => {
+    render(<CleanerCard cleaner={{ ...baseCleaner, area: 'בית הלל', area_en: 'Beit Hillel' }} />)
+    expect(screen.getByText('Beit Hillel')).toBeInTheDocument()
+    expect(screen.queryByText('בית הלל')).not.toBeInTheDocument()
+  })
+
   it('does not render languages (those are profile-page only)', () => {
     render(<CleanerCard cleaner={baseCleaner} />)
     expect(screen.queryByText(/EN, HE/i)).not.toBeInTheDocument()

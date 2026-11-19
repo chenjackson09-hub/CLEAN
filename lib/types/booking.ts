@@ -68,6 +68,9 @@ export type BookingResult = {
   // host's own place). Used to show "which area is this cleaner based in"
   // next to their name, since `address` is the wrong field for that.
   cleaner_address?: string | null
+  // That cleaner's town in both languages (when they chose it from the list), so the English
+  // screen shows "Beit Hillel" instead of the Hebrew name stored in the address.
+  cleaner_area?: import('@/lib/localities/areaNames').AreaName | null
   // When the request was created — drives "requested {n} days ago" on the
   // customer's /home pending section. Optional since older call sites don't
   // select it.

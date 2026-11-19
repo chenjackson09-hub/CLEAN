@@ -217,7 +217,7 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
             {cleaner.area && (
               <p className="mt-1 flex items-center gap-1.5 text-gray-500">
                 <IconPin className="w-4 h-4 shrink-0" />
-                <span className="truncate">{cleaner.area}</span>
+                <span className="truncate">{lang === 'he' ? cleaner.area : cleaner.area_en ?? cleaner.area}</span>
               </p>
             )}
             {cleaner.cindy_verified && (

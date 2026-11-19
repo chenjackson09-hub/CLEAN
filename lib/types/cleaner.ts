@@ -16,6 +16,9 @@ export type CleanerResult = {
   languages: string[]
   distance_km: number
   area?: string
+  // The same town in English (display spelling), when the cleaner chose it from the official list.
+  // `area` is what is stored in their address, which is the Hebrew name.
+  area_en?: string
   email?: string
   phone?: string
   // Average rating out of 5 (null when never rated) and how many ratings it's

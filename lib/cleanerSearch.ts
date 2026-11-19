@@ -4,7 +4,7 @@ export function filterByLocation(cleaners: CleanerResult[], location: string): C
   if (!location.trim()) return cleaners
 
   const query = location.trim().toLowerCase()
-  return cleaners.filter(c => c.area?.toLowerCase().includes(query))
+  return cleaners.filter(c => (c.area?.toLowerCase().includes(query) || c.area_en?.toLowerCase().includes(query)))
 }
 
 export function sortCleaners(cleaners: CleanerResult[], sort: string): CleanerResult[] {

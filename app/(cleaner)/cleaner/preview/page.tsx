@@ -9,6 +9,7 @@ import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
 import { extractArea } from "@/lib/bookingArea";
+import { fetchCleanerAreas } from "@/lib/localities/areaNames";
 import { fetchCindyVerified } from "@/lib/cindyVerified";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -59,6 +60,7 @@ export default async function PreviewPage() {
   const completionPct = profileCompletionPct(missing.length);
   const missingSummary = missing.length > 0 ? t(lang, "prof_still_missing").replace("{list}", missing.join(", ")) : undefined;
 
+  const town = (await fetchCleanerAreas(createAdminClient(), [user.id])).get(user.id);
   const cleanerResult: CleanerResult = {
     id: user.id,
     full_name: fullName,
@@ -69,6 +71,7 @@ export default async function PreviewPage() {
     years_experience: cleaner?.years_experience ?? 0,
     languages: (cleaner?.languages ?? []) as string[],
     area: extractArea(cleaner?.address ?? '') ?? undefined,
+    area_en: town?.en,
     distance_km: 0,
     rating_avg: cleaner?.rating_avg ?? null,
     rating_count: cleaner?.rating_count ?? 0,
