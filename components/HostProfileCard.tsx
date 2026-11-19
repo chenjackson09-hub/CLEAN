@@ -64,7 +64,7 @@ const STR = {
     cleansDone: (n: number) => (n === 1 ? "ניקיון אחד הושלם" : `${n} ניקיונות הושלמו`),
     cleansRated: (n: number) => (n === 1 ? "ניקיון אחד" : `${n} ניקיונות`),
     dwelling: { apartment: "דירה", house: "בית", guesthouse: "צימר / Airbnb", office: "משרד", villa: "וילה", other: "אחר" } as Record<string, string>,
-    bedrooms: (n: number) => (n === 1 ? "חדר שינה אחד" : `${n} חדרי שינה`),
+    bedrooms: (n: number) => (n === 1 ? "חדר אחד" : `${n} חדרים`),
     rooms: (n: number) => (n === 1 ? "חדר אחד" : `${n} חדרים`),
     bathrooms: (n: number) => (n === 1 ? "חדר אמבטיה אחד" : `${n} חדרי אמבטיה`),
     floorsInHome: (n: number) => (n === 1 ? "קומה אחת בבית" : `${n} קומות בבית`),

@@ -64,7 +64,7 @@ const STRINGS = {
     durationValue: (n: number) => (n === 1 ? "שעה" : n === 2 ? "שעתיים" : `${n} שעות`),
     yourHome: "הבית שלכם",
     dwelling: { apartment: "דירה", house: "בית", guesthouse: "צימר / Airbnb", office: "משרד", villa: "וילה", other: "בית" },
-    bedrooms: (n: number) => (n === 1 ? "חדר שינה אחד" : `${n} חדרי שינה`),
+    bedrooms: (n: number) => (n === 1 ? "חדר אחד" : `${n} חדרים`),
     bathrooms: (n: number) => (n === 1 ? "חדר אמבטיה אחד" : `${n} חדרי אמבטיה`),
     cleaningType: "סוג ניקיון",
     cleaningTypeRegular: "ניקיון רגיל",

@@ -108,7 +108,7 @@ describe('HostProfileCard privacy and honesty', () => {
       } as unknown as Customer
       render(<HostProfileCard fullName="Dana Cohen" avatarUrl={null} customer={c} reviews={[]} homeNotesLocked />)
       expect(await screen.findByText('עלינו')).toBeInTheDocument()
-      for (const t of ['הבית', 'דירה', 'חדר שינה אחד', '2 חדרי אמבטיה', 'קומה אחת בבית', 'נפש אחת', 'צרכים אופייניים', 'פעמיים בחודש', 'בערך 3 שעות', 'ג׳, ה׳', 'מטבח', 'ניקיון רגיל ויסודי', 'כלב (2)', 'ניקיון אחד הושלם', 'אין חוות דעת עדיין.']) {
+      for (const t of ['הבית', 'דירה', 'חדר אחד', '2 חדרי אמבטיה', 'קומה אחת בבית', 'נפש אחת', 'צרכים אופייניים', 'פעמיים בחודש', 'בערך 3 שעות', 'ג׳, ה׳', 'מטבח', 'ניקיון רגיל ויסודי', 'כלב (2)', 'ניקיון אחד הושלם', 'אין חוות דעת עדיין.']) {
         expect(screen.getByText(t)).toBeInTheDocument()
       }
       expect(screen.getByText(/נחשפות אחרי שמאשרים בקשה/)).toBeInTheDocument()
