@@ -44,6 +44,7 @@ export default function ErrorScreen({ kind, onRetry }: { kind: "not-found" | "er
             </button>
           )}
           {/* A full page load on purpose: "/" sends each person to their own home screen. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/"
             className={
