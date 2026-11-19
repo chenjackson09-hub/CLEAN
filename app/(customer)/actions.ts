@@ -357,7 +357,7 @@ export async function createBooking(data: {
   const deadline = new Date()
   deadline.setHours(deadline.getHours() + 24)
 
-  const { error } = await supabase.from("bookings").insert({
+  const { data: created, error } = await supabase.from("bookings").insert({
     customer_id: user.id,
     cleaner_id: data.cleaner_id,
     service_type: data.service_type,
@@ -376,16 +376,26 @@ export async function createBooking(data: {
     clean_group_id: data.clean_group_id ?? null,
     status: "pending",
     response_deadline: deadline.toISOString(),
-  })
+  }).select("id").maybeSingle()
 
   if (error) return { error: error.message }
 
-  // In-app bell for the cleaner.
+  // In-app bell for the cleaner. One entry per clean: a host who opened several
+  // days (a frame) sends one request per day, but the cleaner sees one need — the
+  // frame id is the dedupe key, so only the first day creates an entry (same rule
+  // the email already follows). A single-day request is keyed by its booking.
   const hostNames = await profileNames(adminClient, [user.id])
+  const createdId = (created as { id: string } | null)?.id ?? null
   await notify(adminClient, {
     userId: data.cleaner_id,
     kind: 'request_received',
     actorId: user.id,
+    bookingId: createdId,
+    ...(data.clean_group_id
+      ? { dedupeKey: `request_received:frame:${data.clean_group_id}` }
+      : createdId
+        ? { once: true }
+        : {}),
     data: { name: hostNames.get(user.id) ?? '', date: data.scheduled_date, time: data.scheduled_start.slice(0, 5) },
     href: '/cleaner/requests',
   })

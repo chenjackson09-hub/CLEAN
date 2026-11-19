@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { releaseBookingTime } from '@/lib/availability'
 import { notify, profileNames, type NotificationKind } from '@/lib/notifications'
 import { shortName } from '@/lib/chatFormat'
+import { clearSettledRequestNotifications } from '@/lib/notificationCleanup'
 
 // ── Reasons ────────────────────────────────────────────────────────────────
 // Fixed keys (also check-constrained in the database, migration 0036) so the
@@ -229,6 +230,8 @@ export async function cancelBookingCore(
   } catch (e) {
     console.error('cancel: notification failed', e)
   }
+  // The cleaner's "new request" entries about this host are settled now (if nothing else is pending).
+  await clearSettledRequestNotifications(admin, [{ cleanerId: booking.cleaner_id, hostId: booking.customer_id }])
 
   return {
     ok: true,

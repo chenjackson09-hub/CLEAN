@@ -13,6 +13,7 @@ import { cancelBookingCore } from "@/lib/cancellation";
 import { saveRating } from "@/lib/ratings";
 import { resolvePlace } from "@/lib/localities/resolve";
 import { notify, profileNames } from "@/lib/notifications";
+import { clearSettledRequestNotifications } from "@/lib/notificationCleanup";
 import { shortName } from "@/lib/chatFormat";
 import { sendCancellationEmail } from "@/lib/cancellationEmail";
 import { emailRequestAnswered } from "@/lib/appEmails";
@@ -457,6 +458,13 @@ async function applySlotChangeImpact(opts: {
       })),
     );
 
+    if (mode === "deleted") {
+      await clearSettledRequestNotifications(
+        admin,
+        affected.map((b) => ({ cleanerId, hostId: (b as { customer_id: string }).customer_id })),
+      );
+    }
+
     await admin.from("schedule_events").insert({
       kind: mode === "deleted" ? "slot_deleted" : "slot_changed",
       cleaner_id: cleanerId,
@@ -682,6 +690,9 @@ export async function respondToBooking(
     });
   }
 
+  // This request is answered: the cleaner's "new request" bell entries about this host are settled.
+  await clearSettledRequestNotifications(createAdminClient(), [{ cleanerId: user.id, hostId: booking.customer_id }]);
+
   // On approval, remove the booked time from the cleaner's availability so the
   // remaining hours stay open (e.g. 08:00–12:00 booked 08:00–10:00 → 10:00–12:00).
   if (response === "accepted") {
@@ -766,6 +777,12 @@ export async function respondToBooking(
         })),
       );
     }
+
+    // Other cleaners' requests from this host were just closed: their "new request" entries are stale too.
+    await clearSettledRequestNotifications(
+      admin,
+      (siblings ?? []).map((sib) => ({ cleanerId: sib.cleaner_id as string, hostId: booking.customer_id })),
+    );
 
     // The match is now confirmed: make sure the host<->cleaner conversation
     // exists (one per pair, reused for every rebooking) and that this booking

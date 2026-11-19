@@ -209,8 +209,9 @@ export default function ChatView({
   const stickToBottom = useRef(true);
 
   useEffect(() => setMounted(true), []);
-  // Being in the chat means its message notification has been seen.
-  useEffect(() => {
+  // Being in the chat means its message notification has been seen — now, and for every
+  // message that arrives while it stays open and in view (see the realtime effect below).
+  const markChatNotificationsRead = useCallback(() => {
     void createClient()
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -218,6 +219,15 @@ export default function ChatView({
       .is("read_at", null)
       .contains("data", { conversation: conversationId });
   }, [conversationId]);
+  useEffect(() => {
+    markChatNotificationsRead();
+    // Coming back to this tab: whatever arrived while it was hidden has been seen too.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") markChatNotificationsRead();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [markChatNotificationsRead]);
   useEffect(() => {
     try {
       setHideBookings(localStorage.getItem("chatHideBookings") === "1");
@@ -260,6 +270,18 @@ export default function ChatView({
           setMessages((prev) => mergeMessages(prev, [m]));
         }
       )
+      // A message in THIS chat just raised a bell entry for me: I'm looking at the chat,
+      // so it's already seen (skipped while the tab is hidden — that one stays unread).
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${currentUserId}` },
+        (payload) => {
+          const n = payload.new as { kind?: string; data?: { conversation?: string } | null };
+          if (n.kind === "chat_message" && n.data?.conversation === conversationId && document.visibilityState === "visible") {
+            markChatNotificationsRead();
+          }
+        }
+      )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "conversation_bookings", filter: `conversation_id=eq.${conversationId}` },
@@ -280,7 +302,7 @@ export default function ChatView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, currentUserId, currentUserRole, router]);
+  }, [conversationId, currentUserId, currentUserRole, router, markChatNotificationsRead]);
 
   const fullTimeline = useMemo(() => buildTimeline(messages, cards, mounted), [messages, cards, mounted]);
   // Without the booking summaries, a date divider that only introduced a summary

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, profileNames } from "@/lib/notifications";
+import { clearSettledRequestNotifications } from "@/lib/notificationCleanup";
 import { shortName } from "@/lib/chatFormat";
 import { emailRequestAnswered } from "@/lib/appEmails";
 
@@ -48,6 +49,7 @@ export async function sweepExpiredRequests(admin: SupabaseClient, opts: { cleane
       once: true,
     })),
   );
+  await clearSettledRequestNotifications(admin, closed.map((b) => ({ cleanerId: b.cleaner_id, hostId: b.customer_id })));
   // ...and by email (best-effort), since a host waiting for an answer may not open the app.
   for (const b of closed) {
     await emailRequestAnswered(admin, {
