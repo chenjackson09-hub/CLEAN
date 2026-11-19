@@ -469,6 +469,7 @@ export default function CustomerRegisterPage() {
                     labels={{ camera: tr("photoTakePhoto"), library: tr("photoCameraRoll"), computer: tr("photoChooseComputer") }}
                     sizeClass="w-20 h-20"
                     fallback="🐾"
+                    frame={false}
                   />
                 </div>
               </div>

@@ -2,12 +2,13 @@
 
 import { useRef, useState } from "react"
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage"
+import AvatarCropModal from "@/components/AvatarCropModal"
 
 // A round photo button with the "take a photo / camera roll / choose from computer" menu both
 // wizards use. The picked file is converted to a JPEG first (iPhone HEIC) and handed back with
 // a preview URL; uploading is up to the caller.
 export default function PhotoPicker({
-  preview, onPick, labels, sizeClass = "w-24 h-24", fallback = "📷", alt = "",
+  preview, onPick, labels, sizeClass = "w-24 h-24", fallback = "📷", alt = "", frame = true,
 }: {
   preview: string | null
   onPick: (file: File, previewUrl: string) => void
@@ -15,8 +16,11 @@ export default function PhotoPicker({
   sizeClass?: string
   fallback?: string
   alt?: string
+  // Let the person drag/zoom the picture into a square before it is used (profile pictures).
+  frame?: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const [framing, setFraming] = useState<File | null>(null)
   const input = useRef<HTMLInputElement>(null)
 
   function choose(mode: "camera" | "library" | "computer") {
@@ -31,7 +35,9 @@ export default function PhotoPicker({
     const file = e.target.files?.[0]
     if (!file) return
     const normalized = await normalizeImageToJpeg(file)
-    onPick(normalized, URL.createObjectURL(normalized))
+    if (input.current) input.current.value = "" // so choosing the same file again still fires
+    if (frame) setFraming(normalized)
+    else onPick(normalized, URL.createObjectURL(normalized))
   }
 
   return (
@@ -50,6 +56,16 @@ export default function PhotoPicker({
           <button type="button" onClick={() => choose("library")} className="w-full text-start px-4 py-2.5 text-sm hover:bg-gray-50">{labels.library}</button>
           <button type="button" onClick={() => choose("computer")} className="w-full text-start px-4 py-2.5 text-sm hover:bg-gray-50">{labels.computer}</button>
         </div>
+      )}
+      {framing && (
+        <AvatarCropModal
+          file={framing}
+          onCancel={() => setFraming(null)}
+          onDone={(cropped) => {
+            setFraming(null)
+            onPick(cropped, URL.createObjectURL(cropped))
+          }}
+        />
       )}
       <input ref={input} type="file" accept="image/*" className="hidden" onChange={onChange} data-testid="photo-input" />
     </div>

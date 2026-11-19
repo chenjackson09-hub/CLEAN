@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { normalizeImageToJpeg } from '@/lib/image/normalizeImage'
+import AvatarCropModal from '@/components/AvatarCropModal'
 import LocalityPicker from '@/components/LocalityPicker'
 import type { PickedLocality } from '@/lib/localities/address'
 import { HomeVibeFields, HostIntroEditor, HouseholdFields, NeedsFields } from '@/components/onboarding/HostNeedsFields'
@@ -64,6 +65,7 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(defaultValues.avatar_url)
+  const [framing, setFraming] = useState<{ file: File; input: HTMLInputElement } | null>(null)
   const petPhotoInputRef = useRef<HTMLInputElement>(null)
   const [petPhotoPreview, setPetPhotoPreview] = useState<string | null>(defaultValues.pet_photo_url)
   // Pets toggle drives whether the dog/cat + count fields show; dwelling type
@@ -111,12 +113,23 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
     // Convert HEIC/large phone photos to a small JPEG, then write it back into
     // the input so the form submits the converted file (not the raw HEIC).
     const normalized = await normalizeImageToJpeg(file)
-    if (normalized !== file) {
+    // Let the person frame it (drag + zoom) before it is used.
+    setFraming({ file: normalized, input })
+  }
+
+  function finishFraming(cropped: File) {
+    const input = framing?.input
+    setFraming(null)
+    if (input && typeof DataTransfer !== 'undefined') {
       const dt = new DataTransfer()
-      dt.items.add(normalized)
+      dt.items.add(cropped)
       input.files = dt.files
     }
-    setPreview(URL.createObjectURL(normalized))
+    setPreview(URL.createObjectURL(cropped))
+  }
+  function cancelFraming() {
+    if (framing?.input) framing.input.value = ''
+    setFraming(null)
   }
 
   async function handlePetPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -134,6 +147,7 @@ export function ProfileForm({ defaultValues, action, onSaved }: Props) {
 
   return (
     <div className="flex flex-col gap-6 max-w-lg mx-auto">
+      {framing && <AvatarCropModal file={framing.file} onDone={finishFraming} onCancel={cancelFraming} />}
       <h1 className="text-xl font-bold text-gray-900">{t('profile.title')}</h1>
       {/* Profile header card */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex items-center gap-5">

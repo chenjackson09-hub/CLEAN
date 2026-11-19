@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
 import { normalizeImageToJpeg } from '@/lib/image/normalizeImage'
+import AvatarCropModal from '@/components/AvatarCropModal'
 import { updateAdminName, updateAdminAvatar } from './actions'
 import { InlineEditableText } from './InlineEditableText'
 
@@ -24,6 +25,7 @@ export function AdminProfileView({
   const [lastName, setLastName] = useState(initialLastName)
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl)
   const [uploading, setUploading] = useState(false)
+  const [framing, setFraming] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
   function errorText(key: string) {
@@ -53,12 +55,16 @@ export function AdminProfileView({
     e.target.value = ''
     if (!file) return
     setUploadError(null)
-    setUploading(true)
 
     // Converts HEIC/large phone photos to a small JPEG (never throws — falls
     // back to the original file on failure), matching the customer/cleaner
-    // profile forms' upload path.
-    const normalized = await normalizeImageToJpeg(file)
+    // profile forms' upload path. Then the admin frames it before it is uploaded.
+    setFraming(await normalizeImageToJpeg(file))
+  }
+
+  async function uploadFramed(normalized: File) {
+    setFraming(null)
+    setUploading(true)
     const localPreview = URL.createObjectURL(normalized)
     setAvatarUrl(localPreview)
 
@@ -78,6 +84,7 @@ export function AdminProfileView({
 
   return (
     <div className="max-w-lg mx-auto flex flex-col gap-6">
+      {framing && <AvatarCropModal file={framing} onDone={uploadFramed} onCancel={() => setFraming(null)} />}
       <h1 className="text-xl font-bold text-gray-900">{t('adminProfile.title')}</h1>
 
       <div className="flex flex-col items-center gap-2">

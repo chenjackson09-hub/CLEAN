@@ -63,7 +63,10 @@ describe('ProfileForm', () => {
     const file = new File(['avatar-bytes'], 'avatar.png', { type: 'image/png' })
     fireEvent.change(fileInput, { target: { files: [file] } })
 
-    // Preview is set after the async normalize step resolves.
+    // The photo is first shown in the "frame your photo" window; jsdom can't decode images, so
+    // the framing step keeps the photo as picked (the real crop is covered in AvatarCropModal.test).
+    const dialog = await screen.findByRole('dialog', { name: /frame your photo/i })
+    fireEvent.load(dialog.querySelector('img') as HTMLImageElement)
     expect(await screen.findByRole('img', { name: /profile/i })).toHaveAttribute('src', 'blob:preview')
   })
 

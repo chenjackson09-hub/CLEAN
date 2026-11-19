@@ -544,6 +544,10 @@ When a **confirmed** clean is cancelled, the OTHER person also gets an email (ho
 - **Security:** with `CRON_SECRET` set in Vercel the caller must send `Authorization: Bearer <secret>` (add the same value as a GitHub Actions repository secret). **Without it the address is open**: acceptable only because everything it does is once-only and it returns nothing about anyone; runs are then spaced ≥ 4 minutes apart per server instance. Setting the secret in both places is recommended.
 - Why GitHub Actions and not Vercel Cron: Vercel's free plan only allows one run a day, and a more frequent schedule there fails the deployment. Caveats: GitHub can start runs late, and pauses scheduled workflows in a repository with no activity for 60 days. When the site moves to its own domain set the repository variable `SITE_URL`.
 
+### Framing a profile picture
+
+Choosing a profile picture opens **"Frame your photo"** (`components/AvatarCropModal.tsx`): the picture sits under a round window, drag to move, slider/wheel to zoom (1–4×); "Use photo" saves the visible square as a JPEG (≤1024 px), "Cancel" keeps the old picture. The maths is pure and tested (`lib/image/cropFrame.ts`). It sits after `normalizeImageToJpeg` and is wired into the host and cleaner sign-up wizards (`PhotoPicker`, `frame` prop, default on — the host pet photo passes `frame={false}`), the host and cleaner profile forms, and the admin profile. A photo the browser can't display is kept exactly as picked. Language follows `<html dir>`. Not unit-tested in a real browser: dragging uses pointer events.
+
 ### Signed-out screens, passwords, error pages
 
 - `components/BrandMark.tsx` ("Clean", same style as the signed-in header) sits opposite the language toggle on login, register, forgot/reset password, the code screen, `/onboarding` and the admin invite form; the browser tab title is "Clean".

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
+import AvatarCropModal from "@/components/AvatarCropModal";
 import { useLang } from "@/context/LangContext";
 import { hoursToMinutes } from "@/lib/hours";
 import DurationInput from "@/components/DurationInput";
@@ -41,6 +42,7 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
   const [radius, setRadius] = useState<number>(cleaner?.service_radius_km ?? 10);
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url ?? null);
+  const [framing, setFraming] = useState<{ file: File; input: HTMLInputElement } | null>(null);
   const birth = birthdateParts(cleaner?.birthdate);
   const [freqType, setFreqType] = useState<"num" | "monthly" | "other">(
     cleaner?.weekly_clean_target ? "num" : cleaner?.weekly_clean_other === "monthly" ? "monthly" : cleaner?.weekly_clean_other ? "other" : "num"
@@ -80,6 +82,24 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
 
   return (
     <form action={handleSubmit} className="space-y-5 bg-white rounded-3xl shadow-md p-6">
+      {framing && (
+        <AvatarCropModal
+          file={framing.file}
+          onCancel={() => {
+            framing.input.value = "";
+            setFraming(null);
+          }}
+          onDone={(cropped) => {
+            if (typeof DataTransfer !== "undefined") {
+              const dt = new DataTransfer();
+              dt.items.add(cropped);
+              framing.input.files = dt.files;
+            }
+            setAvatarPreview(URL.createObjectURL(cropped));
+            setFraming(null);
+          }}
+        />
+      )}
       {/* Avatar */}
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden shrink-0">
@@ -100,15 +120,10 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
               const input = e.target;
               const file = input.files?.[0];
               if (!file) return;
-              // Convert HEIC/large phone photos to a small JPEG and write it
-              // back so the form submits the converted file, not the raw HEIC.
+              // Convert HEIC/large phone photos to a small JPEG, then let the person frame it
+              // (drag + zoom); the framed square is written back into the input on confirm.
               const normalized = await normalizeImageToJpeg(file);
-              if (normalized !== file) {
-                const dt = new DataTransfer();
-                dt.items.add(normalized);
-                input.files = dt.files;
-              }
-              setAvatarPreview(URL.createObjectURL(normalized));
+              setFraming({ file: normalized, input });
             }}
             className="text-base text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-base file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
           />
