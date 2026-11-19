@@ -1,4 +1,4 @@
-import { isQuarterHour } from '@/lib/hours'
+import { MIN_JOB_HOURS, isJobLengthHours } from '@/lib/hours'
 import { EXPERIENCE_RANGES, EXPERIENCE_VALUES, LANGUAGE_VALUES, MATCH_TYPES, SERVICE_VALUES, joinLanguages, normalizeServices, splitLanguages } from './options'
 import { DraftError, bool, birthdateFromParts, listOf, numText, oneOf, ownPhotoUrl, str, uuidOrNull } from './validate'
 
@@ -61,8 +61,8 @@ export function validateCleanerDraft(input: unknown, opts: { submit: boolean; us
     freqVal: Number(numText(i.freqVal, 'Frequency', 0, 14) || 3),
     freqOtherText: str(i.freqOtherText, 'Frequency', 200),
     rate: numText(i.rate, 'Hourly rate', 0, 2000),
-    duration: numText(i.duration, 'Minimum job length', 0.5, 24),
-    maxDuration: numText(i.maxDuration, 'Maximum job length', 0.5, 24),
+    duration: numText(i.duration, 'Minimum job length', MIN_JOB_HOURS, 24),
+    maxDuration: numText(i.maxDuration, 'Maximum job length', MIN_JOB_HOURS, 24),
     maxDurationNoLimit: bool(i.maxDurationNoLimit, 'No limit'),
     services: listOf(normalizeServices(i.services), 'Services', SERVICE_VALUES),
     serviceOtherText: str(i.serviceOtherText, 'Other service', 120),
@@ -77,7 +77,7 @@ export function validateCleanerDraft(input: unknown, opts: { submit: boolean; us
     languagesOther: str(i.languagesOther, 'Languages', 200),
   }
   for (const [v, field] of [[draft.duration, 'Minimum job length'], [draft.maxDuration, 'Maximum job length']] as const) {
-    if (v && !isQuarterHour(Number(v))) throw new DraftError(`${field} must be in steps of 15 minutes`)
+    if (v && !isJobLengthHours(Number(v))) throw new DraftError(`${field} must be at least 20 minutes, in steps of 5 minutes`)
   }
   if (draft.duration && draft.maxDuration && !draft.maxDurationNoLimit && Number(draft.maxDuration) < Number(draft.duration)) {
     throw new DraftError('The longest job cannot be shorter than the shortest job')

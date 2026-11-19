@@ -12,7 +12,7 @@ import GuidedAbout from "@/components/onboarding/GuidedAbout";
 import { Chip, OptionCard, Stepper } from "@/components/onboarding/Choice";
 import type { PickedLocality } from "@/lib/localities/address";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { HOURS_STEP, MIN_JOB_HOURS, formatHours } from "@/lib/hours";
+import { MIN_JOB_HOURS, formatHours, stepHours } from "@/lib/hours";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { signOutToLogin } from "../../actions";
 import CancelRegistration from "@/components/onboarding/CancelRegistration";
@@ -473,12 +473,12 @@ export default function CleanerRegisterPage() {
             <p className="text-xs text-gray-500 mt-2">{tr("rateHint")}</p>
             <div className="mt-6">
               <span className={label}>{tr("qDuration")}</span>
-              <Stepper value={answers.duration} onChange={(v) => set({ duration: v })} min={MIN_JOB_HOURS} max={12} step={HOURS_STEP} label={tr("qDuration")} format={(n) => formatHours(n, lang === "he" ? "he" : "en")} />
+              <Stepper value={answers.duration} onChange={(v) => set({ duration: v })} min={MIN_JOB_HOURS} max={12} step={MIN_JOB_HOURS} stepFn={stepHours} label={tr("qDuration")} format={(n) => formatHours(n, lang === "he" ? "he" : "en")} />
             </div>
             <div className="mt-6">
               <span className={label}>{tr("qMaxDuration")}</span>
               <div className="flex items-center gap-3 flex-wrap">
-                {!answers.maxDurationNoLimit && <Stepper value={answers.maxDuration} onChange={(v) => set({ maxDuration: v })} min={MIN_JOB_HOURS} max={12} step={HOURS_STEP} label={tr("qMaxDuration")} format={(n) => formatHours(n, lang === "he" ? "he" : "en")} />}
+                {!answers.maxDurationNoLimit && <Stepper value={answers.maxDuration} onChange={(v) => set({ maxDuration: v })} min={MIN_JOB_HOURS} max={12} step={MIN_JOB_HOURS} stepFn={stepHours} label={tr("qMaxDuration")} format={(n) => formatHours(n, lang === "he" ? "he" : "en")} />}
                 <Chip selected={answers.maxDurationNoLimit} onClick={() => set({ maxDurationNoLimit: !answers.maxDurationNoLimit })}>{tr("noLimit")}</Chip>
               </div>
               <p className="text-xs text-gray-500 mt-3">{tr("qMaxDurationNote")}</p>

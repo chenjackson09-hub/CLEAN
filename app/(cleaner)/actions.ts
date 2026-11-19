@@ -1,7 +1,7 @@
 "use server";
 
 import { contactVerificationBlock } from "@/lib/verification";
-import { MIN_JOB_HOURS, isQuarterHour } from "@/lib/hours";
+import { isJobLengthHours, minutesToHours } from "@/lib/hours";
 import { EXPERIENCE_RANGES } from "@/lib/onboarding/options";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -85,13 +85,17 @@ export async function updateCleanerProfile(formData: FormData) {
   // range's lower bound so sorting and older screens work; an unanswered field changes nothing.
   const experienceRaw = (formData.get("experience_range") as string) || "";
   const experience = EXPERIENCE_RANGES.find((r) => r.value === experienceRaw) ?? null;
-  // Job lengths are in quarter-hour steps, at least 30 minutes (migrations 0046/0047).
-  // parseFloat, not parseInt, or a value like 3.25 would silently truncate to 3.
-  const minHours = parseFloat(formData.get("min_hours") as string) || null;
-  const maxHours = parseFloat(formData.get("max_hours") as string) || null;
+  // Job lengths are typed in whole MINUTES on the profile form (any 5-minute step, at least
+  // 20 minutes) and stored as hours (migrations 0046-0048); 20 min is stored as 0.33.
+  const minutesField = (name: string) => {
+    const raw = parseFloat(formData.get(name) as string);
+    return Number.isFinite(raw) && raw > 0 ? minutesToHours(raw) : null;
+  };
+  const minHours = minutesField("min_minutes");
+  const maxHours = minutesField("max_minutes");
   for (const v of [minHours, maxHours]) {
-    if (v != null && (v < MIN_JOB_HOURS || v > 24 || !isQuarterHour(v))) {
-      return { error: "Job lengths must be at least 30 minutes, in steps of 15 minutes." };
+    if (v != null && (v > 24 || !isJobLengthHours(v))) {
+      return { error: "Job lengths must be at least 20 minutes, in steps of 5 minutes." };
     }
   }
   if (minHours != null && maxHours != null && minHours > maxHours) {

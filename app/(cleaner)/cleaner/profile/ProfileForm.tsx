@@ -7,6 +7,7 @@ import Image from "next/image";
 import { updateCleanerProfile } from "../../actions";
 import { normalizeImageToJpeg } from "@/lib/image/normalizeImage";
 import { useLang } from "@/context/LangContext";
+import { hoursToMinutes } from "@/lib/hours";
 import dynamic from "next/dynamic";
 import LocalityPicker from "@/components/LocalityPicker";
 import type { PickedLocality } from "@/lib/localities/address";
@@ -171,10 +172,12 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
             <input
               id="min_job_hours"
               type="number"
-              name="min_hours"
-              step="0.25"
-              min="0.5"
-              defaultValue={cleaner?.min_hours ?? 3}
+              name="min_minutes"
+              inputMode="numeric"
+              step="5"
+              min="20"
+              max="1440"
+              defaultValue={hoursToMinutes(Number(cleaner?.min_hours ?? 3))}
               className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -183,12 +186,12 @@ export default function ProfileForm({ profile, cleaner, onSaved, center = null, 
             <input
               id="max_hours"
               type="number"
-              name="max_hours"
-              inputMode="decimal"
-              step="0.25"
-              min="0.5"
-              max="24"
-              defaultValue={cleaner?.max_hours ?? ""}
+              name="max_minutes"
+              inputMode="numeric"
+              step="5"
+              min="20"
+              max="1440"
+              defaultValue={cleaner?.max_hours != null ? hoursToMinutes(Number(cleaner.max_hours)) : ""}
               placeholder={t("prof_no_limit")}
               className="w-full border border-gray-300 rounded-xl px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

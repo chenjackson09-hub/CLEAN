@@ -46,11 +46,12 @@ describe('cleaner draft', () => {
     expect(() => validateCleanerDraft({ ...good, rate: '-5' }, opts(false))).toThrow(DraftError)
     expect(() => validateCleanerDraft({ ...good, rate: 'abc' }, opts(false))).toThrow(DraftError)
     expect(() => validateCleanerDraft({ ...good, radius: '5000' }, opts(false))).toThrow(DraftError)
-    // Job lengths: at least 30 minutes, in steps of 15 minutes.
+    // Job lengths: at least 20 minutes, in steps of 5 minutes.
     expect(() => validateCleanerDraft({ ...good, duration: '0.25' }, opts(false))).toThrow(DraftError)
-    expect(() => validateCleanerDraft({ ...good, duration: '1.1' }, opts(false))).toThrow('15 minutes')
-    expect(() => validateCleanerDraft({ ...good, maxDuration: '4.3' }, opts(false))).toThrow('15 minutes')
+    expect(() => validateCleanerDraft({ ...good, duration: '1.1' }, opts(false))).toThrow('5 minutes')
+    expect(() => validateCleanerDraft({ ...good, maxDuration: '4.3' }, opts(false))).toThrow('5 minutes')
     expect(validateCleanerDraft({ ...good, duration: '0.75', maxDuration: '4.25' }, opts(false)).duration).toBe('0.75')
+    expect(validateCleanerDraft({ ...good, duration: '0.33' }, opts(false)).duration).toBe('0.33')
     expect(() => validateCleanerDraft({ ...good, services: ['Hacking'] }, opts(false))).toThrow(DraftError)
     expect(() => validateCleanerDraft({ ...good, bio: 'x'.repeat(2001) }, opts(false))).toThrow(DraftError)
     expect(() => validateCleanerDraft({ ...good, localityId: 'not-a-uuid' }, opts(false))).toThrow(DraftError)
