@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 
-export default function PendingApprovalPage() {
-  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
+export default async function PendingApprovalPage() {
+  const lang = ((await cookies()).get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

@@ -10,11 +10,13 @@ import { fetchCleanerReviews } from '@/lib/cleanerReviews'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type Props = {
-  params: { id: string }
-  searchParams: { date?: string; location?: string; duration?: string; from?: string; to?: string; cleanGroup?: string }
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ date?: string; location?: string; duration?: string; from?: string; to?: string; cleanGroup?: string }>
 }
 
-export default async function CleanerProfilePage({ params, searchParams }: Props) {
+export default async function CleanerProfilePage(props: Props) {
+  const params = await props.params
+  const searchParams = await props.searchParams
   const supabase = await createClient()
   const admin = createAdminClient()
 

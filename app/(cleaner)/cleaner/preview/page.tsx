@@ -22,7 +22,7 @@ export default async function PreviewPage() {
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()]);
   if (!user) redirect("/login");
 
-  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
+  const lang = ((await cookies()).get("lang")?.value === "he" ? "he" : "en") as Lang;
   const today = new Date().toISOString().split("T")[0];
 
   const [

@@ -14,7 +14,7 @@ export default async function CleanerDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
+  const lang = ((await cookies()).get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
   // Service-role client for the booking queries below: the embedded customer

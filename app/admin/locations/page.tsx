@@ -14,9 +14,9 @@ type SP = Record<string, string | string[] | undefined>
 
 // Server-rendered and server-paginated: every filter lives in the URL, and the SQL
 // functions (migration 0041) return aggregates for one page — no people are loaded.
-export default async function AdminLocationsPage({ searchParams }: { searchParams?: SP }) {
+export default async function AdminLocationsPage({ searchParams }: { searchParams?: Promise<SP> }) {
   noStore()
-  const filters = parseFilters(searchParams ?? {})
+  const filters = parseFilters((await searchParams) ?? {})
 
   if (filters.tab === 'regions') {
     const [overview, recent] = await Promise.all([loadRegionsOverview(), loadRecentChanges()])

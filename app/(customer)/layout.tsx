@@ -30,7 +30,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
 
   // Count bookings a cleaner accepted since the customer last opened /bookings,
   // to show a red badge on the Bookings nav item (cleared on visit).
-  const seenAt = cookies().get("bookings_seen_at")?.value
+  const seenAt = (await cookies()).get("bookings_seen_at")?.value
   let acceptedQuery = supabase
     .from("bookings")
     .select("id", { count: "exact", head: true })

@@ -24,7 +24,8 @@ function ymd(d: Date): string {
 // cleans and requests plus how many cleaners are free, with a sheet per day to
 // see who's booked / asked / free and to send requests. This page only gathers
 // the data; HostCalendar owns the interaction.
-export default async function BrowsePage({ searchParams }: { searchParams?: { rebook?: string } }) {
+export default async function BrowsePage(props: { searchParams?: Promise<{ rebook?: string }> }) {
+  const searchParams = await props.searchParams;
   const admin = createAdminClient()
 
   // The customer's location comes from their profile, not a search field — we

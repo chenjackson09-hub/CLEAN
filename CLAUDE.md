@@ -25,7 +25,15 @@ The whole suite is green. Add/refresh a colocated test when you change a compone
 
 **Clean** is a cleaning-services marketplace: customers browse and book verified cleaners; cleaners manage availability and respond to requests; admins approve cleaner applications.
 
-Stack: Next.js 14 App Router · TypeScript · Supabase (Postgres + Auth + Storage + Realtime) · Tailwind CSS · Resend (email).
+Stack: Next.js 15 App Router (React 19) · TypeScript · Supabase (Postgres + Auth + Storage + Realtime) · Tailwind CSS · Resend (email).
+
+### Next.js 15 / React 19 (upgraded 2026-11-19 for the Next.js security fixes)
+
+- `cookies()`, `headers()`, and a page's `params` / `searchParams` are **Promises** now — write `const { id } = await params`, `(await cookies()).get(...)`, and type them `Promise<{...}>`. Server components that read them must be `async`. (`createClient()` in `lib/supabase/server.ts` was already async-safe; callers that pass `cookies()` into it use `await cookies()`.)
+- React 19 types: there is no global `JSX` namespace — use `React.JSX.Element`.
+- `jest.setup.ts` mocks `next/cache` (`revalidatePath`, `revalidateTag`, `unstable_noStore`, `unstable_cache`) because the real module needs `Request`/`TextEncoder`, which jsdom lacks. Don't polyfill those globals instead — it breaks other tests.
+- `npm audit` still lists next's own bundled `postcss` and `source-map-js`: both only run at **build time** on our own CSS (no user input), so they're accepted; the only "fix" is `next@16`, a breaking change not worth it before the pilot.
+- Smoke-tested on the production build: login, host calendar → request → cleaner accept → chat, cleaner dashboard/schedule/profile/preview, role redirects, bell badges. Not exercised: photo upload/crop under 15 (the 10 MB `serverActions.bodySizeLimit` is still configured).
 
 ### Route groups
 

@@ -14,7 +14,7 @@ export default async function RequestsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
+  const lang = ((await cookies()).get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   // Use the service-role client so the embedded customer profile (name, avatar)
   // is readable — the "users manage own profile" RLS policy otherwise hides the

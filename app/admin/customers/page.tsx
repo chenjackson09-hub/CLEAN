@@ -9,11 +9,11 @@ import { fetchCindyVerified } from '@/lib/cindyVerified'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminCustomersPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function AdminCustomersPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   noStore()
   const admin = createAdminClient()
   // Opened from Locations (?locality=<id>): only people who chose that place.
-  const place = await readLocalityFilter(admin, searchParams, '/admin/customers')
+  const place = await readLocalityFilter(admin, await searchParams, '/admin/customers')
 
   // Deleted customers are hard-deleted (unlike cleaners' soft-suspend) — the
   // only trace left is their blocked_users snapshot. So "Blocked" for

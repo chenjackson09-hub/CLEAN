@@ -1,5 +1,6 @@
 import ChatThreadPage from "@/components/chat/ChatThreadPage";
 
-export default function HostChatPage({ params }: { params: { cleanerId: string } }) {
-  return <ChatThreadPage role="host" otherId={params.cleanerId} backHref="/chat" />;
+export default async function HostChatPage({ params }: { params: Promise<{ cleanerId: string }> }) {
+  const { cleanerId } = await params;
+  return <ChatThreadPage role="host" otherId={cleanerId} backHref="/chat" />;
 }

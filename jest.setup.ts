@@ -29,6 +29,16 @@ if (typeof ReactDOM.useFormStatus !== 'function') {
   ReactDOM.useFormStatus = () => ({ pending: false })
 }
 
+// `next/cache` (revalidatePath etc.) is imported by every server-actions file. In Next 15 loading
+// the real module drags in the server's web-streams code, which needs globals jsdom lacks, so
+// component tests that only transitively import an actions file get this harmless stand-in.
+jest.mock('next/cache', () => ({
+  revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
+  unstable_noStore: jest.fn(),
+  unstable_cache: (fn: unknown) => fn,
+}))
+
 // Default mock for Next.js navigation hooks so client components that call
 // useRouter()/useSearchParams() can render in tests. Individual suites can
 // still override this with their own jest.mock('next/navigation', ...).

@@ -119,7 +119,7 @@ export function CheckIcon({ className }: { className?: string }) {
 
 // Icons for each "The home" row label — falls back to a plain bullet dot
 // when a label doesn't have a dedicated icon.
-export const HOME_FIELD_ICONS: Record<string, (props: { className?: string }) => JSX.Element> = {
+export const HOME_FIELD_ICONS: Record<string, (props: { className?: string }) => React.JSX.Element> = {
   Bedrooms: BedIcon,
   Rooms: BedIcon,
   Bathrooms: BathIcon,

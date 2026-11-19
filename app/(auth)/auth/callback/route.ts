@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     dest = role ? ROLE_HOME[role] ?? '/browse' : '/browse'
     // Back to the page they were trying to open before signing in (one-shot cookie
     // set by the login page), if it is a safe same-site path.
-    const jar = cookies()
+    const jar = await cookies()
     let raw: string | null = null
     try {
       const v = jar.get(POST_LOGIN_COOKIE)?.value

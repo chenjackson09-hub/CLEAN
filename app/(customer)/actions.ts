@@ -18,7 +18,7 @@ import { notify, profileNames } from "@/lib/notifications"
 // Records that the customer has now seen their bookings, clearing the "newly
 // accepted" badge on the Bookings nav item. Called when the bookings page opens.
 export async function markBookingsSeen(): Promise<void> {
-  cookies().set("bookings_seen_at", new Date().toISOString(), {
+  (await cookies()).set("bookings_seen_at", new Date().toISOString(), {
     path: "/",
     httpOnly: true,
     sameSite: "lax",

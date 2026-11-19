@@ -12,11 +12,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Lang } from "@/lib/lang";
 import { t } from "@/lib/lang";
 
-export default async function CleanerProfilePage({ searchParams }: { searchParams: { edit?: string } }) {
+export default async function CleanerProfilePage(props: { searchParams: Promise<{ edit?: string }> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const lang = (cookies().get("lang")?.value === "he" ? "he" : "en") as Lang;
+  const lang = ((await cookies()).get("lang")?.value === "he" ? "he" : "en") as Lang;
 
   const supabase = await createClient();
 

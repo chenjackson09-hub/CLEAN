@@ -12,7 +12,8 @@ import { fetchCustomerAreas } from "@/lib/localities/areaNames"
 import { fetchCindyVerified } from "@/lib/cindyVerified"
 import { hostNeedsFromRow } from "@/lib/onboarding/hostProfile"
 
-export default async function ProfilePage({ searchParams }: { searchParams?: { edit?: string } }) {
+export default async function ProfilePage(props: { searchParams?: Promise<{ edit?: string }> }) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")

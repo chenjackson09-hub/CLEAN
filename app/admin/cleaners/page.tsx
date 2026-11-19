@@ -9,11 +9,11 @@ import { fetchCindyVerified } from '@/lib/cindyVerified'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminCleanersPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function AdminCleanersPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   noStore()
   const admin = createAdminClient()
   // Opened from Locations (?locality=<id>): only cleaners who chose that place.
-  const place = await readLocalityFilter(admin, searchParams, '/admin/cleaners')
+  const place = await readLocalityFilter(admin, await searchParams, '/admin/cleaners')
 
   // Only approved (or later suspended, still shown under the Blocked filter)
   // cleaners are listed here — a cleaner isn't tallied as a real cleaner
