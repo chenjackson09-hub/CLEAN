@@ -115,7 +115,7 @@ describe('CleanerProfile', () => {
       expect(screen.getByText('4.0')).toBeInTheDocument()
       expect(screen.getByText(/2 cleans/)).toBeInTheDocument()
       expect(screen.getByText('Completed cleans')).toBeInTheDocument()
-      expect(screen.getByText(/^3–6 /)).toBeInTheDocument()
+      expect(screen.getByText('3 h – 6 h')).toBeInTheDocument()
       expect(screen.getByText('Job duration')).toBeInTheDocument()
     })
 

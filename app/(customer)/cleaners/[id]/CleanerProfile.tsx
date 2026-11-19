@@ -10,6 +10,7 @@ import { GALLERY_ENABLED } from '@/lib/features'
 import { CindyVerifiedBadge } from '@/components/CindyVerifiedBadge'
 import { lookingForLabels } from '@/lib/matchPreferences'
 import { useLanguage } from '@/lib/i18n/LanguageContext'
+import { formatHours } from '@/lib/hours'
 import type { CleanerResult } from '@/lib/types/cleaner'
 
 type WeeklySlot = { day_of_week: number; start_time: string; end_time: string }
@@ -115,13 +116,14 @@ export function CleanerProfile({ cleaner, gallery = [], weeklyAvailability = [],
   const longBio = (cleaner.bio ?? '').length > 150 || (cleaner.bio ?? '').split('\n').length > 3
 
   // "3–6 h", "3+ h" (no upper limit), "up to 6 h" — or nothing when neither is set.
+  const fh = (n: number) => formatHours(Number(n), lang === 'he' ? 'he' : 'en')
   const jobDuration =
     cleaner.min_hours != null && cleaner.max_hours != null
-      ? `${cleaner.min_hours}–${cleaner.max_hours} ${t('filterBar.hoursShort')}`
+      ? `${fh(cleaner.min_hours)} – ${fh(cleaner.max_hours)}`
       : cleaner.min_hours != null
-        ? `${cleaner.min_hours}+ ${t('filterBar.hoursShort')}`
+        ? `${fh(cleaner.min_hours)}+`
         : cleaner.max_hours != null
-          ? `${t('cleanerProfile.upTo')} ${cleaner.max_hours} ${t('filterBar.hoursShort')}`
+          ? `${t('cleanerProfile.upTo')} ${fh(cleaner.max_hours)}`
           : null
 
   const lookingFor = lookingForLabels(cleaner.match_preferences, cleaner.match_preference_other, {

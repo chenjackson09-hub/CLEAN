@@ -141,7 +141,7 @@ describe('Cleaner wizard (9 screens, every Continue saved)', () => {
     await user.click(screen.getByRole('button', { name: "Shortest job you'll take +" }))
     await user.click(screen.getByRole('button', { name: 'Continue' }))
     await waitFor(() => expect(mockSave).toHaveBeenCalled())
-    expect(lastDraft().duration).toBe('3.5')
+    expect(lastDraft().duration).toBe('3.25') // steps of 15 minutes
   })
 
   it('experience is five cards, languages are chips plus an "other" field', async () => {

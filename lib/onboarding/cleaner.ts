@@ -1,3 +1,4 @@
+import { isQuarterHour } from '@/lib/hours'
 import { EXPERIENCE_RANGES, EXPERIENCE_VALUES, LANGUAGE_VALUES, MATCH_TYPES, SERVICE_VALUES, joinLanguages, normalizeServices, splitLanguages } from './options'
 import { DraftError, bool, birthdateFromParts, listOf, numText, oneOf, ownPhotoUrl, str, uuidOrNull } from './validate'
 
@@ -74,6 +75,9 @@ export function validateCleanerDraft(input: unknown, opts: { submit: boolean; us
     experience: oneOf(i.experience, 'Experience', EXPERIENCE_VALUES as readonly string[]),
     languages: listOf(i.languages, 'Languages', LANGUAGE_VALUES),
     languagesOther: str(i.languagesOther, 'Languages', 200),
+  }
+  for (const [v, field] of [[draft.duration, 'Minimum job length'], [draft.maxDuration, 'Maximum job length']] as const) {
+    if (v && !isQuarterHour(Number(v))) throw new DraftError(`${field} must be in steps of 15 minutes`)
   }
   if (draft.duration && draft.maxDuration && !draft.maxDurationNoLimit && Number(draft.maxDuration) < Number(draft.duration)) {
     throw new DraftError('The longest job cannot be shorter than the shortest job')

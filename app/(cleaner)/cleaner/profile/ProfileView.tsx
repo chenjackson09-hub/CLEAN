@@ -2,6 +2,7 @@
 
 import { experienceLabel } from "@/lib/onboarding/options";
 import { useLang } from "@/context/LangContext";
+import { formatHours } from "@/lib/hours";
 import { StarRatingDisplay } from "@/components/StarRating";
 import { computeProfileMissing, profileCompletionPct } from "@/lib/profileCompleteness";
 import { lookingForLabels } from "@/lib/matchPreferences";
@@ -104,12 +105,12 @@ export default function ProfileView({ profile, cleaner, onEdit, center = null }:
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-gray-50 rounded-xl px-3 py-2.5">
           <p className="text-xs text-gray-400">{t("prof_min_job")}</p>
-          <p className="text-base font-semibold text-gray-900 mt-0.5">{cleaner?.min_hours ?? 0} hrs</p>
+          <p className="text-base font-semibold text-gray-900 mt-0.5">{formatHours(Number(cleaner?.min_hours ?? 0), lang === "he" ? "he" : "en")}</p>
         </div>
         <div className="bg-gray-50 rounded-xl px-3 py-2.5">
           <p className="text-xs text-gray-400">{t("prof_max_job")}</p>
           <p className="text-base font-semibold text-gray-900 mt-0.5">
-            {cleaner?.max_hours != null ? `${cleaner.max_hours} hrs` : t("prof_no_limit")}
+            {cleaner?.max_hours != null ? formatHours(Number(cleaner.max_hours), lang === "he" ? "he" : "en") : t("prof_no_limit")}
           </p>
         </div>
         <div className="bg-gray-50 rounded-xl px-3 py-2.5">
