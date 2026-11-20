@@ -88,6 +88,18 @@ describe('Register (account is created on the first screen)', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
+  it('shows a neutral message (never a reason) when a blocked person tries to register', async () => {
+    mockSignUp.mockResolvedValue({ data: { session: null, user: null }, error: { message: 'Database error saving new user' } })
+    const user = userEvent.setup()
+    render(<RegisterPage />)
+    await fill(user)
+    await user.click(screen.getByText('Cleaner'))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(await screen.findByText(/couldn't create an account with these details/i)).toBeInTheDocument()
+    expect(screen.queryByText(/database error/i)).not.toBeInTheDocument()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('will not create the account until the Terms and Privacy Policy are agreed to', async () => {
     const user = userEvent.setup()
     render(<RegisterPage />)

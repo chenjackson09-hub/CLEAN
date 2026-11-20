@@ -10,6 +10,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { BrandMark } from "@/components/BrandMark";
 import { MIN_PASSWORD_LENGTH } from "@/lib/passwordRules";
+import { isNewUserRejected } from "@/lib/registrationErrors";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -101,7 +102,7 @@ export default function RegisterPage() {
       return;
     }
     if (signUpErr || !created.user) {
-      setError(signUpErr?.message ?? t("auth.register.signUpFailed"));
+      setError(isNewUserRejected(signUpErr?.message) ? t("auth.register.cannotRegister") : signUpErr?.message ?? t("auth.register.signUpFailed"));
       setLoading(false);
       return;
     }

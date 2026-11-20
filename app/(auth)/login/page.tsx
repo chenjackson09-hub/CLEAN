@@ -9,6 +9,7 @@ import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
 import { BrandMark } from "@/components/BrandMark";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath, POST_LOGIN_COOKIE } from "@/lib/safeRedirect";
+import { isNewUserRejected } from "@/lib/registrationErrors";
 
 function GoogleIcon() {
   return (
@@ -43,7 +44,7 @@ export default function LoginPage() {
   // Surface an error passed back from the OAuth callback (?error=...).
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get("error");
-    if (err) setError(err);
+    if (err) setError(isNewUserRejected(err) ? t("auth.register.cannotRegister") : err);
     if (new URLSearchParams(window.location.search).get("reset") === "1") setNotice(t("auth.login.resetDone"));
     setNext(safeNextPath(new URLSearchParams(window.location.search).get("next")));
     // eslint-disable-next-line react-hooks/exhaustive-deps
