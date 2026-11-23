@@ -6,9 +6,9 @@ import LegalPage from './LegalPage'
 describe('LegalPage', () => {
   it('shows the Terms of Use with every section, the draft notice and a link to the Privacy Policy', () => {
     render(<LegalPage kind="terms" />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Cindy Clean Beta Pilot Terms of Use' })).toBeInTheDocument()
     expect(screen.getByRole('note')).toHaveTextContent('Test version')
-    expect(screen.getByRole('heading', { name: /Prices and payment/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Cleaning Rates and Payments/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy')
   })
 

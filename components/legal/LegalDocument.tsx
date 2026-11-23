@@ -27,9 +27,13 @@ export default function LegalDocument({ kind, onOther }: { kind: Kind; onOther?:
       {doc.sections.map((s) => (
         <section key={s.heading} className="mt-6">
           <h2 className="text-base font-semibold text-gray-900">{s.heading}</h2>
-          {s.body.map((p) => (
-            <p key={p} className="text-sm text-gray-700 leading-relaxed mt-2">{p}</p>
-          ))}
+          {s.body.map((p) =>
+            p.startsWith("• ") ? (
+              <p key={p} className="text-sm text-gray-700 leading-relaxed mt-1 ps-5 -indent-3">{p}</p>
+            ) : (
+              <p key={p} className="text-sm text-gray-700 leading-relaxed mt-2">{p}</p>
+            ),
+          )}
         </section>
       ))}
       <p className="mt-8 text-sm">

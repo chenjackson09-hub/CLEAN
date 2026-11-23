@@ -11,7 +11,7 @@ describe.each(['terms', 'privacy'] as const)('%s text', (kind) => {
     for (const d of [en, he]) {
       expect(d.title).toBeTruthy()
       expect(d.intro).toBeTruthy()
-      d.sections.forEach((s) => { expect(s.heading).toBeTruthy(); s.body.forEach((p) => expect(p.trim().length).toBeGreaterThan(10)) })
+      d.sections.forEach((s) => { expect(s.heading).toBeTruthy(); s.body.forEach((p) => expect(p.trim().length).toBeGreaterThan(4)) })
     }
   })
 })

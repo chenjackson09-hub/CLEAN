@@ -3,51 +3,16 @@
 // LEGAL_DRAFT is true every page says so, and it should be read by a lawyer before launch.
 // Bump TERMS_VERSION whenever the text changes in a way people should agree to again.
 
-export const TERMS_VERSION = '2026-11-02'
+export const TERMS_VERSION = '2026-11-20'
 export const LEGAL_DRAFT = true
+
+import { TERMS_EN, TERMS_HE } from './terms'
 
 export type LegalSection = { heading: string; body: string[] }
 export type LegalDoc = { title: string; updated: string; intro: string; sections: LegalSection[] }
 type Lang = 'en' | 'he'
 
-const TERMS: Record<Lang, LegalDoc> = {
-  en: {
-    title: 'Terms of Use',
-    updated: 'Last updated: 2 November 2026',
-    intro: 'These terms explain how Clean works and what we expect from everyone who uses it. By creating an account you agree to them.',
-    sections: [
-      { heading: '1. What Clean is', body: ['Clean is a platform that helps people who need their home cleaned (“hosts”) find independent people who clean (“cleaners”).', 'Clean is not the employer of any cleaner and is not a party to the agreement between a host and a cleaner. Clean does not provide cleaning services itself.'] },
-      { heading: '2. Who can use it', body: ['You must give true and current information and keep your account details safe. You are responsible for what happens under your account.', 'Hosts must be 18 or older. Cleaners must be at least 14; cleaners under 18 may go through extra checks.'] },
-      { heading: '3. Approval of accounts', body: ['Every new account is reviewed by our team before it can be used to send or accept requests. We may approve, refuse, pause or remove an account, for example if information is untrue or the app is misused.'] },
-      { heading: '4. Requests and bookings', body: ['A host sends a request to a cleaner. The cleaner has 24 hours to accept or decline. A clean is confirmed only when the cleaner accepts.', 'Either side can cancel a confirmed clean from the app — please do it as early as you can. Times and durations shown in the app are estimates.'] },
-      { heading: '5. Prices and payment', body: ['Cleaners set their own hourly rate. Clean does not take or process payments in the app. The host and the cleaner agree between themselves how and when payment is made.'] },
-      { heading: '6. Profiles, photos and reviews', body: ['What you put on your profile is shown as described in the Privacy Policy. Photos of a home are private: they are shown only to a cleaner who has a live request from that host.', 'You must have the right to share anything you upload. Ratings and reviews must be honest and respectful, and we may remove content that is not.'] },
-      { heading: '7. How to behave', body: ['Be respectful and honest. Do not harass anyone, share another person’s private information (for example a home’s address, photos or access details), use the app for anything illegal, or try to get around the app’s safety features.'] },
-      { heading: '8. Safety', body: ['We do not check people’s identity or background beyond what is described in the app. A “Cindy Verified” mark means our team chose to confirm that person; it is not a guarantee.', 'Use your own judgement and keep your conversations in the app’s chat.'] },
-      { heading: '9. Our responsibility', body: ['We work to keep the app running but cannot promise it will always be available or free of errors. To the extent the law allows, Clean is not responsible for what happens during or after a cleaning — including damage, loss or injury — or for indirect losses.'] },
-      { heading: '10. Changes', body: ['We may change these terms or the app. If a change is important we will tell you in the app. Continuing to use Clean after a change means you accept it.'] },
-      { heading: '11. Contact', body: ['Questions or a problem? Use the Help button in the app.'] },
-    ],
-  },
-  he: {
-    title: 'תנאי שימוש',
-    updated: 'עודכן לאחרונה: 2 בנובמבר 2026',
-    intro: 'התנאים האלה מסבירים איך Clean עובדת ומה אנחנו מצפים מכל מי שמשתמש בה. בפתיחת חשבון אתם מסכימים להם.',
-    sections: [
-      { heading: '1. מה זו Clean', body: ['Clean היא פלטפורמה שעוזרת לאנשים שצריכים ניקיון בבית (״מארחים״) למצוא אנשים עצמאיים שמנקים (״מנקים״).', 'Clean אינה המעסיקה של אף מנקה ואינה צד להסכם בין מארח למנקה. Clean אינה מספקת שירותי ניקיון בעצמה.'] },
-      { heading: '2. מי יכול להשתמש', body: ['עליכם למסור פרטים נכונים ועדכניים ולשמור על פרטי החשבון. אתם אחראים למה שקורה בחשבון שלכם.', 'מארחים צריכים להיות בני 18 ומעלה. מנקים צריכים להיות בני 14 לפחות; מנקים מתחת לגיל 18 עשויים לעבור בדיקות נוספות.'] },
-      { heading: '3. אישור חשבונות', body: ['כל חשבון חדש נבדק על ידי הצוות שלנו לפני שאפשר להשתמש בו לשליחה או לקבלה של בקשות. אנחנו רשאים לאשר, לסרב, להשהות או להסיר חשבון, למשל אם המידע אינו נכון או אם נעשה שימוש לרעה באפליקציה.'] },
-      { heading: '4. בקשות והזמנות', body: ['מארח שולח בקשה למנקה. למנקה יש 24 שעות לאשר או לדחות. ניקיון מאושר רק כשהמנקה מאשר.', 'כל צד יכול לבטל ניקיון מאושר מתוך האפליקציה — בבקשה עשו זאת מוקדם ככל האפשר. השעות והמשכים שמוצגים באפליקציה הם הערכות.'] },
-      { heading: '5. מחירים ותשלום', body: ['מנקים קובעים בעצמם את התעריף לשעה. Clean אינה גובה או מעבדת תשלומים באפליקציה. המארח והמנקה מסכמים ביניהם איך ומתי משלמים.'] },
-      { heading: '6. פרופילים, תמונות וחוות דעת', body: ['מה שאתם מציבים בפרופיל מוצג כפי שמפורט במדיניות הפרטיות. תמונות של בית הן פרטיות: הן מוצגות רק למנקה שיש לו בקשה פעילה מאותו מארח.', 'עליכם להיות בעלי הזכות לשתף כל דבר שאתם מעלים. דירוגים וחוות דעת צריכים להיות כנים ומכבדים, ואנחנו רשאים להסיר תוכן שאינו כזה.'] },
-      { heading: '7. התנהגות', body: ['היו מכבדים וכנים. אל תטרידו אף אחד, אל תשתפו מידע פרטי על אדם אחר (למשל כתובת, תמונות או פרטי גישה של בית), אל תשתמשו באפליקציה לשום דבר לא חוקי ואל תנסו לעקוף את מנגנוני הבטיחות שלה.'] },
-      { heading: '8. בטיחות', body: ['אנחנו לא בודקים זהות או רקע של אנשים מעבר למה שמתואר באפליקציה. סימון ״Cindy Verified״ אומר שהצוות שלנו בחר לאשר את האדם; הוא אינו אחריות לטיב האדם.', 'השתמשו בשיקול דעת משלכם ושמרו על השיחות בצ׳אט של האפליקציה.'] },
-      { heading: '9. האחריות שלנו', body: ['אנחנו פועלים כדי שהאפליקציה תפעל, אבל לא יכולים להבטיח שתהיה זמינה תמיד או ללא תקלות. במידה שהחוק מתיר, Clean אינה אחראית למה שקורה במהלך הניקיון או אחריו — כולל נזק, אובדן או פגיעה — ולא להפסדים עקיפים.'] },
-      { heading: '10. שינויים', body: ['אנחנו רשאים לשנות את התנאים או את האפליקציה. אם השינוי חשוב נודיע לכם באפליקציה. המשך שימוש ב-Clean אחרי שינוי פירושו שאתם מסכימים לו.'] },
-      { heading: '11. יצירת קשר', body: ['שאלות או בעיה? השתמשו בכפתור העזרה באפליקציה.'] },
-    ],
-  },
-}
+const TERMS: Record<Lang, LegalDoc> = { en: TERMS_EN, he: TERMS_HE }
 
 const PRIVACY: Record<Lang, LegalDoc> = {
   en: {
@@ -116,6 +81,43 @@ const PRIVACY: Record<Lang, LegalDoc> = {
       { heading: '9. שינויים ויצירת קשר', body: ['אם המדיניות תשתנה באופן חשוב נודיע לכם באפליקציה. שאלות? השתמשו בכפתור העזרה באפליקציה.'] },
     ],
   },
+}
+
+// The short agreement shown on the sign-up screen, above the checkbox.
+export type LegalSummary = { title: string; intro: string; lead: string; points: { label: string; text: string }[] }
+const SUMMARY: Record<Lang, LegalSummary> = {
+  en: {
+    title: 'Welcome to Cindy Clean Beta!',
+    intro: 'Cindy Clean is an invitation-only beta platform connecting Hosts with Cleaners in Israel.',
+    lead: 'Before joining, please understand:',
+    points: [
+      { label: 'Beta testing', text: 'The App is still under development and may contain bugs or incomplete features.' },
+      { label: 'Matching service', text: 'Cindy Clean connects Hosts and Cleaners but does not perform or supervise cleaning services.' },
+      { label: 'Independent arrangements', text: 'Cleaners set their hourly rates and availability, and choose which requests to accept.' },
+      { label: 'Payments', text: 'All payments happen directly between Hosts and Cleaners, outside the App.' },
+      { label: 'Safety', text: 'Cindy Clean does not currently verify identities or provide cleaning-service insurance. Users are responsible for their conduct, subject to applicable law.' },
+      { label: 'Cancellations', text: 'Both parties can cancel bookings. Cancellation updates appear in the App and are also sent by email. Push notifications are not currently available.' },
+      { label: 'Account rules', text: 'Serious misconduct or repeated policy violations may result in suspension or removal.' },
+    ],
+  },
+  he: {
+    title: 'ברוכים הבאים לבטא של Cindy Clean!',
+    intro: 'Cindy Clean היא פלטפורמת בטא בהזמנה בלבד שמחברת בין מארחים למנקים בישראל.',
+    lead: 'לפני שמצטרפים, חשוב להבין:',
+    points: [
+      { label: 'בדיקות בטא', text: 'האפליקציה עדיין בפיתוח ועלולה להכיל באגים או תכונות לא גמורות.' },
+      { label: 'שירות התאמה', text: 'Cindy Clean מחברת בין מארחים למנקים אבל אינה מבצעת או מפקחת על שירותי ניקיון.' },
+      { label: 'הסדרים עצמאיים', text: 'מנקים קובעים את תעריפי השעה והזמינות שלהם ובוחרים אילו בקשות לאשר.' },
+      { label: 'תשלומים', text: 'כל התשלומים מתבצעים ישירות בין מארחים למנקים, מחוץ לאפליקציה.' },
+      { label: 'בטיחות', text: 'Cindy Clean אינה מאמתת כרגע זהויות ואינה מספקת ביטוח לשירותי ניקיון. המשתמשים אחראים להתנהגותם, בכפוף לחוק החל.' },
+      { label: 'ביטולים', text: 'שני הצדדים יכולים לבטל הזמנות. עדכוני ביטול מופיעים באפליקציה ונשלחים גם באימייל. התראות דחיפה אינן זמינות כרגע.' },
+      { label: 'כללי חשבון', text: 'התנהגות פסולה חמורה או הפרות חוזרות של המדיניות עלולות להוביל להשעיה או להסרה.' },
+    ],
+  },
+}
+
+export function legalSummary(lang: Lang): LegalSummary {
+  return SUMMARY[lang]
 }
 
 export function legalDoc(kind: 'terms' | 'privacy', lang: Lang): LegalDoc {

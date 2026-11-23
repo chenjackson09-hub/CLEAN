@@ -15,7 +15,7 @@ describe('TermsConsent', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Terms of Use' }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Cindy Clean Beta Pilot Terms of Use' })).toBeInTheDocument()
     // switch to the other document without leaving the reader
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Privacy Policy' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument()

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle"
+import { legalSummary } from "@/lib/legal/content"
 import LegalDocument from "./LegalDocument"
 
 type Kind = "terms" | "privacy"
@@ -12,7 +13,8 @@ type Kind = "terms" | "privacy"
 // signing up reads it and closes it with everything they typed still in place. Controlled by
 // the page; the page decides what ticking unlocks.
 export default function TermsConsent({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const summary = legalSummary(lang === "he" ? "he" : "en")
   const [reading, setReading] = useState<Kind | null>(null)
 
   useEffect(() => {
@@ -27,13 +29,24 @@ export default function TermsConsent({ checked, onChange, disabled }: { checked:
 
   return (
     <>
-      <label className="flex items-start gap-2 text-sm text-gray-700">
+      <section className="rounded-xl bg-gray-50 ring-1 ring-gray-200 px-4 py-3 text-sm text-gray-700" aria-label={summary.title}>
+        <h2 className="font-semibold text-gray-900">{summary.title}</h2>
+        <p className="mt-1">{summary.intro}</p>
+        <p className="mt-2 font-medium">{summary.lead}</p>
+        <ul className="mt-1 space-y-1 list-disc ps-5">
+          {summary.points.map((p) => (
+            <li key={p.label}><strong>{p.label}:</strong> {p.text}</li>
+          ))}
+        </ul>
+      </section>
+      <label className="mt-3 flex items-start gap-2 text-sm text-gray-700">
         <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} className="mt-0.5" />
         <span>
           {t("legal.consentIntro")}
           <button type="button" onClick={open("terms")} className={linkClass}>{t("legal.termsLink")}</button>
           {t("legal.consentAnd")}
           <button type="button" onClick={open("privacy")} className={linkClass}>{t("legal.privacyLink")}</button>
+          {t("legal.consentEnd")}
         </span>
       </label>
       {reading && (
