@@ -15,8 +15,9 @@ describe('validate helpers', () => {
     expect(() => birthdateFromParts('31', '2', '1995', now)).toThrow(DraftError)
     expect(() => birthdateFromParts('1', '1', '1900', now)).toThrow(DraftError)
     expect(() => birthdateFromParts('1', '1', '2020', now)).toThrow(DraftError)
-    expect(() => birthdateFromParts('1', '1', '2013', now)).toThrow(DraftError) // under 14
-    expect(birthdateFromParts('1', '1', '2010', now)).toBe('2010-01-01') // 16: allowed, admin is told separately
+    expect(() => birthdateFromParts('1', '1', '2010', now)).toThrow(DraftError) // under 18
+    expect(() => birthdateFromParts('30', '10', '2008', now)).toThrow(DraftError) // turns 18 tomorrow
+    expect(birthdateFromParts('29', '10', '2008', now)).toBe('2008-10-29') // exactly 18: allowed
   })
   it('only accepts photos from the person’s own storage folder', () => {
     const own = `${URL}/storage/v1/object/public/avatars/${USER}/avatar.jpg?v=1`

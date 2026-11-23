@@ -63,7 +63,7 @@ describe('Cleaner wizard (9 screens, every Continue saved)', () => {
     expect(next).toBeEnabled()
   })
 
-  it('shows the field error next to the field and blocks someone under 14', async () => {
+  it('shows the field error next to the field and blocks someone under 18', async () => {
     const user = userEvent.setup()
     render(<CleanerOnboardingPage />)
     const name = await screen.findByLabelText('Full name')
@@ -73,7 +73,7 @@ describe('Cleaner wizard (9 screens, every Continue saved)', () => {
     await user.selectOptions(screen.getByLabelText('Day'), '1')
     await user.selectOptions(screen.getByLabelText('Month'), '1')
     await user.selectOptions(screen.getByLabelText('Year'), String(new Date().getFullYear() - 5))
-    expect(screen.getByText('You need to be at least 14 to sign up.')).toBeInTheDocument()
+    expect(screen.getByText('You need to be at least 18 to sign up.')).toBeInTheDocument()
   })
 
   it('resumes where the person stopped', async () => {

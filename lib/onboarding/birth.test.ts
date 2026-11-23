@@ -9,9 +9,9 @@ describe('birthProblem', () => {
     expect(birthProblem('31', '2', '1995', NOW)).toBe('invalid')
     expect(birthProblem('1', '1', '1900', NOW)).toBe('invalid')
   })
-  it('rejects anyone under 14, accepts 14 and over', () => {
-    expect(birthProblem('30', '10', '2012', NOW)).toBe('tooYoung')
-    expect(birthProblem('29', '10', '2012', NOW)).toBeNull()
+  it('rejects anyone under 18, accepts 18 and over', () => {
+    expect(birthProblem('30', '10', '2008', NOW)).toBe('tooYoung')
+    expect(birthProblem('29', '10', '2008', NOW)).toBeNull()
     expect(birthProblem('5', '3', '1995', NOW)).toBeNull()
   })
 })

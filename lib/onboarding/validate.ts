@@ -63,7 +63,7 @@ export const ownPhotoUrl = (v: unknown, field: string, userId: string, supabaseU
   return v
 }
 
-// A real calendar date for someone born between 1920 and 14 years ago.
+// A real calendar date for someone born between 1920 and 18 years ago (the minimum age in the Terms of Use).
 export function birthdateFromParts(d: string, m: string, y: string, now: Date = new Date()): string | null {
   if (!d && !m && !y) return null
   const day = Number(d), month = Number(m), year = Number(y)
@@ -71,7 +71,7 @@ export function birthdateFromParts(d: string, m: string, y: string, now: Date = 
   const dt = new Date(Date.UTC(year, month - 1, day))
   if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) throw new DraftError('Birth date is not valid')
   if (year < 1920) throw new DraftError('Birth date is not valid')
-  const youngest = new Date(Date.UTC(now.getUTCFullYear() - 14, now.getUTCMonth(), now.getUTCDate()))
+  const youngest = new Date(Date.UTC(now.getUTCFullYear() - 18, now.getUTCMonth(), now.getUTCDate()))
   if (dt > youngest) throw new DraftError('Birth date is not valid')
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }

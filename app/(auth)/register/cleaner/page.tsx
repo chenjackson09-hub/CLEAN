@@ -375,7 +375,6 @@ export default function CleanerRegisterPage() {
               {birth === "invalid" && <p className="text-sm text-red-600 mt-1">{tr("errBirth")}</p>}
               {birth === "tooYoung" && <p className="text-sm text-red-600 mt-1">{tr("errTooYoung")}</p>}
               {birth === null && age !== null && <p className="text-sm text-gray-500 mt-1">{tr("ageOut", { age })}</p>}
-              {birth === null && age !== null && age < 18 && <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mt-2">{tr("minorNotice")}</p>}
             </div>
           </>
         )}

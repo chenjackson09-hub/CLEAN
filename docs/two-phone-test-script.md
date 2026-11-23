@@ -33,7 +33,7 @@ Open the site → **Register** → choose **Cleaner**, enter the email + passwor
 - [ ] **1.2** After "Continue" you land on **Step 1 of 9** (no long wait).
 
 **Step 1 – You.** Add a photo (try the camera or library). Type a name. Pick a birth date.
-- [ ] **1.3** Leaving the name empty and tapping out shows a red message under the field. A birth date under 14 years ago shows an error; 14+ is accepted. Under 18 shows the "different verification" note. The line "Only your age is shown" is visible.
+- [ ] **1.3** Leaving the name empty and tapping out shows a red message under the field. A birth date under 18 years ago shows an error; 18+ is accepted. The line "Only your age is shown" is visible.
 - [ ] **1.4** Continue moves on **immediately**.
 
 **Step 2 – Where.** Type your town and pick it from the list (try Hebrew and English spellings).
