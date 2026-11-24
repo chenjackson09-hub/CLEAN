@@ -25,7 +25,6 @@ const STRINGS = {
     },
     notSafari: "It looks like Cindy is open inside another app. Open this page in Safari first (copy the address into Safari).",
     added: "I added it",
-    openShare: "Open Share for me",
     close: "Close",
   },
   he: {
@@ -39,7 +38,6 @@ const STRINGS = {
     },
     notSafari: "נראה ש-Cindy פתוחה בתוך אפליקציה אחרת. פתחו קודם את העמוד ב-Safari (העתיקו את הכתובת ל-Safari).",
     added: "הוספתי",
-    openShare: "פתחו לי את השיתוף",
     close: "סגירה",
   },
 };
@@ -66,12 +64,10 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
   const s = STRINGS[lang];
   const [layout, setLayout] = useState<GuideLayout>("dots");
   const [inApp, setInApp] = useState(false);
-  const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
     setLayout(installGuideLayout(navigator.userAgent));
     setInApp(isIosInAppBrowser(navigator.userAgent));
-    setCanShare(typeof navigator.share === "function");
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -79,15 +75,6 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
 
   const steps = s.steps[layout];
 
-  // EXPERIMENT: open the system share sheet straight from our own button (it is a real tap on the
-  // page, so Safari allows it). That skips the "⋯ → Share" steps. Cancelling just rejects the promise.
-  const openShare = async () => {
-    try {
-      await navigator.share({ title: "Cindy", url: window.location.origin });
-    } catch {
-      /* cancelled, or not allowed: the normal steps still work */
-    }
-  };
 
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[70] bg-black/35" dir={lang === "he" ? "rtl" : "ltr"}>
@@ -112,16 +99,9 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
               </li>
             ))}
           </ol>
-          <div className="mt-3 flex gap-2">
-            {canShare && layout !== "android" && (
-              <button type="button" onClick={openShare} className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                {s.openShare}
-              </button>
-            )}
-            <button type="button" onClick={() => onClose(true)} className="flex-1 rounded-xl bg-gray-100 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
-              {s.added}
-            </button>
-          </div>
+          <button type="button" onClick={() => onClose(true)} className="mt-3 w-full rounded-xl bg-gray-100 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
+            {s.added}
+          </button>
         </div>
       </div>
 
