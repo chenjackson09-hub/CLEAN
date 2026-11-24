@@ -30,3 +30,12 @@ export function installHintFor(opts: {
   if (opts.android && opts.canPrompt) return "android"
   return "none"
 }
+
+/**
+ * The install steps only exist in Safari (and, on newer iPhones, Chrome's own share menu). Inside
+ * another app's built-in browser (Instagram, Facebook, Gmail…) there is no "Add to Home Screen" at
+ * all, so the guide tells the person to open the page in Safari first.
+ */
+export function isIosInAppBrowser(userAgent: string): boolean {
+  return /FBAN|FBAV|Instagram|Line\/|GSA\/|Snapchat|MicroMessenger|WhatsApp/i.test(userAgent)
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import InstallGuide from "@/components/InstallGuide";
 import { installHintFor, isAndroidDevice, isIosDevice, type InstallHint } from "@/lib/pwa";
 
 // A small, dismissible card: "Add Cindy to your Home Screen". Android shows a real Install button
@@ -11,16 +12,18 @@ import { installHintFor, isAndroidDevice, isIosDevice, type InstallHint } from "
 const STRINGS = {
   en: {
     title: "Add Cindy to your Home Screen",
-    ios: "In Safari, tap the Share button (or the ⋯ button, then Share), scroll down and tap “Add to Home Screen”. Cindy opens full screen, like an app.",
+    ios: "Four quick taps, and Cindy opens full screen, like an app. We’ll show you each step.",
     android: "Install Cindy to open it full screen, like an app.",
     install: "Install",
+    showMe: "Show me how",
     close: "Not now",
   },
   he: {
     title: "הוסיפו את Cindy למסך הבית",
-    ios: "ב-Safari לחצו על כפתור השיתוף (או על כפתור ⋯ ואז שיתוף), גללו מטה ולחצו על “הוסף למסך הבית”. Cindy תיפתח במסך מלא, כמו אפליקציה.",
+    ios: "ארבע לחיצות קצרות, ו-Cindy תיפתח במסך מלא, כמו אפליקציה. נראה לכם כל שלב.",
     android: "התקינו את Cindy כדי לפתוח אותה במסך מלא, כמו אפליקציה.",
     install: "התקנה",
+    showMe: "הראו לי איך",
     close: "לא עכשיו",
   },
 };
@@ -34,6 +37,7 @@ export default function InstallPrompt() {
   const [hint, setHint] = useState<InstallHint>("none");
   const [lang, setLang] = useState<"en" | "he">("en");
   const [deferred, setDeferred] = useState<InstallEvent | null>(null);
+  const [guide, setGuide] = useState(false);
 
   useEffect(() => {
     setLang(document.documentElement.dir === "rtl" ? "he" : "en");
@@ -96,6 +100,11 @@ export default function InstallPrompt() {
         <p className="font-semibold">{s.title}</p>
         <p className="mt-0.5 text-blue-800">{hint === "ios" ? s.ios : s.android}</p>
         <div className="mt-2 flex items-center gap-3">
+          {hint === "ios" && (
+            <button type="button" onClick={() => setGuide(true)} className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+              {s.showMe}
+            </button>
+          )}
           {hint === "android" && (
             <button type="button" onClick={install} className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
               {s.install}
@@ -106,6 +115,7 @@ export default function InstallPrompt() {
           </button>
         </div>
       </div>
+      {guide && <InstallGuide lang={lang} onClose={() => setGuide(false)} />}
     </div>
   );
 }

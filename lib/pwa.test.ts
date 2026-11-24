@@ -1,4 +1,4 @@
-import { installHintFor, isAndroidDevice, isIosDevice } from './pwa'
+import { installHintFor, isAndroidDevice, isIosDevice, isIosInAppBrowser } from './pwa'
 
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'
 const IPAD_AS_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15'
@@ -34,5 +34,13 @@ describe('installHintFor', () => {
   })
   it('computers get nothing', () => {
     expect(installHintFor(base)).toBe('none')
+  })
+})
+
+describe('isIosInAppBrowser', () => {
+  it('spots another app’s built-in browser but not Safari', () => {
+    expect(isIosInAppBrowser(IPHONE + ' Instagram 300.0')).toBe(true)
+    expect(isIosInAppBrowser(IPHONE + ' [FBAN/FBIOS;FBAV/450]')).toBe(true)
+    expect(isIosInAppBrowser(IPHONE)).toBe(false)
   })
 })
