@@ -1,4 +1,4 @@
-import { installHintFor, isAndroidDevice, isIosDevice, isIosInAppBrowser } from './pwa'
+import { installHintFor, isAndroidDevice, isIosDevice, isIosInAppBrowser, iosBrowserLayout } from './pwa'
 
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'
 const IPAD_AS_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15'
@@ -42,5 +42,13 @@ describe('isIosInAppBrowser', () => {
     expect(isIosInAppBrowser(IPHONE + ' Instagram 300.0')).toBe(true)
     expect(isIosInAppBrowser(IPHONE + ' [FBAN/FBIOS;FBAV/450]')).toBe(true)
     expect(isIosInAppBrowser(IPHONE)).toBe(false)
+  })
+})
+
+describe('iosBrowserLayout', () => {
+  it('Safari 26 has the ⋯ bar, older Safari a middle Share button, Chrome its own', () => {
+    expect(iosBrowserLayout('Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1')).toBe('dots')
+    expect(iosBrowserLayout(IPHONE.replace('Mobile/', 'Version/17.0 Mobile/'))).toBe('share')
+    expect(iosBrowserLayout(IPHONE.replace('Mobile/', 'CriOS/120.0 Mobile/'))).toBe('chrome')
   })
 })

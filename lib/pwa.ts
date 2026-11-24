@@ -39,3 +39,17 @@ export function installHintFor(opts: {
 export function isIosInAppBrowser(userAgent: string): boolean {
   return /FBAN|FBAV|Instagram|Line\/|GSA\/|Snapchat|MicroMessenger|WhatsApp/i.test(userAgent)
 }
+
+export type IosBrowserLayout = "dots" | "share" | "chrome"
+
+/**
+ * Where the buttons are, so the walkthrough can say the right thing:
+ *  - "dots"   Safari 26+ (floating bottom bar: back · address · ⋯). Share is inside the ⋯ menu.
+ *  - "share"  older Safari (bottom toolbar with a Share button in the middle).
+ *  - "chrome" Chrome on iPhone (Share is in the address bar at the top).
+ */
+export function iosBrowserLayout(userAgent: string): IosBrowserLayout {
+  if (/CriOS/i.test(userAgent)) return "chrome"
+  const v = /Version\/(\d+)/.exec(userAgent)
+  return v && Number(v[1]) >= 26 ? "dots" : "share"
+}

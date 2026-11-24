@@ -13,34 +13,28 @@ function setup(ua: string, standalone = false) {
 }
 
 describe('InstallPrompt', () => {
-  it('on an iPhone the card has one big button that opens the step-by-step pop-ups', () => {
+  it('on an iPhone the card has one big button that opens all the steps at once', () => {
     setup(IPHONE)
     render(<InstallPrompt />)
     expect(screen.getByText('Add Cindy to your Home Screen')).toBeInTheDocument()
     expect(screen.getByText('Have Cindy open full screen, like an app.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
-    expect(screen.getByText('Step 1 of 4')).toBeInTheDocument()
-    expect(screen.getByText('Tap the ⋯ button')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('Tap “Share”')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('Tap “Add to Home Screen”')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-    expect(screen.getByText('Tap “Share”')).toBeInTheDocument()
+    // every step is on screen together, so nobody has to go back and forth while Safari's menus are open
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText(/Scroll down and tap “Add to Home Screen”/)).toBeInTheDocument()
+    expect(screen.getByText(/Tap “Add” \(top right\)/)).toBeInTheDocument()
   })
 
-  it('closing the pop-ups with the X keeps the card; finishing all four steps removes it for good', () => {
+  it('closing with the X keeps the card; “I added it” removes it for good', () => {
     setup(IPHONE)
     const { unmount } = render(<InstallPrompt />)
     fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
-    expect(screen.queryByText('Step 1 of 4')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Add Cindy to your Home Screen')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
-    for (let n = 0; n < 3; n++) fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('Tap “Add”')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    fireEvent.click(screen.getByRole('button', { name: 'I added it' }))
     expect(screen.queryByText('Add Cindy to your Home Screen')).toBeNull()
     unmount()
     render(<InstallPrompt />)
