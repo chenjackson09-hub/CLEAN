@@ -76,7 +76,7 @@ export function DaySheet({ days, active, model, todayStr, hasLocation, locationE
       <div
         role="dialog"
         aria-label={fmt(active, { weekday: 'long', day: 'numeric', month: 'long' })}
-        className="relative bg-white w-full sm:max-w-md sm:mx-4 sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col"
+        className="relative bg-white w-full sm:max-w-md sm:mx-4 sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-gray-100">

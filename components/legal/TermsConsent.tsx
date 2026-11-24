@@ -55,7 +55,7 @@ export default function TermsConsent({ checked, onChange, disabled }: { checked:
             role="dialog"
             aria-modal="true"
             aria-label={reading === "terms" ? t("legal.termsTitle") : t("legal.privacyTitle")}
-            className="bg-white w-full sm:max-w-2xl max-h-[90dvh] rounded-t-2xl sm:rounded-2xl shadow-xl flex flex-col"
+            className="bg-white w-full sm:max-w-2xl max-h-[90dvh] rounded-t-2xl sm:rounded-2xl shadow-xl flex flex-col pb-[env(safe-area-inset-bottom)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-100 shrink-0">

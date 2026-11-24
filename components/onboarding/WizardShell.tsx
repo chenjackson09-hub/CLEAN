@@ -21,7 +21,7 @@ export default function WizardShell({
 }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="w-full max-w-lg mx-auto flex-1 flex flex-col px-4 pt-4 pb-40">
+      <div className="w-full max-w-lg mx-auto flex-1 flex flex-col px-4 pt-4 pb-[calc(10rem+var(--sab))]">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-semibold text-gray-900">{stepLabel}</span>
           <div className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export default function WizardShell({
           )}
         </div>
       </div>
-      <div className="fixed bottom-0 inset-x-0 z-20 bg-white border-t border-gray-200">
+      <div className="fixed bottom-0 inset-x-0 z-20 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
         <div className="w-full max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
             <button

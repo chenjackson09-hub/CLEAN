@@ -8,6 +8,7 @@ import HelpWidget from "@/components/HelpWidget";
 import { sendReminders } from "@/lib/reminders";
 import AutoRefresh from "@/components/AutoRefresh";
 import FinishProfileBanner from "@/components/FinishProfileBanner";
+import InstallPrompt from "@/components/InstallPrompt";
 import { isOwnSignupUnfinished } from "@/lib/onboarding/unfinished";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
@@ -52,7 +53,8 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         avatarUrl={profile.avatar_url ?? null}
         acceptedCount={acceptedCount ?? 0}
       />
-      <main className="px-3 pb-4 pt-28 sm:px-8 sm:pb-8">
+      <main className="px-3 pb-[calc(1rem+var(--sab))] pt-28 sm:px-8 sm:pb-8">
+        <InstallPrompt />
         {signupUnfinished && <FinishProfileBanner href="/register/customer" />}
         {children}
       </main>

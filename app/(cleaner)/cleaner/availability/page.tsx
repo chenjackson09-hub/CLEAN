@@ -75,7 +75,7 @@ export default async function AvailabilityPage() {
     // its key fit on screen. The calendar below keeps a minimum height: when the notices on
     // top (listing checklist, welcome note) are showing, the page scrolls to the schedule
     // instead of squeezing it.
-    <div className="-mx-2 md:mx-0 flex flex-col min-h-[calc(100dvh-8rem)]">
+    <div className="-mx-2 md:mx-0 flex flex-col min-h-[calc(100dvh-8rem-var(--sab))]">
       <div className="shrink-0">
         <Suspense fallback={null}>
           <WelcomeBubble name={firstName} />

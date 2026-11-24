@@ -1,0 +1,653 @@
+<title>Clean Creative Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: one calm reading column, numbered chapters, comparison cards where options must be set side by side. */
+:root {
+  --bg: #F6F8F7;
+  --surface: #FFFFFF;
+  --fg: #14211D;
+  --muted: #5B6B66;
+  --line: #DCE4E1;
+  --accent: #1E5446;
+  --accent-soft: #E3EFEB;
+  --ok-bg: #DDF1E6; --ok-fg: #14532D;
+  --plan-bg: #DEE9FB; --plan-fg: #1E3A8A;
+  --gap-bg: #FCEBC8; --gap-fg: #7A4A00;
+  --code-bg: #0F1B18; --code-fg: #E3EFEB;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1815; --surface: #16231F; --fg: #E6EFEC; --muted: #9DB0AA; --line: #2B3C37;
+    --accent: #6FCDB8; --accent-soft: #1D332D;
+    --ok-bg: #173A28; --ok-fg: #A8E6C1;
+    --plan-bg: #1B2A4D; --plan-fg: #B4C9F5;
+    --gap-bg: #44330F; --gap-fg: #F3D28B;
+    --code-bg: #0A1210; --code-fg: #D5E5E0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1815; --surface: #16231F; --fg: #E6EFEC; --muted: #9DB0AA; --line: #2B3C37;
+  --accent: #6FCDB8; --accent-soft: #1D332D;
+  --ok-bg: #173A28; --ok-fg: #A8E6C1;
+  --plan-bg: #1B2A4D; --plan-fg: #B4C9F5;
+  --gap-bg: #44330F; --gap-fg: #F3D28B;
+  --code-bg: #0A1210; --code-fg: #D5E5E0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 56rem; margin: 0 auto; padding-block: 2.5rem 5rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3, h4 { font-family: var(--font-head); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: -0.02em; }
+h2 { font-size: 1.75rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.2rem; }
+h4 { font-size: 1rem; }
+p { margin: 0 0 .75rem; max-width: 68ch; }
+ul, ol { margin: 0 0 .9rem; padding-left: 1.25rem; max-width: 72ch; }
+li { margin-bottom: .3rem; }
+a { color: var(--accent); }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 60ch; }
+.meta { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; color: var(--muted); font-size: .875rem; margin-top: 1rem; }
+.toc { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .5rem; margin: 2rem 0 0; padding: 0; list-style: none; max-width: none; }
+.toc a { display: block; padding: .6rem .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: .6rem; text-decoration: none; color: var(--fg); font-size: .92rem; }
+.toc a:hover, .toc a:focus-visible { border-color: var(--accent); outline: none; }
+.toc small { display: block; color: var(--muted); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+section.chapter { margin-top: 3.5rem; padding-top: 2rem; border-top: 2px solid var(--fg); }
+section.chapter > header { margin-bottom: 1.25rem; }
+.kicker { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .35rem; }
+.block { margin-top: 1.75rem; }
+.block > h3 { margin-bottom: .6rem; }
+.tag { display: inline-block; font-size: .7rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: .12rem .5rem; border-radius: 99px; vertical-align: middle; margin-right: .35rem; }
+.t-ok { background: var(--ok-bg); color: var(--ok-fg); }
+.t-plan { background: var(--plan-bg); color: var(--plan-fg); }
+.t-gap { background: var(--gap-bg); color: var(--gap-fg); }
+.legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-size: .85rem; color: var(--muted); margin: .5rem 0 1rem; }
+.note { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: .5rem; padding: .8rem 1rem; margin: 1rem 0; max-width: 72ch; }
+.note p:last-child { margin-bottom: 0; }
+.note.gap { border-left-color: var(--gap-fg); }
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; padding: 1.1rem 1.2rem; min-width: 0; }
+.card h4 { margin-bottom: .4rem; }
+.card ul { padding-left: 1.1rem; margin-bottom: 0; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; vertical-align: top; padding: .55rem .7rem; border-bottom: 1px solid var(--line); }
+th { font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: .8rem; }
+.dir { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 1.4rem 1.4rem 1.1rem; margin-top: 1.25rem; min-width: 0; }
+.dir > header { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; justify-content: space-between; margin-bottom: .75rem; }
+.dir dl { display: grid; grid-template-columns: 9.5rem 1fr; gap: .55rem 1rem; margin: 1rem 0 0; }
+.dir dt { font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: .15rem; }
+.dir dd { margin: 0; min-width: 0; }
+@media (max-width: 36rem) { .dir dl { grid-template-columns: 1fr; gap: .1rem; } .dir dd { margin-bottom: .6rem; } }
+.sw { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .6rem; max-width: none; }
+.sw li { margin: 0; font-size: .8rem; line-height: 1.35; }
+.sw i { display: block; height: 2.6rem; border-radius: .5rem; border: 1px solid var(--line); margin-bottom: .3rem; }
+.sw b { display: block; font-weight: 600; }
+.sw code { font-size: .78rem; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; }
+.logo { display: grid; grid-template-columns: 2.2rem 1fr; gap: .2rem 1rem; }
+.logo .n { font-family: var(--font-head); font-weight: 700; font-size: 1.6rem; color: var(--accent); line-height: 1; padding-top: .15rem; }
+.prompt { background: var(--code-bg); color: var(--code-fg); border-radius: .8rem; margin-top: 1.25rem; overflow: hidden; }
+.prompt .ph { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .6rem .6rem .6rem 1rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+.prompt .ph b { font-family: var(--font-head); font-size: .95rem; }
+.prompt .ph span { display: block; font-size: .78rem; opacity: .7; font-weight: 400; font-family: var(--font-body); }
+.prompt button { font: inherit; font-size: .85rem; font-weight: 600; padding: .4rem .9rem; border-radius: .5rem; border: 1px solid rgba(255,255,255,.35); background: transparent; color: inherit; cursor: pointer; flex: none; }
+.prompt button:hover, .prompt button:focus-visible { background: rgba(255,255,255,.12); outline: none; }
+.prompt pre { margin: 0; padding: 1rem; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; line-height: 1.6; max-height: 26rem; overflow-y: auto; }
+.rec { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 1rem; padding: 1.3rem 1.4rem; }
+.hr { height: 0; border: 0; border-top: 1px solid var(--line); margin: 1.5rem 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">Creative brief · Draft v1 · 23 November 2026</div>
+  <h1>Clean: app description and design direction</h1>
+  <p class="lede">A complete description of the product, followed by three brand directions, five logo concepts, the screen architecture and four prompts for AI design tools. It is written for a designer who has never heard of the project.</p>
+  <div class="meta"><span>Product stage: supervised beta pilot</span><span>Launch region: Hula Valley, Northern Israel</span><span>Languages: Hebrew (right to left) and English</span></div>
+  <div class="legend">
+    <span><span class="tag t-ok">Confirmed</span>built and working in the app today</span>
+    <span><span class="tag t-plan">Proposed</span>a design recommendation, not a decided feature</span>
+    <span><span class="tag t-gap">Gap</span>information we do not have yet</span>
+  </div>
+  <ul class="toc">
+    <li><a href="#app"><small>1</small>The app</a></li>
+    <li><a href="#inspiration"><small>2</small>Preply and Komoot</a></li>
+    <li><a href="#directions"><small>3</small>Three brand directions</a></li>
+    <li><a href="#logos"><small>4</small>Five logo concepts</a></li>
+    <li><a href="#ux"><small>5</small>UX and UI architecture</a></li>
+    <li><a href="#prompts"><small>6</small>Four AI tool prompts</a></li>
+    <li><a href="#recommendation"><small>7</small>Recommendation</a></li>
+  </ul>
+</header>
+
+<!-- ============ 1. THE APP ============ -->
+<section class="chapter" id="app">
+  <header><div class="kicker">Chapter 1</div><h2>The app</h2></header>
+
+  <div class="block">
+    <h3>In one paragraph</h3>
+    <p>Clean is a two-sided marketplace for home cleaning. <strong>Hosts</strong> (people who need a home, villa, guesthouse or office cleaned) pick a day on a calendar, see which approved cleaners are free and within range, and send a booking request. <strong>Cleaners</strong> mark the days and hours they are available, answer requests within 24 hours, and chat with the host once matched. Every person is approved by an admin before they can take part. Payment happens between the two people outside the app. It is bilingual (Hebrew right to left, English left to right) and mobile-first.</p>
+    <div class="note"><p><strong>Name.</strong> The product shows "Clean" as its wordmark in the app. The legal text and the signup agreement call it "Cindy Clean". "Cindy" is also the friendly assistant who greets new users. A domain, cindyclean.co.il, is planned. <span class="tag t-gap">Gap</span> The final public name has not been fixed, and there is no Hebrew name. This brief uses "Clean" and notes where "Cindy" matters.</p></div>
+  </div>
+
+  <div class="block">
+    <h3>The problem it solves</h3>
+    <p>This is inferred from how the product is built, not from market research.</p>
+    <ul>
+      <li><strong>For hosts:</strong> finding a cleaner who is actually free on the day you need, and who someone has checked. The app starts from the day, not from a list of strangers.</li>
+      <li><strong>For cleaners:</strong> getting requests that already fit their calendar, their area and their rate, without negotiating over messages first.</li>
+      <li><strong>For both:</strong> sharing as little personal information as possible until a match is made. Hosts show a town, not a street. Cleaners show an age, not a birth date.</li>
+    </ul>
+    <p><span class="tag t-gap">Gap</span> No customer interviews, competitor research or market sizing have been done. Anything below about "what makes us different" comes from the product's own rules.</p>
+  </div>
+
+  <div class="block">
+    <h3>Who uses it</h3>
+    <div class="grid">
+      <div class="card"><h4>Hosts <span class="tag t-ok">Confirmed</span></h4><ul>
+        <li>Households, plus homes described as apartment, house, villa, guesthouse (including Airbnb) or office</li>
+        <li>Must be 18 or older</li>
+        <li>Many will use Hebrew; some English</li>
+        <li>Optional details: pets, floors, people at home, private home photos</li></ul></div>
+      <div class="card"><h4>Cleaners <span class="tag t-ok">Confirmed</span></h4><ul>
+        <li>Individual cleaners (18 or older) who set their own rate, area and available days</li>
+        <li>Offer services such as regular, deep, windows, laundry, move-in or move-out, post-renovation, Pesach, Airbnb, offices, pet-friendly, organizing</li>
+        <li>Hebrew or English</li></ul></div>
+      <div class="card"><h4>Admins <span class="tag t-ok">Confirmed</span></h4><ul>
+        <li>The small team running the pilot</li>
+        <li>Approve every host and cleaner, answer support messages, and open or close service areas</li>
+        <li>Internal tool, not a brand surface</li></ul></div>
+    </div>
+    <p style="margin-top:.9rem"><span class="tag t-gap">Gap</span> We do not have a profile of the typical host or cleaner (age range, income, how comfortable with apps). This matters for tone and type size.</p>
+  </div>
+
+  <div class="block">
+    <h3>Unique value</h3>
+    <ul>
+      <li><strong>Calendar first.</strong> The host's main screen is a month calendar showing which days are booked, requested or have cleaners free. Search filters were deliberately removed.</li>
+      <li><strong>Everyone is approved.</strong> Admins review every sign-up. A separate "Cindy Verified" badge appears only when an admin personally verifies a person. Nothing is verified automatically.</li>
+      <li><strong>Privacy in stages.</strong> Hosts' street addresses and home notes reach a cleaner only when a request is sent or accepted. Home photos are private and visible only to a cleaner with a live request. Phone numbers are never shown; people use in-app chat.</li>
+      <li><strong>Flexible days.</strong> A host can offer several candidate days for one clean. Accepting one closes the rest.</li>
+      <li><strong>Opened area by area.</strong> The service opens locality by locality. A host in a closed area sees a "coming soon" banner but keeps their calendar.</li>
+      <li><strong>A named helper.</strong> "Cindy" speaks in the welcome and waitlist messages, giving the product a human voice.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Confirmed features</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Area</th><th>What exists today</th></tr></thead>
+      <tbody>
+        <tr><td>Sign-up</td><td>Account on the first screen (email and password, or Google), email code check, required agreement to the Terms. Cleaner wizard: 9 screens. Host wizard: 7 screens. Both end with a preview of the profile, can be left and resumed, and are saved on every Continue. Photo framing tool (drag and zoom into a round window).</td></tr>
+        <tr><td>Approval</td><td>New hosts see a friendly "you're on the waitlist" message from Cindy until approved. New cleaners can set up their schedule while waiting.</td></tr>
+        <tr><td>Host schedule</td><td>Month calendar. Green day = booked (hours shown). Orange = requests sent. Blue dots = cleaners free. Tapping a day opens a sheet with bookings, requests, closed requests and free cleaners as cards. One day or flexible days mode.</td></tr>
+        <tr><td>Cleaner cards</td><td>Photo, name, rating, town, rate per hour, distance, available time slots for that day, "Cindy Verified" badge. Opens a full profile.</td></tr>
+        <tr><td>Cleaner profile</td><td>Photo, name and age, rating with number of cleans, hourly rate, stats (cleans completed, experience range, job length), languages, services as pills, what they are looking for, gas reimbursement, a service-area map with radius, written reviews from hosts.</td></tr>
+        <tr><td>Host profile</td><td>Seen by cleaners who have a request: first impression, home details, pets, typical needs, a template-written "About us" paragraph, reviews from cleaners. Private home photos and home notes unlock only for a live request.</td></tr>
+        <tr><td>Booking request</td><td>One card: date, start time, estimated duration, cleaning type (regular or deep), extras (oven, linens, windows, fridge, laundry, outdoor), what matters most, pets and host at home, notes, address. It becomes a read-only sent card.</td></tr>
+        <tr><td>Cleaner side</td><td>Availability calendar by date with time slots (blue free, orange pending, green booked). Requests grouped by host with a time-left label. Accept in one tap, decline with confirmation. Dashboard: today and tomorrow, upcoming, past. Mark complete, rate the host.</td></tr>
+        <tr><td>After a match</td><td>In-app text chat with booking cards, a notification bell (live), add to Google Calendar button, cancellation by either side with reason, "find another cleaner" if the cleaner cancels, ratings (1 to 5) with a short written review.</td></tr>
+        <tr><td>Email</td><td>Requests, answers, cancellations, approvals and reminders, in Hebrew and English together.</td></tr>
+        <tr><td>Admin</td><td>Dashboard with live counts, applications, cleaners, hosts, booking requests, matches, support inbox, a Locations screen to open or close areas, Cindy Verify control.</td></tr>
+        <tr><td>Platform</td><td>Hebrew and English with a full right-to-left layout, a two-row top header (wordmark, bell, menu and profile photo above the main tabs), Terms and Privacy pages.</td></tr>
+        <tr><td>Not included</td><td>In-app payments, phone numbers shown to users, a photo gallery on cleaner profiles (built, switched off).</td></tr>
+      </tbody></table></div>
+  </div>
+
+  <div class="block">
+    <h3>Future features discussed, not built <span class="tag t-plan">Proposed</span></h3>
+    <ul>
+      <li>Phone push notifications; WhatsApp or SMS messages</li>
+      <li>Automatic two-way Google Calendar sync (today it is a manual "add" link)</li>
+      <li>An admin map and analytics: demand by area, growth, expansion suggestions</li>
+      <li>"Book again" with a favourite cleaner</li>
+      <li>Showing first name plus initial until a booking is confirmed</li>
+      <li>One person holding both a host and a cleaner role</li>
+      <li>Opening more regions beyond the Hula Valley launch list; a dedicated domain</li>
+    </ul>
+    <p>Map-based browsing of cleaners is <strong>not</strong> on this list. Today the only map is the cleaner's service-area circle. See chapter 5 for how a map could be added.</p>
+  </div>
+
+  <div class="block">
+    <h3>Primary journeys <span class="tag t-ok">Confirmed</span></h3>
+    <div class="grid">
+      <div class="card"><h4>Host</h4><ol>
+        <li>Create account, answer a few questions about the home, check the preview</li>
+        <li>Wait for approval (Cindy's waitlist message)</li>
+        <li>Open the calendar, tap a day</li>
+        <li>Pick a free cleaner, send a request</li>
+        <li>Get the answer, chat, add to calendar</li>
+        <li>After the clean: rate and write a review</li></ol></div>
+      <div class="card"><h4>Cleaner</h4><ol>
+        <li>Create account, answer nine short screens, check the preview</li>
+        <li>Mark available days and hours</li>
+        <li>See a request, open it, accept or decline within 24 hours</li>
+        <li>Chat to arrange details</li>
+        <li>Clean, mark complete, rate the host</li></ol></div>
+      <div class="card"><h4>Admin</h4><ol>
+        <li>See a new sign-up on the dashboard</li>
+        <li>Approve, reject or ask for more information</li>
+        <li>Optionally Cindy Verify a person</li>
+        <li>Watch requests and matches; open an area to new hosts</li></ol></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Current visual state</h3>
+    <p>The app has no designed identity yet. It uses plain white cards with large rounded corners, a standard blue as the main action colour, grey text, and system fonts. The admin area uses a stakeholder-supplied palette: teal #75C9C8, blue #80A1D4, lilac #C0B9DD, pale #DED9E2, cream #F7F4EA. The calendar already has a three-colour status language: <strong>free = blue, pending = orange, booked = green</strong>. A new identity must keep these three states instantly distinguishable.</p>
+  </div>
+
+  <div class="block">
+    <h3>How it differs from other apps</h3>
+    <p>From the product's own rules, not from a competitor review: day-first calendar discovery, approval by people, staged privacy, flexible-day requests, area-by-area opening and a full Hebrew right-to-left experience. <span class="tag t-gap">Gap</span> Which cleaning marketplaces the target users already know has not been researched. Do that before claiming any difference publicly.</p>
+  </div>
+
+  <div class="block">
+    <h3>Emotions the app should create <span class="tag t-plan">Proposed</span></h3>
+    <p>These are design goals, chosen to match the product's rules.</p>
+    <ul>
+      <li><strong>Trust.</strong> "A person looked at this cleaner, and my address is safe."</li>
+      <li><strong>Calm.</strong> A home task that feels simple and finished, not a chore list.</li>
+      <li><strong>Warmth.</strong> A friendly local helper (Cindy), not a call centre.</li>
+      <li><strong>Freshness.</strong> The lightness of a just-cleaned room: air, light, clear surfaces.</li>
+      <li><strong>Belonging.</strong> A small community in a place people know, the Hula Valley.</li>
+    </ul>
+  </div>
+
+  <div class="note gap">
+    <p><strong>Open questions for the designers' first call</strong></p>
+    <ul>
+      <li>Final product name, and a Hebrew name or transliteration.</li>
+      <li>Is the Hula Valley an identity element, or only the first place we open? (Affects whether the brand can travel to other regions.)</li>
+      <li>Who is the primary audience for the brand: hosts or cleaners? The app serves both.</li>
+      <li>Is there existing photography, or will it be commissioned or illustrated?</li>
+      <li>Should the helper "Cindy" become a visible character? Today she is only a name in messages.</li>
+      <li>Any colours or symbols to avoid (religious, political or regional sensitivities)?</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 2. INSPIRATION ============ -->
+<section class="chapter" id="inspiration">
+  <header><div class="kicker">Chapter 2</div><h2>Preply and Komoot: what to borrow</h2></header>
+  <p>The goal is an original identity. Both apps are used here as lessons in how to organise and present information, not as styles to copy.</p>
+
+  <div class="grid" style="margin-top:1rem">
+    <div class="card"><h4>Preply: how a marketplace of people feels friendly</h4>
+      <ul>
+        <li><strong>Person cards that do the selling.</strong> A cleaner card should work the way a tutor card does: face first, one line of who they are, the price, the rating, one clear button.</li>
+        <li><strong>Visual hierarchy.</strong> One strong number (price), one trust signal (rating), one action per card.</li>
+        <li><strong>Profiles as a story.</strong> Photo, short intro, facts in tidy tiles, reviews. Our cleaner profile already follows this order.</li>
+        <li><strong>Friendly onboarding.</strong> One question per screen, small progress indicator, playful tone. Our wizards already work this way and need a better skin.</li>
+        <li><strong>Playful but professional.</strong> Rounded shapes, bright accent, warm language, no clutter.</li>
+      </ul></div>
+    <div class="card"><h4>Komoot: how place and discovery feel inspiring</h4>
+      <ul>
+        <li><strong>Place as the hero.</strong> Our launch is a real, loved landscape. Locality names, distance and the service-area circle can feel like part of a journey, not a form field.</li>
+        <li><strong>Outdoor palette.</strong> Greens, water blues and earth tones give the product a sense of fresh air.</li>
+        <li><strong>Photography and storytelling.</strong> Real places and real people, used generously on empty states, onboarding and area pages.</li>
+        <li><strong>Clear detail.</strong> Information-dense screens that stay legible: a tidy stats row, a map, then text.</li>
+        <li><strong>Mobile navigation.</strong> A thumb-friendly layout where the map or calendar owns the screen and details slide up as a sheet.</li>
+      </ul></div>
+  </div>
+
+  <div class="block">
+    <h3>How the two combine for this product <span class="tag t-plan">Proposed</span></h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Our screen</th><th>Preply lesson</th><th>Komoot lesson</th></tr></thead>
+      <tbody>
+        <tr><td>Day sheet with free cleaners</td><td>Compact person cards, one clear action</td><td>Bottom sheet that rises over the calendar or map, with the locality named above it</td></tr>
+        <tr><td>Cleaner profile</td><td>Face, price, rating, tidy fact tiles, reviews</td><td>A service-area map and distance as a proper visual, not a number</td></tr>
+        <tr><td>Onboarding</td><td>One question per screen, warm copy, preview of the finished profile</td><td>A landscape image that changes as the person moves through the steps, and a town picker that feels like choosing a place</td></tr>
+        <tr><td>Home screen</td><td>Next clean as the main card, friendly greeting</td><td>The day strip as a mini timeline, seasonal or regional imagery in the header</td></tr>
+        <tr><td>Empty states</td><td>A friendly message with one button</td><td>A photographic or illustrated landscape instead of a grey box</td></tr>
+      </tbody></table></div>
+    <div class="note"><p><strong>What not to take.</strong> Preply's marketplace pressure (urgency banners, heavy filtering) does not suit a calm, approval-based pilot. Komoot's dense route-planning tools do not apply, because we do not plan routes. Keep the feeling, drop the machinery.</p></div>
+  </div>
+</section>
+
+<!-- ============ 3. DIRECTIONS ============ -->
+<section class="chapter" id="directions">
+  <header><div class="kicker">Chapter 3</div><h2>Three brand directions</h2></header>
+  <p>All three must work in Hebrew right to left and English left to right, so every type recommendation uses families on Google Fonts that include both scripts. All three keep the free, pending and booked calendar states distinct.</p>
+
+  <!-- A -->
+  <article class="dir" id="dir-a">
+    <header><h3>A · Valley Morning</h3><span class="tag t-plan">Komoot-leaning</span></header>
+    <p><strong>Concept.</strong> The Hula Valley at first light: wetland water, green hills and the pale outline of Mount Hermon. Clean feels like fresh air coming into a room.</p>
+    <dl>
+      <dt>Personality</dt><dd>Calm, local, trustworthy, quietly proud of place. Speaks plainly and warmly.</dd>
+      <dt>Colours</dt><dd><ul class="sw" data-sw="Valley green|#1E5446|Headings, navigation, primary buttons;Water teal|#2E9E96|Active states, links, free days;Morning mist|#EDF5F2|Page background;Sunrise amber|#F4A63B|Pending, highlights, sparkle;Hermon stone|#8696A0|Secondary text, dividers;Deep ink|#12211D|Body text"></ul></dd>
+      <dt>Typography</dt><dd>Headings: Rubik (600), friendly and slightly rounded, with a matching Hebrew. Body: Heebo (400 and 500). Numbers and prices: Rubik tabular. All three include Hebrew.</dd>
+      <dt>Logo</dt><dd>A rising sun over layered hills, the lower layer reading as water. Pairs with logo concept 3 or 4.</dd>
+      <dt>Icons</dt><dd>Rounded line icons, 2 px stroke, a few filled accents in amber. Place icons (hill, water, pin) used sparingly.</dd>
+      <dt>Imagery</dt><dd>Real photography of the valley in soft morning light, plus very light, desaturated landscape bands for backgrounds. People photographed in daylight, at home, in natural poses. Soft hand-drawn contour lines as a recurring texture.</dd>
+      <dt>UI language</dt><dd>White cards on a misty background, 16 px corners, thin tinted borders instead of heavy shadows. A contour-line texture behind headers. Buttons in valley green, with water teal for secondary.</dd>
+      <dt>Why it fits</dt><dd>It matches the launch place, feels clean without looking clinical, and gives the strongest Komoot-style sense of discovery. Risk: ties the brand to one region.</dd>
+    </dl>
+  </article>
+
+  <!-- B -->
+  <article class="dir" id="dir-b">
+    <header><h3>B · Bright Hello</h3><span class="tag t-plan">Preply-leaning</span></header>
+    <p><strong>Concept.</strong> A friendly neighbour who always says hello first. Bold colour, round shapes and a character. Cindy is the face of the brand.</p>
+    <dl>
+      <dt>Personality</dt><dd>Cheerful, helpful, playful but professional. Uses short sentences and the occasional smile.</dd>
+      <dt>Colours</dt><dd><ul class="sw" data-sw="Clean blue|#2B5FD9|Primary buttons, links (continuity with today's blue);Sky|#DCE8FF|Soft backgrounds, tags;Mint|#7ED9C4|Success, booked, fresh accents;Sunshine|#FFC94D|Ratings, highlights;Coral|#FF7A66|Alerts, pending, small energy;Ink|#1B2340|Text;Snow|#F7F9FC|Page background"></ul></dd>
+      <dt>Typography</dt><dd>Headings: Secular One, chunky and friendly in Hebrew and Latin, used large and sparingly. Body and UI: Assistant (400, 600). Large type sizes for readability.</dd>
+      <dt>Logo</dt><dd>A speech bubble or rounded sparkle shape that becomes Cindy's face. Pairs with logo concept 5.</dd>
+      <dt>Icons</dt><dd>Chunky filled icons with rounded ends in two tones (blue plus mint).</dd>
+      <dt>Imagery</dt><dd>Flat, friendly illustration of Cindy and everyday home scenes. Cut-out photos of real cleaners on colour blocks. Confetti-like sparkles on success moments.</dd>
+      <dt>UI language</dt><dd>Pill buttons, 24 px card corners, colour-blocked card headers, sticker-style badges for Cindy Verified. Micro-animations on success.</dd>
+      <dt>Why it fits</dt><dd>It makes sign-up fun, matches the "Cindy" helper already in the copy, and is the closest to Preply's feel. Risk: can feel like a children's app if over-used, and less rooted in place.</dd>
+    </dl>
+  </article>
+
+  <!-- C -->
+  <article class="dir" id="dir-c">
+    <header><h3>C · Daylight Glass</h3><span class="tag t-plan">Precise and premium</span></header>
+    <p><strong>Concept.</strong> The look of a window after cleaning: clarity, reflection, a single bright highlight. Minimal, architectural, confident.</p>
+    <dl>
+      <dt>Personality</dt><dd>Crisp, precise, reliable, understated. Speaks briefly and exactly.</dd>
+      <dt>Colours</dt><dd><ul class="sw" data-sw="Ink navy|#0E1B2C|Text, headers, primary buttons;Pane white|#FFFFFF|Cards;Chalk|#F4F6F8|Page background;Glass blue|#3BA7D9|Links, free days, focus;Steel|#8A97A6|Secondary text;Lemon|#F6D743|The single bold accent: sparkle, ratings, key action"></ul></dd>
+      <dt>Typography</dt><dd>Headings: Heebo 800 with tight spacing, set large. Body and UI: IBM Plex Sans Hebrew (400, 500), which also covers Latin. Generous white space.</dd>
+      <dt>Logo</dt><dd>A sharp geometric mark: a square window pane with a single diagonal glint. Pairs with logo concept 2 or a refined version of 1.</dd>
+      <dt>Icons</dt><dd>Thin 1.5 px geometric line icons on a strict grid, no fills.</dd>
+      <dt>Imagery</dt><dd>Architectural interior photography with natural light, clean surfaces, minimal objects. Duotone treatment (navy and glass blue) for people photos.</dd>
+      <dt>UI language</dt><dd>Hairline borders, 8 px corners, large type, lots of air, one lemon accent per screen. Soft light-reflection gradient on key surfaces.</dd>
+      <dt>Why it fits</dt><dd>It signals cleanliness and reliability most directly and suits guesthouses and offices. Risk: coldest of the three, and least like Preply or Komoot.</dd>
+    </dl>
+  </article>
+
+  <div class="note"><p><strong>Calendar states.</strong> Whatever direction is chosen, free, pending and booked must differ by more than hue (add an icon or pattern) so they work for colour-blind users and in small month cells. Check each palette above for this before approving it.</p></div>
+</section>
+
+<!-- ============ 4. LOGOS ============ -->
+<section class="chapter" id="logos">
+  <header><div class="kicker">Chapter 4</div><h2>Five logo concepts</h2></header>
+  <p>Every concept needs a Latin wordmark and a Hebrew wordmark that look like the same brand. The Hebrew name is not decided, so concepts show the symbol first. Test each as a rounded-square app icon at 48 px and as a 16 px browser-tab icon.</p>
+
+  <div class="grid" style="margin-top:1rem">
+    <div class="card logo"><div class="n">1</div><div>
+      <h4>The Sparkle C</h4>
+      <p><strong>Idea.</strong> A bold letter C whose opening holds a four-point sparkle, like light on a clean surface.</p>
+      <p><strong>Symbolism.</strong> C for Clean and Cindy; the sparkle means "just cleaned".</p>
+      <p><strong>Shape.</strong> One thick rounded stroke forming the C, with a small sparkle placed in the gap. Works in one colour.</p>
+      <p><strong>App icon.</strong> White C and sparkle on a solid brand colour.</p>
+      <p><strong>Small sizes.</strong> Strong. The C alone still reads at 16 px; the sparkle may merge, so draw a simplified version.</p>
+      <p><strong>Pairs with.</strong> Directions A, B or C.</p></div></div>
+
+    <div class="card logo"><div class="n">2</div><div>
+      <h4>Window Glint</h4>
+      <p><strong>Idea.</strong> A square pane with a single diagonal highlight cutting across one corner.</p>
+      <p><strong>Symbolism.</strong> Clear glass, a home (window), light.</p>
+      <p><strong>Shape.</strong> A rounded square outline, one thick diagonal line, one small tick. Pure geometry.</p>
+      <p><strong>App icon.</strong> Works as a negative space cut in a coloured square.</p>
+      <p><strong>Small sizes.</strong> Very strong; extremely simple. Least distinctive, since window marks are common.</p>
+      <p><strong>Pairs with.</strong> Direction C.</p></div></div>
+
+    <div class="card logo"><div class="n">3</div><div>
+      <h4>Valley Horizon</h4>
+      <p><strong>Idea.</strong> A circle (sun) above two soft overlapping hills, the lower band drawn as a gentle wipe or wave.</p>
+      <p><strong>Symbolism.</strong> The Hula Valley, fresh morning, and a cloth wiping a surface in one stroke.</p>
+      <p><strong>Shape.</strong> A circle and two flowing bands, all within a rounded square. Two or three colours.</p>
+      <p><strong>App icon.</strong> Sun in amber over green and teal bands on mist.</p>
+      <p><strong>Small sizes.</strong> Good if reduced to the circle plus one band at 16 px.</p>
+      <p><strong>Pairs with.</strong> Direction A.</p></div></div>
+
+    <div class="card logo"><div class="n">4</div><div>
+      <h4>House Pin</h4>
+      <p><strong>Idea.</strong> A map pin whose inside is a simple house outline with a small sparkle at the roof.</p>
+      <p><strong>Symbolism.</strong> A cleaner coming to a place; location plus home.</p>
+      <p><strong>Shape.</strong> A teardrop pin with a house cut out of it, drawn with one outline weight.</p>
+      <p><strong>App icon.</strong> Pin centred on a solid square, white on colour.</p>
+      <p><strong>Small sizes.</strong> Recognisable, but pins are common in many apps, so distinctiveness depends on the house and sparkle detail.</p>
+      <p><strong>Pairs with.</strong> Directions A and C.</p></div></div>
+
+    <div class="card logo"><div class="n">5</div><div>
+      <h4>Cindy Bubble</h4>
+      <p><strong>Idea.</strong> A rounded speech bubble that is also a friendly, minimal face (two dots and a small smile) with a sparkle on the corner.</p>
+      <p><strong>Symbolism.</strong> The helper Cindy; chat and welcome; a human voice.</p>
+      <p><strong>Shape.</strong> A soft squircle bubble with a small tail, two dot eyes, a gentle curve.</p>
+      <p><strong>App icon.</strong> Bubble on a bright colour; the tail points to the lower corner.</p>
+      <p><strong>Small sizes.</strong> The bubble silhouette holds; the face may disappear at 16 px, which is acceptable.</p>
+      <p><strong>Pairs with.</strong> Direction B. It only works if Cindy becomes a visible character. <span class="tag t-gap">Gap</span></p></div></div>
+  </div>
+  <p style="margin-top:1rem"><strong>Selection criteria.</strong> Pick for: reads at 16 px, works in one colour, looks the same mirrored in a right-to-left layout, is not already a common stock symbol, and says something about this product.</p>
+</section>
+
+<!-- ============ 5. UX ============ -->
+<section class="chapter" id="ux">
+  <header><div class="kicker">Chapter 5</div><h2>UX and UI architecture</h2></header>
+  <p>This chapter keeps today's structure and recommends how to present it. Items marked Proposed are design suggestions, not decided features.</p>
+
+  <div class="block">
+    <h3>Navigation structure <span class="tag t-ok">Confirmed</span></h3>
+    <div class="grid">
+      <div class="card"><h4>Host</h4><p>Two-row top header. Row 1: wordmark, notification bell, menu button, profile photo. Row 2 tabs: Home, Schedule, Bookings, Chat. Profile is the photo, not a tab.</p></div>
+      <div class="card"><h4>Cleaner</h4><p>Same header. Tabs: Home, Requests, Schedule, Chat. Red badge on Requests for pending answers.</p></div>
+      <div class="card"><h4>Admin</h4><p>Top bar plus left sidebar (a menu on phones). Dashboard, applications, requests, matches, cleaners, hosts, support, locations.</p></div>
+    </div>
+    <p style="margin-top:.8rem"><span class="tag t-plan">Proposed</span> On phones, consider moving the four tabs to a bottom bar for thumb reach, with the header reduced to wordmark, bell and photo. In right-to-left, the order mirrors.</p>
+  </div>
+
+  <div class="block">
+    <h3>Home screens</h3>
+    <ul>
+      <li><strong>Host home <span class="tag t-ok">Confirmed</span>:</strong> greeting, a Today and tomorrow strip, "Waiting for an answer" with the time left, "Coming up", and a collapsed "Past cleans". With no bookings, a single button to find a cleaner.</li>
+      <li><strong>Cleaner home <span class="tag t-ok">Confirmed</span>:</strong> greeting and search, an amber "requests are waiting" link, "Finished? Mark as complete", Today and tomorrow, Upcoming, collapsed Past.</li>
+      <li><span class="tag t-plan">Proposed</span> Make the next clean a large hero card with date, cleaner photo and one action (open chat). Add a regional image in the header that changes with the season or time of day.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Discovery: calendar first, optionally map-aware</h3>
+    <ul>
+      <li><strong>Today <span class="tag t-ok">Confirmed</span>:</strong> the host opens the Schedule calendar. Day cells show booked hours, "N asked", and blue dots for free cleaners. Tapping a day opens a sheet of free cleaner cards. There are no search filters.</li>
+      <li><strong>Preply-style card <span class="tag t-plan">Proposed</span>:</strong> large photo, "First L.", rating and clean count, town and distance, price per hour, available time chips, Cindy Verified, one primary button "Request".</li>
+      <li><strong>Komoot-style map layer <span class="tag t-plan">Proposed</span>:</strong> inside the day sheet, a toggle between list and a map of the area. The host's town is marked, cleaners appear as photo pins at their <em>town</em> (never an exact address), and the sheet rises from the bottom. Needs a decision, because it is a new feature. Privacy rule to keep: pins show towns only.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Profiles</h3>
+    <ul>
+      <li><strong>Cleaner profile <span class="tag t-ok">Confirmed</span>:</strong> top bar, photo, name, rating, rate tile, three stat tiles, languages, About, services as pills, preferences, host reviews. <span class="tag t-plan">Proposed:</span> add the service-area map as a full-width image band with the radius, and a sticky "Request" button.</li>
+      <li><strong>Host profile (seen by a cleaner) <span class="tag t-ok">Confirmed</span>:</strong> intro paragraph, home tiles, pets, typical needs, reviews, with home photos and notes locked until a live request.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Booking request and core workflow</h3>
+    <ol>
+      <li>Host taps a day, then a cleaner, then "Request". <span class="tag t-ok">Confirmed</span></li>
+      <li>One request card: date, time, duration, cleaning type, extras, what matters, pets, notes, address. It becomes a read-only sent card. <span class="tag t-ok">Confirmed</span></li>
+      <li>Cleaner sees one row per host, opens it, accepts in one tap. A 24-hour countdown shows time left. <span class="tag t-ok">Confirmed</span></li>
+      <li>Chat opens automatically with a booking card; a reminder arrives the day before. <span class="tag t-ok">Confirmed</span></li>
+      <li>Cancellation is a single shared sheet with a reason. <span class="tag t-ok">Confirmed</span></li>
+      <li><span class="tag t-plan">Proposed</span> Give each state a clear visual stage (Requested, Accepted, Done, Rated) as a small progress track on the booking card.</li>
+    </ol>
+  </div>
+
+  <div class="block">
+    <h3>Onboarding</h3>
+    <ul>
+      <li><strong>Structure <span class="tag t-ok">Confirmed</span>:</strong> account first, then 9 cleaner or 7 host screens with a "Step X of N" bar, fixed Back and Continue bar, optional "Skip for now", a final preview with Edit on each section, exit with resume.</li>
+      <li><span class="tag t-plan">Proposed</span> Show Cindy as a small guide on each screen, with one friendly sentence. Use a landscape or home illustration that gently changes per step. Celebrate the finish with a short moment, then the waitlist message for hosts.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Mobile-first principles <span class="tag t-plan">Proposed</span></h3>
+    <ul>
+      <li>One primary action per screen; primary buttons within thumb reach and at least 44 px tall.</li>
+      <li>Bottom sheets for details so the calendar or list stays visible behind.</li>
+      <li>Right-to-left is a first-class layout: design in Hebrew first, then check English. Use start and end, never left and right. Icons that imply direction (arrows, back) must mirror.</li>
+      <li>Body text no smaller than 16 px; Hebrew needs slightly more line height than Latin.</li>
+      <li>Photos first, but always with a fallback (initial on a colour) because some people have no photo yet.</li>
+      <li>Never show a phone number or street address on a card.</li>
+    </ul>
+  </div>
+
+  <div class="note"><p><strong>How the two inspirations work together.</strong> Preply gives the product its people-first cards, profiles and friendly onboarding. Komoot gives it place: the calendar day opens onto an area, the cleaner profile shows where they work, and photography ties both to the Hula Valley. The common thread is one clear action per screen, a trust signal beside every person, and a sense of local belonging.</p></div>
+</section>
+
+<!-- ============ 6. PROMPTS ============ -->
+<section class="chapter" id="prompts">
+  <header><div class="kicker">Chapter 6</div><h2>Four prompts for AI design tools</h2></header>
+  <p>Each prompt is self-contained and ready to paste into Figma AI, Google Stitch or a similar tool. Square-bracket text is a choice to fill in. Prompts C and D are written for the recommended direction (A, Valley Morning, with friendly components borrowed from B); change the bracketed line to test another.</p>
+
+  <div class="prompt">
+    <div class="ph"><div><b>Prompt A · Brand identity exploration</b><span>Generates three different brand worlds to compare</span></div><button type="button" data-copy="pa">Copy</button></div>
+<pre id="pa">Create three clearly different brand identity concept boards for a mobile app called "Clean" (also known as "Cindy Clean").
+
+PRODUCT: A bilingual (Hebrew right-to-left and English left-to-right) mobile-first marketplace connecting home hosts in Northern Israel's Hula Valley with admin-approved home cleaners. Hosts pick a day on a calendar, see which approved cleaners are free and nearby, and send a booking request. Cleaners set their available days, answer within 24 hours, then chat with the host. No in-app payments. A friendly assistant named Cindy welcomes new users. The product feels trustworthy, calm, warm, fresh and local.
+
+USERS: Households, villa and guesthouse owners (hosts) and individual cleaners, ages 18 and up, who read Hebrew first and English second. Not tech-savvy by default.
+
+INSPIRATION (do not copy): Preply for friendly person cards, polished profiles and playful-but-professional onboarding; Komoot for place-based discovery, outdoor palettes, immersive photography and clear map presentation.
+
+BOARD 1 "Valley Morning": Hula Valley at first light. Palette: valley green #1E5446, water teal #2E9E96, morning mist #EDF5F2, sunrise amber #F4A63B, stone #8696A0, ink #12211D. Rubik headings, Heebo body. Rounded line icons, contour-line textures, soft morning landscape photography.
+BOARD 2 "Bright Hello": a cheerful neighbour. Palette: clean blue #2B5FD9, sky #DCE8FF, mint #7ED9C4, sunshine #FFC94D, coral #FF7A66, ink #1B2340, snow #F7F9FC. Secular One headings, Assistant body. Chunky two-tone icons, flat illustration of Cindy, pill buttons.
+BOARD 3 "Daylight Glass": a window after cleaning. Palette: ink navy #0E1B2C, chalk #F4F6F8, glass blue #3BA7D9, steel #8A97A6, lemon #F6D743 as the single accent. Heebo 800 headings, IBM Plex Sans Hebrew body. Hairline icons, architectural interior photography.
+
+FOR EACH BOARD SHOW: a logo placeholder and wordmark in Latin and Hebrew; the colour palette with usage notes; type specimen in Hebrew and English; five icons; a photography or illustration sample; a cleaner card, a primary button, a status chip set (free, pending, booked) and a rating row styled in that world; a one-line brand voice sample in English and Hebrew.
+
+RULES: Show Hebrew text right-to-left throughout. Keep free, pending and booked states clearly distinct for colour-blind users. Do not use stock cleaning clichés (buckets, spray bottles, rubber gloves, mops). Boards must feel meaningfully different from each other, not variations of one style. Add a short note on strengths and risks for each.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="ph"><div><b>Prompt B · Logo and app icon generation</b><span>Five logo concepts, each as mark, wordmark and icon</span></div><button type="button" data-copy="pb">Copy</button></div>
+<pre id="pb">Design five distinct logo concepts and app icons for "Clean" (also "Cindy Clean"), a mobile marketplace that connects home hosts with trusted, admin-approved cleaners in Northern Israel's Hula Valley. The brand must feel trustworthy, warm, fresh and local. It must work in Hebrew (right-to-left) and English.
+
+For each concept, deliver: (1) the symbol alone, (2) symbol plus English wordmark "Clean", (3) a Hebrew wordmark placeholder that matches the style, (4) a rounded-square iOS/Android app icon, (5) a one-colour version, (6) the symbol at 48 px and 16 px to prove it holds up small, (7) a dark-mode version.
+
+CONCEPT 1 "Sparkle C": a bold, rounded letter C with a four-point sparkle sitting in its opening. One colour friendly.
+CONCEPT 2 "Window Glint": a rounded square pane with one thick diagonal highlight and a small tick. Pure geometry, negative space.
+CONCEPT 3 "Valley Horizon": a circle (sun) over two soft overlapping hill bands, the lower band drawn as a wiping wave. Two or three colours.
+CONCEPT 4 "House Pin": a map pin containing a simple house outline with a tiny sparkle at the roof. One outline weight.
+CONCEPT 5 "Cindy Bubble": a soft squircle speech bubble with two dot eyes and a small smile, plus a sparkle at the corner. Friendly but not childish.
+
+COLOURS: use one palette per concept: [Valley green #1E5446 with water teal #2E9E96 and amber #F4A63B] or [clean blue #2B5FD9 with mint #7ED9C4 and sunshine #FFC94D] or [ink navy #0E1B2C with glass blue #3BA7D9 and lemon #F6D743].
+
+RULES: Simple, memorable, scalable. Flat vector, no gradients inside the symbol, no more than three colours. Avoid buckets, spray bottles, gloves, mops, bubbles-as-foam, and generic checkmark-in-circle marks. The mark must look right when mirrored in a right-to-left layout and must not contain text. Present all five on one comparison sheet on a neutral background, with a short note on what each symbolises.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="ph"><div><b>Prompt C · Mobile UX/UI screens</b><span>High-fidelity screens for the main journeys</span></div><button type="button" data-copy="pc">Copy</button></div>
+<pre id="pc">Design high-fidelity mobile app screens (390 x 844) for "Clean", a bilingual (Hebrew right-to-left primary, English secondary) marketplace connecting home hosts with admin-approved cleaners in Northern Israel's Hula Valley.
+
+DESIGN DIRECTION: [Valley Morning: calm, local, trustworthy. Colours: valley green #1E5446, water teal #2E9E96, morning mist #EDF5F2 background, sunrise amber #F4A63B, stone #8696A0, ink #12211D. Rubik headings, Heebo body. White cards with 16 px corners and thin tinted borders, pill buttons for primary actions, rounded line icons, soft contour-line texture in headers, soft morning landscape photography.] Take friendliness from Preply (person cards, polished profiles, warm onboarding) and place and discovery from Komoot (map, outdoor feel). Do not copy either app.
+
+SHOW THESE 10 SCREENS, in Hebrew right-to-left with English labels in a second set for the first three:
+1. Onboarding step for a cleaner: "Step 2 of 9", a question about the town with a search field and a small landscape illustration, a friendly helper called Cindy with one sentence, fixed Back and Continue bar.
+2. Onboarding preview: the finished cleaner profile with an Edit link on each section.
+3. Host waitlist screen: Cindy says the account is waiting for approval; warm, calm.
+4. Host Schedule: a month calendar. Free days show small blue-teal dots, requested days orange with "2 asked", booked days green with hours "9-13". Legend below. Today highlighted.
+5. Day sheet rising from the bottom over the calendar: three cleaner cards (photo, "Noa R.", 4.9 stars with "12 cleans", town and distance, price per hour, available time chips, a small "Cindy Verified" badge, a clear Request button).
+6. Booking request card: date, start time, duration, cleaning type (regular or deep), extras as chips (oven, windows, fridge, laundry), "pets will be home" toggle, notes, address, Send request.
+7. Cleaner public profile: large photo, name and age, rating, rate tile, three stat tiles, language chips, About, service pills, a service-area map band with a soft radius circle, host reviews, sticky Request button.
+8. Cleaner Requests: one row per host with photo, days requested, and "23 h to accept" in a calm tone; an open request sheet with Accept and Decline pinned at the bottom.
+9. Chat: header with the other person's name and "Matched cleaner", message bubbles, a light blue upcoming-clean booking card, date dividers.
+10. Host Home: greeting, a large "next clean" hero card, a Today and tomorrow strip, a collapsed Past cleans line.
+
+RULES: Right-to-left layout must be correct (mirrored navigation, arrows and progress). Header: wordmark, notification bell, menu button and profile photo; tabs Home, Schedule, Bookings, Chat for hosts. Never show phone numbers or street addresses. Minimum 16 px body text, 44 px tap targets, contrast AA. Use real-looking Hebrew names and Hula Valley place names (Kiryat Shmona, Metula, Kfar Giladi, Beit Hillel, Shamir). Add a states sheet for the calendar: free, pending, booked, closed, each with a shape or icon in addition to colour.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="ph"><div><b>Prompt D · Complete design system</b><span>Tokens and components for build hand-off</span></div><button type="button" data-copy="pd">Copy</button></div>
+<pre id="pd">Create a complete, production-ready design system for "Clean", a bilingual (Hebrew right-to-left primary, English left-to-right) mobile-first marketplace for home cleaning in Northern Israel. Output as Figma-style variables, styles and components with light and dark themes.
+
+BRAND DIRECTION: [Valley Morning with friendly components: calm, local, trustworthy, warm.] Inspiration: Preply's person cards and friendly onboarding; Komoot's outdoor palette, place focus and clear detail. Original, not a copy.
+
+COLOUR TOKENS: primary valley green #1E5446; secondary water teal #2E9E96; background morning mist #EDF5F2; surface white; accent sunrise amber #F4A63B; text ink #12211D; secondary text stone #8696A0. Add tints (100 to 900) for each. Semantic: success, warning, error, info. Calendar status tokens that stay distinct for colour-blind users: free (teal with dot), pending (amber with clock), booked (green with check), closed (grey with dash). Dark theme: tuned, not inverted.
+
+TYPOGRAPHY: Rubik headings (600), Heebo body (400, 500). Both include Hebrew. Define a scale: display 32, h1 26, h2 22, h3 18, body 16, small 14, caption 12; Hebrew line height +0.1 over Latin. Tabular numerals for prices, times and dates.
+
+SPACING AND SHAPE: 4 px base grid (4, 8, 12, 16, 24, 32, 48). Radii: 8 inputs, 16 cards, 24 sheets, full pills for buttons. Elevation: three levels, soft and low. Minimum tap target 44 px. All layout uses start and end, never left and right.
+
+COMPONENTS (each with default, hover or pressed, focus, disabled, loading, error, and RTL versions): primary, secondary, ghost and destructive buttons; text field, select, stepper, chip, toggle, checkbox, radio, slider (service radius), date and time pickers; month calendar with day cells (free, pending, booked, closed, today, selected) and a legend; cleaner card (photo, name, rating, clean count, town, distance, price, time chips, Cindy Verified badge, Request button); host request row; stat tile; review item; booking card in chat (upcoming, completed, cancelled); bottom sheet; modal; toast; notification bell with unread count; notification list item with avatar; progress bar for onboarding ("Step X of N"); tab bar and two-row header; empty states with landscape illustration; avatar with initial fallback; rating stars; skeleton loaders.
+
+ICONS: a 24 px rounded line set, 2 px stroke, with place icons (pin, hill, water) and home icons (house, key, calendar, chat, bell, star, check, clock, shield for Cindy Verified). Directional icons mirror in right-to-left.
+
+DELIVER: token tables, component sheet, a sample Schedule screen and a sample Cleaner Profile screen in both languages, and short usage rules (do and do not) for colour, type and motion. Motion: 150 to 250 ms ease-out, respect reduced-motion.</pre>
+  </div>
+</section>
+
+<!-- ============ 7. RECOMMENDATION ============ -->
+<section class="chapter" id="recommendation">
+  <header><div class="kicker">Chapter 7</div><h2>Recommendation</h2></header>
+  <div class="rec">
+    <h3>Start with Direction A, Valley Morning, using the friendly components of Direction B.</h3>
+    <p style="margin-top:.6rem"><strong>Why it represents the product.</strong> The product opens one real place at a time, starting in the Hula Valley. Water, green hills and morning light say "clean" and "local" at once, and they give a small pilot a story no generic cleaning brand has.</p>
+    <p><strong>How it combines Preply and Komoot.</strong> The cards, profiles, rounded buttons and one-question onboarding borrow Preply's warmth. The palette, the landscape imagery, the service-area map and the sheet that rises over the calendar borrow Komoot's sense of place.</p>
+    <p><strong>What makes it distinctive.</strong> A real regional identity (hill and water motifs, contour lines), a calm approach to trust (the verified badge and staged privacy shown visually), and Cindy as a gentle guide in onboarding and empty states.</p>
+    <p><strong>Risks to manage.</strong> A regional symbol could limit expansion, so keep the logo abstract (a horizon and a sun, not a named mountain). Greens and teals can look similar in small calendar cells, so the status icons are mandatory. Warmth should not turn childish; borrow B's roundness, not its mascot-heavy tone, until Cindy's role as a character is decided.</p>
+  </div>
+
+  <div class="block">
+    <h3>What to prototype first</h3>
+    <div class="grid">
+      <div class="card"><h4>Logos</h4><ol>
+        <li><strong>Concept 3, Valley Horizon:</strong> the best fit for A and the most ownable.</li>
+        <li><strong>Concept 1, Sparkle C:</strong> a safe, strong fallback that works in any direction.</li>
+        <li><strong>Concept 5, Cindy Bubble:</strong> only if the decision is made to make Cindy a visible character.</li></ol></div>
+      <div class="card"><h4>Screens</h4><ol>
+        <li>Host Schedule with the day sheet and cleaner cards. This is the product's core moment.</li>
+        <li>Cleaner public profile with the service-area map band.</li>
+        <li>Booking request card.</li>
+        <li>Cleaner onboarding step and preview.</li>
+        <li>Cleaner Requests and accept sheet.</li>
+        <li>Chat with booking card.</li></ol></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Before design starts, decide</h3>
+    <ol>
+      <li>The public name, and whether there will be a Hebrew name.</li>
+      <li>Whether Cindy becomes a visible character.</li>
+      <li>Whether map-based browsing of cleaners (by town) is wanted, or the calendar stays the only discovery tool.</li>
+      <li>Whether to commission or license regional photography, since the direction depends on it.</li>
+      <li>A native Hebrew reader to review every Hebrew word in the mock-ups.</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('ul.sw[data-sw]').forEach(function (ul) {
+    ul.getAttribute('data-sw').split(';').forEach(function (item) {
+      var p = item.split('|');
+      var li = document.createElement('li');
+      var chip = document.createElement('i'); chip.style.background = p[1];
+      var name = document.createElement('b'); name.textContent = p[0];
+      var code = document.createElement('code'); code.textContent = p[1];
+      var use = document.createElement('span'); use.textContent = ' ' + p[2];
+      li.appendChild(chip); li.appendChild(name); li.appendChild(code); li.appendChild(use);
+      ul.appendChild(li);
+    });
+  });
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var el = document.getElementById(btn.getAttribute('data-copy'));
+      var text = el.textContent;
+      function selectIt() { var r = document.createRange(); r.selectNodeContents(el); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+      function done(msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); }
+      try {
+        navigator.clipboard.writeText(text).then(function () { done('Copied'); }, function () { selectIt(); done('Selected'); });
+      } catch (e) { selectIt(); done('Selected'); }
+    });
+  });
+})();
+</script>

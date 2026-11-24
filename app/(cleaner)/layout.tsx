@@ -9,6 +9,7 @@ import { StatusBadge } from "./StatusBadge";
 import HelpWidget from "@/components/HelpWidget";
 import AutoRefresh from "@/components/AutoRefresh";
 import FinishProfileBanner from "@/components/FinishProfileBanner";
+import InstallPrompt from "@/components/InstallPrompt";
 import { isOwnSignupUnfinished } from "@/lib/onboarding/unfinished";
 
 export default async function CleanerLayout({
@@ -57,7 +58,8 @@ export default async function CleanerLayout({
           </Suspense>
         }
       />
-      <main className="relative p-3 pt-28">
+      <main className="relative p-3 pt-28 pb-[calc(0.75rem+var(--sab))]">
+        <InstallPrompt />
         {signupUnfinished && <FinishProfileBanner href="/register/cleaner" />}
         {children}
       </main>

@@ -322,7 +322,7 @@ export default async function BrowsePage(props: { searchParams?: Promise<{ reboo
   return (
     // A fixed-height column (the viewport minus the header) so the whole month,
     // its key and the controls fit on screen with no scrolling.
-    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100dvh-8rem)] min-h-[28rem]">
+    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100dvh-8rem-var(--sab))] min-h-[28rem]">
       {area.state === 'closed' && <ComingSoonBanner nameHe={area.nameHe} nameEn={area.nameEn} />}
       <HostCalendar
         areaClosed={areaClosed}
