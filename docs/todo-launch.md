@@ -40,6 +40,7 @@ Probably can be closed: #40 (written reviews exist on both sides), #25 (marked i
 
 ## E. The phone app (PWA) — where it stands (2026-11-24)
 - **Done:** installable (manifest, placeholder "C" icon, name "Cindy"), on-screen install steps for iPhone and Android, "Install the app" in both account menus, welcome screen at the website's address (install on Home Screen vs continue online), safe-area fixes for the phone's bottom bar.
-- **Owner to test on a real phone:** Google sign-in / sign-up in Safari AND inside the installed app; full-screen look of every screen (chat box, sign-up screens); the "Open Share for me" button; whether the welcome screen works as hoped.
+- **Confirmed on the owner's iPhone (2026-11-24):** the install steps work, the installed app opens full screen with no Safari bars and nothing cut off, Google sign-in and logging out work inside the installed app. (The "Open Share for me" experiment failed and was removed.)
+- **Still to test:** a brand-new Google SIGN-UP inside the installed app; every screen's full-screen look (chat box, sign-up wizards); the welcome screen as a brand-new visitor; Android.
 - **Not built yet:** offline screen + service worker (also makes Android's install button reliable); phone push notifications (iPhone needs the app installed, iOS 16.4+); App Store / Google Play versions (a Capacitor wrapper, later); the real logo / icon / splash (the "C" is a placeholder: replace the four PNGs in `public/icons`, update the colours in `app/manifest.ts` and `app/layout.tsx`).
 
