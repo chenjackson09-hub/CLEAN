@@ -40,13 +40,13 @@ describe('Welcome', () => {
     expect(replace).not.toHaveBeenCalled() // nobody is sent on until they pick
   })
 
-  it('"Continue online" goes to the login page and is remembered', () => {
+  it('"Continue online" goes to the login page and is NOT remembered', () => {
     setup(IPHONE)
     renderIt()
     act(() => { jest.advanceTimersByTime(1700) })
     fireEvent.click(screen.getByRole('button', { name: 'Continue online' }))
     expect(push).toHaveBeenCalledWith('/login')
-    expect(localStorage.getItem('cindyWelcomeChoice')).toBe('online')
+    expect(localStorage.getItem('cindyWelcomeChoice')).toBeNull()
   })
 
   it('"Install" opens the on-screen steps, and finishing them says to continue on the Home Screen', () => {
@@ -70,15 +70,12 @@ describe('Welcome', () => {
     expect(screen.queryByText('Welcome to Cindy!')).toBeNull()
   })
 
-  it('someone who chose "online" before skips it; ?welcome=1 shows it again', () => {
+  it('shows the choice again on the next visit, even after choosing "online" before', () => {
     setup(IPHONE)
-    localStorage.setItem('cindyWelcomeChoice', 'online')
     const a = renderIt()
-    act(() => { jest.advanceTimersByTime(10) })
-    expect(replace).toHaveBeenCalledWith('/login')
+    act(() => { jest.advanceTimersByTime(1700) })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue online' }))
     a.unmount()
-    setup(IPHONE, { search: '?welcome=1' })
-    localStorage.setItem('cindyWelcomeChoice', 'online')
     renderIt()
     act(() => { jest.advanceTimersByTime(1700) })
     expect(screen.getByText('Welcome to Cindy!')).toBeInTheDocument()

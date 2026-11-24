@@ -13,13 +13,13 @@ import { markInstalledHere, useInstall, wasInstalledHere } from "@/lib/installSt
 //      public/icons/icon-512.png, so replacing that file changes this too) and the name,
 //   2. "Welcome to Cindy!": install the app on the Home Screen (recommended) or continue online.
 //      The person has to pick one.
-//        - Continue online → remembered, goes to the login page (next visits skip straight there).
+//        - Continue online → goes to the login page. NOT remembered: the welcome screen shows again
+//          on every visit to the site address (owner's choice, 2026-11-24).
 //        - Install → the install steps; once done, they are told to open Cindy from the Home Screen
 //          and sign up / log in THERE (on iPhone the installed app keeps its own login, separate
 //          from Safari).
-// Inside the installed app (and on computers, and for people who chose "online" before) this is
-// skipped and goes straight to /login. `?welcome=1` forces the choice screen again (for testing).
-const ONLINE_KEY = "cindyWelcomeChoice";
+// Inside the installed app and on computers this is skipped and goes straight to /login.
+// `?welcome=1` shows the choice screen on a computer too (for testing).
 
 export default function Welcome() {
   const router = useRouter();
@@ -33,20 +33,10 @@ export default function Welcome() {
   useEffect(() => {
     if (!ready) return;
     const force = new URLSearchParams(window.location.search).get("welcome") === "1";
-    let remembered = false;
-    try {
-      remembered = localStorage.getItem(ONLINE_KEY) === "online";
-    } catch {
-      /* ignore */
-    }
     if (standalone) {
       // opened from the Home Screen icon: a brief splash, then straight to login
       const id = setTimeout(() => router.replace("/login"), 900);
       return () => clearTimeout(id);
-    }
-    if (remembered && !force) {
-      router.replace("/login");
-      return;
     }
     const id = setTimeout(() => {
       if (ios || android || force) setPhase("choose");
@@ -61,11 +51,6 @@ export default function Welcome() {
   }, [installed]);
 
   const continueOnline = () => {
-    try {
-      localStorage.setItem(ONLINE_KEY, "online");
-    } catch {
-      /* ignore */
-    }
     router.push("/login");
   };
 
