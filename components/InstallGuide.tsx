@@ -18,24 +18,26 @@ const STRINGS = {
     title: "Add Cindy to your Home Screen",
     sub: "Keep this open and follow the steps in Safari.",
     steps: {
-      dots: ["Tap the ⋯ button (bottom right, see the arrow)", "Tap “Share”", "Tap “View More” if you see it, then “Add to Home Screen”", "Tap “Add” (top right)"],
-      share: ["Tap the Share button (bottom middle, see the arrow)", "Scroll down and tap “Add to Home Screen”", "Tap “Add” (top right)"],
-      chrome: ["Tap the Share button (next to the address, at the top)", "Scroll down and tap “Add to Home Screen”", "Tap “Add” (top right)"],
+      dots: ["Tap the ⋯ button (bottom right, see the arrow)", "Tap “Share”", "Tap “View More” if you see it, then “Add to Home Screen” (a square with a +)", "Keep “Open as Web App” switched ON, then tap “Add” (top right)"],
+      share: ["Tap the Share button (bottom middle, see the arrow)", "Scroll down and tap “Add to Home Screen” (a square with a +)", "Keep “Open as Web App” switched ON (if you see it), then tap “Add” (top right)"],
+      chrome: ["Tap the Share button (next to the address, at the top)", "Scroll down and tap “Add to Home Screen” (a square with a +)", "Keep “Open as Web App” switched ON (if you see it), then tap “Add” (top right)"],
     },
     notSafari: "It looks like Cindy is open inside another app. Open this page in Safari first (copy the address into Safari).",
     added: "I added it",
+    openShare: "Open Share for me",
     close: "Close",
   },
   he: {
     title: "הוסיפו את Cindy למסך הבית",
     sub: "השאירו את זה פתוח ועקבו אחרי השלבים ב-Safari.",
     steps: {
-      dots: ["לחצו על הכפתור ⋯ (למטה בצד ימין, ראו את החץ)", "לחצו על ״שיתוף״", "לחצו על ״עוד״ (View More) אם רואים אותו, ואז על ״הוסף למסך הבית״", "לחצו על ״הוסף״ (למעלה בפינה)"],
-      share: ["לחצו על כפתור השיתוף (למטה באמצע, ראו את החץ)", "גללו מטה ולחצו על ״הוסף למסך הבית״", "לחצו על ״הוסף״ (למעלה בפינה)"],
-      chrome: ["לחצו על כפתור השיתוף (ליד הכתובת, למעלה)", "גללו מטה ולחצו על ״הוסף למסך הבית״", "לחצו על ״הוסף״ (למעלה בפינה)"],
+      dots: ["לחצו על הכפתור ⋯ (למטה בצד ימין, ראו את החץ)", "לחצו על ״שיתוף״", "לחצו על ״עוד״ (View More) אם רואים אותו, ואז על ״הוסף למסך הבית״ (ריבוע עם +)", "השאירו את ״Open as Web App״ מופעל ולחצו על ״הוסף״ (למעלה בפינה)"],
+      share: ["לחצו על כפתור השיתוף (למטה באמצע, ראו את החץ)", "גללו מטה ולחצו על ״הוסף למסך הבית״ (ריבוע עם +)", "השאירו את ״Open as Web App״ מופעל (אם רואים אותו) ולחצו על ״הוסף״ (למעלה בפינה)"],
+      chrome: ["לחצו על כפתור השיתוף (ליד הכתובת, למעלה)", "גללו מטה ולחצו על ״הוסף למסך הבית״ (ריבוע עם +)", "השאירו את ״Open as Web App״ מופעל (אם רואים אותו) ולחצו על ״הוסף״ (למעלה בפינה)"],
     },
     notSafari: "נראה ש-Cindy פתוחה בתוך אפליקציה אחרת. פתחו קודם את העמוד ב-Safari (העתיקו את הכתובת ל-Safari).",
     added: "הוספתי",
+    openShare: "פתחו לי את השיתוף",
     close: "סגירה",
   },
 };
@@ -62,16 +64,28 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
   const s = STRINGS[lang];
   const [layout, setLayout] = useState<IosBrowserLayout>("dots");
   const [inApp, setInApp] = useState(false);
+  const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
     setLayout(iosBrowserLayout(navigator.userAgent));
     setInApp(isIosInAppBrowser(navigator.userAgent));
+    setCanShare(typeof navigator.share === "function");
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const steps = s.steps[layout];
+
+  // EXPERIMENT: open the system share sheet straight from our own button (it is a real tap on the
+  // page, so Safari allows it). That skips the "⋯ → Share" steps. Cancelling just rejects the promise.
+  const openShare = async () => {
+    try {
+      await navigator.share({ title: "Cindy", url: window.location.origin });
+    } catch {
+      /* cancelled, or not allowed: the normal steps still work */
+    }
+  };
 
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[70] bg-black/35" dir={lang === "he" ? "rtl" : "ltr"}>
@@ -96,9 +110,16 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
               </li>
             ))}
           </ol>
-          <button type="button" onClick={() => onClose(true)} className="mt-3 w-full rounded-xl bg-gray-100 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
-            {s.added}
-          </button>
+          <div className="mt-3 flex gap-2">
+            {canShare && (
+              <button type="button" onClick={openShare} className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                {s.openShare}
+              </button>
+            )}
+            <button type="button" onClick={() => onClose(true)} className="flex-1 rounded-xl bg-gray-100 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
+              {s.added}
+            </button>
+          </div>
         </div>
       </div>
 

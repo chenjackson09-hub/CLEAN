@@ -22,7 +22,8 @@ describe('InstallPrompt', () => {
     // every step is on screen together, so nobody has to go back and forth while Safari's menus are open
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getByText(/Scroll down and tap “Add to Home Screen”/)).toBeInTheDocument()
-    expect(screen.getByText(/Tap “Add” \(top right\)/)).toBeInTheDocument()
+    // the iOS 26 switch that makes it open full screen is named before the sheet can hide this box
+    expect(screen.getByText(/Open as Web App/)).toBeInTheDocument()
   })
 
   it('closing with the X keeps the card; “I added it” removes it for good', () => {
