@@ -12,18 +12,16 @@ import { installHintFor, isAndroidDevice, isIosDevice, type InstallHint } from "
 const STRINGS = {
   en: {
     title: "Add Cindy to your Home Screen",
-    ios: "Four quick taps, and Cindy opens full screen, like an app. We’ll show you each step.",
-    android: "Install Cindy to open it full screen, like an app.",
-    install: "Install",
-    showMe: "Show me how",
+    ios: "Have Cindy open full screen, like an app.",
+    android: "Have Cindy open full screen, like an app.",
+    go: "Let’s do it!",
     close: "Not now",
   },
   he: {
     title: "הוסיפו את Cindy למסך הבית",
-    ios: "ארבע לחיצות קצרות, ו-Cindy תיפתח במסך מלא, כמו אפליקציה. נראה לכם כל שלב.",
-    android: "התקינו את Cindy כדי לפתוח אותה במסך מלא, כמו אפליקציה.",
-    install: "התקנה",
-    showMe: "הראו לי איך",
+    ios: "שתיפתח Cindy במסך מלא, כמו אפליקציה.",
+    android: "שתיפתח Cindy במסך מלא, כמו אפליקציה.",
+    go: "בואו נעשה את זה!",
     close: "לא עכשיו",
   },
 };
@@ -93,29 +91,36 @@ export default function InstallPrompt() {
   };
 
   return (
-    <div dir={lang === "he" ? "rtl" : "ltr"} className="mb-3 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icons/icon-192.png" alt="" className="h-10 w-10 shrink-0 rounded-xl" />
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold">{s.title}</p>
-        <p className="mt-0.5 text-blue-800">{hint === "ios" ? s.ios : s.android}</p>
-        <div className="mt-2 flex items-center gap-3">
-          {hint === "ios" && (
-            <button type="button" onClick={() => setGuide(true)} className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-              {s.showMe}
-            </button>
-          )}
-          {hint === "android" && (
-            <button type="button" onClick={install} className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-              {s.install}
-            </button>
-          )}
-          <button type="button" onClick={dismiss} className="text-xs text-blue-700 underline">
-            {s.close}
-          </button>
+    <div dir={lang === "he" ? "rtl" : "ltr"} className="mb-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900">
+      <div className="flex items-start gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icons/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-bold">{s.title}</p>
+          <p className="mt-0.5 text-sm text-blue-800">{hint === "ios" ? s.ios : s.android}</p>
         </div>
       </div>
-      {guide && <InstallGuide lang={lang} onClose={() => setGuide(false)} />}
+      <button
+        type="button"
+        onClick={hint === "ios" ? () => setGuide(true) : install}
+        className="mt-3 w-full rounded-full bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+      >
+        {s.go}
+      </button>
+      <div className="mt-2 text-center">
+        <button type="button" onClick={dismiss} className="text-xs text-blue-700 underline">
+          {s.close}
+        </button>
+      </div>
+      {guide && (
+        <InstallGuide
+          lang={lang}
+          onClose={(finished) => {
+            setGuide(false);
+            if (finished) dismiss(); // they went all the way through: don't show the card again
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -13,20 +13,43 @@ function setup(ua: string, standalone = false) {
 }
 
 describe('InstallPrompt', () => {
-  it('shows the Home Screen steps on an iPhone, and closing it sticks', () => {
+  it('on an iPhone the card has one big button that opens the step-by-step pop-ups', () => {
     setup(IPHONE)
-    const { unmount } = render(<InstallPrompt />)
+    render(<InstallPrompt />)
     expect(screen.getByText('Add Cindy to your Home Screen')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Show me how' }))
+    expect(screen.getByText('Have Cindy open full screen, like an app.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
     expect(screen.getByText('Step 1 of 4')).toBeInTheDocument()
     expect(screen.getByText('Tap the ⋯ button')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Tap “Share”')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(screen.getByText('Tap “Add to Home Screen”')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('Step 4 of 4')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByText('Tap “Share”')).toBeInTheDocument()
+  })
+
+  it('closing the pop-ups with the X keeps the card; finishing all four steps removes it for good', () => {
+    setup(IPHONE)
+    const { unmount } = render(<InstallPrompt />)
+    fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByText('Step 1 of 4')).toBeNull()
+    expect(screen.getByText('Add Cindy to your Home Screen')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
+    for (let n = 0; n < 3; n++) fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Tap “Add”')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Done' }))
-    expect(screen.queryByText('Step 4 of 4')).toBeNull()
+    expect(screen.queryByText('Add Cindy to your Home Screen')).toBeNull()
+    unmount()
+    render(<InstallPrompt />)
+    expect(screen.queryByText('Add Cindy to your Home Screen')).toBeNull()
+  })
+
+  it('“Not now” hides the card and it stays hidden', () => {
+    setup(IPHONE)
+    const { unmount } = render(<InstallPrompt />)
     fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
     expect(screen.queryByText('Add Cindy to your Home Screen')).toBeNull()
     unmount()
@@ -54,7 +77,7 @@ describe('InstallPrompt', () => {
       window.dispatchEvent(ev)
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Install' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
     })
     expect(prompt).toHaveBeenCalled()
   })
