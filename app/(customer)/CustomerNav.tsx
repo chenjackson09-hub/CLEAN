@@ -1,5 +1,6 @@
 "use client";
 
+import InstallMenuItem from "@/components/InstallMenuItem";
 import LegalLinks from "@/components/legal/LegalLinks";
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -105,6 +106,7 @@ export default function CustomerNav({ signOut, userId, userName, avatarUrl = nul
               <p className="text-xs text-gray-400 mb-1.5">{lang === "he" ? "שפה" : "Language"}</p>
               {LangButtons}
             </div>
+            <InstallMenuItem lang={lang === "he" ? "he" : "en"} onPress={close} />
             <LegalLinks lang={lang === "he" ? "he" : "en"} />
             <button
               onClick={() => { close(); setConfirmSignOut(true); }}

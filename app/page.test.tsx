@@ -1,16 +1,10 @@
+import { render, screen } from '@testing-library/react'
 import Home from './page'
-import { redirect } from 'next/navigation'
-
-jest.mock('next/navigation', () => ({
-  redirect: jest.fn(),
-}))
-
-const mockedRedirect = redirect as jest.MockedFunction<typeof redirect>
+import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 
 describe('Home', () => {
-  it('redirects to /login', () => {
-    Home()
-
-    expect(mockedRedirect).toHaveBeenCalledWith('/login')
+  it('shows the welcome splash (the middleware sends signed-in people elsewhere)', () => {
+    render(<LanguageProvider><Home /></LanguageProvider>)
+    expect(screen.getByLabelText('Cindy')).toBeInTheDocument()
   })
 })

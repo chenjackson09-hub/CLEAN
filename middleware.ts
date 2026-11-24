@@ -70,7 +70,11 @@ export async function middleware(request: NextRequest) {
   // The scheduled housekeeping job has no signed-in person; the route checks its own secret.
   const isCronPath = pathname.startsWith('/api/cron/')
 
-  if (!user && !isCronPath && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isPasswordResetPath && !isCallbackPath && !isLocalitySearch) {
+  // The website's first screen (welcome / install choice) is for signed-out visitors; it then
+  // leads to /login. A signed-in person at "/" is sent on below.
+  const isWelcomePath = pathname === '/'
+
+  if (!user && !isCronPath && !isWelcomePath && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isPasswordResetPath && !isCallbackPath && !isLocalitySearch) {
     // Remember where they were headed (e.g. a booking link from a calendar event)
     // so sign-in can take them straight back. Validated again when it's used.
     const loginUrl = new URL('/login', request.url)
@@ -78,6 +82,10 @@ export async function middleware(request: NextRequest) {
     if (pathname !== '/') loginUrl.searchParams.set('next', dest)
     return NextResponse.redirect(loginUrl)
   }
+
+  // Signed in and at the welcome address: /login already knows where each role and sign-up state
+  // belongs, so hand over to it.
+  if (user && isWelcomePath) return NextResponse.redirect(new URL('/login', request.url))
 
   if (user) {
     const isRoleProtected =

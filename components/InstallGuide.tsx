@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { iosBrowserLayout, isIosInAppBrowser, type IosBrowserLayout } from "@/lib/pwa";
+import { installGuideLayout, isIosInAppBrowser, type GuideLayout } from "@/lib/pwa";
 
 // "Add Cindy to your Home Screen" on an iPhone, shown over the real app.
 //
@@ -20,6 +20,7 @@ const STRINGS = {
     steps: {
       dots: ["Tap the ⋯ button (bottom right, see the arrow)", "Tap “Share”", "Tap “View More” if you see it, then “Add to Home Screen” (a square with a +)", "Keep “Open as Web App” switched ON, then tap “Add” (top right)"],
       share: ["Tap the Share button (bottom middle, see the arrow)", "Scroll down and tap “Add to Home Screen” (a square with a +)", "Keep “Open as Web App” switched ON (if you see it), then tap “Add” (top right)"],
+      android: ["Tap the ⋯ menu at the top right of Chrome", "Tap “Install app” (or “Add to Home screen”)", "Tap “Install” to confirm"],
       chrome: ["Tap the Share button (next to the address, at the top)", "Scroll down and tap “Add to Home Screen” (a square with a +)", "Keep “Open as Web App” switched ON (if you see it), then tap “Add” (top right)"],
     },
     notSafari: "It looks like Cindy is open inside another app. Open this page in Safari first (copy the address into Safari).",
@@ -33,6 +34,7 @@ const STRINGS = {
     steps: {
       dots: ["לחצו על הכפתור ⋯ (למטה בצד ימין, ראו את החץ)", "לחצו על ״שיתוף״", "לחצו על ״עוד״ (View More) אם רואים אותו, ואז על ״הוסף למסך הבית״ (ריבוע עם +)", "השאירו את ״Open as Web App״ מופעל ולחצו על ״הוסף״ (למעלה בפינה)"],
       share: ["לחצו על כפתור השיתוף (למטה באמצע, ראו את החץ)", "גללו מטה ולחצו על ״הוסף למסך הבית״ (ריבוע עם +)", "השאירו את ״Open as Web App״ מופעל (אם רואים אותו) ולחצו על ״הוסף״ (למעלה בפינה)"],
+      android: ["לחצו על תפריט ⋯ בפינה הימנית העליונה של Chrome", "לחצו על ״התקנת אפליקציה״ (או ״הוסף למסך הבית״)", "לחצו על ״התקנה״ לאישור"],
       chrome: ["לחצו על כפתור השיתוף (ליד הכתובת, למעלה)", "גללו מטה ולחצו על ״הוסף למסך הבית״ (ריבוע עם +)", "השאירו את ״Open as Web App״ מופעל (אם רואים אותו) ולחצו על ״הוסף״ (למעלה בפינה)"],
     },
     notSafari: "נראה ש-Cindy פתוחה בתוך אפליקציה אחרת. פתחו קודם את העמוד ב-Safari (העתיקו את הכתובת ל-Safari).",
@@ -62,12 +64,12 @@ function PointDown({ label }: { label: React.ReactNode }) {
 
 export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onClose: (finished: boolean) => void }) {
   const s = STRINGS[lang];
-  const [layout, setLayout] = useState<IosBrowserLayout>("dots");
+  const [layout, setLayout] = useState<GuideLayout>("dots");
   const [inApp, setInApp] = useState(false);
   const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
-    setLayout(iosBrowserLayout(navigator.userAgent));
+    setLayout(installGuideLayout(navigator.userAgent));
     setInApp(isIosInAppBrowser(navigator.userAgent));
     setCanShare(typeof navigator.share === "function");
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose(false);
@@ -89,8 +91,8 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
 
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[70] bg-black/35" dir={lang === "he" ? "rtl" : "ltr"}>
-      {/* The checklist lives at the TOP: Safari's menu and share sheet open over the bottom part. */}
-      <div className="pointer-events-auto absolute inset-x-3 top-3 mx-auto max-w-md" role="dialog" aria-label={s.title}>
+      {/* The checklist lives at the TOP on iPhone (Chrome on Android keeps its menu at the top, so there it sits at the bottom): Safari's menu and share sheet open over the bottom part. */}
+      <div className={`pointer-events-auto absolute inset-x-3 mx-auto max-w-md ${layout === "android" ? "bottom-3" : "top-3"}`} role="dialog" aria-label={s.title}>
         <div className="rounded-2xl bg-white p-4 shadow-2xl">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -111,7 +113,7 @@ export default function InstallGuide({ lang, onClose }: { lang: "en" | "he"; onC
             ))}
           </ol>
           <div className="mt-3 flex gap-2">
-            {canShare && (
+            {canShare && layout !== "android" && (
               <button type="button" onClick={openShare} className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700">
                 {s.openShare}
               </button>

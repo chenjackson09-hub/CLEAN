@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import InstallPrompt from './InstallPrompt'
+import { openInstallGuide, resetInstallStateForTests } from '@/lib/installState'
 
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36'
@@ -10,6 +11,7 @@ function setup(ua: string, standalone = false) {
   Object.defineProperty(window.navigator, 'maxTouchPoints', { value: ua === IPHONE || ua === ANDROID ? 5 : 0, configurable: true })
   window.matchMedia = ((q: string) => ({ matches: standalone && q.includes('standalone'), addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })) as unknown as typeof window.matchMedia
   localStorage.clear()
+  resetInstallStateForTests()
 }
 
 describe('InstallPrompt', () => {
@@ -84,5 +86,16 @@ describe('InstallPrompt', () => {
     render(<InstallPrompt />)
     expect(screen.getByText('Add Cindy to your Home Screen')).toBeInTheDocument()
     window.history.pushState({}, '', '/')
+  })
+
+  it('the account-menu event reopens the steps even after the card was dismissed', () => {
+    setup(IPHONE)
+    localStorage.setItem('installPromptDismissed', '1')
+    render(<InstallPrompt />)
+    expect(screen.queryByText('Add Cindy to your Home Screen')).toBeNull()
+    act(() => {
+      openInstallGuide()
+    })
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })

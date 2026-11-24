@@ -2,25 +2,28 @@
 
 import { useEffect, useState } from "react";
 import InstallGuide from "@/components/InstallGuide";
-import { installHintFor, isAndroidDevice, isIosDevice, type InstallHint } from "@/lib/pwa";
+import { OPEN_GUIDE_EVENT, useInstall } from "@/lib/installState";
+import { installHintFor } from "@/lib/pwa";
 
-// A small, dismissible card: "Add Cindy to your Home Screen". Android shows a real Install button
-// (the browser tells us when it can); iPhone has no such button, so it gets the written steps.
-// Hidden inside the installed app, on computers, and for good once closed.
+// Mounted once in each signed-in layout. Two jobs:
+//  1. A small, dismissible card: "Add Cindy to your Home Screen" (Android: the browser's real
+//     install dialog; iPhone: the on-screen steps). Hidden inside the installed app, on computers,
+//     and for good once closed.
+//  2. Listens for "open the install steps" (the account-menu item sends it), so the steps can be
+//     reopened any time, even after the card was dismissed. The steps live HERE, not in the menu,
+//     because the menu closes and would take them with it.
 // Keeps its own English/Hebrew text and reads the language from <html dir> (like HelpWidget),
 // because it sits under both language systems.
 const STRINGS = {
   en: {
     title: "Add Cindy to your Home Screen",
-    ios: "Have Cindy open full screen, like an app.",
-    android: "Have Cindy open full screen, like an app.",
+    body: "Have Cindy open full screen, like an app.",
     go: "Let’s do it!",
     close: "Not now",
   },
   he: {
     title: "הוסיפו את Cindy למסך הבית",
-    ios: "שתיפתח Cindy במסך מלא, כמו אפליקציה.",
-    android: "שתיפתח Cindy במסך מלא, כמו אפליקציה.",
+    body: "שתיפתח Cindy במסך מלא, כמו אפליקציה.",
     go: "בואו נעשה את זה!",
     close: "לא עכשיו",
   },
@@ -28,53 +31,38 @@ const STRINGS = {
 
 const DISMISS_KEY = "installPromptDismissed";
 
-// The browser's own "install" event; not in TypeScript's built-in types.
-type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
-
 export default function InstallPrompt() {
-  const [hint, setHint] = useState<InstallHint>("none");
+  const inst = useInstall();
   const [lang, setLang] = useState<"en" | "he">("en");
-  const [deferred, setDeferred] = useState<InstallEvent | null>(null);
+  const [dismissed, setDismissed] = useState(true); // hidden until we have read the saved choice
   const [guide, setGuide] = useState(false);
 
   useEffect(() => {
     setLang(document.documentElement.dir === "rtl" ? "he" : "en");
-
-    let dismissed = false;
+    let saved = false;
     try {
-      dismissed = localStorage.getItem(DISMISS_KEY) === "1";
+      saved = localStorage.getItem(DISMISS_KEY) === "1";
     } catch {
       /* private mode: just show it */
     }
     // Testing/support: opening any page with ?install=1 shows the card again even after it was dismissed.
-    if (new URLSearchParams(window.location.search).get("install") === "1") dismissed = false;
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    const ua = navigator.userAgent;
-    const base = {
-      standalone,
-      dismissed,
-      ios: isIosDevice(ua, navigator.maxTouchPoints ?? 0),
-      android: isAndroidDevice(ua),
-    };
-    setHint(installHintFor({ ...base, canPrompt: false }));
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault(); // keep the browser's own banner away; we show ours
-      setDeferred(e as InstallEvent);
-      setHint(installHintFor({ ...base, canPrompt: true }));
-    };
-    const onInstalled = () => setHint("none");
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
+    if (new URLSearchParams(window.location.search).get("install") === "1") saved = false;
+    setDismissed(saved);
   }, []);
 
-  if (hint === "none") return null;
+  const { canPrompt, promptInstall } = inst;
+  useEffect(() => {
+    const open = () => {
+      if (canPrompt) void promptInstall();
+      else setGuide(true);
+    };
+    window.addEventListener(OPEN_GUIDE_EVENT, open);
+    return () => window.removeEventListener(OPEN_GUIDE_EVENT, open);
+  }, [canPrompt, promptInstall]);
+
+  const hint = !inst.ready
+    ? "none"
+    : installHintFor({ standalone: inst.standalone, dismissed, ios: inst.ios, android: inst.android, canPrompt: inst.canPrompt });
   const s = STRINGS[lang];
 
   const dismiss = () => {
@@ -83,37 +71,35 @@ export default function InstallPrompt() {
     } catch {
       /* ignore */
     }
-    setHint("none");
-  };
-  const install = async () => {
-    if (!deferred) return;
-    await deferred.prompt();
-    setDeferred(null);
-    setHint("none");
+    setDismissed(true);
   };
 
   return (
-    <div dir={lang === "he" ? "rtl" : "ltr"} className="mb-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900">
-      <div className="flex items-start gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
-        <div className="min-w-0 flex-1">
-          <p className="text-base font-bold">{s.title}</p>
-          <p className="mt-0.5 text-sm text-blue-800">{hint === "ios" ? s.ios : s.android}</p>
+    <>
+      {hint !== "none" && (
+        <div dir={lang === "he" ? "rtl" : "ltr"} className="mb-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-blue-900">
+          <div className="flex items-start gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-bold">{s.title}</p>
+              <p className="mt-0.5 text-sm text-blue-800">{s.body}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={hint === "ios" ? () => setGuide(true) : () => void promptInstall()}
+            className="mt-3 w-full rounded-full bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            {s.go}
+          </button>
+          <div className="mt-2 text-center">
+            <button type="button" onClick={dismiss} className="text-xs text-blue-700 underline">
+              {s.close}
+            </button>
+          </div>
         </div>
-      </div>
-      <button
-        type="button"
-        onClick={hint === "ios" ? () => setGuide(true) : install}
-        className="mt-3 w-full rounded-full bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-      >
-        {s.go}
-      </button>
-      <div className="mt-2 text-center">
-        <button type="button" onClick={dismiss} className="text-xs text-blue-700 underline">
-          {s.close}
-        </button>
-      </div>
+      )}
       {guide && (
         <InstallGuide
           lang={lang}
@@ -123,6 +109,6 @@ export default function InstallPrompt() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }

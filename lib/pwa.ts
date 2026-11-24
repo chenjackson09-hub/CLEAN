@@ -53,3 +53,10 @@ export function iosBrowserLayout(userAgent: string): IosBrowserLayout {
   const v = /Version\/(\d+)/.exec(userAgent)
   return v && Number(v[1]) >= 26 ? "dots" : "share"
 }
+
+export type GuideLayout = IosBrowserLayout | "android"
+
+/** Which walkthrough to show on this phone (Android has its own: Chrome's ⋯ menu is at the top). */
+export function installGuideLayout(userAgent: string): GuideLayout {
+  return isAndroidDevice(userAgent) ? "android" : iosBrowserLayout(userAgent)
+}
