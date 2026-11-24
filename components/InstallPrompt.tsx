@@ -11,14 +11,14 @@ import { installHintFor, isAndroidDevice, isIosDevice, type InstallHint } from "
 const STRINGS = {
   en: {
     title: "Add Cindy to your Home Screen",
-    ios: "Tap the Share button, then “Add to Home Screen”. Cindy opens full screen, like an app.",
+    ios: "In Safari, tap the Share button (or the ⋯ button, then Share), scroll down and tap “Add to Home Screen”. Cindy opens full screen, like an app.",
     android: "Install Cindy to open it full screen, like an app.",
     install: "Install",
     close: "Not now",
   },
   he: {
     title: "הוסיפו את Cindy למסך הבית",
-    ios: "לחצו על כפתור השיתוף, ואז על “הוסף למסך הבית”. Cindy תיפתח במסך מלא, כמו אפליקציה.",
+    ios: "ב-Safari לחצו על כפתור השיתוף (או על כפתור ⋯ ואז שיתוף), גללו מטה ולחצו על “הוסף למסך הבית”. Cindy תיפתח במסך מלא, כמו אפליקציה.",
     android: "התקינו את Cindy כדי לפתוח אותה במסך מלא, כמו אפליקציה.",
     install: "התקנה",
     close: "לא עכשיו",
