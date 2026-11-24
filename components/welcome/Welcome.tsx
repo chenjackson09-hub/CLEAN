@@ -18,32 +18,53 @@ import { markInstalledHere, useInstall, wasInstalledHere } from "@/lib/installSt
 //        - Install → the install steps; once done, they are told to open Cindy from the Home Screen
 //          and sign up / log in THERE (on iPhone the installed app keeps its own login, separate
 //          from Safari).
-// Inside the installed app and on computers this is skipped and goes straight to /login.
-// `?welcome=1` shows the choice screen on a computer too (for testing).
+// Inside the installed app, for someone already signed in, and on computers this is skipped and
+// goes on to /login (which sends a signed-in person to their own home). `?welcome=1` shows the
+// choice screen on a computer too (for testing).
+//
+// The splash stays for a few seconds, then fades out (FADE_MS) before the next screen appears, so
+// the change of screen is a soft one instead of a jump.
+const SPLASH_BROWSER_MS = 4600; // browser: splash, then the install-or-online choice
+const SPLASH_APP_MS = 3900; // installed app / signed in: splash, then on to /login
+const FADE_MS = 500;
 
-export default function Welcome() {
+export default function Welcome({ signedIn = false }: { signedIn?: boolean }) {
   const router = useRouter();
   const { t, lang } = useLanguage();
   const inst = useInstall();
   const [phase, setPhase] = useState<"splash" | "choose" | "installed">("splash");
   const [guide, setGuide] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [leaving, setLeaving] = useState(false); // the splash is fading out
 
   const { ready, standalone, ios, android, installed } = inst;
   useEffect(() => {
-    if (!ready) return;
+    if (!signedIn && !ready) return;
     const force = new URLSearchParams(window.location.search).get("welcome") === "1";
-    if (standalone) {
-      // opened from the Home Screen icon: a brief splash, then straight to login
-      const id = setTimeout(() => router.replace("/login"), 900);
-      return () => clearTimeout(id);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    // wait, fade the splash out, then do the next thing
+    const after = (wait: number, next: () => void) => {
+      timers.push(
+        setTimeout(() => {
+          setLeaving(true);
+          timers.push(setTimeout(next, FADE_MS));
+        }, wait),
+      );
+    };
+    if (signedIn || standalone) {
+      // already signed in, or opened from the Home Screen icon: splash, then /login
+      // (which sends a signed-in person to their own home)
+      after(SPLASH_APP_MS, () => router.replace("/login"));
+    } else if (ios || android || force) {
+      after(SPLASH_BROWSER_MS, () => {
+        setPhase("choose");
+        setLeaving(false);
+      });
+    } else {
+      after(SPLASH_BROWSER_MS, () => router.replace("/login")); // computers: nothing to install
     }
-    const id = setTimeout(() => {
-      if (ios || android || force) setPhase("choose");
-      else router.replace("/login"); // computers: nothing to install, no choice to make
-    }, 1600);
-    return () => clearTimeout(id);
-  }, [ready, standalone, ios, android, router]);
+    return () => timers.forEach(clearTimeout);
+  }, [signedIn, ready, standalone, ios, android, router]);
 
   // The browser told us the install really happened (Android/Chrome).
   useEffect(() => {
@@ -80,7 +101,10 @@ export default function Welcome() {
       )}
 
       {phase === "splash" && (
-        <div className="flex flex-col items-center gap-4" aria-label="Cindy">
+        <div
+          className={`flex flex-col items-center gap-4 transition-all duration-500 ease-out motion-reduce:transition-none ${leaving ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
+          aria-label="Cindy"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/icon-512.png" alt="" className="cindy-pop h-28 w-28 rounded-[28px] shadow-lg" />
           <p className="cindy-fade text-4xl font-bold tracking-tight text-gray-900">Cindy</p>
@@ -88,7 +112,7 @@ export default function Welcome() {
       )}
 
       {phase === "choose" && (
-        <div className="w-full max-w-sm text-center">
+        <div className="cindy-rise w-full max-w-sm text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/icon-192.png" alt="" className="mx-auto mb-5 h-16 w-16 rounded-2xl shadow" />
           <h1 className="text-2xl font-bold text-gray-900">{t("welcome.title")}</h1>
@@ -114,7 +138,7 @@ export default function Welcome() {
       )}
 
       {phase === "installed" && (
-        <div className="w-full max-w-sm text-center">
+        <div className="cindy-rise w-full max-w-sm text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/icon-192.png" alt="" className="mx-auto mb-5 h-16 w-16 rounded-2xl shadow" />
           <h1 className="text-2xl font-bold text-gray-900">{t("welcome.installedTitle")}</h1>

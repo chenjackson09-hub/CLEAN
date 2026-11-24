@@ -70,8 +70,8 @@ export async function middleware(request: NextRequest) {
   // The scheduled housekeeping job has no signed-in person; the route checks its own secret.
   const isCronPath = pathname.startsWith('/api/cron/')
 
-  // The website's first screen (welcome / install choice) is for signed-out visitors; it then
-  // leads to /login. A signed-in person at "/" is sent on below.
+  // The website's first screen: the Cindy splash for everyone, then (signed out) the welcome /
+  // install choice or (signed in) on to /login.
   const isWelcomePath = pathname === '/'
 
   if (!user && !isCronPath && !isWelcomePath && !isAuthPath && !isOnboardingPath && !isSignedOutPath && !isLegalPath && !isPasswordResetPath && !isCallbackPath && !isLocalitySearch) {
@@ -83,9 +83,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Signed in and at the welcome address: /login already knows where each role and sign-up state
-  // belongs, so hand over to it.
-  if (user && isWelcomePath) return NextResponse.redirect(new URL('/login', request.url))
+  // A signed-in person at the welcome address is NOT redirected here: they see the Cindy splash too,
+  // then the page itself (app/page.tsx knows they are signed in) fades on to /login, which already
+  // knows where each role and sign-up state belongs.
 
   if (user) {
     const isRoleProtected =
