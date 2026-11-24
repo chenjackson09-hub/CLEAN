@@ -1,4 +1,4 @@
-# To-do list before the pilot — updated 2026-11-17
+# To-do list before the pilot — updated 2026-11-24
 
 ## Done
 - GitHub: pushing works through GitHub Desktop (repo folder `~/Documents/CLEAN`, NOT the old `~/Documents/GitHub/CLEAN`). Live site deploys from `main` on Vercel.
@@ -33,3 +33,13 @@ Still real:
 - #23 "Talked / haven't yet talked" on the cleaner home — not built.
 - #20 CLEANER – HOME (2 of 3 sub-issues done) — #23 is the open one.
 Probably can be closed: #40 (written reviews exist on both sides), #25 (marked invalid), #1–#4 (old "Foundation / Cleaner domain / Customer domain" epics).
+
+## D. Later features (asked for, NOT started — don't build until the owner says so)
+1. **Admin can send a message in the Chat.** An admin should be able to write in the in-app chat (to a host and/or a cleaner). Open questions for when it is picked up: is it a private admin ↔ person thread, or can the admin also join an existing host ↔ cleaner chat (e.g. a dispute)? What does the person see as the sender (e.g. "Cindy team")? Bell notification + email for an admin message? Today a conversation is strictly one (host, cleaner) pair (`conversations unique (host_id, cleaner_id)`, read-only RLS), so this needs a new kind of conversation and new access rules.
+2. **A time calculator "on the side".** A small calculator for working out time (e.g. start time + duration = end time, or hours between two times). Open questions: who uses it (admin panel, cleaners, hosts — or inside the chat/booking screens) and where "on the side" means (a side panel on desktop? a floating button on the phone?).
+
+## E. The phone app (PWA) — where it stands (2026-11-24)
+- **Done:** installable (manifest, placeholder "C" icon, name "Cindy"), on-screen install steps for iPhone and Android, "Install the app" in both account menus, welcome screen at the website's address (install on Home Screen vs continue online), safe-area fixes for the phone's bottom bar.
+- **Owner to test on a real phone:** Google sign-in / sign-up in Safari AND inside the installed app; full-screen look of every screen (chat box, sign-up screens); the "Open Share for me" button; whether the welcome screen works as hoped.
+- **Not built yet:** offline screen + service worker (also makes Android's install button reliable); phone push notifications (iPhone needs the app installed, iOS 16.4+); App Store / Google Play versions (a Capacitor wrapper, later); the real logo / icon / splash (the "C" is a placeholder: replace the four PNGs in `public/icons`, update the colours in `app/manifest.ts` and `app/layout.tsx`).
+
