@@ -76,4 +76,13 @@ describe('InstallPrompt', () => {
     })
     expect(prompt).toHaveBeenCalled()
   })
+
+  it('?install=1 brings the card back after it was dismissed (for testing)', () => {
+    setup(IPHONE)
+    localStorage.setItem('installPromptDismissed', '1')
+    window.history.pushState({}, '', '/home?install=1')
+    render(<InstallPrompt />)
+    expect(screen.getByText('Add Cindy to your Home Screen')).toBeInTheDocument()
+    window.history.pushState({}, '', '/')
+  })
 })

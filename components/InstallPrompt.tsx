@@ -46,6 +46,8 @@ export default function InstallPrompt() {
     } catch {
       /* private mode: just show it */
     }
+    // Testing/support: opening any page with ?install=1 shows the card again even after it was dismissed.
+    if (new URLSearchParams(window.location.search).get("install") === "1") dismissed = false;
     const standalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
