@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import AlreadyInstalledConfirm from "@/components/AlreadyInstalledConfirm";
 import InstallGuide from "@/components/InstallGuide";
-import { OPEN_GUIDE_EVENT, useInstall } from "@/lib/installState";
+import { OPEN_GUIDE_EVENT, markInstalledHere, useInstall, wasInstalledHere } from "@/lib/installState";
 import { installHintFor } from "@/lib/pwa";
 
 // Mounted once in each signed-in layout. Two jobs:
@@ -36,6 +37,7 @@ export default function InstallPrompt() {
   const [lang, setLang] = useState<"en" | "he">("en");
   const [dismissed, setDismissed] = useState(true); // hidden until we have read the saved choice
   const [guide, setGuide] = useState(false);
+  const [confirm, setConfirm] = useState(false); // "you already added it — again?"
 
   useEffect(() => {
     setLang(document.documentElement.dir === "rtl" ? "he" : "en");
@@ -51,14 +53,19 @@ export default function InstallPrompt() {
   }, []);
 
   const { canPrompt, promptInstall } = inst;
-  useEffect(() => {
-    const open = () => {
-      if (canPrompt) void promptInstall();
-      else setGuide(true);
-    };
-    window.addEventListener(OPEN_GUIDE_EVENT, open);
-    return () => window.removeEventListener(OPEN_GUIDE_EVENT, open);
+  const start = useCallback(() => {
+    if (canPrompt) void promptInstall();
+    else setGuide(true);
   }, [canPrompt, promptInstall]);
+  // Anyone who already went through the steps on this phone is asked before doing it again.
+  const requestStart = useCallback(() => {
+    if (wasInstalledHere()) setConfirm(true);
+    else start();
+  }, [start]);
+  useEffect(() => {
+    window.addEventListener(OPEN_GUIDE_EVENT, requestStart);
+    return () => window.removeEventListener(OPEN_GUIDE_EVENT, requestStart);
+  }, [requestStart]);
 
   const hint = !inst.ready
     ? "none"
@@ -88,7 +95,7 @@ export default function InstallPrompt() {
           </div>
           <button
             type="button"
-            onClick={hint === "ios" ? () => setGuide(true) : () => void promptInstall()}
+            onClick={requestStart}
             className="mt-3 w-full rounded-full bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
           >
             {s.go}
@@ -105,7 +112,20 @@ export default function InstallPrompt() {
           lang={lang}
           onClose={(finished) => {
             setGuide(false);
-            if (finished) dismiss(); // they went all the way through: don't show the card again
+            if (finished) {
+              markInstalledHere();
+              dismiss(); // they went all the way through: don't show the card again
+            }
+          }}
+        />
+      )}
+      {confirm && (
+        <AlreadyInstalledConfirm
+          lang={lang}
+          onNo={() => setConfirm(false)}
+          onYes={() => {
+            setConfirm(false);
+            start();
           }}
         />
       )}

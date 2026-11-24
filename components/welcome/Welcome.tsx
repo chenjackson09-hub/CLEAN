@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AlreadyInstalledConfirm from "@/components/AlreadyInstalledConfirm";
 import InstallGuide from "@/components/InstallGuide";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { LanguageToggle } from "@/lib/i18n/LanguageToggle";
-import { useInstall } from "@/lib/installState";
+import { markInstalledHere, useInstall, wasInstalledHere } from "@/lib/installState";
 
 // The first screen at the website's address for someone who is not signed in:
 //   1. a splash with the app icon (a "C" for now — it is the same picture as the home-screen icon,
@@ -26,6 +27,7 @@ export default function Welcome() {
   const inst = useInstall();
   const [phase, setPhase] = useState<"splash" | "choose" | "installed">("splash");
   const [guide, setGuide] = useState(false);
+  const [confirm, setConfirm] = useState(false);
 
   const { ready, standalone, ios, android, installed } = inst;
   useEffect(() => {
@@ -68,6 +70,14 @@ export default function Welcome() {
   };
 
   const install = async () => {
+    // already went through the steps on this phone? ask first (see AlreadyInstalledConfirm)
+    if (wasInstalledHere()) {
+      setConfirm(true);
+      return;
+    }
+    await startInstall();
+  };
+  const startInstall = async () => {
     if (inst.canPrompt) {
       const outcome = await inst.promptInstall();
       if (outcome === "accepted") setPhase("installed");
@@ -135,7 +145,20 @@ export default function Welcome() {
           lang={lang === "he" ? "he" : "en"}
           onClose={(finished) => {
             setGuide(false);
-            if (finished) setPhase("installed");
+            if (finished) {
+              markInstalledHere();
+              setPhase("installed");
+            }
+          }}
+        />
+      )}
+      {confirm && (
+        <AlreadyInstalledConfirm
+          lang={lang === "he" ? "he" : "en"}
+          onNo={() => setConfirm(false)}
+          onYes={() => {
+            setConfirm(false);
+            void startInstall();
           }}
         />
       )}

@@ -9,6 +9,24 @@ import { isAndroidDevice, isIosDevice } from "@/lib/pwa";
 // kept for whoever asks.
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 
+// Safari cannot tell a page whether its app is already on the Home Screen, so we remember, on this
+// phone's browser, that the person finished the install steps (or accepted the install dialog).
+const INSTALLED_KEY = "cindyAppInstalledHere";
+export function markInstalledHere() {
+  try {
+    localStorage.setItem(INSTALLED_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+export function wasInstalledHere(): boolean {
+  try {
+    return localStorage.getItem(INSTALLED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 let deferred: InstallEvent | null = null;
 let installed = false;
 const listeners = new Set<() => void>();
@@ -23,6 +41,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("appinstalled", () => {
     deferred = null;
     installed = true;
+    markInstalledHere();
     emit();
   });
 }
@@ -64,6 +83,7 @@ export function useInstall() {
     if (!ev) return null;
     await ev.prompt();
     const choice = await ev.userChoice;
+    if (choice.outcome === "accepted") markInstalledHere();
     deferred = null;
     emit();
     return choice.outcome;

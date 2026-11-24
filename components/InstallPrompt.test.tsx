@@ -98,4 +98,28 @@ describe('InstallPrompt', () => {
     })
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
+
+  it('asks before installing again once this phone has been through the steps', () => {
+    setup(IPHONE)
+    render(<InstallPrompt />)
+    fireEvent.click(screen.getByRole('button', { name: 'Let’s do it!' }))
+    fireEvent.click(screen.getByRole('button', { name: 'I added it' }))
+    expect(localStorage.getItem('cindyAppInstalledHere')).toBe('1')
+
+    // later, from the menu
+    act(() => {
+      openInstallGuide()
+    })
+    expect(screen.getByText('You have already downloaded this app on your home screen')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).toBeNull() // the steps wait for the answer
+    fireEvent.click(screen.getByRole('button', { name: 'No, cancel' }))
+    expect(screen.queryByText('You have already downloaded this app on your home screen')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    act(() => {
+      openInstallGuide()
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, download it again' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
 })

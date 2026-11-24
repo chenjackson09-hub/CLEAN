@@ -90,4 +90,16 @@ describe('Welcome', () => {
     act(() => { jest.advanceTimersByTime(1700) })
     expect(replace).toHaveBeenCalledWith('/login')
   })
+
+  it('"Install" asks first when this phone already went through the install steps', () => {
+    setup(IPHONE)
+    localStorage.setItem('cindyAppInstalledHere', '1')
+    renderIt()
+    act(() => { jest.advanceTimersByTime(1700) })
+    fireEvent.click(screen.getByRole('button', { name: /Install the app on my Home Screen/ }))
+    expect(screen.getByText('You have already downloaded this app on your home screen')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, download it again' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
 })
